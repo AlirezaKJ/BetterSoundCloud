@@ -1,0 +1,44 @@
+:root {
+    --userbg: #ffffff;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+#webview {
+    position: fixed;
+    background: black;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+}
+
+.greet {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--userbg);
+    position: fixed;
+    top: 0;
+    left: 0;
+    transition: all 1s;
+    width: 100vw;
+    height: 100vh;
+    width: 100vw;
+    opacity: 1;
+}
+
+.greet .greet-item {
+    position: absolute;
+    font-size: 40px;
+    font-family: Lucida Grande,Lucida Sans Unicode,Lucida Sans,Garuda,Verdana,Tahoma,sans-serif;
+    /* font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; */
+    transition: all 0.5s;
+}
+
+.fade {opacity: 0;}
+

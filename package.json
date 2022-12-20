@@ -1,0 +1,26 @@
+{
+  "name": "bettersoundcloud",
+  "version": "0.1.0",
+  "description": "BetterSoundCloud PC Client",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "repository": "https://github.com/AlirezaKJ/BetterSoundCloud",
+  "downloadpage": "https://github.com/AlirezaKJ/BetterSoundCloud/releases",
+  "keywords": [
+    "electron",
+    "soundcloud",
+    "music",
+    "audio",
+    "web"
+  ],
+  "author": "AlirezaKJ",
+  "license": "",
+  "devDependencies": {
+    "electron": "^22.0.0"
+  },
+  "dependencies": {
+    "discord-rpc": "^4.0.1"
+  }
+}
