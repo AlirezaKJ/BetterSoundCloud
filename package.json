@@ -15,6 +15,64 @@
     "audio",
     "web"
   ],
+  "build": {
+    "appId": "com.bettersoundcloud.app",
+    "productName": "BetterSoundCloud",
+    "copyright": "Copyright © 2022 AlirezaKJ",
+    "mac": {
+      "category": "public.app-category.utilities",
+      "icon": "lib\\assets\\bw-icon.ico",
+      "target": [
+        "zip",
+        "dmg"
+      ],
+      "publish": [
+        "github"
+      ]
+    },
+    "win": {
+      "publisherName": "AlirezaKJ",
+      "icon": "lib\\assets\\bw-icon.ico",
+      "publish": [
+        "github"
+      ],
+      "target": [
+        "nsis"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "tar.gz"
+      ]
+    },
+    "dmg": {
+      "background": "assets/background.png",
+      "icon": "lib\\assets\\bw-icon.ico",
+      "title": "Accurate Installer"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "lib\\assets\\bw-icon.ico",
+      "installerSidebar": "lib\\assets\\bw-icon.ico",
+      "uninstallerSidebar": "lib\\assets\\bw-icon.ico",
+      "license": "",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "AlirezaKJ",
+        "repo": "bettersoundcloud",
+        "vPrefixedTagName": true,
+        "private": true,
+        "releaseType": "draft"
+      }
+    ]
+  },
   "author": "AlirezaKJ",
   "license": "",
   "devDependencies": {
