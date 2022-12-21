@@ -47,7 +47,7 @@
       ]
     },
     "dmg": {
-      "background": "assets/background.png",
+      "background": "lib\\assets\\bw-icon.ico",
       "icon": "lib\\assets\\bw-icon.ico",
       "title": "Accurate Installer"
     },
