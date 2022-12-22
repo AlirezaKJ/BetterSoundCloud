@@ -9,7 +9,7 @@ setInterval(() => {
     
     tick = tick + 1
     if (playbtn.classList.contains("playing")) {
-        console.log("BSCReceive|Playing");
+        console.log("BSCReceive|Playing")
         console.log("BSCReceive|CurrentDur|" + currentduration.innerText)
         console.log("BSCReceive|EndDur|" + endduration.innerText)
         console.log("BSCReceive|CurSongTitle|" + currentsongtitle.innerText )
