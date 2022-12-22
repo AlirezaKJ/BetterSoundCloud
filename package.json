@@ -75,7 +75,7 @@
   },
   "plugins": {
     "ctxMenu": "https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/plugins/ctxMenu.js",
-    "discordRPC": "https://github.com/AlirezaKJ/BetterSoundCloud/blob/main/plugins/discordRPC.js"
+    "discordRPC": "https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/plugins/discordRPC.js"
   },
   "author": "AlirezaKJ",
   "license": "",
