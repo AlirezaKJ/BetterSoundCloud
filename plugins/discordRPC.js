@@ -5,6 +5,9 @@ setInterval(() => {
     var endduration = document.querySelectorAll(".playbackTimeline__duration span")[1]
     var currentduration = document.querySelectorAll(".playbackTimeline__timePassed span")[1]
     var currentsongtitle = document.querySelector(".playbackSoundBadge__title")
+    var currentsongcover = document.querySelector(".playControls__soundBadge .image__lightOutline span").getAttribute("style").split(";")[0].split('"')[1]
+    // currentsongcover = currentsongcover
+    console.log(currentsongcover)
     var currentartist = document.querySelector(".playbackSoundBadge__lightLink")
     
     tick = tick + 1
@@ -13,6 +16,7 @@ setInterval(() => {
         console.log("BSCReceive|CurrentDur|" + currentduration.innerText)
         console.log("BSCReceive|EndDur|" + endduration.innerText)
         console.log("BSCReceive|CurSongTitle|" + currentsongtitle.innerText )
+        console.log("BSCReceive|CurSongCoverUrl|" + currentsongcover)
         console.log("BSCReceive|CurSongArtist|" + currentartist.innerText)
     } else {console.log("BSCReceive|Paused")}
     console.log("tick number ",tick)

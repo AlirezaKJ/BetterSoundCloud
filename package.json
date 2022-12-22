@@ -1,6 +1,6 @@
 {
   "name": "bettersoundcloud",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "BetterSoundCloud PC Client",
   "main": "main.js",
   "scripts": {
@@ -72,6 +72,10 @@
         "releaseType": "draft"
       }
     ]
+  },
+  "plugins": {
+    "ctxMenu": "https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/plugins/ctxMenu.js",
+    "discordRPC": "file:///C:/Codes/BetterSoundCloud/plugins/discordRPC.js"
   },
   "author": "AlirezaKJ",
   "license": "",

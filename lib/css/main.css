@@ -10,7 +10,10 @@
 
 #webview {
     position: fixed;
-    background: black;
+    background: white center;
+    background-image: url(../assets/bw-icon.png);
+    background-repeat: no-repeat;
+    background-size: 200px;
     top: 0;
     left: 0;
     width: 100vw;
@@ -42,3 +45,134 @@
 
 .fade {opacity: 0;}
 
+#ctxmenu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    transition: all 200ms;
+    width: 150px;
+    height: fit-content;
+    background: rgba(255, 255, 255, 0.9);
+    border: solid 1px black;
+    border-radius: 5px;
+    display: flex;
+    align-items: flex-start;
+    align-content: flex-start;
+    justify-content: left;
+    flex-wrap: wrap;
+    opacity: 0;
+    visibility: hidden;
+    font-family: Lucida Grande,Lucida Sans Unicode,Lucida Sans,Garuda,Verdana,Tahoma,sans-serif;
+}
+
+#ctxmenu .ctxitem {
+    display: flex;
+    background: none;
+    border-bottom: solid 1px;
+    overflow: hidden;
+    width: 150px;
+    height: 30px;
+    transition: all 200ms;
+    cursor: pointer;
+}
+#ctxmenu .ctxitem:last-child {
+    border-bottom: none;
+}
+#ctxmenu .ctxitem:hover {
+    scale: 1.1;
+    overflow: visible;
+    background: white;
+    border: #ff5500 solid 1px;
+}
+#ctxmenu .ctxitem .itemimg {
+    display: inline-block;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 15px;
+    width: 30px;
+    height: 30px;
+}
+#ctxmenu .ctxitem .itemtxt {
+    display: inline-block;
+    width: 120px;
+    height: 30px;
+    line-height: 30px;
+    font-size: 12px;
+    text-align: left;
+}
+
+.showmenu {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.settings {
+    font-family: Lucida Grande,Lucida Sans Unicode,Lucida Sans,Garuda,Verdana,Tahoma,sans-serif;
+    display: inline-block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    visibility: hidden;
+    transition: all 300ms;
+    opacity: 0;
+}
+.showsettings {opacity: 1 !important;}
+.settings .sidebar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 20vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    align-content: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    background: rgba(0,0,0,0.9);
+    color: white;
+}
+.settings .sidebar .item {
+    margin: 5px 0;
+    font-size: 30px;
+    text-indent: 50px;
+    width: 20vw;
+    text-align: left;
+    cursor: pointer;
+    transition: all 200ms;
+}
+.settings .sidebar .item:hover {
+    color: #ff7700;
+}
+.settings .sidebar .activesidebar {
+    background: rgb(255, 255, 255);
+    color: black;
+}
+.settings .slidesbar {
+    position: absolute;
+    top: 0;
+    left: 20vw;
+    width: 80vw;
+    height: 100vh;
+    background-color: rgba(255, 255, 255, 0.95);
+    background-image: url(../assets/bw-icon.png);
+    background-position: center;
+    background-repeat:  no-repeat;
+    background-size: 150px;
+}
+.settings .slidesbar .slide {
+    display: none;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.95);
+    transition: all 250ms;
+    opacity: 0;
+}
+.settings .slidesbar .activeslide {opacity: 1;}
+
+.settings .slidesbar .soon {
+    font-size: 50px;
+    margin: 200px 0;
+    text-align: center;
+}
