@@ -37,7 +37,12 @@
         "github"
       ],
       "target": [
-        "nsis"
+        "nsis",
+        "nsis-web",
+        "portable",
+        "appx",
+        "msi",
+        "squirrel"
       ]
     },
     "linux": {
