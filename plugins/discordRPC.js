@@ -5,9 +5,8 @@ setInterval(() => {
     var endduration = document.querySelectorAll(".playbackTimeline__duration span")[1]
     var currentduration = document.querySelectorAll(".playbackTimeline__timePassed span")[1]
     var currentsongtitle = document.querySelector(".playbackSoundBadge__title")
-    var currentsongcover = document.querySelector(".playControls__soundBadge .image__lightOutline span").getAttribute("style").split(";")[0].split('"')[1]
+    var currentsongcover = document.querySelector(".playControls__soundBadge .image__lightOutline span").getAttribute("style").split(";")[0].split('"')[1].replace("120x120","500x500")
     // currentsongcover = currentsongcover
-    console.log(currentsongcover)
     var currentartist = document.querySelector(".playbackSoundBadge__lightLink")
     
     tick = tick + 1
