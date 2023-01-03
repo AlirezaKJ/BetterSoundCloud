@@ -1,6 +1,6 @@
 {
   "name": "bettersoundcloud",
-  "version": "0.2 (Unreleased)",
+  "version": "0.2.0 (Unreleased)",
   "description": "BetterSoundCloud PC Client",
   "main": "main.js",
   "scripts": {
@@ -81,6 +81,9 @@
   "plugins": {
     "ctxMenu": "https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/plugins/ctxMenu.js",
     "discordRPC": "https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/plugins/discordRPC.js"
+  },
+  "theme": {
+    "darkCloud": "https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/themes/darkCloud.css"
   },
   "author": "AlirezaKJ",
   "license": "",
