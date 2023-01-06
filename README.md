@@ -6,8 +6,8 @@ A PC client of SoundCloud with improvement made using electronjs
 
 ## Auto Installers
 
-[![Github All Releases](https://img.shields.io/badge/Windows-Download-blue?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/AlirezaKJ/BetterSoundCloud/releases/download/V.0.1.1/BetterSoundCloud.Setup.0.1.1.exe)
 [![Github All Releases](https://img.shields.io/badge/Portable-Download-yellowgreen?style=for-the-badge&logo=electron-builder&logoColor=white)](https://github.com/AlirezaKJ/BetterSoundCloud/releases/download/V.0.1.1/win-portable.rar)
+[![Github All Releases](https://img.shields.io/badge/Windows-Download-blue?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/AlirezaKJ/BetterSoundCloud/releases/download/V.0.1.1/BetterSoundCloud.Setup.0.1.1.exe)
 [![Github All Releases](https://img.shields.io/badge/Source-Download-yellow?style=for-the-badge&logo=javascript&logoColor=white)](https://github.com/AlirezaKJ/BetterSoundCloud/archive/refs/tags/V.0.1.1.zip)
 
 ## Manual Installation
