@@ -13,9 +13,9 @@
 <body onload="greet()">
 
     
-    <webview id="webview" src="https://soundcloud.com/" enableblinkfeatures="PreciseMemoryInfo, CSSVariables" nodeintegration width="100%" height="100%" allowpopups></webview>
+    <webview id="webview" src="https://soundcloud.com/" plugins enableblinkfeatures="PreciseMemoryInfo, CSSVariables" nodeintegration width="100%" height="100%" allowpopups></webview>
 
-    <div class="settings">
+    <div class="settings" id="settingsmenu">
         <div class="sidebar">
             <div class="item" onclick="focusSettingSlide(0)">Change Notes</div>
             <div class="item" onclick="focusSettingSlide(1)">Plug-ins</div>
@@ -24,6 +24,19 @@
         </div>
         <div class="slidesbar">
             <div id="changenote" class="slide">
+                <hr>
+                <div class="note">
+                    <h3>V0.2.0 (Beta) </h3>
+                    <p> - Added Themes Menu </p>
+                    <p> - Added Dark Cloud Theme</p>
+                    <p> - Added Plugins Menu </p>
+                    <p> - Added SilentAd Plugin</p>
+                    <p> - Added ReloadOnAd Plugin</p>
+                    <p> - Added ReloadAndPlay Plugin</p>
+                    <p> - Added Database Features To Save Settings And Prefrences</p>
+                    <p> - Fixed Discord RPC To Show The Big Image Of The Song And Diffrent States</p>
+                    <span class="date"> 6 January 2023</span>
+                </div>
                 <hr>
                 <div class="note">
                     <h3>V0.1.1 (Beta) </h3>
@@ -42,11 +55,47 @@
                 <hr>
 
             </div>
-            <div class="slide soon">
-                <h3>Coming Soon</h3>
+            <div class="slide plugins">
+                <h3>Plugins</h3>
+                <section>
+                    <h4>Ad System</h4>
+                    <div class="options">
+                        <div class="option" onclick="switchPlugin('adSystem','default')">
+                            <h5>Default</h5>
+                            <p>Default Sound Cloud Ads Without Any Modification</p>
+
+                        </div>
+                        <div class="option" onclick="switchPlugin('adSystem','silentAds')">
+                            <h5>Silent Ads</h5>
+                            <p>Default Sound Cloud Ads But With No Volume And Silenced</p>
+                            <p>BSC Recommended Ad System</p>
+
+                        </div>
+                        <div class="option" onclick="switchPlugin('adSystem','reloadOnAds')">
+                            <h5>Refresh</h5>
+                            <p>Refresh The SoundCloud Frame To Dodge The Ad</p>
+                            <p class="warn">Warning: May Result In Queue Changes</p>
+
+                        </div>
+                        <div class="option" onclick="switchPlugin('adSystem','reloadAndPlay')">
+                            <h5>Refresh And Play</h5>
+                            <p>Refresh The SoundCloud Frame To Dodge The Ad And Autoplay The Song</p>
+                            <p class="warn">Warning: May Result In Queue Changes And Autoplay At App Startup</p>
+                        </div>
+                    </div>
+                </section>
+                <hr>
             </div>
-            <div class="slide soon">
-                <h3>Coming Soon</h3>
+            <div class="slide theme">
+                <h3>Themes</h3>
+                <div class="themebar darkcloud">
+                    <div class="column firstcol">
+                        <span class="themename">Dark Cloud</span>
+                    </div>
+                    <div class="column secondcol">
+                        <span class="themetoggle" id="darkcloudtgl">On</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

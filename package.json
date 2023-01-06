@@ -1,6 +1,6 @@
 {
   "name": "bettersoundcloud",
-  "version": "0.2.0 (Unreleased)",
+  "version": "0.2.0",
   "description": "BetterSoundCloud PC Client",
   "main": "main.js",
   "scripts": {
@@ -80,7 +80,10 @@
   },
   "plugins": {
     "ctxMenu": "https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/plugins/ctxMenu.js",
-    "discordRPC": "https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/plugins/discordRPC.js"
+    "discordRPC": "https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/plugins/discordRPC.js",
+    "silentAds": "https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/plugins/silentads.js",
+    "reloadOnAds": "https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/plugins/reloadonads.js",
+    "reloadAndPlayOnAds": "https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/plugins/reloadandplay.js"
   },
   "theme": {
     "darkCloud": "https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/themes/darkCloud.css"
