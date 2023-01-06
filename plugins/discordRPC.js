@@ -20,4 +20,4 @@ setInterval(() => {
     } else {console.log("BSCReceive|Paused")}
     console.log("tick number ",tick)
 
-},500)
+},100)
