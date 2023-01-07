@@ -1,4 +1,5 @@
-# BetterSoundCloud | [![Github All Releases](https://img.shields.io/github/downloads/AlirezaKJ/BetterSoundCloud/total.svg?style=for-the-badge&color=orange)](https://github.com/AlirezaKJ/BetterSoundCloud/releases)
+# BetterSoundCloud | [![Github All Releases](https://img.shields.io/github/downloads/AlirezaKJ/BetterSoundCloud/total.svg?style=for-the-badge&color=orange)](https://github.com/AlirezaKJ/BetterSoundCloud/releases) <a href="https://www.buymeacoffee.com/alirezakj" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-red.png" alt="Buy Me A Coffee" style="height: 30px !important;width: 100px !important;" ></a>
+
 A PC client of SoundCloud with themes and plugins made using electronjs
 
 ---
