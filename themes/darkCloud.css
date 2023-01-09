@@ -240,4 +240,8 @@ html,body {
     background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1059733494173024276/round_report_problem_white_24dp.png") !important;    
 }
 
+.visualSound__wrapper {
+    background: #111 !important;   
+}
+
 .soundBadge__additional {background: rgba(255, 255, 255, 0) !important;}
