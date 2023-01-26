@@ -55,7 +55,7 @@ let patchnotes = [
 
 // Update Version Infos
 let currentversionel = document.getElementById("currentversion")
-currentversionel.innerHTML = currentversion
+currentversionel.innerHTML = "V" + currentversion
 let latestversionel = document.getElementById("latestversion")
 if (currentversion === latestversion) {
     latestversionel.innerHTML = "You Are On The Latest Version"
