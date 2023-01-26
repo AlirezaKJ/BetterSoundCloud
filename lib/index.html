@@ -8,7 +8,7 @@
     <script src="js/LSDB.js"></script>
     <link rel="stylesheet" href="css/changenotes.css">
     <link rel="stylesheet" href="css/main.css">
-    <title>BetterSC</title>
+    <title>Better Sound Cloud</title>
 </head>
 <body onload="greet()">
 
@@ -24,36 +24,16 @@
         </div>
         <div class="slidesbar">
             <div id="changenote" class="slide">
-                <hr>
-                <div class="note">
-                    <h3>V0.2.0 (Beta) </h3>
-                    <p> - Added Themes Menu </p>
-                    <p> - Added Dark Cloud Theme</p>
-                    <p> - Added Plugins Menu </p>
-                    <p> - Added SilentAd Plugin</p>
-                    <p> - Added ReloadOnAd Plugin</p>
-                    <p> - Added ReloadAndPlay Plugin</p>
-                    <p> - Added Database Features To Save Settings And Prefrences</p>
-                    <p> - Fixed Discord RPC To Show The Big Image Of The Song And Diffrent States</p>
-                    <span class="date"> 6 January 2023</span>
-                </div>
-                <hr>
-                <div class="note">
-                    <h3>V0.1.1 (Beta) </h3>
-                    <p> - Right Click Menu Added</p>
-                    <p> - Option Menu Added</p>
-                    <p> - Song Cover Added To DiscordRPC</p>
-                    <span class="date"> 23 December 2022</span>
-                </div>
-                <hr>
-                <div class="note">
+                <h2 class="firstone" id="currentversion"></h2>
+                <h2 id="latestversion"></h2>
+                <br><br>
+                <!-- <div class="note">
                     <h3>V0.1.0 (Beta) </h3>
                     <p> - Added Discord Rich Presence</p>
                     <p> - Main And First Release</p>
                     <span class="date"> 21 December 2022</span>
                 </div>
-                <hr>
-
+                <hr> -->
             </div>
             <div class="slide plugins">
                 <h3>Plugins</h3>
@@ -96,6 +76,30 @@
                         <span class="themetoggle" id="darkcloudtgl">On</span>
                     </div>
                 </div>
+                <div class="themebar nocturnal">
+                    <div class="column firstcol">
+                        <span class="themename">Nocturnal</span>
+                    </div>
+                    <div class="column secondcol">
+                        <span class="themetoggle" id="nocturnaltgl">On</span>
+                    </div>
+                </div>
+                <div class="themebar postMorphic">
+                    <div class="column firstcol">
+                        <span class="themename">postMorphic</span>
+                    </div>
+                    <div class="column secondcol">
+                        <span class="themetoggle" id="postMorphictgl">On</span>
+                    </div>
+                </div>
+                <div class="themebar hover">
+                    <div class="column firstcol">
+                        <span class="themename">Hover</span>
+                    </div>
+                    <div class="column secondcol">
+                        <span class="themetoggle" id="hovertgl">On</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -135,6 +139,7 @@
 
     <script src="js/main.js"></script>
     <script src="js/greet.js"></script>
-
+    <script src="../plugins/updateCheck.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@master/plugins/updateCheck.js"></script> -->
 </body>
 </html>

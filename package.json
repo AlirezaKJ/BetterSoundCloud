@@ -1,6 +1,6 @@
 {
   "name": "bettersoundcloud",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "BetterSoundCloud PC Client",
   "main": "main.js",
   "scripts": {
@@ -89,7 +89,7 @@
     "darkCloud": "https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/themes/darkCloud.css",
     "nocturnal": "https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/themes/nocturnal.css",
     "postMorphic": "https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/themes/postMorphic.css",
-    "hover":"https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/themes/hover.css"
+    "hover": "https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/themes/hover.css"
   },
   "author": "AlirezaKJ",
   "license": "",

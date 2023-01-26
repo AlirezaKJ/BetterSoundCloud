@@ -8,7 +8,7 @@ function createWindow () {
     width: 1920,
     height: 1080,
     icon: "lib/assets/bw-icon.png",
-    fullscreen: true,
+    
     webPreferences: {
         nodeIntegration: true,
         contextIsolation: false,
@@ -17,6 +17,7 @@ function createWindow () {
   })
 
   mainWindow.setMenuBarVisibility(false)
+  mainWindow.maximize()
 
   // and load the index.html of the app.
   mainWindow.loadFile('lib/index.html')

@@ -1,4 +1,4 @@
-let latestversion = "0.2.0"
+let latestversion = "0.3.0"
 let currentversion = clientVersion
 let patchnotesdiv = document.getElementById("changenote")
 
@@ -14,7 +14,7 @@ let patchnotes = [
             "- Added Links To Each Patch Box",
             "- App Dont Automatically Start On Fullscreen Anymore",
         ],
-        "date":"28 January 2023",
+        "date":"26 January 2023",
         "link":"#"
     },
     {
@@ -80,7 +80,7 @@ for (let index = 0; index < patchnotes.length; index++) {
     }
     let notedate = document.createElement("span")
     notedate.classList.add("date")
-    notedate.innerHTML = "21 December 2022"
+    notedate.innerHTML = patch.date
     notediv.appendChild(notedate)
     let linkel = document.createElement("a")
     linkel.setAttribute("href",patch.link)

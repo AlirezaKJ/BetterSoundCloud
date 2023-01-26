@@ -7,6 +7,16 @@
     border-left: solid white 2px;
     border-right: solid white 2px;
 }
+#changenote .firstone {
+    margin-top: 30px;
+}
+#changenote h2 {
+    text-align: center;
+    font-size: 30px;
+}
+#changenote > a {
+    text-decoration: none;
+}
 #changenote .note:hover {
     background: lightgray;
     border-left: solid black 2px;
@@ -32,4 +42,7 @@
     background: black;
     height: 1px;
     margin: 0 70px;
+}
+#changenote a {
+    color: inherit;
 }
