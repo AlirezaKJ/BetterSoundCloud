@@ -104,9 +104,19 @@
         </div>
     </div>
 
+    <div id="gotopanel" class="gotopanelon">
+        <div class="gotobox">
+            <input type="url" name="gotourl" id="gotourltextbox">
+            <span id="gotoboxbtn" onclick="gotoReqUi()">Go</span>
+        </div>
+    </div>
+
     <div id="ctxmenu">
         <div class="ctxitem" onclick="copyCurUrl()">
             <div class="itemimg" style="background-image: url(assets/ctx-copy.png);"></div><div class="itemtxt">Copy Current Url</div>
+        </div>
+        <div class="ctxitem" onclick="gotoUI('toggle')">
+            <div class="itemimg" style="background-image: url(assets/ctx-goto.png);"></div><div class="itemtxt">Go To Url</div>
         </div>
         <div class="ctxitem" onclick="webview.goForward()">
             <div class="itemimg" style="background-image: url(assets/ctx-forward.png);"></div><div class="itemtxt">Forward</div>
@@ -131,14 +141,15 @@
         </div>
     </div>
 
-    <div class="greet">
+    <!-- <div class="greet">
         <h1 class="greet-item ">Better Sound Cloud</h1>
         <h1 class="greet-item fade"></h1>
         <img class="greet-item fade" src="assets/bw-icon.png" width="200" alt="icon">
-    </div>
+    </div> -->
 
     <script src="js/main.js"></script>
     <script src="js/greet.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@master/plugins/updateCheck.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@master/plugins/updateCheck.js"></script> -->
+    <script src="../plugins/updateCheck.js"></script>
 </body>
 </html>
