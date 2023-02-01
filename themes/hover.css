@@ -799,3 +799,11 @@ tileGallery__sliderButton:active,
     background-position: -6px !important;
     background-repeat: no-repeat !important;
 }
+
+/* CSS For SCI Elements */
+.playControls__themebtn {
+    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1070221791160717362/ctx-themes-fff.png") !important;
+}
+.playControls__pluginbtn {
+    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1070221790971969546/ctx-plugins-fff.png") !important;
+}

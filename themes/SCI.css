@@ -1,0 +1,29 @@
+header > .header__inner {
+    width: 100% !important;
+}
+.playControls > section > .playControls__wrapper {
+    width: 100% !important;
+}
+.playControls__themebtn {
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1070215836050149466/ctx-themes-333.png");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 70%;
+    margin-right: 20px;
+}
+.playControls__pluginbtn {
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1070216593130397736/ctx-plugins-333.png");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 70%;
+}
+
+.l-product-banners {
+    display: none !important;
+}

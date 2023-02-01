@@ -1330,3 +1330,11 @@ img[src*="/default/userx200-"] {
 .soundBadge.dragHandle.editing {
     background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAKCAYAAAC5Sw6hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAApSURBVChTY3BwcPhPDcygrKz8nxqYoaGhgSoYqyA5eDSMCOPBFkbK/wEctxZKLh9yPQAAAABJRU5ErkJggg==) no-repeat 16px center !important
 }
+
+/* CSS For SCI Elements */
+.playControls__themebtn {
+    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1070226635959308458/ctx-themes-888.png") !important;
+}
+.playControls__pluginbtn {
+    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1070226617303044096/ctx-plugins-888.png") !important;
+}

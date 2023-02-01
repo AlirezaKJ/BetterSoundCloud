@@ -375,3 +375,11 @@ a.commentPopover__username:visited {
 .sc-button-group-medium {
     padding: 0px !important;
 }
+
+/* CSS For SCI Elements */
+.playControls__themebtn {
+    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1070226635959308458/ctx-themes-888.png") !important;
+}
+.playControls__pluginbtn {
+    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1070226617303044096/ctx-plugins-888.png") !important;
+}
