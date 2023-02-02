@@ -1,5 +1,6 @@
 :root {
     --userbg: #ffffff;
+    --font: Lucida Grande,Lucida Sans Unicode,Lucida Sans,Garuda,Verdana,Tahoma,sans-serif;
 }
 
 * {
@@ -44,7 +45,6 @@
     position: absolute;
     font-size: 40px;
     font-family: Lucida Grande,Lucida Sans Unicode,Lucida Sans,Garuda,Verdana,Tahoma,sans-serif;
-    /* font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; */
     transition: all 0.5s;
 }
 
@@ -318,11 +318,79 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-color: rgba(0,0,0,0.5);
+    background-color: rgba(0,0,0,0.7);
     display: none;
     opacity: 0;
 }
 .gotopanelon {
-    display: block !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
     opacity: 1 !important;
+}
+#gotopanel .fakedivforclick {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1;
+}
+#gotopanel .gotobox {
+    font-family: var(--font);
+    background: rgba(255,255,255,0.8);
+    border: black solid 0.1vw;
+    border-radius: 0.3vw;
+    width: 70vw;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+#gotopanel .gotobox input {
+    border: none;
+    border: solid 0.1vw black;
+    border-radius: 0.3vw;
+    outline: none;
+    padding-left: 10px;
+    height: 50px;
+    width: 80%;
+    background: #ccc;
+    font-family: var(--font);
+    font-size: 1vw;
+    transition: all 0.3s;
+}
+#gotopanel .gotobox span {
+    background: #ccc;
+    border: solid 0.1vw black;
+    border-radius: 0.3vw;
+    height: 50px;
+    width: 10%;
+    text-align: center;
+    line-height: 50px;
+    font-size: 1.2vw;
+    font-weight: 900;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-left: 2vw;
+}
+#gotopanel .gotobox input:focus,
+#gotopanel .gotobox span:hover {
+    border-color: #ff5500;
+    color: #ff5500;
+}
+
+#gotopanel .close {
+    cursor: pointer;
+    position: absolute;
+    z-index: 999;
+    top: 50px;
+    right: 50px;
+    width: 50px;
+    height: 50px;
+}
+#gotopanel .close img {
+    width: 100%;
+    height: 100%;
 }

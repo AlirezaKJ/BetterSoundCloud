@@ -24,6 +24,35 @@ header > .header__inner {
     background-size: 70%;
 }
 
+/* Hide All Promotion Banners */
 .l-product-banners {
     display: none !important;
+}
+
+/* Custom Scrollbar */
+/* width */
+body::-webkit-scrollbar {
+    position: fixed !important;
+    width: 3px;
+}
+
+/* Track */
+body::-webkit-scrollbar-track {
+    display: none;
+}
+
+body::-webkit-scrollbar-corner {
+    display: none;
+}
+body::-webkit-scrollbar-corner {
+}
+/* Handle */
+body::-webkit-scrollbar-thumb {
+    background: #ff5500;
+    transition: all 3.0s;
+}
+
+/* Handle on hover */
+body::-webkit-scrollbar-thumb:hover {
+    background: #ff7700;
 }

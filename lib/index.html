@@ -104,11 +104,15 @@
         </div>
     </div>
 
-    <div id="gotopanel" class="gotopanelon">
+    <div id="gotopanel">
+        <div class="fakedivforclick" onclick="gotoUI('close')"></div>
         <div class="gotobox">
             <input type="url" name="gotourl" id="gotourltextbox">
             <span id="gotoboxbtn" onclick="gotoReqUi()">Go</span>
         </div>
+        <span class="close" onclick="gotoUI('close')">
+            <img src="assets/ui-close-light.png" alt="Close">
+        </span>
     </div>
 
     <div id="ctxmenu">

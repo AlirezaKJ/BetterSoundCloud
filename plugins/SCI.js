@@ -10,9 +10,9 @@ playControls__elements.appendChild(pluginbtn)
 playControls__elements.appendChild(themebtn)
 
 
-// After 10 second do all the operations (for div load up)
+// After 5 second do all the operations (for div load up)
 setTimeout(() => {
     let navbaradbuttons = [document.querySelector(".header__goUpsell_side_by_side_experience"),document.querySelector(".creatorSubscriptionsButton")]
     
     navbaradbuttons.forEach(element => {element.remove()});
-}, 10000);
+}, 5000);
