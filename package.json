@@ -79,7 +79,7 @@
     ]
   },
   "plugins": {
-    "SCI": "https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/plugins/SCI.js",
+    "SCI": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@master/plugins/SCI.js",
     "ctxMenu": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@master/plugins/ctxMenu.js",
     "discordRPC": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@master/plugins/discordRPC.js",
     "silentAds": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@master/plugins/silentads.js",
@@ -87,7 +87,7 @@
     "reloadAndPlayOnAds": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@master/plugins/reloadandplay.js"
   },
   "theme": {
-    "SCI": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@V0.4.0/plugins/SCI.js",
+    "SCI": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@master/themes/SCI.css",
     "darkCloud": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@master/themes/darkCloud.css",
     "nocturnal": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@master/themes/nocturnal.css",
     "postMorphic": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@master/themes/postMorphic.css",

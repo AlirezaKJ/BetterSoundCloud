@@ -17,7 +17,7 @@ let patchnotes = [
             "- Created A Custom Page For BetterSoundCloud At: <a href='https://bsc.alirezakj.com'>bsc.alirezakj.com</a>",
         ],
         "date":"3 February 2023",
-        "link":"#"
+        "link":"https://github.com/AlirezaKJ/BetterSoundCloud/releases/tag/V0.4.0"
     },
     {
         "title":"V0.3.0 (Beta)",
