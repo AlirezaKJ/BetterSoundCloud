@@ -89,7 +89,7 @@
   "theme": {
     "SCI": "https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/themes/SCI.css",
     "darkCloud": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@master/themes/darkCloud.css",
-    "nocturnal": "https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/themes/nocturnal.css",
+    "nocturnal": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@master/themes/nocturnal.css",
     "postMorphic": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@master/themes/postMorphic.css",
     "hover": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@master/themes/hover.css"
   },

@@ -4,6 +4,22 @@ let patchnotesdiv = document.getElementById("changenote")
 
 let patchnotes = [
     {
+        "title":"V0.4.0 (Beta)",
+        "changes":[
+            "- Added SCI (SoundCloudImprovement) Theme And Plugin By <a href='https://github.com/AlirezaKJ'>AlirezaKJ</a>",
+            "- SCI Feature: Removed Try GO+ And Try Next Pro (ADs) Buttons ",
+            "- SCI Feature: Removed All Products And Discounts (ADs) Banners",
+            "- SCI Feature: Added Theme And Plugins Setting Button To Play Controls Bar",
+            "- SCI Feature: Replaced Default Browser Scrollbar",
+            "- Added Go To Url Option To Right Click Menu",
+            "- Updated DiscordRPC Download Link To <a href='https://bsc.alirezakj.com'>This</a>",
+            "- Updated Plugin Retrieving From raw.githubusercontent.com To jsdelivr.com For A Better Load",
+            "- Created A Custom Page For BetterSoundCloud At: <a href='https://bsc.alirezakj.com'>bsc.alirezakj.com</a>",
+        ],
+        "date":"3 February 2023",
+        "link":"#"
+    },
+    {
         "title":"V0.3.0 (Beta)",
         "changes":[
             "- Added Nocturnal Theme By <a href='https://userstyles.org/styles/129712/nocturnal-soundcloud-theme'>Chloe Chantelle</a>",
@@ -15,17 +31,17 @@ let patchnotes = [
             "- App Dont Automatically Start On Fullscreen Anymore",
         ],
         "date":"26 January 2023",
-        "link":"#"
+        "link":"https://github.com/AlirezaKJ/BetterSoundCloud/releases/tag/V0.3.0"
     },
     {
         "title":"V0.2.0 (Beta)",
         "changes":[
             "- Added Themes Menu",
-            "- Added Dark Cloud Theme",
+            "- Added Dark Cloud Theme By <a href='https://github.com/AlirezaKJ'>AlirezaKJ</a>",
             "- Added Plugins Menu",
-            "- Added SilentAd Plugin",
-            "- Added ReloadOnAd Plugin",
-            "- Added ReloadAndPlay Plugin",
+            "- Added SilentAd Plugin By <a href='https://github.com/AlirezaKJ'>AlirezaKJ</a>",
+            "- Added ReloadOnAd Plugin By <a href='https://github.com/AlirezaKJ'>AlirezaKJ</a>",
+            "- Added ReloadAndPlay Plugin By <a href='https://github.com/AlirezaKJ'>AlirezaKJ</a>",
             "- Added Database Features To Save Settings And Prefrences",
             "- Fixed Discord RPC To Show The Big Image Of The Song And Diffrent States"
         ],
