@@ -33,7 +33,7 @@ header > .header__inner {
 /* width */
 body::-webkit-scrollbar {
     position: fixed !important;
-    width: 3px;
+    width: 2px;
 }
 
 /* Track */
@@ -44,12 +44,9 @@ body::-webkit-scrollbar-track {
 body::-webkit-scrollbar-corner {
     display: none;
 }
-body::-webkit-scrollbar-corner {
-}
 /* Handle */
 body::-webkit-scrollbar-thumb {
     background: #ff5500;
-    transition: all 3.0s;
 }
 
 /* Handle on hover */
