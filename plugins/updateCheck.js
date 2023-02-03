@@ -1,4 +1,4 @@
-let latestversion = "0.3.0"
+let latestversion = "0.4.0"
 let currentversion = clientVersion
 let patchnotesdiv = document.getElementById("changenote")
 

@@ -1,6 +1,6 @@
 {
   "name": "bettersoundcloud",
-  "version": "0.4.0 (Unreleased)",
+  "version": "0.4.0",
   "description": "BetterSoundCloud PC Client",
   "main": "main.js",
   "scripts": {
@@ -87,7 +87,7 @@
     "reloadAndPlayOnAds": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@master/plugins/reloadandplay.js"
   },
   "theme": {
-    "SCI": "https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/themes/SCI.css",
+    "SCI": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@V0.4.0/plugins/SCI.js",
     "darkCloud": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@master/themes/darkCloud.css",
     "nocturnal": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@master/themes/nocturnal.css",
     "postMorphic": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@master/themes/postMorphic.css",
