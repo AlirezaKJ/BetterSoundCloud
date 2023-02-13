@@ -7,9 +7,9 @@ A PC client of SoundCloud with themes and plugins made using electronjs
 
 ## Auto Installers
 
-[![Github All Releases](https://img.shields.io/badge/Portable-Download-yellowgreen?style=for-the-badge&logo=electron-builder&logoColor=white)](https://github.com/AlirezaKJ/BetterSoundCloud/releases/download/V0.3.0/BetterSoundCloud.0.3.0.exe)
-[![Github All Releases](https://img.shields.io/badge/Windows-Download-blue?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/AlirezaKJ/BetterSoundCloud/releases/download/V0.3.0/BetterSoundCloud.0.3.0.msi)
-[![Github All Releases](https://img.shields.io/badge/Source-Download-yellow?style=for-the-badge&logo=javascript&logoColor=white)](https://github.com/AlirezaKJ/BetterSoundCloud/archive/refs/tags/V0.3.0.zip)
+[![Github All Releases](https://img.shields.io/badge/Portable-Download-yellowgreen?style=for-the-badge&logo=electron-builder&logoColor=white)](https://github.com/AlirezaKJ/BetterSoundCloud/releases/download/V0.4.0/BetterSoundCloud.0.4.0.exe)
+[![Github All Releases](https://img.shields.io/badge/Windows-Download-blue?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/AlirezaKJ/BetterSoundCloud/releases/download/V0.4.0/BetterSoundCloud.0.4.0.msi)
+[![Github All Releases](https://img.shields.io/badge/Source-Download-yellow?style=for-the-badge&logo=javascript&logoColor=white)](https://github.com/AlirezaKJ/BetterSoundCloud/archive/refs/tags/V0.4.0.zip)
 
 ## Manual Installation
 
