@@ -1,6 +1,14 @@
-// Modules to control application life and create native browser window
 const {app, BrowserWindow} = require('electron')
 const path = require('path')
+const process = require('process')
+const fs = require("fs")
+
+
+cachefolder = process.env.APPDATA + "\\"+ app.getName() + "\\Cache"
+console.log(cachefolder)
+fs.rmdir(cachefolder, () => {
+    console.log("Caches Cleared")
+})
 
 function createWindow () {
   // Create the browser window.
