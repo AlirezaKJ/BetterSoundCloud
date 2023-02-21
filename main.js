@@ -1,4 +1,4 @@
-const {app, BrowserWindow} = require('electron')
+const { app, ipcMain, BrowserWindow } = require('electron')
 const path = require('path')
 const process = require('process')
 const fs = require("fs")
@@ -10,13 +10,15 @@ fs.rmdir(cachefolder, () => {
     console.log("Caches Cleared")
 })
 
+let mainWindow;
+
 function createWindow () {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1920,
     height: 1080,
     icon: "lib/assets/bw-icon.png",
-    
+
     webPreferences: {
         nodeIntegration: true,
         contextIsolation: false,
@@ -25,7 +27,7 @@ function createWindow () {
   })
 
   mainWindow.setMenuBarVisibility(false)
-  mainWindow.maximize()
+  mainWindow.setFullScreen(true)
 
   // and load the index.html of the app.
   mainWindow.loadFile('lib/index.html')
@@ -47,6 +49,19 @@ app.whenReady().then(() => {
   })
 })
 
+ipcMain.on ("appReqClose", (event, args) => {
+    app.quit()
+});
+ipcMain.on ("appReqMaximize", (event, args) => {
+    if (mainWindow.isFullScreen()) {
+        mainWindow.setFullScreen(false)
+    } else {
+        mainWindow.setFullScreen(true)
+    }
+});
+ipcMain.on ("appReqMinimize", (event, args) => {
+    mainWindow.minimize()
+});
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.

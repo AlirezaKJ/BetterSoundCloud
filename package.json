@@ -1,6 +1,6 @@
 {
   "name": "bettersoundcloud",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "BetterSoundCloud PC Client",
   "main": "main.js",
   "scripts": {
@@ -11,8 +11,11 @@
   "keywords": [
     "electron",
     "soundcloud",
+    "bettersoundcloud",
+    "soundcloudclient",
     "music",
     "audio",
+    "song",
     "web"
   ],
   "build": {
@@ -84,7 +87,8 @@
     "discordRPC": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@master/plugins/discordRPC.js",
     "silentAds": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@master/plugins/silentads.js",
     "reloadOnAds": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@master/plugins/reloadonads.js",
-    "reloadAndPlayOnAds": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@master/plugins/reloadandplay.js"
+    "reloadAndPlayOnAds": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@master/plugins/reloadandplay.js",
+    "SCIshowcase": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@master/plugins/SCIshowcase.js"
   },
   "theme": {
     "SCI": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@master/themes/SCI.css",

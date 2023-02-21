@@ -7,12 +7,12 @@
     
     <script src="js/LSDB.js"></script>
     <link rel="stylesheet" href="css/changenotes.css">
+    <link rel="stylesheet" href="css/SCIshowcase.css">
     <link rel="stylesheet" href="css/main.css">
     <title>Better Sound Cloud</title>
 </head>
 <body onload="greet()">
 
-    
     <webview id="webview" src="https://soundcloud.com/" plugins enableblinkfeatures="PreciseMemoryInfo, CSSVariables" nodeintegration width="100%" height="100%" allowpopups></webview>
 
     <div class="settings" id="settingsmenu">
@@ -143,6 +143,31 @@
         <div class="ctxitem" onclick="changeViewUrl('https://soundcloud.com/logout')">
             <div class="itemimg" style="background-image: url(assets/ctx-signout.png);"></div><div class="itemtxt">Signout</div>
         </div>
+    </div>
+
+    <div class="songshowcase">
+        <div class="insidecase">
+            <main>
+                <div class="info">
+                    <span class="trackname"></span><br>
+                    <span class="trackartist"></span>
+                </div>
+                <div class="time">
+                    <span class="trackcur"></span>
+                    <span class="trackend"></span>
+                </div>
+                <div class="progbar">
+                    <div class="fillingbar"></div>
+                </div>
+            </main>
+        </div>
+        <nav>
+            <div onclick="showCase(false)" class="closeshowcasebtn"></div>
+            <div onclick="showCaseAction('play')" class="tglplayshowcasebtn"></div>
+            <div onclick="showCaseAction('skip')" class="skipshowcasebtn"></div>
+            <div onclick="showCaseAction('like')" class="tgllikeshowcasebtn"></div>
+        </nav>
+
     </div>
 
     <div class="greet">

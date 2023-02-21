@@ -4,6 +4,21 @@ let patchnotesdiv = document.getElementById("changenote")
 
 let patchnotes = [
     {
+        "title":"V0.5.0 (Beta)",
+        "changes":[
+            "- SCI Feature: added a custom minimize, maximize and close button to main soundcloud header frame",
+            "- SCI Feature: added song showcase feature and the button of it to down right",
+            "- SCI Feature: removed upload, notification, tripledot and messages button from main soundcloud header frame (as they were useless)",
+            "- SCI Feature: added a custom go back and forward button to main soundcloud header frame",
+            "- app will start on fullscreen (custom buttons will help you to get out of it)",
+            "- removed discord rpc start timestamp as it was useless and no point on it",
+            "From now everytime the app start caches clear to update any theme and plugin changes (including update checker)",
+            "this may result in a high load time but a auto plugin and themes latest fetching",
+        ],
+        "date":"21 February 2023",
+        "link":"https://github.com/AlirezaKJ/BetterSoundCloud/releases/tag/V0.5.0"
+    },
+    {
         "title":"V0.4.0 (Beta)",
         "changes":[
             "- Added SCI (SoundCloudImprovement) Theme And Plugin By <a href='https://github.com/AlirezaKJ'>AlirezaKJ</a>",
