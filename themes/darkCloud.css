@@ -253,3 +253,23 @@ html,body {
 .playControls__pluginbtn {
     background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1070221790971969546/ctx-plugins-fff.png") !important;
 }
+.playControls__showcasebtn {
+    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1077507941919375382/baseline_smart_display_black_fff.png");
+}
+
+.header__appclosebtn:hover {
+    background-color: black !important;
+}
+.header__appmaximizebtn:hover {
+    background-color: black !important;
+}
+.header__appminimizebtn:hover {
+    background-color: black !important;
+}
+/* Previous And Next Header Btn */
+.header__appnextbtn {
+    background-color: #111 !important;
+}
+.header__apppreviousbtn {
+    background-color: #111 !important;
+}

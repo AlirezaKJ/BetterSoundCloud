@@ -807,3 +807,26 @@ tileGallery__sliderButton:active,
 .playControls__pluginbtn {
     background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1070221790971969546/ctx-plugins-fff.png") !important;
 }
+.playControls__showcasebtn {
+    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1077507941919375382/baseline_smart_display_black_fff.png");
+}
+
+.header__app__custombtns:hover {background-color: var(--main);}
+.header__appclosebtn {
+    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1076820283702386719/baseline_close_white_24dp.png");
+}
+.header__appmaximizebtn {
+    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1076820729162649600/sharp_fullscreen_white_48dp.png");
+}
+.header__appminimizebtn {
+    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1076820441718595594/baseline_minimize_white_48dp.png");
+}
+/* Previous And Next Header Btn */
+.header__appnextbtn {
+    background-color: var(--light);
+    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1076843682881347584/sharp_arrow_forward_ios_white_48dp.png");
+}
+.header__apppreviousbtn {
+    background-color: var(--light);
+    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1076843798308597781/sharp_arrow_back_ios_white_48dp.png");
+}

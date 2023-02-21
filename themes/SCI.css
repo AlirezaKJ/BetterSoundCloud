@@ -1,9 +1,10 @@
+/* Full Width The Header And Audio Controls Bar */
 header > .header__inner {
     width: 100% !important;
 }
-.playControls > section > .playControls__wrapper {
-    width: 100% !important;
-}
+.playControls > section > .playControls__wrapper {width: 100% !important;}
+
+/* Added Custom Theme And Plugins Btn To Audio Bar */
 .playControls__themebtn {
     cursor: pointer;
     width: 24px;
@@ -12,7 +13,6 @@ header > .header__inner {
     background-position: center;
     background-repeat: no-repeat;
     background-size: 70%;
-    margin-right: 20px;
 }
 .playControls__pluginbtn {
     cursor: pointer;
@@ -23,33 +23,55 @@ header > .header__inner {
     background-repeat: no-repeat;
     background-size: 70%;
 }
-
-/* Hide All Promotion Banners */
-.l-product-banners {
-    display: none !important;
+.header__app__custombtns {
+    cursor: pointer;
+    display: block;
+    height: 46px;
+    width: 46px;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 60%;
 }
+.header__app__custombtns:hover {background-color: #111;}
+.header__appclosebtn {
+    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1076820283702386719/baseline_close_white_24dp.png");
+}
+.header__appmaximizebtn {
+    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1077113471843455006/sharp_fullscreen_exit_white_48dp.png");
+}
+.header__appmaximizebtn__alt {
+    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1076820729162649600/sharp_fullscreen_white_48dp.png");
+}
+.header__appminimizebtn {
+    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1076820441718595594/baseline_minimize_white_48dp.png");
+}
+/* Previous And Next Header Btn */
+.header__appnextbtn {
+    background-color: black;
+    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1076843682881347584/sharp_arrow_forward_ios_white_48dp.png");
+}
+.header__apppreviousbtn {
+    background-color: black;
+    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1076843798308597781/sharp_arrow_back_ios_white_48dp.png");
+}
+/* Hide All Promotion Banners */
+.l-product-banners {display: none !important;}
 
 /* Custom Scrollbar */
-/* width */
-body::-webkit-scrollbar {
-    position: fixed !important;
-    width: 2px;
-}
+body::-webkit-scrollbar {position: fixed !important;width: 2px;}
+body::-webkit-scrollbar-track {display: none;}
+body::-webkit-scrollbar-corner {display: none;}
+body::-webkit-scrollbar-thumb {background: #ff5500;}
+body::-webkit-scrollbar-thumb:hover {background: #ff7700;}
 
-/* Track */
-body::-webkit-scrollbar-track {
-    display: none;
-}
-
-body::-webkit-scrollbar-corner {
-    display: none;
-}
-/* Handle */
-body::-webkit-scrollbar-thumb {
-    background: #ff5500;
-}
-
-/* Handle on hover */
-body::-webkit-scrollbar-thumb:hover {
-    background: #ff7700;
+/* SCI Showcase Plugin Styles */
+.playControls__showcasebtn {
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1077142705244741702/baseline_smart_display_black.png");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 75%;
+    margin-right: 20px;
 }
