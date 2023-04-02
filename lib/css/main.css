@@ -314,6 +314,55 @@
     color: red;
 }
 
+.settings .slidesbar .plugins section .options .full {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    width: 100%;
+    height: 200px;
+    gap: 40px;
+}
+
+.settings .slidesbar .plugins section .options div .download {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    gap: 20px;
+}
+
+.settings .slidesbar .plugins section .options div .download input {
+    width: 80%;
+    height: 50px;
+    font-size: 20px;
+    border: solid black 2px;
+    border-radius: 5px;
+    padding: 0 10px;
+    outline: none;
+}
+
+.settings .slidesbar .plugins section .options div .download .downloadbtn {
+    width: 20%;
+    height: 50px;
+    line-height: 50px;
+    font-size: 20px;
+    border: solid black 2px;
+    border-radius: 5px;
+    padding: 0 10px;
+    outline: none;
+    background: black;
+    color: white;
+    transition: all 300ms;
+    cursor: pointer;
+}
+
+.settings .slidesbar .plugins section .options div .download .downloadbtn:hover {
+    border: solid #ff5500 2px;
+    color: #ff5500;
+}
+
+
 #gotopanel {
     position: fixed;
     top: 0;
