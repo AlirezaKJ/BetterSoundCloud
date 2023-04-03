@@ -5,6 +5,11 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.16.0/ace.min.js" integrity="sha512-4T3GMbqlA/8FAPZRSo/JbV6RNL4s/XkV86vNHzuHPHPeqKJWbV3Sp5KicgK3NwB+bd4KOm1Q6c7O3RNV2o6RPg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.16.0/mode-javascript.min.js" integrity="sha512-4pSr5XJEo9PorZpo7xa7DrbEWKN5Pu4atm/tmMXTRJtepTeKo+sNzlfqkDwPlPx+hpSM4yz4fJEacTiaPazeoA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.16.0/mode-css.min.js" integrity="sha512-q2Qu7dOhudjAQ8wvsLOsZ1NyUhOPAeGL/jzO1f45NMFGSv9F6sgDyzWa00LCVBWg/p84nGM/NHOX4bO1ctbkKg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.16.0/theme-monokai.min.js" integrity="sha512-8rSB/wU3KoN3rr1VHwPP4dfpbU063BvH6qzwt0oe9E2ThEchzd8MmJylVPxZ5kLvxsShgtWvc9AtIlS7rmPunA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
     <script src="js/LSDB.js"></script>
     <link rel="stylesheet" href="css/changenotes.css">
     <link rel="stylesheet" href="css/SCIshowcase.css">
@@ -20,6 +25,8 @@
             <div class="item" onclick="focusSettingSlide(0)">Change Notes</div>
             <div class="item" onclick="focusSettingSlide(1)">Plug-ins</div>
             <div class="item" onclick="focusSettingSlide(2)">Themes</div>
+            <div class="item" onclick="focusSettingSlide(3)">Custom JS</div>
+            <div class="item" onclick="focusSettingSlide(4)">Custom CSS</div>
             <div class="item" onclick="Settings('close')">Close</div>
         </div>
         <div class="slidesbar">
@@ -115,6 +122,23 @@
                     </div>
                 </div>
             </div>
+            <div class="slide customjs">
+                <h3>Custom Script</h3>
+                <div class="buttonsbox">
+                    <span onclick="webview.openDevTools()">Open Soundcloud Devtools</span>
+                    <span onclick="applyCustomJS()">Reload View And Apply Script</span>
+                </div>
+                <div id="customjsbox"></div>
+            </div>
+            <div class="slide customcss">
+                <h3>Custom CSS</h3>
+                <div class="buttonsbox">
+                    <span onclick="webview.openDevTools()">Open Soundcloud Devtools</span>
+                    <span onclick="applyCustomCSS()">Reload View And Apply Styles</span>
+                </div>
+                <div id="customcssbox"></div>
+            </div>
+            
         </div>
     </div>
 
