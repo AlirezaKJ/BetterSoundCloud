@@ -21,7 +21,7 @@ minimizebtn.classList.add("header__appminimizebtn")
 minimizebtn.classList.add("header__app__custombtns")
 minimizebtn.setAttribute("onclick","console.log('BSCReceive|UISettingMinimizeApp')")
 
-function maximize() {
+function toggleMenuIcons() {
     state = maximizebtn.classList.contains("header__appmaximizebtn__alt")
     if (state) {
         maximizebtn.classList.remove("header__appmaximizebtn__alt")
@@ -32,8 +32,17 @@ function maximize() {
         minimizebtn.style.display = "none"
         closebtn.style.display = "none"
     }
+}
+
+// Since the default mode is not maximized the icons hide
+toggleMenuIcons()
+
+function maximize() {
+    toggleMenuIcons()
     console.log('BSCReceive|UISettingMaximizeApp')
 }
+
+
 
 rightnavbar.appendChild(minimizebtn)
 rightnavbar.appendChild(maximizebtn)

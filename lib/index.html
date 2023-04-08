@@ -19,15 +19,16 @@
 </head>
 <body onload="greet()">
 
-    <webview id="webview" src="https://soundcloud.com/" plugins enableblinkfeatures="PreciseMemoryInfo, CSSVariables" nodeintegration width="100%" height="100%" allowpopups></webview>
+    <webview id="webview" plugins enableblinkfeatures="PreciseMemoryInfo, CSSVariables" nodeintegration width="100%" height="100%" allowpopups></webview>
 
     <div class="settings" id="settingsmenu">
         <div class="sidebar">
             <div class="item" onclick="focusSettingSlide(0)">Change Notes</div>
             <div class="item" onclick="focusSettingSlide(1)">Plug-ins</div>
             <div class="item" onclick="focusSettingSlide(2)">Themes</div>
-            <div class="item" onclick="focusSettingSlide(3)">Custom JS</div>
-            <div class="item" onclick="focusSettingSlide(4)">Custom CSS</div>
+            <div class="item" onclick="focusSettingSlide(3)">Settings</div>
+            <div class="item" onclick="focusSettingSlide(4)">Custom JS</div>
+            <div class="item" onclick="focusSettingSlide(5)">Custom CSS</div>
             <div class="item" onclick="Settings('close')">Close</div>
         </div>
         <div class="slidesbar">
@@ -81,7 +82,7 @@
                                 <p id="scdldownloadstatus"></p>
                             </div>
                             <div class="download">
-                                <input id="soundclouddownloaderurlbar" type="text" placeholder="https://soundcloud.com/arsalun/noskhe">
+                                <input id="soundclouddownloaderurlbar" type="text" placeholder="https://soundcloud.com/saeed-dehghan/tkt">
                                 <span onclick="downloadreq()" class="downloadbtn">Download</span>
                             </div>
                         </div>
@@ -125,6 +126,28 @@
             </div>
             <div class="slide settingsslide">
                 <h3>Settings</h3>
+                <div style="border-top: solid 2px black" class="optionrow">
+                    <div class="col1">Disable Greet</div>
+                    <div class="col2">
+                        <div id="disablegreet" onclick="toggleSwitch(0)" class="toggleswitch">
+                            <div class="circle"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="optionrow">
+                    <div class="col1">Startup Fullscreen</div>
+                    <div class="col2">
+                        <div id="startupfullscreen" onclick="toggleSwitch(1)" class="toggleswitch">
+                            <div class="circle"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="optionrow">
+                    <div class="col1">Startup Page</div>
+                    <div class="col2">
+                        <input onchange="inputChange(0)" type="text" id="startuppage" class="urlarea">
+                    </div>
+                </div>
             </div>
             <div class="slide customjs">
                 <h3>Custom Script</h3>
@@ -173,14 +196,14 @@
         <div class="ctxitem" onclick="webview.reload()">
             <div class="itemimg" style="background-image: url(assets/ctx-reload.png);"></div><div class="itemtxt">Reload</div>
         </div>
-        <div class="ctxitem" onclick="changeViewUrl('https://soundcloud.com/settings')">
-            <div class="itemimg" style="background-image: url(assets/ctx-setting.png);"></div><div class="itemtxt">Settings</div>
-        </div>
         <div class="ctxitem" onclick="Settings('show',1)">
             <div class="itemimg" style="background-image: url(assets/ctx-plugins.png);"></div><div class="itemtxt">Plug-ins</div>
         </div>
         <div class="ctxitem" onclick="Settings('show',2)">
             <div class="itemimg" style="background-image: url(assets/ctx-themes.png);"></div><div class="itemtxt">Themes</div>
+        </div>
+        <div class="ctxitem" onclick="Settings('show',3)">
+            <div class="itemimg" style="background-image: url(assets/ctx-setting.png);"></div><div class="itemtxt">Settings</div>
         </div>
         <div class="ctxitem" onclick="changeViewUrl('https://soundcloud.com/logout')">
             <div class="itemimg" style="background-image: url(assets/ctx-signout.png);"></div><div class="itemtxt">Signout</div>
@@ -212,11 +235,11 @@
 
     </div>
 
-    <!-- <div class="greet">
+    <div class="greet">
         <h1 class="greet-item ">Better Sound Cloud</h1>
         <h1 class="greet-item fade"></h1>
         <img class="greet-item fade" src="assets/bw-icon.png" width="200" alt="icon">
-    </div> -->
+    </div>
 
     <script src="js/settings.js"></script>
     <script src="js/main.js"></script>
