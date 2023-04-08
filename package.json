@@ -82,20 +82,20 @@
     ]
   },
   "plugins": {
-    "SCI": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@V0.5.0/plugins/SCI.js",
-    "ctxMenu": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@V0.5.0/plugins/ctxMenu.js",
-    "discordRPC": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@V0.5.0/plugins/discordRPC.js",
-    "silentAds": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@V0.5.0/plugins/silentads.js",
-    "reloadOnAds": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@V0.5.0/plugins/reloadonads.js",
-    "reloadAndPlayOnAds": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@V0.5.0/plugins/reloadandplay.js",
-    "SCIshowcase": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@V0.5.0/plugins/SCIshowcase.js"
+    "SCI": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud/plugins/SCI.js",
+    "ctxMenu": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud/plugins/ctxMenu.js",
+    "discordRPC": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud/plugins/discordRPC.js",
+    "silentAds": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud/plugins/silentads.js",
+    "reloadOnAds": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud/plugins/reloadonads.js",
+    "reloadAndPlayOnAds": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud/plugins/reloadandplay.js",
+    "SCIshowcase": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud/plugins/SCIshowcase.js"
   },
   "theme": {
-    "SCI": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@V0.5.0/themes/SCI.css",
-    "darkCloud": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@V0.5.0/themes/darkCloud.css",
-    "nocturnal": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@V0.5.0/themes/nocturnal.css",
-    "postMorphic": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@V0.5.0/themes/postMorphic.css",
-    "hover": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud@V0.5.0/themes/hover.css"
+    "SCI": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud/themes/SCI.css",
+    "darkCloud": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud/themes/darkCloud.css",
+    "nocturnal": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud/themes/nocturnal.css",
+    "postMorphic": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud/themes/postMorphic.css",
+    "hover": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud/themes/hover.css"
   },
   "author": "AlirezaKJ",
   "license": "",

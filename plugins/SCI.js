@@ -34,7 +34,7 @@ function toggleMenuIcons() {
     }
 }
 
-// Since the default mode is not maximized the icons hide
+// Since the default mode is the icons hide
 toggleMenuIcons()
 
 function maximize() {
