@@ -1,8 +1,18 @@
-let latestversion = "0.5.0"
+let latestversion = "0.5.1"
 let currentversion = clientVersion
 let patchnotesdiv = document.getElementById("changenote")
 
 let patchnotes = [
+    {
+        "title":"V0.5.1 (Beta)",
+        "changes":[
+            "- Added soundcloud downloader in plugins tab",
+            "- added custom css and js editor",
+            "- added settings menu to customize the app experience",
+        ],
+        "date":"9 April 2023",
+        "link":"https://github.com/AlirezaKJ/BetterSoundCloud/releases/tag/V0.5.1   "
+    },
     {
         "title":"V0.5.0 (Beta)",
         "changes":[
