@@ -37,10 +37,10 @@ header > .header__inner {
     background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1076820283702386719/baseline_close_white_24dp.png");
 }
 .header__appmaximizebtn {
-    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1077113471843455006/sharp_fullscreen_exit_white_48dp.png");
+    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1098225315572097126/baseline_fullscreen_exit_white_48dp.png");
 }
 .header__appmaximizebtn__alt {
-    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1076820729162649600/sharp_fullscreen_white_48dp.png");
+    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1098224953398136853/baseline_fullscreen_white_48dp.png");
 }
 .header__appminimizebtn {
     background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1076820441718595594/baseline_minimize_white_48dp.png");
