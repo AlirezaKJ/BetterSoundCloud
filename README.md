@@ -2,7 +2,7 @@
 
 A PC client of SoundCloud with themes and plugins made using electronjs
 
-![alt text](https://cdn.discordapp.com/attachments/1061293941372227595/1061295401761767515/image.png)
+![alt text](https://cdn.discordapp.com/attachments/1059412245077045278/1100409502282555422/blackandwhite.png)
 # Installation
 
 ## Auto Installers
