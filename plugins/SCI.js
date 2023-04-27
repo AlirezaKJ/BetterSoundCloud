@@ -48,6 +48,7 @@ rightnavbar.appendChild(minimizebtn)
 rightnavbar.appendChild(maximizebtn)
 rightnavbar.appendChild(closebtn)
 
+
 // Header Previos And Next Btn 
 let leftheaderbar = document.querySelector(".header__left .header__navMenu")
 
