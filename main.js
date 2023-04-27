@@ -1,4 +1,4 @@
-const { app, ipcMain, BrowserWindow } = require('electron')
+const { app, shell, ipcMain, BrowserWindow } = require('electron')
 const path = require('path')
 const process = require('process')
 
@@ -58,6 +58,10 @@ ipcMain.on ("appReqJustFullscreen", (event, args) => {
 ipcMain.on ("appReqMinimize", (event, args) => {
     mainWindow.minimize()
 });
+// Show downloaded item on file explorer
+ipcMain.on ("appDownloaderFinish", (event, args) => {
+    shell.openPath('C:\\BetterSoundCloud\\Downloads')
+})
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
