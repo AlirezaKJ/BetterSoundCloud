@@ -1360,3 +1360,7 @@ img[src*="/default/userx200-"] {
     background-color: #111;
     background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1076843798308597781/sharp_arrow_back_ios_white_48dp.png");
 }
+
+.l-container {
+    background-color: rgb(33, 33, 33);
+}
