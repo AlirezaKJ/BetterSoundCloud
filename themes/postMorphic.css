@@ -1362,5 +1362,5 @@ img[src*="/default/userx200-"] {
 }
 
 .l-container {
-    background-color: rgb(33, 33, 33);
+    background-color: rgb(33, 33, 33) !important;
 }
