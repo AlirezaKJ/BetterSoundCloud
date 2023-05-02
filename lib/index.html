@@ -119,7 +119,7 @@
             </div>
             <div class="slide settingsslide">
                 <h3>Settings</h3>
-                <div style="border-top: solid 2px black" class="optionrow">
+                <div style="border-top: solid 1px black; padding-top: 15px;" class="optionrow">
                     <div title="Disable startup greeting message" class="col1 tooltip">
                         Disable Greet
                     </div>
@@ -147,6 +147,30 @@
                         <div id="custombg" onclick="toggleSwitch(2)" class="toggleswitch">
                             <div class="circle"></div>
                         </div>
+                    </div>
+                </div>
+                <div class="optionrow">
+                    <div title="switch the useless background to your current playing song cover" class="col1">
+                        Cntrl + R Bind
+                    </div>
+                    <div class="col2">
+                        <select name="cntrlrbind" id="cntrlrbindselect">
+                            <option value="disabled">Disabled</option>
+                            <option value="viewreload">View Reload</option>
+                            <option value="appreload">BSC Reload</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="optionrow">
+                    <div title="switch the useless background to your current playing song cover" class="col1">
+                        F5 Bind
+                    </div>
+                    <div class="col2">
+                        <select name="f5bind" id="f5bindselect">
+                            <option value="disabled">Disabled</option>
+                            <option value="viewreload">View Reload</option>
+                            <option value="appreload">BSC Reload</option>
+                        </select>
                     </div>
                 </div>
                 <div class="optionrow">

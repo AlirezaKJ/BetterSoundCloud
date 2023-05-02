@@ -58,13 +58,34 @@
 
 .optionrow .urlarea {
     height: 35px;
-    border: solid 2px #bbb;
-    border-radius: 50vw;
+    border: solid 2px #bbb; 
+    border-radius: 4px;
     padding: 10px;
-    width: auto;
+    width: 80%;
     min-width: 60%;
     max-width: 100%;
     font-size: 20px;
     line-height: 25px;
+    background-color: #ddd;
     outline: none;
+}
+.optionrow select {
+    background-color: #ddd;
+    width: 80%;
+    height: 35px;
+    outline: none;
+    border: solid 2px #bbb;
+    border-radius: 4px;
+    font-size: 16px;
+}
+.optionrow select {
+    width: 80%;
+    height: 35px;
+}
+
+.optionrow select * {
+    background-color: #fff;
+    color: #000;
+    height: 35px !important;
+    min-height: 35px !important;
 }
