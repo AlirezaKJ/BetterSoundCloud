@@ -36,13 +36,6 @@
                 <h2 class="firstone" id="currentversion"></h2>
                 <h2 id="latestversion"></h2>
                 <br><br>
-                <!-- <div class="note">
-                    <h3>V0.1.0 (Beta) </h3>
-                    <p> - Added Discord Rich Presence</p>
-                    <p> - Main And First Release</p>
-                    <span class="date"> 21 December 2022</span>
-                </div>
-                <hr> -->
             </div>
             <div class="slide plugins">
                 <h3>Plugins</h3>
@@ -127,7 +120,9 @@
             <div class="slide settingsslide">
                 <h3>Settings</h3>
                 <div style="border-top: solid 2px black" class="optionrow">
-                    <div class="col1">Disable Greet</div>
+                    <div title="Disable startup greeting message" class="col1 tooltip">
+                        Disable Greet
+                    </div>
                     <div class="col2">
                         <div id="disablegreet" onclick="toggleSwitch(0)" class="toggleswitch">
                             <div class="circle"></div>
@@ -135,7 +130,9 @@
                     </div>
                 </div>
                 <div class="optionrow">
-                    <div class="col1">Startup Fullscreen</div>
+                    <div title="Start the application in fullscreen" class="col1">
+                        Startup Fullscreen
+                    </div>
                     <div class="col2">
                         <div id="startupfullscreen" onclick="toggleSwitch(1)" class="toggleswitch">
                             <div class="circle"></div>
@@ -143,7 +140,9 @@
                     </div>
                 </div>
                 <div class="optionrow">
-                    <div class="col1">Custom Background</div>
+                    <div title="switch the useless background to your current playing song cover" class="col1">
+                        Custom Background
+                    </div>
                     <div class="col2">
                         <div id="custombg" onclick="toggleSwitch(2)" class="toggleswitch">
                             <div class="circle"></div>
@@ -151,7 +150,9 @@
                     </div>
                 </div>
                 <div class="optionrow">
-                    <div class="col1">Startup Page</div>
+                    <div title="the url which is loaded when you open the app" class="col1">
+                        Startup Page
+                    </div>
                     <div class="col2">
                         <input onchange="inputChange(0)" type="text" id="startuppage" class="urlarea">
                     </div>
