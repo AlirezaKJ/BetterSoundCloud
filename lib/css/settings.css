@@ -82,10 +82,3 @@
     width: 80%;
     height: 35px;
 }
-
-.optionrow select * {
-    background-color: #fff;
-    color: #000;
-    height: 35px !important;
-    min-height: 35px !important;
-}
