@@ -1,0 +1,47 @@
+.songlyricshowcase {
+    position: fixed;
+    font-family: var(--font);
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s, visibility 0.5s 0.5s;
+    background-color: black;
+}
+
+.songlyricshowcase_on {
+    visibility: visible;
+    opacity: 1;
+    transition: opacity 0.5s;
+}
+
+.songlyricshowcase .blurrer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    filter: blur(12px);
+    opacity: 0.75;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.songlyricshowcase .close {
+    position: fixed;
+    right: 20px;
+    top: 20px;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.songlyricshowcase .close img {
+    width: 60px;
+    height: 60px;
+}
