@@ -10,12 +10,14 @@
     background-size: cover;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.5s;
+    transition: opacity 0.5s, visibility 0.5s 0.5s;
 }
 
 .songshowcase_on {
     visibility: visible;
     opacity: 1;
+    transition: opacity 0.5s;
+
 }
 
 .songshowcase .insidecase {
