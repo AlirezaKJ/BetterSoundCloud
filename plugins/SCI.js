@@ -77,9 +77,6 @@ leftheadernavmenuitems[0].innerHTML = homeiconsvg
 leftheadernavmenuitems[1].innerHTML = feediconsvg
 leftheadernavmenuitems[2].innerHTML = libraryiconsvg
 
-console.log("runned and no errors")
-console.log(leftheadernavmenuitems)
-
 leftheadernavmenuitems.forEach(element => {
     element.style.display = "flex"
     element.style.justifyContent = "center"
@@ -99,13 +96,21 @@ leftheadernavmenuitemsvg.forEach(element => { // This is required to fix icons f
 let playControls__elements = document.querySelector(".playControls__elements")
 let pluginbtn = document.createElement("a")
 let themebtn = document.createElement("div")
+let lyricbtn = document.createElement("div")
+let openshowcasebtn = document.createElement("div")
 pluginbtn.classList.add("playControls__pluginbtn")
 themebtn.classList.add("playControls__themebtn")
+lyricbtn.classList.add("playControls__lyricbtn")
+openshowcasebtn.classList.add("playControls__showcasebtn")
 pluginbtn.setAttribute("onclick","console.log('BSCReceive|UISettingShowRequest|1')")
 themebtn.setAttribute("onclick","console.log('BSCReceive|UISettingShowRequest|2')")
+lyricbtn.setAttribute("onclick","console.log('BSCReceive|UIActivateLyricShowCase')")
+openshowcasebtn.setAttribute("onclick","console.log('BSCReceive|UIActivateShowCase')")
 
 playControls__elements.appendChild(pluginbtn)
 playControls__elements.appendChild(themebtn)
+playControls__elements.appendChild(lyricbtn)
+playControls__elements.appendChild(openshowcasebtn)
 
 
 // After 1 second do all the operations (for div load up)
@@ -114,4 +119,3 @@ setTimeout(() => {
     
     navbaradbuttons.forEach(element => {element.remove()});
 }, 1000);
-

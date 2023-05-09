@@ -88,7 +88,6 @@
     "silentAds": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud/plugins/silentads.js",
     "reloadOnAds": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud/plugins/reloadonads.js",
     "reloadAndPlayOnAds": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud/plugins/reloadandplay.js",
-    "SCIshowcase": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud/plugins/SCIshowcase.js",
     "custombg": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud/plugins/custombg.js"
   },
   "theme": {
