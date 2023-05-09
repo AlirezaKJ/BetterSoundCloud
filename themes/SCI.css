@@ -43,7 +43,7 @@ header > .header__inner {
     background-size: 60%;
 }
 .header__app__custombtns:hover {background-color: #111;}
-.header__appclosebtn::after {
+.header__appclosebtn {
     background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1076820283702386719/baseline_close_white_24dp.png");
 }
 .header__appmaximizebtn {
