@@ -9,6 +9,9 @@
     visibility: hidden;
     transition: opacity 0.5s, visibility 0.5s 0.5s;
     background-color: black;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .songlyricshowcase_on {
@@ -42,6 +45,16 @@
 }
 
 .songlyricshowcase .close img {
-    width: 60px;
-    height: 60px;
+    width: 40px;
+    height: 40px;
+}
+
+.songlyricshowcase .lyricbox {
+    max-width: 100%;
+    width: 600px;
+    height: 100vh;
+    color: white;
+    z-index: 1;
+    overflow: visible;
+    font-size: 20px;
 }
