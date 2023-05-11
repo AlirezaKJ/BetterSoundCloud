@@ -19,6 +19,9 @@
 .playControls__pluginbtn {
     background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1070226617303044096/ctx-plugins-888.png") !important;
 }
+.playControls__lyricbtn {
+    background-image: url("https://cdn.discordapp.com/attachments/1105298386275549234/1106013632350920714/round_mic_888.png") !important;
+}
 .playControls__showcasebtn {
     background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1077507939843178546/baseline_smart_display_black_888.png");
 }
