@@ -51,11 +51,16 @@ app.on('browser-window-focus', function () {
 		mainWindow.webContents.send("appReqF5")
 		console.log("F5 is pressed");
 	});
+    globalShortcut.register("Esc", () => {
+		mainWindow.webContents.send("appReqEsc")
+		console.log("Esc is pressed");
+	});
 });
 app.on('browser-window-blur', function () {
 	console.log("window blurred")
 	globalShortcut.unregister('CommandOrControl+R');
 	globalShortcut.unregister('F5');
+	globalShortcut.unregister('Esc');
 });
 
 ipcMain.on ("appReqClose", (event, args) => {
