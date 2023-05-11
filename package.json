@@ -1,6 +1,6 @@
 {
   "name": "bettersoundcloud",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "BetterSoundCloud PC Client",
   "main": "main.js",
   "scripts": {
@@ -21,7 +21,7 @@
   "build": {
     "appId": "com.bettersoundcloud.app",
     "productName": "BetterSoundCloud",
-    "copyright": "Copyright © 2022 AlirezaKJ",
+    "copyright": "Copyright © 2023 AlirezaKJ",
     "mac": {
       "category": "public.app-category.utilities",
       "icon": "lib\\assets\\bw-icon.ico",
