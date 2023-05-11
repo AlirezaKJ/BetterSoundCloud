@@ -55,6 +55,12 @@
     height: 100vh;
     color: white;
     z-index: 1;
-    overflow: visible;
+    overflow: scroll;
     font-size: 20px;
+}
+
+.songlyricshowcase .lyricbox .lyricbar {
+    font-size: 30px;
+    font-family: var(--font);
+    margin: 20px 0;
 }
