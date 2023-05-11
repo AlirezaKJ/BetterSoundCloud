@@ -60,7 +60,13 @@
 }
 
 .songlyricshowcase .lyricbox .lyricbar {
+    text-align: start;
     font-size: 30px;
     font-family: var(--font);
     margin: 20px 0;
+}
+
+.songlyricshowcase .lyricboxrtl {
+    text-align: right;
+    direction: rtl;
 }
