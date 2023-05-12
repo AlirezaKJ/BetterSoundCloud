@@ -1,5 +1,6 @@
 const { app, globalShortcut, shell, ipcMain, BrowserWindow } = require('electron')
 const path = require('path')
+const fs = require('fs')
 const process = require('process')
 
 
@@ -84,6 +85,13 @@ ipcMain.on ("appReqMinimize", (event, args) => {
 ipcMain.on ("appReqRestartWindow", (event, args) => {
 	mainWindow.reload()
 })
+
+ipcMain.on ("appReqClearCache", (event, args) => {
+    bscpath = process.env.APPDATA + "\\"+ "bettersoundcloud";
+	fs.rmSync(bscpath, {recursive: true, force: true });
+    mainWindow.reload()
+})
+
 
 // Show downloaded item on file explorer
 ipcMain.on ("appDownloaderFinish", (event, args) => {
