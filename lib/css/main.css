@@ -9,9 +9,16 @@
     box-sizing: border-box;
 }
 
-*::-webkit-scrollbar {
+/* *::-webkit-scrollbar {
     display: none;
-}
+} */
+
+*::-webkit-scrollbar {position: fixed !important;width: 2px;}
+*::-webkit-scrollbar-track {display: none;}
+*::-webkit-scrollbar-corner {display: none;}
+*::-webkit-scrollbar-thumb {background: #ff5500;}
+*::-webkit-scrollbar-thumb:hover {background: #ff7700;}
+
 
 #webview {
     position: fixed;
