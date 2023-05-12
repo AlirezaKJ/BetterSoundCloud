@@ -77,8 +77,33 @@
     border: solid 2px #bbb;
     border-radius: 4px;
     font-size: 16px;
+    cursor: pointer ;
 }
-.optionrow select {
-    width: 80%;
-    height: 35px;
+
+.optionrow .fullcol {
+    width: 100% !important;
+    height: 70px;
+    display: flex;
+    align-items: center;
+}
+
+.optionrow .fullcol .optionbtn {
+    width: 20vw;
+    height: 60px;
+    padding: 16px 20px;
+    background-color: #ddd;
+    border: solid 3px #bbb;
+    border-radius: 5px;
+    font-size: 1.5vw;
+    cursor: pointer;
+    margin: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 300ms;
+}
+
+.optionrow .fullcol .optionbtn:hover {
+    border-radius: 10px;
+    border: solid 3px #ff5500;
 }

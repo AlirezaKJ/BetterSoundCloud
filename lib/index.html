@@ -151,8 +151,18 @@
                     </div>
                 </div>
                 <div class="optionrow">
-                    <div title="switch the useless background to your current playing song cover" class="col1">
-                        Cntrl + R Bind
+                    <div title="Turn on/off the discord activity on your profile (app restart required)" class="col1">
+                        Discord RPC
+                    </div>
+                    <div class="col2">
+                        <div id="discordrpc" onclick="toggleSwitch(3)" class="toggleswitch">
+                            <div class="circle"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="optionrow">
+                    <div title="customize the Control + R keybind to another action" class="col1">
+                        Ctrl + R Bind
                     </div>
                     <div class="col2">
                         <select onchange="selectOptionChange()" name="cntrlrbind" id="cntrlrbindselect">
@@ -163,7 +173,7 @@
                     </div>
                 </div>
                 <div class="optionrow">
-                    <div title="switch the useless background to your current playing song cover" class="col1">
+                    <div title="customize the F5 keybind to another action" class="col1">
                         F5 Bind
                     </div>
                     <div class="col2">
@@ -180,6 +190,17 @@
                     </div>
                     <div class="col2">
                         <input onchange="inputChange(0)" type="text" id="startuppage" class="urlarea">
+                    </div>
+                </div>
+                <br><br>
+                <div class="optionrow">
+                    <div class="fullcol">
+                        <div onclick="loadSoundCloudSettings()" class="optionbtn">
+                            SoundCloud Settings
+                        </div>
+                        <div class="optionbtn">
+                            Clear Cache
+                        </div>
                     </div>
                 </div>
             </div>
@@ -252,7 +273,7 @@
             <img src="assets/ui-close-light.png" alt="Close">
         </div>
         <div class="lyricbox">
-            Less gooo
+            <span class="lyricbar">Exprimental Feature | Genius API</span><br>
         </div>
     </div>
 
