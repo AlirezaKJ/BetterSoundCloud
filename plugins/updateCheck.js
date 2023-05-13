@@ -1,8 +1,31 @@
-let latestversion = "0.5.1"
+let latestversion = "0.5.2"
 let currentversion = clientVersion
 let patchnotesdiv = document.getElementById("changenote")
 
 let patchnotes = [
+    {
+        "title":"V0.5.2 (Beta)",
+        "changes":[
+            "- Added lyric showcase feature (Super Experimental)",
+			"- Added custom background feature to replace the unused background of soundcloud",
+			"- Added basic tooltip to each setting options",
+			"- From now when you download a song using the downloader the folder will automatically open",
+			"- Replaced the header bar buttons with icons instead of text (SCI)",
+            "- Replaced all UI scrollbars same as the SCI scrollbar",
+            "- Improved the song showcase animations",
+			"- Improved Esc keypress functionality",
+			"- New setting option: handle Cntrl + R",
+			"- New setting option: handle F5",
+			"- New setting option: turn custombg on and off",
+			"- New setting option: turn discordrpc on and off",
+			"- New setting option: clear the whole application cache and data",
+			"- New setting option: go to soundcloud settings page from bsc settings",
+			"- No more errors on creating the bettersoundcloud root folder",
+			"- Removed for artist button recently added to soundcloud header",
+        ],
+        "date":"13 May 2023",
+        "link":"https://github.com/AlirezaKJ/BetterSoundCloud/releases/tag/V0.5.2"
+    },    
     {
         "title":"V0.5.1 (Beta)",
         "changes":[
