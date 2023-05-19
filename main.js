@@ -41,6 +41,38 @@ app.whenReady().then(() => {
 	})
 })
 
+// Handle Deep Links
+if (process.defaultApp) {
+    if (process.argv.length >= 2) {
+        app.setAsDefaultProtocolClient('bsc', process.execPath, [path.resolve(process.argv[1])])
+    }
+} else {
+    app.setAsDefaultProtocolClient('bsc')
+}
+
+const gotTheLock = app.requestSingleInstanceLock()
+
+if (!gotTheLock) {
+  app.quit()
+} else {
+    app.on('second-instance', (event, commandLine) => {
+        // Someone tried to run a second instance, we should focus our window.
+        if (mainWindow) {
+           if (mainWindow.isMinimized()) mainWindow.restore()
+           mainWindow.focus()
+        }
+        // the commandLine is array of strings in which last element is deep link url
+        // the url str ends with /
+        mainWindow.webContents.send("appDeepUrl", commandLine.pop())
+        console.log(commandLine)
+    })
+
+    // Create mainWindow, load the rest of the app, etc...
+    // app.whenReady().then(() => {
+    //   createWindow()
+    // })
+}
+
 // Handle f5 and ctrl+r
 app.on('browser-window-focus', function () {
 	console.log("window focused")
