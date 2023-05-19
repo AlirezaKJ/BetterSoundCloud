@@ -13,6 +13,7 @@ setInterval(() => {
     var currentduration = document.querySelectorAll(".playbackTimeline__timePassed span")[1]
     var currentsongtitle = document.querySelector(".playbackSoundBadge__title")
     var currentsongcover = document.querySelector(".playControls__soundBadge .image__lightOutline span").getAttribute("style").split(";")[0].split('"')[1].replace("120x120","500x500")
+    var currentsongurl = document.querySelector(".playbackSoundBadge__titleLink").getAttribute("href")
     // currentsongcover = currentsongcover
     var currentartist = document.querySelector(".playbackSoundBadge__lightLink")
     var currentsongliked = document.querySelector(".playbackSoundBadge__actions .playbackSoundBadge__like")
@@ -37,6 +38,7 @@ setInterval(() => {
         console.log("BSCReceive|CurSongCoverUrl|" + currentsongcover)
         console.log("BSCReceive|CurSongArtist|" + currentartist.innerText)
         console.log("BSCReceive|CurSongLiked|" + currentsongliked)
+        console.log("BSCReceive|CurSongUrl|" + currentsongurl)
     } else {
         songinfostate = "paused"
         console.log("BSCReceive|Paused")
