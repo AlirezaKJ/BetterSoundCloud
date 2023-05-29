@@ -85,3 +85,8 @@ body::-webkit-scrollbar-thumb:hover {background: #ff7700;}
     background-size: 75%;
     margin-right: 20px;
 }
+
+/* Fix replaced icon scrollbar bug for high zoom */
+.header__navWrapper .header__navMenu li a {
+    overflow: hidden;
+}
