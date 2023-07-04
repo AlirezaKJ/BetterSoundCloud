@@ -36,3 +36,14 @@ npm i
 ```ps
 npm start
 ```
+
+## FAQ
+is this app virus free?
+> yes, bettersoundcloud has been verified as 100% clean by [Softpedia](https://www.softpedia.com/get/Multimedia/Audio/Audio-Players/BetterSoundCloud.shtml#status).
+
+does my soundcloud account get banned for using bettersoundcloud?
+> no, since we launched bettersoundcloud no one has been banned for using this client.
+
+how can i report a bug or a feature idea?
+> you can open a request at the repository issue page and i reach you under 24hours.
+
