@@ -22,6 +22,10 @@
 
     <webview id="webview" plugins enableblinkfeatures="PreciseMemoryInfo, CSSVariables" nodeintegration width="100%" height="100%" allowpopups></webview>
 
+    <div class="scrollerbtn" onclick="scrollBtnClick()">
+        <img src="assets/round_arrow_drop_down_white_48dp.png" alt="">
+    </div>
+
     <div class="settings" id="settingsmenu">
         <div class="sidebar">
             <div class="item" onclick="focusSettingSlide(0)">Change Notes</div>
@@ -166,6 +170,16 @@
                     </div>
                     <div class="col2">
                         <div id="startuplastpage" onclick="toggleSwitch(4)" class="toggleswitch">
+                            <div class="circle"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="optionrow">
+                    <div title="This help you scroll down your favorite playlist to load all the songs with just one button" class="col1">
+                        Scroller Button
+                    </div>
+                    <div class="col2">
+                        <div id="scrollerbtn" onclick="toggleSwitch(5)" class="toggleswitch">
                             <div class="circle"></div>
                         </div>
                     </div>
