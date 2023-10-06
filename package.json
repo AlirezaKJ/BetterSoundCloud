@@ -100,7 +100,7 @@
   "author": "AlirezaKJ",
   "license": "",
   "devDependencies": {
-    "electron": "^22.0.0"
+    "electron": "^22.3.25"
   },
   "dependencies": {
     "discord-rpc": "^4.0.1",
