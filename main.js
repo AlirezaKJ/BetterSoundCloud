@@ -1,4 +1,4 @@
-const { app, globalShortcut, shell, ipcMain, BrowserWindow } = require('electron')
+const { app, globalShortcut, shell, ipcMain, BrowserWindow, Tray, Menu, nativeImage } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const process = require('process')
@@ -39,6 +39,37 @@ app.whenReady().then(() => {
 		// dock icon is clicked and there are no other windows open.
 		if (BrowserWindow.getAllWindows().length === 0) createWindow()
 	})
+
+	// Prevent window from closing and quitting app
+    // Instead make close simply hide main window
+    // Clicking on tray icon will bring back main window
+    mainWindow.on('close', event => {
+        event.preventDefault()
+        mainWindow.hide()
+    })
+
+    const icon = nativeImage.createFromPath('lib/assets/bw-icon.png')
+    tray = new Tray(icon.resize({ width: 16, height: 16 }))
+    tray.setIgnoreDoubleClickEvents(true)
+
+    var trayMenu = Menu.buildFromTemplate([
+        {
+            label: 'Quit',
+            click: _ => {
+                console.log('Menu/Quit was clicked')
+                app.exit()
+            }
+        }
+    ]);
+    tray.setContextMenu(trayMenu)
+
+    // Prevent menu from being shown on left click
+    // Instead make main window visible (if it had been invisible)
+    tray.on('click', event => {
+        console.log('tray left clicked')
+        event.preventDefault
+        mainWindow.show()
+    })
 })
 
 // Handle Deep Links
