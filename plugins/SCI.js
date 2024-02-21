@@ -119,3 +119,6 @@ setTimeout(() => {
     
     navbaradbuttons.forEach(element => {element.remove()});
 }, 1000);
+
+// Media Player Btns Functions
+let playpausebtn = document.querySelector(".playControls__elements .playControls__play")

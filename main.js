@@ -119,6 +119,18 @@ app.on('browser-window-focus', function () {
 		mainWindow.webContents.send("appReqEsc")
 		console.log("Esc is pressed");
 	});
+    globalShortcut.register("MediaPlayPause", () => {
+		mainWindow.webContents.send("appReqMediaPlayPause")
+		console.log("MediaPlayPause is pressed");
+	});
+	globalShortcut.register("MediaNextTrack", () => {
+		mainWindow.webContents.send("appReqMediaNextTrack")
+		console.log("MediaNextTrack is pressed");
+	});
+	globalShortcut.register("MediaPreviousTrack", () => {
+		mainWindow.webContents.send("appReqMediaPreviousTrack")
+		console.log("MediaPreviousTrack is pressed");
+	});
 });
 app.on('browser-window-blur', function () {
 	console.log("window blurred")
