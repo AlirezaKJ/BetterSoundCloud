@@ -122,3 +122,5 @@ setTimeout(() => {
 
 // Media Player Btns Functions
 let playpausebtn = document.querySelector(".playControls__elements .playControls__play")
+let previoussongbtn = document.querySelector(".playControls__elements .playControls__prev")
+let nextsongbtn = document.querySelector(".playControls__elements .playControls__next")
