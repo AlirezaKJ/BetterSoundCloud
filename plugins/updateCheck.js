@@ -1,8 +1,24 @@
-let latestversion = "0.5.2"
+let latestversion = "0.5.3"
 let currentversion = clientVersion
 let patchnotesdiv = document.getElementById("changenote")
 
 let patchnotes = [
+    {
+        "title":"V0.5.3 (Beta)",
+        "changes":[
+            "- Added deeplinks, load any url with bsc://",
+            "- Added native MediaKeys integration (play, next, previous)",
+            "- Added Tray menu",
+			"- Fixed header icons scrollbar bug in high zoom",
+			"- Fixed the lyric page to auto refresh on new song",
+			"- New feature: auto scroll down button for lazy loading",
+			"- New setting option: overall zoom factor",
+			"- New setting option: on startup load last page",
+			"- Several settings page tweaks and ui fixes"
+        ],
+        "date":"12 March 2024",
+        "link":"https://github.com/AlirezaKJ/BetterSoundCloud/releases/tag/V0.5.3"
+    },
     {
         "title":"V0.5.2 (Beta)",
         "changes":[
