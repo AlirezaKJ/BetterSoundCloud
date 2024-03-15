@@ -35,7 +35,7 @@
     },
     "win": {
       "publisherName": "AlirezaKJ",
-      "icon": "lib\\assets\\bw-icon.ico",
+      "icon": "lib/assets/bw-icon.ico",
       "publish": [
         "github"
       ],
@@ -104,6 +104,7 @@
   },
   "dependencies": {
     "discord-rpc": "^4.0.1",
+    "electron-dl": "^3.5.2",
     "genius-lyrics-api": "^3.2.0",
     "soundcloud-downloader": "^1.0.0"
   }

@@ -2,27 +2,50 @@ const { app, globalShortcut, shell, ipcMain, BrowserWindow, Tray, Menu, nativeIm
 const path = require('path')
 const fs = require('fs')
 const process = require('process')
-
+const {download} = require("electron-dl")
 
 let mainWindow;
 
 function createWindow () {
 	// Create the browser window.
 	mainWindow = new BrowserWindow({
-	width: 1920,
-	height: 1080,
-	icon: "lib/assets/bw-icon.png",
-
-	webPreferences: {
-		nodeIntegration: true,
-		contextIsolation: false,
-		webviewTag: true,
-	}
-})
+		width: 1920,
+		height: 1080,
+		icon: "lib/assets/bw-icon.ico",
+		webPreferences: {
+			nodeIntegration: true,
+			contextIsolation: false,
+			webviewTag: true,
+		}
+	})
 
 	mainWindow.setMenuBarVisibility(false)
 	mainWindow.loadFile('lib/index.html')
+
+	
 }
+
+// Root folders check
+if (!fs.existsSync("C://BetterSoundCloud")) {
+    fs.mkdirSync("C://BetterSoundCloud")
+}
+if (!fs.existsSync("C://BetterSoundCloud/Downloads")) {
+    fs.mkdirSync("C://BetterSoundCloud/Downloads")
+}
+if (!fs.existsSync("C://BetterSoundCloud/assets")) {
+    fs.mkdirSync("C://BetterSoundCloud/assets")
+}
+
+
+// Download Trayicon locally
+ipcMain.on("download", (event, info) => {
+	console.log("download started");
+	download(BrowserWindow.getFocusedWindow(), info.url, info.properties)
+		.then(dl => console.log("downloaded: " + dl.getSavePath()));
+});
+
+
+
 
 function localPluginsAndThemes() {
 	
@@ -48,8 +71,8 @@ app.whenReady().then(() => {
         mainWindow.hide()
     })
 
-    const icon = nativeImage.createFromPath('lib/assets/bw-icon.png')
-    tray = new Tray(icon.resize({ width: 16, height: 16 }))
+    const icon = nativeImage.createFromPath('C:\\BetterSoundCloud\\assets\\bw-icon.ico')
+    let tray = new Tray(icon.resize({ width: 16, height: 16 }))
     tray.setIgnoreDoubleClickEvents(true)
 
     var trayMenu = Menu.buildFromTemplate([
@@ -84,13 +107,13 @@ if (process.defaultApp) {
 const gotTheLock = app.requestSingleInstanceLock()
 
 if (!gotTheLock) {
-  app.quit()
+	app.quit()
 } else {
     app.on('second-instance', (event, commandLine) => {
         // Someone tried to run a second instance, we should focus our window.
         if (mainWindow) {
-           if (mainWindow.isMinimized()) mainWindow.restore()
-           mainWindow.focus()
+			if (mainWindow.isMinimized()) mainWindow.restore()
+            mainWindow.focus()
         }
         // the commandLine is array of strings in which last element is deep link url
         // the url str ends with /
@@ -178,6 +201,6 @@ ipcMain.on ("appDownloaderFinish", (event, args) => {
 app.on('window-all-closed', function () {
 	if (process.platform !== 'darwin') app.quit()
 })
-
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
+
