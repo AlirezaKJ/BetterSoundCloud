@@ -30,31 +30,31 @@ html,body {
     color: white !important;
     border: solid #999 1px !important;
 }
-.playControls__elements > .playControls__play {background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1055861452013047839/round_play_arrow_white_24dp.png") !important;}
-.playControls__elements > .playing { /* Pause Icon */ background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1055861749460508692/round_pause_white_24dp.png") !important;}
-.playControls__elements > .skipControl__previous {background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1055862460642512976/round_skip_previous_white_24dp.png") !important;}
-.playControls__elements > .skipControl__next {    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1055862264776888432/round_skip_next_white_24dp.png") !important;}
+.playControls__elements > .playControls__play {background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_play_arrow_white_24dp.png") !important;}
+.playControls__elements > .playing { /* Pause Icon */ background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_pause_white_24dp.png") !important;}
+.playControls__elements > .skipControl__previous {background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_skip_previous_white_24dp.png") !important;}
+.playControls__elements > .skipControl__next {    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_skip_next_white_24dp.png") !important;}
 /* .playControls__elements > .playControls__control > .shuffleControl > button  */
-.playControls__elements .playControls__shuffle .shuffleControl::before { background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1055865496148398170/round_shuffle_white_24dp.png") !important;}
-.playControls__elements .playControls__shuffle .shuffleControl::after { background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1055870043600212038/round_shuffle_orange_24dp.png") !important;}
-.playControls__elements .playControls__repeat .repeatControl.m-none { background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1055873064086282260/round_repeat_white_24dp.png") !important;}
-.playControls__elements .playControls__repeat .repeatControl::before { background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1055874200847515768/round_repeat_orange_24dp.png") !important;}
+.playControls__elements .playControls__shuffle .shuffleControl::before { background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_shuffle_white_24dp.png") !important;}
+.playControls__elements .playControls__shuffle .shuffleControl::after { background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_shuffle_orange_24dp.png") !important;}
+.playControls__elements .playControls__repeat .repeatControl.m-none { background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_repeat_white_24dp.png") !important;}
+.playControls__elements .playControls__repeat .repeatControl::before { background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_repeat_orange_24dp.png") !important;}
 .playControls__elements .playControls__repeat .repeatControl::after {
-    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1055881399304982578/round_repeat_orange_loop_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_repeat_orange_loop_24dp.png") !important;
     background-size: contain;
 }
 .playControls__elements .playbackTimeline * {color: white !important;}
-.volume[data-level="0"] .volume__button {background: url("https://cdn.discordapp.com/attachments/1055860189619826793/1055884357421777027/round_volume_off_white_24dp.png") no-repeat 0 !important;}
-.volume[data-level="1"] .volume__button {background: url("https://cdn.discordapp.com/attachments/1055860189619826793/1055884605611331584/round_volume_down_white_24dp.png") no-repeat 0 !important;}
-.volume[data-level="2"] .volume__button {background: url("https://cdn.discordapp.com/attachments/1055860189619826793/1055884605611331584/round_volume_down_white_24dp.png") no-repeat 0 !important;}
-.volume[data-level="3"] .volume__button {background: url("https://cdn.discordapp.com/attachments/1055860189619826793/1055884605611331584/round_volume_down_white_24dp.png") no-repeat 0 !important;}
-.volume[data-level="4"] .volume__button {background: url("https://cdn.discordapp.com/attachments/1055860189619826793/1055884605611331584/round_volume_down_white_24dp.png") no-repeat 0 !important;}
-.volume[data-level="5"] .volume__button {background: url("https://cdn.discordapp.com/attachments/1055860189619826793/1055884605611331584/round_volume_down_white_24dp.png") no-repeat 0 !important;}
-.volume[data-level="6"] .volume__button {background: url("https://cdn.discordapp.com/attachments/1055860189619826793/1055884488170803220/round_volume_up_white_24dp.png") no-repeat 0 !important;}
-.volume[data-level="7"] .volume__button {background: url("https://cdn.discordapp.com/attachments/1055860189619826793/1055884488170803220/round_volume_up_white_24dp.png") no-repeat 0 !important;}
-.volume[data-level="8"] .volume__button {background: url("https://cdn.discordapp.com/attachments/1055860189619826793/1055884488170803220/round_volume_up_white_24dp.png") no-repeat 0 !important;}
-.volume[data-level="9"] .volume__button {background: url("https://cdn.discordapp.com/attachments/1055860189619826793/1055884488170803220/round_volume_up_white_24dp.png") no-repeat 0 !important;}
-.volume[data-level="10"] .volume__button {background: url("https://cdn.discordapp.com/attachments/1055860189619826793/1055884488170803220/round_volume_up_white_24dp.png") no-repeat 0 !important;}
+.volume[data-level="0"] .volume__button {background: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_volume_off_white_24dp.png") no-repeat 0 !important;}
+.volume[data-level="1"] .volume__button {background: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_volume_down_white_24dp.png") no-repeat 0 !important;}
+.volume[data-level="2"] .volume__button {background: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_volume_down_white_24dp.png") no-repeat 0 !important;}
+.volume[data-level="3"] .volume__button {background: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_volume_down_white_24dp.png") no-repeat 0 !important;}
+.volume[data-level="4"] .volume__button {background: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_volume_down_white_24dp.png") no-repeat 0 !important;}
+.volume[data-level="5"] .volume__button {background: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_volume_down_white_24dp.png") no-repeat 0 !important;}
+.volume[data-level="6"] .volume__button {background: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_volume_up_white_24dp.png") no-repeat 0 !important;}
+.volume[data-level="7"] .volume__button {background: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_volume_up_white_24dp.png") no-repeat 0 !important;}
+.volume[data-level="8"] .volume__button {background: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_volume_up_white_24dp.png") no-repeat 0 !important;}
+.volume[data-level="9"] .volume__button {background: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_volume_up_white_24dp.png") no-repeat 0 !important;}
+.volume[data-level="10"] .volume__button {background: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_volume_up_white_24dp.png") no-repeat 0 !important;}
 
 .playbackSoundBadge .playbackSoundBadge__titleContextContainer .playbackSoundBadge__lightLink:hover {
     color: white !important;
@@ -95,22 +95,22 @@ html,body {
     color: white !important;
 }
 .userBadge__actions .sc-button-follow::before {
-    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1056510086761160704/round_person_add_alt_white_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_person_add_alt_white_24dp.png") !important;
 }
 .userBadge__actions .sc-button-selected::before {
-    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1056515986041352274/round_how_to_reg_white_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_how_to_reg_white_24dp.png") !important;
 }
 .playbackSoundBadge__actions .playbackSoundBadge__like::before {
-    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1055884999271911594/round_favorite_white_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_favorite_white_24dp.png") !important;
 }
 .playbackSoundBadge__actions .playbackSoundBadge__like[title=Unlike]::before {
-    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1055885869430616135/round_favorite_orange_24dp.png") !important;    
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_favorite_orange_24dp.png") !important;    
 }
 .playbackSoundBadge__actions .playbackSoundBadge__follow::before {
-    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1056510086761160704/round_person_add_alt_white_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_person_add_alt_white_24dp.png") !important;
 }
 .playbackSoundBadge__actions .playbackSoundBadge__follow[title=Unfollow]::before {
-    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1056534676572995614/round_how_to_reg_orange_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_how_to_reg_orange_24dp.png") !important;
 
 }
 .playbackSoundBadge__actions .playbackSoundBadge__showQueue svg {
@@ -120,7 +120,7 @@ html,body {
     border-color: #999 !important;
     background-color: #333 !important;
     color: white !important;
-    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1056535567854215168/round_playlist_play_white_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_playlist_play_white_24dp.png") !important;
 }
 .playControls__queue .queue {
     background: #333 !important;
@@ -136,13 +136,13 @@ html,body {
 }
 
 .sc-button-group .sc-button-like::before {
-    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1055884999271911594/round_favorite_white_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_favorite_white_24dp.png") !important;
 }
 .sc-button-group .sc-button-like[title=Unlike]::before {
-    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1055885869430616135/round_favorite_orange_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_favorite_orange_24dp.png") !important;
 }
 .sc-button-group .sc-button-more::before {
-    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1056530430884597780/round_more_vert_white_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_more_vert_white_24dp.pngص") !important;
     background-size: cover !important;
 }
 .moreActions__group button::before {
@@ -183,19 +183,19 @@ html,body {
 }
 
 .sc-ministats-sounds::before {
-    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1059715012144402442/round_equalizer_white_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_equalizer_white_24dp.png") !important;
 }
 .sc-button-repost::before {
-    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1059717773208588298/round_autorenew_white_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_autorenew_white_24dp.png") !important;
 }
 .sc-button-share::before {
-    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1059718467370102854/round_share_white_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_share_white_24dp.png") !important;
 }
 .sc-button-copylink::before {
-    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1059719070133534810/round_content_copy_white_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_content_copy_white_24dp.png") !important;
 }
 .sc-button-queue::before {
-    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1056535567854215168/round_playlist_play_white_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_playlist_play_white_24dp.png") !important;
 }
 
 .soundActions .sc-button-group:nth-child(2) a {
@@ -228,16 +228,16 @@ html,body {
     color: white !important;
 }
 .sc-button-startstation::before {
-    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1059728709856280656/round_radio_white_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_radio_white_24dp.png") !important;
 }
 .sc-button-message::before {
-    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1059729090329976943/round_email_white_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_email_white_24dp.png") !important;
 }
 .sc-button-addtoset::before {
-    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1059730376114839612/round_playlist_add_white_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_playlist_add_white_24dp.png") !important;
 }
 .sc-button-report::before {
-    background-image: url("https://cdn.discordapp.com/attachments/1055860189619826793/1059733494173024276/round_report_problem_white_24dp.png") !important;    
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_report_problem_white_24dp.png") !important;    
 }
 
 .visualSound__wrapper {
