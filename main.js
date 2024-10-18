@@ -1,5 +1,8 @@
-const { app, globalShortcut, shell, ipcMain, BrowserWindow, Tray, Menu, nativeImage, screen} = require('electron')
+const { app, globalShortcut, shell, ipcMain, BrowserWindow, Tray, Menu, nativeImage, screen, session} = require('electron')
 const path = require('node:path')
+const { ElectronBlocker } = require('@cliqz/adblocker-electron');
+const fetch = require('cross-fetch'); // required 'fetch'
+const { log } = require('node:console');
 
 let mainWindow;
 function createWindow () {
@@ -19,8 +22,6 @@ function createWindow () {
   mainWindow.setMenuBarVisibility(false)
   mainWindow.loadFile('app/index.html')
   
-
-  console.log(__dirname + '/app/lib/assets/sc-icon.jpg',)
   // Open the DevTools.
   // mainWindow.webContents.openDevTools()
 }
@@ -36,7 +37,16 @@ app.whenReady().then(() => {
   console.log(apppath);
 
   mainWindow.webContents.on('dom-ready', () => {
+
     mainWindow.webContents.send("apppath", apppath)
+
+    // adblocker
+    viewsession = session.fromPartition("persist:webviewsession")
+    console.log(viewsession)
+    ElectronBlocker.fromPrebuiltAdsAndTracking(fetch).then((blocker) => {
+      blocker.enableBlockingInSession(session.defaultSession);
+    });
+
   });
   
   
@@ -54,6 +64,3 @@ app.whenReady().then(() => {
 app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit()
 })
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.

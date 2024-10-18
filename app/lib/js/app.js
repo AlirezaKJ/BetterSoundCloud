@@ -3,6 +3,7 @@ const fs = require('fs')
 // const packagefile = require("../package.json")
 
 
+
 let appdirectory;
 ipcRenderer.on("apppath", function (evt, message) {
   console.log(message)

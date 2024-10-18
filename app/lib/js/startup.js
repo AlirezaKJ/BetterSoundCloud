@@ -10,6 +10,7 @@ function loadstop() {
   // LOAD SCI SET
   addscript("/app/plugins/SCI.js")
   addstyle("/app/themes/SCI.css")
+  
   // addstyle("\\app\\themes\\darkCloud.css")
 }
 
