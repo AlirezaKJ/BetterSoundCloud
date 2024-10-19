@@ -1,5 +1,5 @@
-// // Menu Bar Frame Injection To Main Frame In Header
-// // Remove All Useless Buttons First
+// Menu Bar Frame Injection To Main Frame In Header
+// Remove All Useless Buttons First
 let rightnavbar = document.querySelector(".header__right .header__navMenu")
 document.querySelectorAll(".header__right .header__navMenu * ").forEach(element => {element.remove()});
 document.querySelectorAll(".header__right .header__link").forEach(element => {element.remove()});

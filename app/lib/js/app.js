@@ -1,3 +1,4 @@
+const { log } = require('console');
 const { ipcRenderer } = require('electron')
 const fs = require('fs')
 // const packagefile = require("../package.json")
@@ -9,28 +10,34 @@ ipcRenderer.on("apppath", function (evt, message) {
   console.log(message)
   appdirectory = message
 })
-console.log(appdirectory)
 
 let webview = document.querySelector("#webview");
+webview.setAttribute("src", "https://soundcloud.com/discover")
 console.log(webview);
 
 
-webview.setAttribute("src", "https://soundcloud.com/discover")
 
+// READ CONSOLE MESSAGES
+webview.addEventListener('console-message', (e) => {
+  console.log('view logged:', e.message)
+  console.log(e)
+})
+
+
+// READ FILES
 function readfile(src) {
   data = fs.readFileSync(src, 'utf8');
   return data
 }
 
 
-// LOAD PLUGINS
+// FOR LOADING PLUGINS
 function addscript(src) {
   let code = readfile(appdirectory + src)
-  console.log(code);
   webview.executeJavaScript(code)
 }
 
-// LOAD THEMES
+// FOR LOADING THEMES
 function addstyle(src) {
   var code = readfile(appdirectory + src)
   webview.insertCSS(code)
