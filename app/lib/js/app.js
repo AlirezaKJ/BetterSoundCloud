@@ -57,14 +57,14 @@ document.addEventListener('contextmenu', function(e) {
 
 // Handle Custom Media keys functionality
 ipcRenderer.on("appReqMediaPlayPause", function (evt, message) {
-  execJS(`playpausebtn.click()`)
+  addscript(`playpausebtn.click()`)
   console.log("MediaPlayPause is pressed");
 })
 ipcRenderer.on("appReqMediaNextTrack", function (evt, message) {
-  execJS(`nextsongbtn.click()`)
+  addscript(`nextsongbtn.click()`)
   console.log("MediaNextTrack is pressed");
 })
 ipcRenderer.on("appReqMediaPreviousTrack", function (evt, message) {
-  execJS(`previoussongbtn.click()`)
+  addscript(`previoussongbtn.click()`)
   console.log("MediaPreviousTrack is pressed");
 })
