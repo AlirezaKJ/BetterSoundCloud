@@ -49,3 +49,22 @@ document.addEventListener('contextmenu', function(e) {
   alert("You've tried to open context menu"); //here you draw your own menu
   e.preventDefault();
 }, false);
+
+
+
+
+
+
+// Handle Custom Media keys functionality
+ipcRenderer.on("appReqMediaPlayPause", function (evt, message) {
+  execJS(`playpausebtn.click()`)
+  console.log("MediaPlayPause is pressed");
+})
+ipcRenderer.on("appReqMediaNextTrack", function (evt, message) {
+  execJS(`nextsongbtn.click()`)
+  console.log("MediaNextTrack is pressed");
+})
+ipcRenderer.on("appReqMediaPreviousTrack", function (evt, message) {
+  execJS(`previoussongbtn.click()`)
+  console.log("MediaPreviousTrack is pressed");
+})

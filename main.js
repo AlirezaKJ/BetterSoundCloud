@@ -64,3 +64,19 @@ app.whenReady().then(() => {
 app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit()
 })
+
+app.on('browser-window-focus', function () {
+	console.log("window focused")
+    globalShortcut.register("MediaPlayPause", () => {
+		mainWindow.webContents.send("appReqMediaPlayPause")
+		console.log("MediaPlayPause is pressed");
+	});
+	globalShortcut.register("MediaNextTrack", () => {
+		mainWindow.webContents.send("appReqMediaNextTrack")
+		console.log("MediaNextTrack is pressed");
+	});
+	globalShortcut.register("MediaPreviousTrack", () => {
+		mainWindow.webContents.send("appReqMediaPreviousTrack")
+		console.log("MediaPreviousTrack is pressed");
+	});
+});
