@@ -36,13 +36,12 @@ app.whenReady().then(() => {
   apppath = app.getAppPath()
   console.log(apppath);
 
+  // ON MAIN WINDOW LOAD
   mainWindow.webContents.on('dom-ready', () => {
 
     mainWindow.webContents.send("apppath", apppath)
 
     // adblocker
-    viewsession = session.fromPartition("persist:webviewsession")
-    console.log(viewsession)
     ElectronBlocker.fromPrebuiltAdsAndTracking(fetch).then((blocker) => {
       blocker.enableBlockingInSession(session.defaultSession);
     });
