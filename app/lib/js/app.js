@@ -1,6 +1,7 @@
 const { log } = require('console');
 const { ipcRenderer } = require('electron')
 const fs = require('fs')
+const packagefile = require("../package.json")
 // const packagefile = require("../package.json")
 
 
@@ -20,37 +21,46 @@ console.log(webview);
 // READ CONSOLE MESSAGES
 webview.addEventListener('console-message', (e) => {
   console.log('view logged:', e.message)
-  console.log(e)
+  // console.log(e)
 })
 
 
 // READ FILES
 function readfile(src) {
   data = fs.readFileSync(src, 'utf8');
+  loadingscreentxt.innerHTML = "Readed File: " + src
   return data
 }
-
 
 // FOR LOADING PLUGINS
 function addscript(src) {
   let code = readfile(appdirectory + src)
+  loadingscreentxt.innerHTML = "Added Script: " + src
   webview.executeJavaScript(code)
 }
-
 // FOR LOADING THEMES
 function addstyle(src) {
   var code = readfile(appdirectory + src)
+  loadingscreentxt.innerHTML = "Added Style: " + src
   webview.insertCSS(code)
 }
 
 
+function rclick(e) {
+  console.log(e)
+  e.preventDefault()
+  e.stopPropagation()
+  console.log("Right Clicked")
+}
+
 // Customised rightclick menu
-document.addEventListener('contextmenu', function(e) {
-  alert("You've tried to open context menu"); //here you draw your own menu
-  e.preventDefault();
-}, false);
+webview.addEventListener('context-menu', rclick(e))
 
 
+// document.addEventListener('contextmenu', function(e) {
+//   alert("You've tried to open context menu"); //here you draw your own menu
+//   e.preventDefault();
+// }, false);
 
 
 
