@@ -1,23 +1,27 @@
 {
-  "name": "electron-quick-start",
-  "version": "1.0.0",
-  "description": "A minimal Electron application",
+  "name": "bettersoundcloud",
+  "version": "0.5.3",
+  "description": "BetterSoundCloud PC Client",
   "main": "main.js",
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make"
   },
-  "repository": "https://github.com/electron/electron-quick-start",
+  "repository": "https://github.com/AlirezaKJ/BetterSoundCloud",
+  "downloadpage": "https://github.com/AlirezaKJ/BetterSoundCloud/releases",
   "keywords": [
-    "Electron",
-    "quick",
-    "start",
-    "tutorial",
-    "demo"
+    "electron",
+    "soundcloud",
+    "bettersoundcloud",
+    "soundcloudclient",
+    "music",
+    "audio",
+    "song",
+    "web"
   ],
-  "author": "GitHub",
-  "license": "CC0-1.0",
+  "author": "AlirezaKJ",
+  "license": "MIT license",
   "devDependencies": {
     "@electron-forge/cli": "^7.5.0",
     "@electron-forge/maker-appx": "^7.5.0",
