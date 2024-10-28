@@ -1,12 +1,13 @@
 /* ! Color Based on ECSTACY by tailwindcss */
 :root {
   --50: #fff9ec;
-  --200: #ffe2a5;
+  --200: rgb(255, 226, 165);
   --400: #ffaa32;
   --600: #ff7700;
   --800: #a1430b;
-  --950: #3c1e00;
+  --950: #201000;
   --rgba: rgba(255, 249, 236, 0.5);
+  --rgba2: rgba(255, 249, 236, 0.35);
   --uifont: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
@@ -31,6 +32,62 @@ body {
 #view #webview {
   width: 100%;
   height: 100%;
+}
+
+.mousectx {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 200px;
+  /* height: 800px; */
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  visibility: visible;
+  opacity: 1;
+  transition: 0.25s ease-in-out all;
+  background-color: var(--rgba2);
+  backdrop-filter: blur(5px);
+}
+.mousectx li {
+  display: flex;
+  font-size: 16px;
+  font-weight: 700;
+  align-items: center;
+  justify-content: flex-start;
+  height: 35px;
+  width: 100%;
+  border: solid 1px var(--950);
+  color: var(--950);
+  gap: 10px;
+  transition: all 0.25s ease-in-out;
+  cursor: pointer;
+}
+.mousectx li .icon {
+  margin-left: 5px;
+  width: 20px;
+  height: 20px;
+}
+.mousectx li .icon svg {
+  transition: all 0.25s ease-in-out;
+  fill: var(--950);
+  width: 100%;
+  height: 100%;
+}
+.mousectx li:hover {
+  scale: 1.1;
+  background-color: var(--950);
+  color: var(--50);
+  border: solid 1px var(--600);
+}
+.mousectx li:hover svg {
+  fill: var(--50);
+}
+
+.fademctx {
+  animation: fadeOut 0.25s ease-in-out forwards;
 }
 
 #loadingscreen {
@@ -63,7 +120,7 @@ body {
   justify-content: center;
   align-items: center;
   flex-direction: row;
-  gap: 20px;
+  gap: 25px;
 }
 #loadingscreen h3 {
   color: var(--950);
@@ -72,6 +129,19 @@ body {
 #loadingscreen span {
   color: var(--950);
   font-size: 25px;
+}
+#loadingscreen .row .linkicon {
+  width: 50px;
+  height: 50px;
+}
+#loadingscreen .row .linkicon svg {
+  fill: var(--950);
+  width: 100%;
+  height: 100%;
+  transition: 0.3s;
+}
+#loadingscreen .row .linkicon:hover svg {
+  scale: 1.1;
 }
 
 .fadels {

@@ -22,6 +22,9 @@ console.log(webview);
 webview.addEventListener('console-message', (e) => {
   console.log('view logged:', e.message)
   // console.log(e)
+  if (e.message == "BSCReceive|MouseClicked") {
+    rclickmenu.classList.add("fademctx")
+  }
 })
 
 
@@ -46,16 +49,59 @@ function addstyle(src) {
 }
 
 
-function rclick(e) {
-  console.log(e)
+// Customised rightclick menu
+let rclickmenu = document.querySelector(".mousectx")
+webview.addEventListener('context-menu', (e) => {
+  console.log("Right Clicked")
   e.preventDefault()
   e.stopPropagation()
-  console.log("Right Clicked")
+  console.log(e)
+  rclickmenu.style.top = e.params.y + "px"
+  rclickmenu.style.left = e.params.x + "px"
+  rclickmenu.classList.remove("fademctx")
+})
+
+function cururl() {
+  navigator.clipboard.writeText(webview.getURL())
+  rclickmenu.classList.add("fademctx")
 }
 
-// Customised rightclick menu
-webview.addEventListener('context-menu', rclick(e))
+function gotourl() { // TODO: ADD GOTO PAGE FUNCTIONALITY
+  rclickmenu.classList.add("fademctx")
+}
 
+function forwardwv() {
+  webview.goForward()
+  rclickmenu.classList.add("fademctx")
+}
+
+function backwardwv() {
+  webview.goBack()
+  rclickmenu.classList.add("fademctx")
+}
+
+function reloadwv() {
+  webview.reload()
+  rclickmenu.classList.add("fademctx")
+}
+
+function opensettings() { // TODO: ADD SETTINGS PAGE FUNCTIONALITY
+  rclickmenu.classList.add("fademctx")
+}
+
+function signoutwv() {
+  webview.loadURL("https://soundcloud.com/logout")
+  rclickmenu.classList.add("fademctx")
+}
+
+function copywv() { // TODO: ADD COPY FUNCTIONALITY
+  // navigator.clipboard.writeText(webview.getURL())
+  rclickmenu.classList.add("fademctx")
+}
+
+function pastewv() { // TODO: ADD COPY FUNCTIONALITY
+  rclickmenu.classList.add("fademctx")
+}
 
 // document.addEventListener('contextmenu', function(e) {
 //   alert("You've tried to open context menu"); //here you draw your own menu

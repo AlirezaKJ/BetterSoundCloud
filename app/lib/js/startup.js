@@ -16,12 +16,21 @@ function loadstop() {
   console.log("loaded");
   
   // LOAD SCI SET
-  addscript("/app/plugins/SCI.js")
-  addstyle("/app/themes/SCI.css")
+  addscript("\\app\\plugins\\SCI.js")
+  addstyle("\\app\\themes\\SCI.css")
+
+
+  
+  // LOAD RIGHTCLICK MENU ESSENTIALS
+  addscript("\\app\\plugins\\ctxMenu.js")
+  
+  // LOAD DISCORD RPC
+  // addscript("\\app\\plugins\\discordRPC.js")
   
   // LOAD CUSTOMBG
-  addscript("/app/plugins/custombg.js")
+  // addscript("\\app\\plugins\\custombg.js")
   
+  // LOAD THEME
   addstyle("\\app\\themes\\darkCloud.css")
 
   loadingscreentxt.innerHTML = "Loading Finished"
