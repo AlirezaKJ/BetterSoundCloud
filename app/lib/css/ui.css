@@ -1,0 +1,44 @@
+.interface {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: row;
+  visibility: visible;
+  opacity: 1;
+  transition: 0.25s ease-in-out opacity, 0.25s ease-in-out visibility;
+  background-color: var(--rgba2);
+  backdrop-filter: blur(5px);
+}
+
+.fadeui {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.interface .sidebar {
+  width: 20%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+.interface .sidebar a {
+  color: var(--950);
+  text-decoration: none;
+}
+
+.interface .mainbar {
+  width: 80%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+}

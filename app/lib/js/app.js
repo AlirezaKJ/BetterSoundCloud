@@ -16,9 +16,13 @@ let webview = document.querySelector("#webview");
 webview.setAttribute("src", "https://soundcloud.com/discover")
 console.log(webview);
 
+let rclickmenu = document.querySelector(".mousectx")
+let interfaceel = document.querySelector(".interface")
 
 
-// READ CONSOLE MESSAGES
+
+// ! READ CONSOLE MESSAGES
+// USED AS A CHANNEL FOR COMMUNICATION BETWEEN WEBVIEW AND RENDERER
 webview.addEventListener('console-message', (e) => {
   console.log('view logged:', e.message)
   // console.log(e)
@@ -50,7 +54,6 @@ function addstyle(src) {
 
 
 // Customised rightclick menu
-let rclickmenu = document.querySelector(".mousectx")
 webview.addEventListener('context-menu', (e) => {
   console.log("Right Clicked")
   e.preventDefault()
@@ -87,6 +90,8 @@ function reloadwv() {
 
 function opensettings() { // TODO: ADD SETTINGS PAGE FUNCTIONALITY
   rclickmenu.classList.add("fademctx")
+  interfaceel.classList.remove("fadeui")
+  
 }
 
 function signoutwv() {

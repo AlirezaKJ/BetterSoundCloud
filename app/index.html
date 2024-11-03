@@ -4,6 +4,7 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="stylesheet" href="lib/css/main.css">
+	<link rel="stylesheet" href="lib/css/ui.css">
 	<script src="lib/js/LSDB.js"></script>
 	<title>BSC</title>
 </head>
@@ -13,11 +14,62 @@
 		<webview id="webview" persist:webviewsession plugins enableblinkfeatures="PreciseMemoryInfo, CSSVariables" nodeintegration allowpopups></webview>
 	</div>
 
-	<div class="interface">
+	<div class="interface fadeui">
+		<div class="sidebar">
+			<a href="#" class="side-btn">Prefrences</a>
+			<a href="#" class="side-btn">Downloader</a>
+			<a href="#" class="side-btn">Themes</a>
+			<a href="#" class="side-btn">Custom JS</a>
+			<a href="#" class="side-btn">Custom CSS</a>
+			<a href="#" class="side-btn">Support</a>
+			<a href="#" class="side-btn">Patch Notes</a>
+			<a href="#" class="side-btn">Close</a>
+		</div>
+		<div class="mainbar">
+			<h4 id="prefrences">Prefrences</h4>
+			<section>
 
+			</section>
+			<h4 id="downloader">Downloader</h4>
+			<section>
+
+			</section>
+			<h4 id="themes">Themes</h4>
+			<section>
+
+			</section>
+			<h4 id="themes">Custom JS</h4>
+			<section>
+
+			</section>
+			<h4 id="themes">Custom CSS</h4>
+			<section>
+
+			</section>
+			<h4 id="themes">Support</h4>
+			<section>
+
+			</section>
+			<h4 id="themes">Patch Notes</h4>
+			<section>
+
+			</section>
+		</div>
 	</div>
 
 	<div class="mousectx fademctx">
+		<li onclick="copywv()">
+			<div class="icon">
+				<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e8eaed"><path d="M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-520q0-17 11.5-28.5T160-720q17 0 28.5 11.5T200-680v520h400q17 0 28.5 11.5T640-120q0 17-11.5 28.5T600-80H200Zm160-240v-480 480Z"/></svg>
+			</div>
+			<div class="action">Copy</div>
+		</li>
+		<li onclick="pastewv()">
+			<div class="icon">
+				<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e8eaed"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h167q11-35 43-57.5t70-22.5q40 0 71.5 22.5T594-840h166q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560h-80v80q0 17-11.5 28.5T640-640H320q-17 0-28.5-11.5T280-680v-80h-80v560Zm280-560q17 0 28.5-11.5T520-800q0-17-11.5-28.5T480-840q-17 0-28.5 11.5T440-800q0 17 11.5 28.5T480-760Z"/></svg>
+			</div>
+			<div class="action">Paste</div>
+		</li>
 		<li onclick="cururl()">
 			<div class="icon">
 				<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e8eaed"><path d="M280-280q-83 0-141.5-58.5T80-480q0-83 58.5-141.5T280-680h120q17 0 28.5 11.5T440-640q0 17-11.5 28.5T400-600H280q-50 0-85 35t-35 85q0 50 35 85t85 35h120q17 0 28.5 11.5T440-320q0 17-11.5 28.5T400-280H280Zm80-160q-17 0-28.5-11.5T320-480q0-17 11.5-28.5T360-520h240q17 0 28.5 11.5T640-480q0 17-11.5 28.5T600-440H360Zm200 160q-17 0-28.5-11.5T520-320q0-17 11.5-28.5T560-360h120q50 0 85-35t35-85q0-50-35-85t-85-35H560q-17 0-28.5-11.5T520-640q0-17 11.5-28.5T560-680h120q83 0 141.5 58.5T880-480q0 83-58.5 141.5T680-280H560Z"/></svg>
@@ -59,18 +111,6 @@
 				<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e8eaed"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h240q17 0 28.5 11.5T480-800q0 17-11.5 28.5T440-760H200v560h240q17 0 28.5 11.5T480-160q0 17-11.5 28.5T440-120H200Zm487-320H400q-17 0-28.5-11.5T360-480q0-17 11.5-28.5T400-520h287l-75-75q-11-11-11-27t11-28q11-12 28-12.5t29 11.5l143 143q12 12 12 28t-12 28L669-309q-12 12-28.5 11.5T612-310q-11-12-10.5-28.5T613-366l74-74Z"/></svg>
 			</div>
 			<div class="action">Signout</div>
-		</li>
-		<li onclick="copywv()">
-			<div class="icon">
-				<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e8eaed"><path d="M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-520q0-17 11.5-28.5T160-720q17 0 28.5 11.5T200-680v520h400q17 0 28.5 11.5T640-120q0 17-11.5 28.5T600-80H200Zm160-240v-480 480Z"/></svg>
-			</div>
-			<div class="action">Copy</div>
-		</li>
-		<li onclick="pastewv()">
-			<div class="icon">
-				<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e8eaed"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h167q11-35 43-57.5t70-22.5q40 0 71.5 22.5T594-840h166q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560h-80v80q0 17-11.5 28.5T640-640H320q-17 0-28.5-11.5T280-680v-80h-80v560Zm280-560q17 0 28.5-11.5T520-800q0-17-11.5-28.5T480-840q-17 0-28.5 11.5T440-800q0 17 11.5 28.5T480-760Z"/></svg>
-			</div>
-			<div class="action">Paste</div>
 		</li>
 	</div>
 
