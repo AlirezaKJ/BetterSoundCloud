@@ -31,7 +31,7 @@ function loadstop() {
   // addscript("\\app\\plugins\\custombg.js")
   
   // LOAD THEME
-  addstyle("\\app\\themes\\darkCloud.css")
+  // addstyle("\\app\\themes\\darkCloud.css")
 
   loadingscreentxt.innerHTML = "Loading Finished"
   setTimeout(() => {
