@@ -27,18 +27,55 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: flex-start;
+  justify-content: center;
+  background: var(--200);
 }
 .interface .sidebar a {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: 40px;
+  font-size: 20px;
+  font-weight: 500;
   color: var(--950);
   text-decoration: none;
+  text-indent: 10px;
+  transition: all 0.2s ease-in-out;
+
+  &:hover {
+    background-color: var(--400);
+  }
+  & svg {
+    fill: var(--950);
+  }
 }
+.interface .sidebar a .icon {
+  margin-left: 5px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.interface .sidebar a .name {
+  height: 100%;
+  line-height: 40px;
+  display: flex;
+  align-items: center;
+}
+
+
 
 .interface .mainbar {
   width: 80%;
   height: 100%;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   justify-content: flex-start;
+}
+
+.interface .mainbar h4 {
+  font-size: 30px;
+  color: var(--950);
 }
