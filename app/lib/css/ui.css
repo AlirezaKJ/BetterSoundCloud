@@ -73,9 +73,101 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
+  overflow-y: scroll;
+  scroll-behavior: smooth;
 }
 
 .interface .mainbar h4 {
-  font-size: 30px;
-  color: var(--950);
+  font-size: 35px;
+  font-weight: 900;
+  margin: 30px 0px;
+  color: var(--400);
+}
+.interface .mainbar section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  width: 100%;
+}
+.interface .mainbar .settingitem {
+  padding: 10px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 70%;
+  border: solid 1px rgba(0, 0, 0, 0);
+  color: var(--200);
+  transition: all 0.2s ease-in-out;
+}
+.interface .mainbar .settingitem:hover {
+  border-left: solid 1px var(--800);
+  border-right: solid 1px var(--800);
+}
+.interface .mainbar .settingitem > div {
+  margin: 0px 10px;
+  width: 50%;
+}
+.interface .mainbar .gapline {
+  width: 70%;
+  height: 1px;
+  background-color: var(--800);
+  /* margin: 10px 0px; */
+}
+
+.interface .mainbar .settingitem .name {
+  font-size: 25px;
+  font-weight: 700;
+  color: var();
+}
+.interface .mainbar .settingitem .description {
+  font-size: 18px;
+  font-weight: 300;
+  color: var();
+  white-space: nowrap;
+}
+.interface .mainbar .settingitem .toggle {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+.interface .mainbar .settingitem .toggle .switch {
+  font-size: 17px;
+  position: relative;
+  display: inline-block;
+  width: 3.5em;
+  height: 2em;
+}
+.interface .mainbar .settingitem .toggle .switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.interface .mainbar .settingitem .toggle .slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  border: 2px solid var(--200);
+  border-radius: 50px;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.interface .mainbar .settingitem .toggle .slider:before {
+  position: absolute;
+  content: "";
+  height: 1.4em;
+  width: 1.4em;
+  left: 0.2em;
+  bottom: 0.2em;
+  background-color: var(--200);
+  border-radius: inherit;
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
+  transform: translateY(1px);
+}
+.interface .mainbar .settingitem .toggle .switch input:checked + .slider {
+  box-shadow: 0 0 20px var(--boxshadow600);
+  border: 2px solid var(--600);
+}
+.interface .mainbar .settingitem .toggle .switch input:checked + .slider:before {
+  background-color: var(--600);
+  transform: translate(1.5em, 1px);
 }

@@ -7,8 +7,9 @@
   --800: #a1430b;
   --950: #201000;
   --rgba: rgba(255, 249, 236, 0.5);
-  --rgba2: rgba(255, 249, 236, 0.35);
+  --rgba2: rgba(35, 35, 35, 0.7);
   --uifont: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --boxshadow600: rgba(255, 119, 0,0.8);
 }
 
 * {
@@ -54,7 +55,7 @@ body {
   visibility: visible;
   opacity: 1;
   transition: 0.25s ease-in-out opacity, 0.25s ease-in-out visibility;
-  background-color: var(--rgba2);
+  background-color: var(--rgba);
   backdrop-filter: blur(5px);
 }
 .mousectx li {
