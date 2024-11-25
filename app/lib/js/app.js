@@ -24,11 +24,20 @@ let interfaceel = document.querySelector(".interface")
 // ! READ CONSOLE MESSAGES
 // USED AS A CHANNEL FOR COMMUNICATION BETWEEN WEBVIEW AND RENDERER
 webview.addEventListener('console-message', (e) => {
-  console.log('view logged:', e.message)
   // console.log(e)
+  console.log(e.message)
   if (e.message == "BSCReceive|MouseClicked") {
     rclickmenu.classList.add("fademctx")
-  }
+  } else if (e.message == "BSCReceive|UISettingMaximizeApp") {
+    console.log("sendmaximize req")
+    ipcRenderer.send("appReqMaximizeApp")
+  } else if (e.message == "BSCReceive|UISettingMinimizeApp") {
+    console.log("sendminimize req")
+    ipcRenderer.send("appReqMinimizeApp")
+  } else if (e.message == "BSCReceive|UISettingCloseApp") {
+    console.log("sendclose req")
+    ipcRenderer.send("appReqCloseApp")
+  } 
 })
 
 

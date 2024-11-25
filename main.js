@@ -10,7 +10,7 @@ function createWindow () {
   mainWindow = new BrowserWindow({
     width: 1366,
     height: 768,
-    frame: false,
+    // frame: false,
     icon: __dirname + '/app/lib/assets/sc-icon.jpg',
     webPreferences: {
 			nodeIntegration: true,
@@ -66,7 +66,7 @@ app.on('window-all-closed', function () {
 
 app.on('browser-window-focus', function () {
 	console.log("window focused")
-    globalShortcut.register("MediaPlayPause", () => {
+  globalShortcut.register("MediaPlayPause", () => {
 		mainWindow.webContents.send("appReqMediaPlayPause")
 		console.log("MediaPlayPause is pressed");
 	});
@@ -78,4 +78,20 @@ app.on('browser-window-focus', function () {
 		mainWindow.webContents.send("appReqMediaPreviousTrack")
 		console.log("MediaPreviousTrack is pressed");
 	});
+});
+
+
+// TODO: Fix icon states in renderer when switching
+ipcMain.on("appReqMaximizeApp",() => {
+  if (mainWindow.isFullScreen()) {
+		mainWindow.setFullScreen(false)
+	} else {
+		mainWindow.setFullScreen(true)
+	}
+})
+ipcMain.on("appReqMinimizeApp",() => {
+  mainWindow.minimize();
+});
+ipcMain.on("appReqCloseApp",() => {
+  app.quit();
 });
