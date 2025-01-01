@@ -24,7 +24,6 @@ let interfaceel = document.querySelector(".interface")
 // ! READ CONSOLE MESSAGES
 // USED AS A CHANNEL FOR COMMUNICATION BETWEEN WEBVIEW AND RENDERER
 webview.addEventListener('console-message', (e) => {
-  // console.log(e)
   console.log(e.message)
   if (e.message == "BSCReceive|MouseClicked") {
     rclickmenu.classList.add("fademctx")
@@ -37,7 +36,15 @@ webview.addEventListener('console-message', (e) => {
   } else if (e.message == "BSCReceive|UISettingCloseApp") {
     console.log("sendclose req")
     ipcRenderer.send("appReqCloseApp")
-  } 
+  } else if (e.message.split("|")[1] == ("UISettingShowRequest")) {
+    opensettings()
+    sidebtns = document.querySelectorAll(".interface .sidebar .side-btn")
+    if (e.message.split("|")[2] == "1") {
+      sidebtns[0].click()
+    } else if (e.message.split("|")[2] == "2") {
+      sidebtns[2].click()
+    }
+  }
 })
 
 
