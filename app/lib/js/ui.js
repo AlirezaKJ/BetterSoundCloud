@@ -15,9 +15,23 @@ function cururl() {
   rclickmenu.classList.add("fademctx")
 }
 
+
+var gotourlslide = document.getElementById("gotourlslide")
+var gotourlinp = document.getElementById("gotourli")
 function gotourl() { // TODO: ADD GOTO PAGE FUNCTIONALITY
+  gotourlslide.classList.remove("gotourlfade")
   rclickmenu.classList.add("fademctx")
 }
+function gotourlcls() {
+  gotourlslide.classList.add("gotourlfade")
+}
+function gotourlenter() {
+  url = gotourlinp.value
+  webview.loadURL(url)
+  console.log(url)
+  gotourlcls()
+}
+
 
 function forwardwv() {
   webview.goForward()
@@ -58,3 +72,8 @@ function copywv() { // TODO: ADD COPY FUNCTIONALITY
 function pastewv() { // TODO: ADD COPY FUNCTIONALITY
   rclickmenu.classList.add("fademctx")
 }
+
+
+// SETTINGS SLIDE UI RESPONSIBILITY
+function syncsettingsui() {}
+let togglebuttons = document.querySelectorAll(".mainbar .settingitem .toggle input")

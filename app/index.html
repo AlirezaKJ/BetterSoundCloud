@@ -80,7 +80,7 @@
 					</div>
 					<div class="toggle">
 						<label class="switch">
-							<input type="checkbox">
+							<input name="startupfullscreen" type="checkbox">
 							<span class="slider"></span>
 						</label>
 					</div>
@@ -97,24 +97,7 @@
 					</div>
 					<div class="toggle">
 						<label class="switch">
-							<input type="checkbox">
-							<span class="slider"></span>
-						</label>
-					</div>
-				</div>
-				<div class="gapline"></div>
-				<div class="settingitem">
-					<div class="info">
-						<div class="name">
-							Custom Background
-						</div>
-						<div class="description">
-							The custom background of the current playing song.
-						</div>
-					</div>
-					<div class="toggle">
-						<label class="switch">
-							<input type="checkbox">
+							<input name="custombg" type="checkbox">
 							<span class="slider"></span>
 						</label>
 					</div>
@@ -265,6 +248,21 @@
 			<section>
 
 			</section>
+		</div>
+	</div>
+
+	<div id="gotourlslide" class="gotourlfade" >
+		<div class="closediv" onclick="gotourlcls()">
+			
+		</div>
+		<div class="opendiv">
+			<div class="urlbar">
+				<input placeholder="https://soundcloud.com/sleeptoken/sets/take-me-back-to-eden-1" type="url" name="gotourl" id="gotourli" onclick="console.log('mamad')">
+				<button id="gotourlenterbtn" onclick="gotourlenter()">
+					Enter
+				</button>
+			</div>
+			<span>click on the transparent area to close</span>
 		</div>
 	</div>
 
