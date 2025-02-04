@@ -101,8 +101,8 @@
   transition: all 0.2s ease-in-out;
 }
 .interface .mainbar .settingitem:hover {
-  border-left: solid 1px var(--800);
-  border-right: solid 1px var(--800);
+  border-left: solid 1px var(--600);
+  border-right: solid 1px var(--600);
 }
 .interface .mainbar .settingitem > div {
   margin: 0px 10px;
@@ -111,7 +111,7 @@
 .interface .mainbar .gapline {
   width: 70%;
   height: 1px;
-  background-color: var(--800);
+  background-color: var(--600);
   /* margin: 10px 0px; */
 }
 
@@ -170,4 +170,55 @@
 .interface .mainbar .settingitem .toggle .switch input:checked + .slider:before {
   background-color: var(--600);
   transform: translate(1.5em, 1px);
+}
+.interface .mainbar .settingitem .manualinp {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+.interface .mainbar .settingitem .manualinp select {
+  appearance: none;
+  text-align: center;
+  width: 120px;
+  height: 35px;
+  background-color: var(--950);
+	color: var(--200);
+	border: solid var(--200) 2px;
+  border-radius: 50px;
+	outline: none;
+}
+.interface .mainbar .settingitem .manualinp select option:hover {
+  background: red;
+}
+.interface .mainbar .settingitem .manualinp input[type="number"] {
+  text-align: center;
+  width: 60px;
+  height: 35px;
+  font-size: 16px;
+  font-weight: 700;
+  background-color: rgba(0, 0, 0, 0);
+  border: solid 2px var(--200);
+  border-radius: 50px;
+  color: var(--200);
+  transition: all 0.4s ease-in-out;
+  &:focus {
+    border: solid 2px var(--600);
+    color: var(--600);
+    box-shadow: 0 0 20px var(--boxshadow600);
+  }
+}
+
+.interface .mainbar .settingitem .manualinp input[type="url"] {
+  width: 90%;
+  height: 35px;
+  font-size: 20px;
+  font-weight: 700;
+  background-color: rgba(0, 0, 0, 0);
+  color: var(--200);
+  border-bottom: solid 2px var(--200);
+  transition: all 0.4s ease-in-out;
+  &:focus {
+    border-bottom: solid 2px var(--600);
+    color: var(--600);
+  }
 }

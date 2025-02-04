@@ -7,6 +7,7 @@ let settings = {
   startuplastpage: dbResolve("settings.startuplastpage", false),
   startupurl: dbResolve("settings.startupurl", false),
   scrollerbtn: dbResolve("settings.scrollerbtn", false),
+  zoomfactor: dbResolve("settings.zoomfactor", 100),
 }
 
 function updateLS() {
@@ -18,6 +19,7 @@ function updateLS() {
   dbSetItem("settings.startuplastpage", settings.startuplastpage)
   dbSetItem("settings.startupurl", settings.startupurl)
   dbSetItem("settings.scrollerbtn", settings.scrollerbtn)
+  dbSetItem("settings.zoomfactor", settings.zoomfactor)
 }
 
 function changeSettings(name, value) {

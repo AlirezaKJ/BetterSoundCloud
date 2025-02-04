@@ -75,5 +75,7 @@ function pastewv() { // TODO: ADD COPY FUNCTIONALITY
 
 
 // SETTINGS SLIDE UI RESPONSIBILITY
-function syncsettingsui() {}
+function syncsettingsui() {
+  
+}
 let togglebuttons = document.querySelectorAll(".mainbar .settingitem .toggle input")

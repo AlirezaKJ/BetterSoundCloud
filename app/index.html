@@ -114,7 +114,7 @@
 					</div>
 					<div class="toggle">
 						<label class="switch">
-							<input type="checkbox">
+							<input name="discordrpc" type="checkbox">
 							<span class="slider"></span>
 						</label>
 					</div>
@@ -131,7 +131,7 @@
 					</div>
 					<div class="toggle">
 						<label class="switch">
-							<input type="checkbox">
+							<input name="startuplastpage" type="checkbox">
 							<span class="slider"></span>
 						</label>
 					</div>
@@ -148,41 +148,7 @@
 					</div>
 					<div class="toggle">
 						<label class="switch">
-							<input type="checkbox">
-							<span class="slider"></span>
-						</label>
-					</div>
-				</div>
-				<div class="gapline"></div>
-				<div class="settingitem">
-					<div class="info">
-						<div class="name">
-							Ctrl + R Bind 
-						</div>
-						<div class="description">
-							Change which page reload by pressing Ctrl + R.
-						</div>
-					</div>
-					<div class="toggle">
-						<label class="switch">
-							<input type="checkbox">
-							<span class="slider"></span>
-						</label>
-					</div>
-				</div>
-				<div class="gapline"></div>
-				<div class="settingitem">
-					<div class="info">
-						<div class="name">
-							Ctrl + F5 Bind 
-						</div>
-						<div class="description">
-							Change which page reload by pressing Ctrl + F5.
-						</div>
-					</div>
-					<div class="toggle">
-						<label class="switch">
-							<input type="checkbox">
+							<input name="scrollerbtn" type="checkbox">
 							<span class="slider"></span>
 						</label>
 					</div>
@@ -197,11 +163,44 @@
 							Change the zoom scale of Soundcloud.
 						</div>
 					</div>
-					<div class="toggle">
-						<label class="switch">
-							<input type="checkbox">
-							<span class="slider"></span>
-						</label>
+					<div class="manualinp">
+						<input type="number" name="zoomfactor" value="100">
+					</div>
+				</div>
+				<div class="gapline"></div>
+				<div class="settingitem">
+					<div class="info">
+						<div class="name">
+							Ctrl + R Bind 
+						</div>
+						<div class="description">
+							Change which page reload by pressing Ctrl + R.
+						</div>
+					</div>
+					<div class="manualinp">
+						<select name="bindctrlr">
+							<option value="unbind">Unbind</option>
+							<option value="reloadview">Reload Soundcloud</option>
+							<option value="reloadapp">Reload App</option>
+						</select>
+					</div>
+				</div>
+				<div class="gapline"></div>
+				<div class="settingitem">
+					<div class="info">
+						<div class="name">
+							Ctrl + F5 Bind 
+						</div>
+						<div class="description">
+							Change which page reload by pressing Ctrl + F5.
+						</div>
+					</div>
+					<div class="manualinp">
+						<select name="bindf5">
+							<option value="unbind">Unbind</option>
+							<option value="reloadview">Reload Soundcloud</option>
+							<option value="reloadapp">Reload App</option>
+						</select>
 					</div>
 				</div>
 				<div class="gapline"></div>
@@ -211,14 +210,11 @@
 							Startup Page
 						</div>
 						<div class="description">
-							Set a url to load when the app starts (dont override startup load last page settings).
+							Load the specified url on app start.
 						</div>
 					</div>
-					<div class="toggle">
-						<label class="switch">
-							<input type="checkbox">
-							<span class="slider"></span>
-						</label>
+					<div class="manualinp">
+						<input type="url" placeholder="https://soundcloud.com/safirfarsi" name="startupurl">
 					</div>
 				</div>
 				<div class="gapline"></div>
