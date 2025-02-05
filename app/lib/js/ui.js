@@ -75,7 +75,67 @@ function pastewv() { // TODO: ADD COPY FUNCTIONALITY
 
 
 // SETTINGS SLIDE UI RESPONSIBILITY
-function syncsettingsui() {
-  
-}
 let togglebuttons = document.querySelectorAll(".mainbar .settingitem .toggle input")
+let zoomfactorinp = document.querySelector(".mainbar .settingitem .manualinp input[name='zoomfactor']")
+let reloadbindsinp = document.querySelectorAll(".mainbar .settingitem .manualinp select")
+let startuppageinp = document.querySelector(".mainbar .settingitem .manualinp input[type='url']")
+function syncsettingsui() {
+  togglebuttons.forEach(function(tglbtn) {
+    if (settings[tglbtn.name]) {
+      tglbtn.click();
+    }
+  })
+  zoomfactorinp.value = settings["zoomfactor"]
+  reloadbindsinp.forEach(function (selectel) {
+    if (settings[selectel.name]) {
+      selectel.value = settings[selectel.name]
+    }
+  })
+  if (settings["startupurl"] != false) {
+    startuppageinp.value = settings["startupurl"]
+  }
+}
+syncsettingsui()
+
+// EACH TOGGLEBUTTON ON CHANGE EVENT
+togglebuttons.forEach(function (tglbtn) {
+  console.log(tglbtn)
+  tglbtn.addEventListener("change", function () {
+    console.log(this.name)
+    console.log(this.checked)
+    changeSettings(this.name, this.checked)
+    if (this.name == "custombg") {
+      webview.reload()
+    }
+  })
+})
+
+// EACH BIND ACTION CHANGE EVENT
+reloadbindsinp.forEach(bindinp => {
+  bindinp.addEventListener("change", function() {
+    console.log(this.name)
+    console.log(this.value)
+    changeSettings(this.name, this.value)
+  })
+});
+
+// ZOOMFACTOR INPUT ON VALUE EVENT
+zoomfactorinp.addEventListener("change", function () {
+  if (9 < parseInt(this.value) && parseInt(this.value) < 501) {
+    changeSettings(this.name, parseInt(this.value))
+    webview.setZoomFactor(settings.zoomfactor / 100)
+  } else {
+    this.value = settings[this.name]
+  }
+})
+
+// STARTUPPAGE INPUT ON VALUE EVENT
+startuppageinp.addEventListener("change", function () {
+  console.log(this.name)
+  console.log(this.value)
+  if (this.value === "") {
+    changeSettings(this.name, false)
+  } else {
+    changeSettings(this.name, this.value)
+  }
+})

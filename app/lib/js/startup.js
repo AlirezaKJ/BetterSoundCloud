@@ -12,6 +12,7 @@ function mainWindowload() {
 }
 
 function loadstop() {
+  webview.setZoomFactor(settings.zoomfactor / 100)
   setTimeout(() => { // TODO: figure out why it have to wait 2 seconds and load after
     addscript("\\app\\plugins\\SCI.js")
     addstyle("\\app\\themes\\SCI.css")
@@ -30,7 +31,10 @@ function loadstop() {
     // addscript("\\app\\plugins\\discordRPC.js")
     
     // LOAD CUSTOMBG
-    // addscript("\\app\\plugins\\custombg.js")
+    if (settings.custombg) {
+      addscript("\\app\\plugins\\custombg.js")
+      console.log("custombg loaded")
+    }
     
     // LOAD THEME
     addstyle("\\app\\themes\\darkCloud.css")
@@ -40,7 +44,6 @@ function loadstop() {
       loadingscreen.classList.add("fadels")
     }, 500);
   }, 3000);
-  
 }
 
 webview.addEventListener('did-stop-loading', loadstop)

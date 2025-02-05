@@ -13,7 +13,11 @@ ipcRenderer.on("apppath", function (evt, message) {
 })
 
 let webview = document.querySelector("#webview");
-webview.setAttribute("src", "https://soundcloud.com/discover")
+if (settings["startupurl"] != false) {
+  webview.setAttribute("src", settings["startupurl"])
+} else {
+  webview.setAttribute("src", "https://soundcloud.com/discover")
+}
 console.log(webview);
 
 let rclickmenu = document.querySelector(".mousectx")

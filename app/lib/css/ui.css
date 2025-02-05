@@ -96,13 +96,13 @@
   align-items: center;
   justify-content: center;
   width: 70%;
-  border: solid 1px rgba(0, 0, 0, 0);
+  border: solid 2px rgba(0, 0, 0, 0);
   color: var(--200);
   transition: all 0.2s ease-in-out;
 }
 .interface .mainbar .settingitem:hover {
-  border-left: solid 1px var(--600);
-  border-right: solid 1px var(--600);
+  border-left: solid 2px var(--600);
+  border-right: solid 2px var(--600);
 }
 .interface .mainbar .settingitem > div {
   margin: 0px 10px;
@@ -110,7 +110,7 @@
 }
 .interface .mainbar .gapline {
   width: 70%;
-  height: 1px;
+  height: 2px;
   background-color: var(--600);
   /* margin: 10px 0px; */
 }
@@ -179,16 +179,19 @@
 .interface .mainbar .settingitem .manualinp select {
   appearance: none;
   text-align: center;
-  width: 120px;
-  height: 35px;
+  width: 240px;
+  height: 45px;
   background-color: var(--950);
 	color: var(--200);
 	border: solid var(--200) 2px;
   border-radius: 50px;
 	outline: none;
-}
-.interface .mainbar .settingitem .manualinp select option:hover {
-  background: red;
+  font-size: 18px;
+  transition: all 0.4s ease-in-out;
+  &:hover {
+    border: solid 2px var(--800);
+    border-radius: 8px;
+  }
 }
 .interface .mainbar .settingitem .manualinp input[type="number"] {
   text-align: center;
