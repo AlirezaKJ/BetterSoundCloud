@@ -15,6 +15,8 @@ ipcRenderer.on("apppath", function (evt, message) {
 let webview = document.querySelector("#webview");
 if (settings["startupurl"] != false) {
   webview.setAttribute("src", settings["startupurl"])
+} else if (settings["startuplastpage"]) {
+  webview.setAttribute("src", settings["lasturlvisited"])
 } else {
   webview.setAttribute("src", "https://soundcloud.com/discover")
 }
@@ -49,6 +51,11 @@ webview.addEventListener('console-message', (e) => {
       sidebtns[2].click()
     }
   }
+})
+
+webview.addEventListener('did-navigate', (e) => {
+  console.log(e)
+  console.log("salam")
 })
 
 

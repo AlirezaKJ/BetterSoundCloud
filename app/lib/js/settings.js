@@ -5,6 +5,7 @@ let settings = {
   bindf5: dbResolve("settings.bindf5", undefined),
   startupfullscreen: dbResolve("settings.startupfullscreen", false),
   startuplastpage: dbResolve("settings.startuplastpage", false),
+  lasturlvisited: dbResolve("settings.lasturlvisited", "https://soundcloud.com/discover"),
   startupurl: dbResolve("settings.startupurl", false),
   scrollerbtn: dbResolve("settings.scrollerbtn", false),
   zoomfactor: dbResolve("settings.zoomfactor", 100),
@@ -17,6 +18,7 @@ function updateLS() {
   dbSetItem("settings.bindf5", settings.bindf5)
   dbSetItem("settings.startupfullscreen", settings.startupfullscreen)
   dbSetItem("settings.startuplastpage", settings.startuplastpage)
+  dbSetItem("settings.lasturlvisited", settings.lasturlvisited)
   dbSetItem("settings.startupurl", settings.startupurl)
   dbSetItem("settings.scrollerbtn", settings.scrollerbtn)
   dbSetItem("settings.zoomfactor", settings.zoomfactor)

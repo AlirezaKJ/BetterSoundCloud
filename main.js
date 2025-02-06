@@ -89,6 +89,9 @@ ipcMain.on("appReqMaximizeApp",() => {
 		mainWindow.setFullScreen(true)
 	}
 })
+ipcMain.on("appReqFullscreenApp",() => {
+	mainWindow.setFullScreen(true)
+})
 ipcMain.on("appReqMinimizeApp",() => {
   mainWindow.minimize();
 });

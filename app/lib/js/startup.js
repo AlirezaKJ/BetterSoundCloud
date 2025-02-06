@@ -13,9 +13,14 @@ function mainWindowload() {
 
 function loadstop() {
   webview.setZoomFactor(settings.zoomfactor / 100)
+  if (settings.startupfullscreen) {
+    ipcRenderer.send("appReqFullscreenApp")
+  }
+  changeSettings("lasturlvisited", webview.getURL())
   setTimeout(() => { // TODO: figure out why it have to wait 2 seconds and load after
     addscript("\\app\\plugins\\SCI.js")
     addstyle("\\app\\themes\\SCI.css")
+
     loadingscreentxt.innerHTML = "Loaded SoundCloud Window"
     console.log("loaded");
     
