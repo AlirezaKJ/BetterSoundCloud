@@ -66,6 +66,18 @@ app.on('window-all-closed', function () {
 
 app.on('browser-window-focus', function () {
 	console.log("window focused")
+  globalShortcut.register("CommandOrControl+R", () => {
+		mainWindow.webContents.send("appReqCtrlR")
+		console.log("CtrlR is pressed");
+	});
+  globalShortcut.register("F5", () => {
+		mainWindow.webContents.send("appReqF5")
+		console.log("F5 is pressed");
+	});
+  globalShortcut.register("Esc", () => {
+		mainWindow.webContents.send("appReqEsc")
+		console.log("Esc is pressed");
+	});
   globalShortcut.register("MediaPlayPause", () => {
 		mainWindow.webContents.send("appReqMediaPlayPause")
 		console.log("MediaPlayPause is pressed");
@@ -78,6 +90,13 @@ app.on('browser-window-focus', function () {
 		mainWindow.webContents.send("appReqMediaPreviousTrack")
 		console.log("MediaPreviousTrack is pressed");
 	});
+});
+
+app.on('browser-window-blur', function () {
+	console.log("window blurred")
+	globalShortcut.unregister('CommandOrControl+R');
+	globalShortcut.unregister('F5');
+	globalShortcut.unregister('Esc');
 });
 
 
@@ -96,5 +115,9 @@ ipcMain.on("appReqMinimizeApp",() => {
   mainWindow.minimize();
 });
 ipcMain.on("appReqCloseApp",() => {
+  app.quit();
+});
+ipcMain.on("appReqReloadApp",() => {
+  app.relaunch();
   app.quit();
 });

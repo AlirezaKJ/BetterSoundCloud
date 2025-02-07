@@ -95,3 +95,25 @@ ipcRenderer.on("appReqMediaPreviousTrack", function (evt, message) {
   addscript(`previoussongbtn.click()`)
   console.log("MediaPreviousTrack is pressed");
 })
+
+// Handle Custom Keyboard keys functionality
+ipcRenderer.on("appReqCtrlR", function (evt, message) {
+  if (settings["bindctrlr"] == "reloadview") {
+    webview.reload()
+  } else if (settings["bindctrlr"] == "reloadapp") {
+    ipcRenderer.send("appReqReloadApp")
+  } else {
+    console.log("unbind cntrl r");
+  }
+  console.log("CtrlR is pressed");
+})
+ipcRenderer.on("appReqF5", function (evt, message) {
+  if (settings["bindf5"] == "reloadview") {
+    webview.reload()
+  } else if (settings["bindf5"] == "reloadapp") {
+    ipcRenderer.send("appReqReloadApp")
+  } else {
+    console.log("unbind f5");
+  }
+  console.log("F5 is pressed");
+})
