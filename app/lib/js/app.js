@@ -1,119 +1,138 @@
-const { log } = require('console');
-const { ipcRenderer } = require('electron')
-const fs = require('fs')
-const packagefile = require("../package.json")
-// const packagefile = require("../package.json")
-
-
+const { log } = require("console");
+const { ipcRenderer } = require("electron");
+const fs = require("fs");
+const packagefile = require("../package.json");
+const scdl = require("soundcloud-downloader").default;
+// const CLIENT_ID = 'YHtBnq6bxM7DhJkIfzrGq3gYrueyLDMM'
 
 let appdirectory;
 ipcRenderer.on("apppath", function (evt, message) {
-  console.log(message)
-  appdirectory = message
-})
+  console.log(message);
+  appdirectory = message;
+});
 
 let webview = document.querySelector("#webview");
 if (settings["startupurl"] != false) {
-  webview.setAttribute("src", settings["startupurl"])
+  webview.setAttribute("src", settings["startupurl"]);
 } else if (settings["startuplastpage"]) {
-  webview.setAttribute("src", settings["lasturlvisited"])
+  webview.setAttribute("src", settings["lasturlvisited"]);
 } else {
-  webview.setAttribute("src", "https://soundcloud.com/discover")
+  webview.setAttribute("src", "https://soundcloud.com/discover");
 }
 console.log(webview);
 
-let rclickmenu = document.querySelector(".mousectx")
-let interfaceel = document.querySelector(".interface")
-
-
+let rclickmenu = document.querySelector(".mousectx");
+let interfaceel = document.querySelector(".interface");
 
 // ! READ CONSOLE MESSAGES
 // USED AS A CHANNEL FOR COMMUNICATION BETWEEN WEBVIEW AND RENDERER
-webview.addEventListener('console-message', (e) => {
-  console.log(e.message)
+webview.addEventListener("console-message", (e) => {
+  console.log(e.message);
   if (e.message == "BSCReceive|MouseClicked") {
-    rclickmenu.classList.add("fademctx")
+    rclickmenu.classList.add("fademctx");
   } else if (e.message == "BSCReceive|UISettingMaximizeApp") {
-    console.log("sendmaximize req")
-    ipcRenderer.send("appReqMaximizeApp")
+    console.log("sendmaximize req");
+    ipcRenderer.send("appReqMaximizeApp");
   } else if (e.message == "BSCReceive|UISettingMinimizeApp") {
-    console.log("sendminimize req")
-    ipcRenderer.send("appReqMinimizeApp")
+    console.log("sendminimize req");
+    ipcRenderer.send("appReqMinimizeApp");
   } else if (e.message == "BSCReceive|UISettingCloseApp") {
-    console.log("sendclose req")
-    ipcRenderer.send("appReqCloseApp")
-  } else if (e.message.split("|")[1] == ("UISettingShowRequest")) {
-    opensettings()
-    sidebtns = document.querySelectorAll(".interface .sidebar .side-btn")
+    console.log("sendclose req");
+    ipcRenderer.send("appReqCloseApp");
+  } else if (e.message.split("|")[1] == "UISettingShowRequest") {
+    opensettings();
+    sidebtns = document.querySelectorAll(".interface .sidebar .side-btn");
     if (e.message.split("|")[2] == "1") {
-      sidebtns[0].click()
+      sidebtns[0].click();
     } else if (e.message.split("|")[2] == "2") {
-      sidebtns[2].click()
+      sidebtns[2].click();
     }
   }
-})
+});
 
-webview.addEventListener('did-navigate', (e) => {
-  console.log(e)
-  console.log("salam")
-})
-
+webview.addEventListener("did-navigate", (e) => {
+  console.log(e);
+  console.log("salam");
+});
 
 // READ FILES
 function readfile(src) {
-  data = fs.readFileSync(src, 'utf8');
-  loadingscreentxt.innerHTML = "Readed File: " + src
-  return data
+  data = fs.readFileSync(src, "utf8");
+  loadingscreentxt.innerHTML = "Readed File: " + src;
+  return data;
 }
 
 // FOR LOADING PLUGINS
 function addscript(src) {
-  let code = readfile(appdirectory + src)
-  loadingscreentxt.innerHTML = "Added Script: " + src
-  webview.executeJavaScript(code)
+  let code = readfile(appdirectory + src);
+  loadingscreentxt.innerHTML = "Added Script: " + src;
+  webview.executeJavaScript(code);
 }
 // FOR LOADING THEMES
 function addstyle(src) {
-  var code = readfile(appdirectory + src)
-  loadingscreentxt.innerHTML = "Added Style: " + src
-  webview.insertCSS(code)
+  var code = readfile(appdirectory + src);
+  loadingscreentxt.innerHTML = "Added Style: " + src;
+  webview.insertCSS(code);
 }
 
-
+function scdownloaderbtnreq() {
+  var downloadurl = document.querySelector("#downloadurl").value;
+  console.log(appdirectory);
+  console.log(downloadurl);
+  songtitle = "audio";
+  // Create Downloads folder if it doesn't exist
+  if (!fs.existsSync(`${appdirectory}/Downloads`)) {
+    fs.mkdirSync(`${appdirectory}/Downloads`);
+  }
+  let tooltip = document.querySelector("#downloaderstatusspan");
+  scdl.getInfo(downloadurl).then((info) => {
+    songtitle = info.title;
+    console.log(songtitle);
+    tooltip.innerHTML = "Started Downloading " + songtitle;
+    scdl.download(downloadurl).then((stream) => {
+      stream.pipe(
+        fs.createWriteStream(`${appdirectory}/Downloads/${songtitle}.mp3`)
+      );
+      tooltip.innerHTML = `Saved to ${appdirectory}/Downloads/${songtitle}.mp3`;
+      // ipcRenderer.send("appDownloaderFinish");
+    });
+  });
+}
 
 
 // Handle Custom Media keys functionality
 ipcRenderer.on("appReqMediaPlayPause", function (evt, message) {
-  addscript(`playpausebtn.click()`)
+  addscript(`playpausebtn.click()`);
   console.log("MediaPlayPause is pressed");
-})
+});
 ipcRenderer.on("appReqMediaNextTrack", function (evt, message) {
-  addscript(`nextsongbtn.click()`)
+  addscript(`nextsongbtn.click()`);
   console.log("MediaNextTrack is pressed");
-})
+});
 ipcRenderer.on("appReqMediaPreviousTrack", function (evt, message) {
-  addscript(`previoussongbtn.click()`)
+  addscript(`previoussongbtn.click()`);
   console.log("MediaPreviousTrack is pressed");
-})
+});
 
 // Handle Custom Keyboard keys functionality
 ipcRenderer.on("appReqCtrlR", function (evt, message) {
   if (settings["bindctrlr"] == "reloadview") {
-    webview.reload()
+    webview.reload();
   } else if (settings["bindctrlr"] == "reloadapp") {
-    ipcRenderer.send("appReqReloadApp")
+    ipcRenderer.send("appReqReloadApp");
   } else {
     console.log("unbind cntrl r");
   }
   console.log("CtrlR is pressed");
-})
+});
+
 ipcRenderer.on("appReqF5", function (evt, message) {
   if (settings["bindf5"] == "reloadview") {
-    webview.reload()
+    webview.reload();
   } else if (settings["bindf5"] == "reloadapp") {
-    ipcRenderer.send("appReqReloadApp")
+    ipcRenderer.send("appReqReloadApp");
   } else {
     console.log("unbind f5");
   }
   console.log("F5 is pressed");
-})
+});

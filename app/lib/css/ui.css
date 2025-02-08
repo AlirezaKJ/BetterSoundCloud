@@ -225,3 +225,46 @@
     color: var(--600);
   }
 }
+
+.interface .mainbar .bigsettingitem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 70%;
+}
+.interface .mainbar .bigsettingitem #downloadurl {
+  width: calc(98% - 120px);
+  height: 45px;
+  font-size: 20px;
+  font-weight: 700;
+  background-color: rgba(0, 0, 0, 0);
+  color: var(--200);
+  border-bottom: solid 2px var(--200);
+  transition: all 0.4s ease-in-out;
+  &:focus {
+    border-bottom: solid 2px var(--600);
+    color: var(--600);
+  }
+}
+.interface .mainbar .bigsettingitem #downloadbtn {
+  cursor: pointer;
+  width: 120px;
+  height: 45px;
+  font-size: 18px;
+  font-weight: 500;
+  background-color: var(--950);
+	color: var(--200);
+	border: solid var(--200) 2px;
+  border-radius: 50px;
+  transition: all 0.4s ease-in-out;
+  &:hover {
+    border: solid 2px var(--800);
+    border-radius: 8px;
+  }
+}
+.interface .mainbar #downloaderstatusspan {
+  margin: 30px 0;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--200);
+}
