@@ -114,10 +114,7 @@ syncsettingsui()
 
 // EACH TOGGLEBUTTON ON CHANGE EVENT
 togglebuttons.forEach(function (tglbtn) {
-  console.log(tglbtn)
   tglbtn.addEventListener("change", function () {
-    console.log(this.name)
-    console.log(this.checked)
     changeSettings(this.name, this.checked)
     if (this.name == "custombg") {
       webview.reload()
@@ -128,8 +125,6 @@ togglebuttons.forEach(function (tglbtn) {
 // EACH BIND ACTION CHANGE EVENT
 reloadbindsinp.forEach(bindinp => {
   bindinp.addEventListener("change", function() {
-    console.log(this.name)
-    console.log(this.value)
     changeSettings(this.name, this.value)
   })
 });
@@ -146,8 +141,6 @@ zoomfactorinp.addEventListener("change", function () {
 
 // STARTUPPAGE INPUT ON VALUE EVENT
 startuppageinp.addEventListener("change", function () {
-  console.log(this.name)
-  console.log(this.value)
   if (this.value === "") {
     changeSettings(this.name, false)
   } else {

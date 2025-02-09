@@ -3,7 +3,7 @@
 // }, 100);
 
 let loadingscreen = document.querySelector("#loadingscreen")
-let loadingscreenver = document.querySelector("#loadingscreenver")
+let loadingscreenver = document.querySelector(".loadingscreenver")
 loadingscreenver.innerHTML =  "V" + packagefile.version
 let loadingscreentxt = document.querySelector("#loadingscreentxt")
 loadingscreentxt.innerHTML = "Loading Main Window"

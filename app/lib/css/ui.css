@@ -323,3 +323,62 @@
   width: 100%;
   margin: 20px 0px;
 }
+.interface .mainbar #changenote {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  flex-direction: column;
+  width: 70%;
+}
+.interface .mainbar #changenote hr {
+  background: var(--400);
+  outline: none;
+  border: none;
+  border: solid 1px var(--400);
+  height: 0px;
+  width: 100% ;
+}
+.interface .mainbar #changenote > a {
+  padding: 20px;
+  width: 100%;
+  color: var(--50);
+  text-decoration: none;
+  font-size: 18px;
+  font-weight: 500;
+  transition: all 0.4s ease-in-out;
+  border-left: solid 2px rgba(0, 0, 0, 0);
+  border-right: solid 2px rgba(0, 0, 0, 0);
+  &:hover {
+    background: var(--rgba2);
+    border-left: solid 2px var(--400);
+    border-right: solid 2px var(--400);
+  }
+}
+.interface .mainbar #changenote a > .note {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  flex-direction: column;
+}
+.interface .mainbar #changenote a > .note > h3 {
+  font-size: 28px;
+  color: var(--400);
+  margin: 20px 15px;
+}
+.interface .mainbar #changenote a > .note > p {
+  font-size: 20px;
+  margin: 5px 0px;
+}
+.interface .mainbar #changenote a > .note > p > a {
+  color: var(--200);
+  font-weight: 700;
+  transition: all 0.4s ease-in-out;
+  &:hover {
+    color: var(--400);
+  }
+}
+.interface .mainbar #changenote a > .note > .date {
+  margin: 20px 15px;
+  font-size: 24px;
+  color: var(--200);
+}

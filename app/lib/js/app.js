@@ -4,6 +4,8 @@ const fs = require("fs");
 const packagefile = require("../package.json");
 const scdl = require("soundcloud-downloader").default;
 // const CLIENT_ID = 'YHtBnq6bxM7DhJkIfzrGq3gYrueyLDMM'
+clientVersion = packagefile.version
+console.log(clientVersion)
 
 let appdirectory;
 ipcRenderer.on("apppath", function (evt, message) {
