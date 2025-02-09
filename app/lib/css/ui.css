@@ -22,7 +22,7 @@
 }
 
 .interface .sidebar {
-  width: 20%;
+  width: 15%;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -67,7 +67,7 @@
 
 
 .interface .mainbar {
-  width: 80%;
+  width: 85%;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -267,4 +267,59 @@
   font-size: 18px;
   font-weight: 500;
   color: var(--200);
+}
+.interface .mainbar .selectthemes {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 90%;
+}
+.interface .mainbar .selectthemes .themeitem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  width: 22.5%;
+  padding: 0px 20px;
+  border: solid 2px rgba(0, 0, 0, 0);
+  transition: all 0.4s ease-in-out;
+  border-radius: 10px;
+  &:hover {
+    cursor: pointer;
+    background: var(--rgba2);
+    border: solid 2px var(--200);
+  }
+  &.active {
+    background: var(--rgba);
+    border: solid 2px var(--600);
+  }
+  &.active h4 {
+    color: var(--950);
+  }
+  &.active h5 {
+    color: var(--800);
+  }
+}
+.interface .mainbar .selectthemes .themeitem .themeinfo {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  margin: 40px 0px 60px 0px;
+}
+.interface .mainbar .selectthemes .themeitem h4 {
+  display: inline-block;
+  font-size: 24px;
+  color: var(--50);
+  margin: 0;
+}
+.interface .mainbar .selectthemes .themeitem h5 {
+  display: inline-block;
+  font-size: 18px;
+  color: var(--200);
+}
+.interface .mainbar .selectthemes .themeitem img {
+  width: 100%;
+  margin: 20px 0px;
 }

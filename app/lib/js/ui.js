@@ -79,6 +79,7 @@ let togglebuttons = document.querySelectorAll(".mainbar .settingitem .toggle inp
 let zoomfactorinp = document.querySelector(".mainbar .settingitem .manualinp input[name='zoomfactor']")
 let reloadbindsinp = document.querySelectorAll(".mainbar .settingitem .manualinp select")
 let startuppageinp = document.querySelector(".mainbar .settingitem .manualinp input[type='url']")
+let themeitemsdiv = document.querySelectorAll(".mainbar .selectthemes .themeitem")
 function syncsettingsui() {
   togglebuttons.forEach(function(tglbtn) {
     if (settings[tglbtn.name]) {
@@ -93,6 +94,20 @@ function syncsettingsui() {
   })
   if (settings["startupurl"] != false) {
     startuppageinp.value = settings["startupurl"]
+  }
+  switch (settings.theme) {
+    case "darkcloud":
+      themeitemsdiv[1].classList.add("active")
+      break;
+    case "nocturnal":
+      themeitemsdiv[2].classList.add("active")
+      break;
+    case "postmorphic":
+      themeitemsdiv[3].classList.add("active")
+      break;
+    default:
+      themeitemsdiv[0].classList.add("active")
+      break;
   }
 }
 syncsettingsui()
@@ -139,3 +154,26 @@ startuppageinp.addEventListener("change", function () {
     changeSettings(this.name, this.value)
   }
 })
+
+// SELECT THEME IN SETTINGS PAGE
+function selecttheme(index) {
+  switch (index) {
+    case 0:
+      changeSettings("theme", "vanilla")
+      break;
+    case 1:
+      changeSettings("theme", "darkcloud")
+      break;
+    case 2:
+      changeSettings("theme", "nocturnal")
+      break;
+    case 3:
+      changeSettings("theme", "postmorphic")
+      break;
+  }
+  themeitemsdiv.forEach(function (themeitem) {
+    themeitem.classList.remove("active")
+  })
+  themeitemsdiv[index].classList.add("active")
+  webview.reload()
+}

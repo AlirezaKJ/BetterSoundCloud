@@ -42,7 +42,20 @@ function loadstop() {
     }
     
     // LOAD THEME
-    addstyle("\\app\\themes\\darkCloud.css")
+    switch (settings.theme) {
+      case "darkcloud":
+        addstyle("\\app\\themes\\darkCloud.css")
+        break;
+      case "nocturnal":
+        addstyle("\\app\\themes\\nocturnal.css")
+        break;
+      case "postmorphic":
+        addstyle("\\app\\themes\\postMorphic.css")
+        break;
+      default:
+        console.log("No theme selected")
+        break;
+    }
 
     loadingscreentxt.innerHTML = "Loading Finished"
     setTimeout(() => {

@@ -9,6 +9,7 @@ let settings = {
   startupurl: dbResolve("settings.startupurl", false),
   scrollerbtn: dbResolve("settings.scrollerbtn", false),
   zoomfactor: dbResolve("settings.zoomfactor", 100),
+  theme: dbResolve("settings.theme", "darkcloud"),
 }
 
 function updateLS() {
@@ -22,6 +23,7 @@ function updateLS() {
   dbSetItem("settings.startupurl", settings.startupurl)
   dbSetItem("settings.scrollerbtn", settings.scrollerbtn)
   dbSetItem("settings.zoomfactor", settings.zoomfactor)
+  dbSetItem("settings.theme", settings.theme)
 }
 
 function changeSettings(name, value) {
