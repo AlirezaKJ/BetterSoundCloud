@@ -323,6 +323,44 @@
   width: 100%;
   margin: 20px 0px;
 }
+
+.interface .mainbar #customjsbox {
+  width: 80%;
+  height: 900px;
+  font-size: 18px;
+}
+.interface .mainbar #customcssbox {
+  width: 80%;
+  height: 900px;
+  font-size: 18px;
+}
+.interface .mainbar .btnsbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80%;
+  height: 60px;
+  margin: 20px 0px;
+  gap: 20px;
+}
+.interface .mainbar .btnsbar button {
+  cursor: pointer;
+  outline: none;
+  background: var(--950);
+  color: var(--200);
+  font-size: 20px;
+  font-weight: 800;
+  transition: all 0.4s ease-in-out;
+  padding: 20px 16px;
+  border: solid 2px var(--200);
+  border-radius: 50px;
+  &:hover {
+    border: solid 2px var(--800);
+    border-radius: 10px;
+  }
+}
+
+
 .interface .mainbar #changenote {
   display: flex;
   align-items: flex-start;

@@ -80,21 +80,54 @@ let zoomfactorinp = document.querySelector(".mainbar .settingitem .manualinp inp
 let reloadbindsinp = document.querySelectorAll(".mainbar .settingitem .manualinp select")
 let startuppageinp = document.querySelector(".mainbar .settingitem .manualinp input[type='url']")
 let themeitemsdiv = document.querySelectorAll(".mainbar .selectthemes .themeitem")
+// Custom CSS and JS editors handling 
+let customcssbox = document.querySelector("#customcssbox")
+let customjsbox = document.querySelector("#customjsbox")
+
+let customcsseditor = ace.edit("customcssbox");
+let customcssvalue = settings.customcss
+if (customcssvalue == undefined) {customcssvalue = "/* Make sure to use !important if your style doesn't applied */\n/* Dont do anything if you dont know anything ;) */"}
+customcsseditor.setTheme("ace/theme/monokai");
+customcsseditor.session.setMode("ace/mode/css");
+customcsseditor.setValue(customcssvalue, 1)
+customcsseditor.setOptions({
+    enableBasicAutocompletion: true,
+    enableSnippets: true,
+    enableLiveAutocompletion: true,
+});
+
+let customjseditor = ace.edit("customjsbox");
+let customjsvalue = settings.customjs
+if (customjsvalue == undefined) {customjsvalue = "// Dont do anything if you dont know anything ;)"}
+customjseditor.setTheme("ace/theme/monokai");
+customjseditor.session.setMode("ace/mode/javascript");
+customjseditor.setValue(customjsvalue, 1)
+customjseditor.setOptions({
+    enableBasicAutocompletion: true,
+    enableSnippets: true,
+    enableLiveAutocompletion: true,
+});
+
+
 function syncsettingsui() {
   togglebuttons.forEach(function(tglbtn) {
     if (settings[tglbtn.name]) {
       tglbtn.click();
     }
   })
+  
   zoomfactorinp.value = settings["zoomfactor"]
+  
   reloadbindsinp.forEach(function (selectel) {
     if (settings[selectel.name]) {
       selectel.value = settings[selectel.name]
     }
   })
+
   if (settings["startupurl"] != false) {
     startuppageinp.value = settings["startupurl"]
   }
+
   switch (settings.theme) {
     case "darkcloud":
       themeitemsdiv[1].classList.add("active")
@@ -108,6 +141,13 @@ function syncsettingsui() {
     default:
       themeitemsdiv[0].classList.add("active")
       break;
+  }
+
+  if (settings.customcss != undefined) {
+    customcsseditor.setValue(settings.customcss)
+  }
+  if (settings.customjs != undefined) {
+    customjseditor.setValue(settings.customjs)
   }
 }
 syncsettingsui()
@@ -168,5 +208,18 @@ function selecttheme(index) {
     themeitem.classList.remove("active")
   })
   themeitemsdiv[index].classList.add("active")
+  webview.reload()
+}
+
+// HANDLE CUSTOM CSS AND JS SAVE BUTTON
+function applyCustomCSS() {
+  var customcss = customcsseditor.getValue()
+  changeSettings("customcss", customcss)
+  webview.reload()
+}
+
+function applyCustomJS() {
+  var customjs = customjseditor.getValue()
+  changeSettings("customjs",customjs)
   webview.reload()
 }

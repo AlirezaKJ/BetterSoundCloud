@@ -3,6 +3,11 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.16.0/ace.min.js" integrity="sha512-4T3GMbqlA/8FAPZRSo/JbV6RNL4s/XkV86vNHzuHPHPeqKJWbV3Sp5KicgK3NwB+bd4KOm1Q6c7O3RNV2o6RPg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.16.0/mode-javascript.min.js" integrity="sha512-4pSr5XJEo9PorZpo7xa7DrbEWKN5Pu4atm/tmMXTRJtepTeKo+sNzlfqkDwPlPx+hpSM4yz4fJEacTiaPazeoA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.16.0/mode-css.min.js" integrity="sha512-q2Qu7dOhudjAQ8wvsLOsZ1NyUhOPAeGL/jzO1f45NMFGSv9F6sgDyzWa00LCVBWg/p84nGM/NHOX4bO1ctbkKg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.16.0/theme-monokai.min.js" integrity="sha512-8rSB/wU3KoN3rr1VHwPP4dfpbU063BvH6qzwt0oe9E2ThEchzd8MmJylVPxZ5kLvxsShgtWvc9AtIlS7rmPunA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
 	<link rel="stylesheet" href="lib/css/main.css">
 	<link rel="stylesheet" href="lib/css/ui.css">
 	<script src="lib/js/LSDB.js"></script>
@@ -242,7 +247,7 @@
 					<div class="themeitem" onclick="selecttheme(1)">
 						<div class="themeinfo">
 							<h4 class="themename">Darkcloud</h4>
-							<h5 class="themeauthor">by Akbar</h4>
+							<h5 class="themeauthor">by Khorsei</h4>
 						</div>
 						<div class="themesnapshot">
 							<img src="lib/assets/inapp/themessnaps/darkcloud.png" alt="vannila">
@@ -268,14 +273,24 @@
 					</div>
 				</div>
 			</section>
-			<h4 id="customjs">Custom JS</h4>
-			<section>
 
-			</section>
 			<h4 id="customcss">Custom CSS</h4>
 			<section>
-
+				<div id="customcssbox"></div>
+				<div class="btnsbar">
+					<button onclick="webview.openDevTools()">Open Devtools</button>
+					<button onclick="applyCustomCSS()">Save</button>
+				</div>
 			</section>
+			<h4 id="customjs">Custom JS</h4>
+			<section>
+				<div id="customjsbox"></div>
+				<div class="btnsbar">
+					<button onclick="webview.openDevTools()">Open Devtools</button>
+					<button onclick="applyCustomJS()">Save</button>
+				</div>
+			</section>
+
 			<h4 id="support">Support</h4>
 			<section>
 

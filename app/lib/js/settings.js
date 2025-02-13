@@ -1,4 +1,6 @@
 let settings = {
+  customcss: dbResolve("settings.customcss", undefined),
+  customjs: dbResolve("settings.customjs", undefined),
   custombg: dbResolve("settings.custombg", true),
   discordrpc:dbResolve("settings.discordrpc", true),
   bindctrlr: dbResolve("settings.bindctrlr", "reloadview"),
@@ -13,6 +15,8 @@ let settings = {
 }
 
 function updateLS() {
+  dbSetItem("settings.customcss", settings.customcss)
+  dbSetItem("settings.customjs", settings.customjs)
   dbSetItem("settings.custombg", settings.custombg)
   dbSetItem("settings.discordrpc", settings.discordrpc)
   dbSetItem("settings.bindctrlr", settings.bindctrlr)

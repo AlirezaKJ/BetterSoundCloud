@@ -52,10 +52,6 @@ webview.addEventListener("console-message", (e) => {
   }
 });
 
-webview.addEventListener("did-navigate", (e) => {
-  console.log(e);
-  console.log("salam");
-});
 
 // READ FILES
 function readfile(src) {

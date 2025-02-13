@@ -1,7 +1,3 @@
-// setTimeout(() => {
-//   webview.loadURL("https://soundcloud.com/discover");
-// }, 100);
-
 let loadingscreen = document.querySelector("#loadingscreen")
 let loadingscreenver = document.querySelector(".loadingscreenver")
 loadingscreenver.innerHTML =  "V" + packagefile.version
@@ -25,9 +21,6 @@ function loadstop() {
     console.log("loaded");
     
     // LOAD SCI SET
-    
-
-
     
     // LOAD RIGHTCLICK MENU ESSENTIALS
     addscript("\\app\\plugins\\ctxMenu.js")
@@ -55,6 +48,16 @@ function loadstop() {
       default:
         console.log("No theme selected")
         break;
+    }
+
+    // LOAD CUSTOM CSS AND JS
+    if (settings.customcss != undefined) {
+      webview.insertCSS(settings.customcss);
+      loadingscreentxt.innerHTML = "Added Custom CSS";
+    }
+    if (settings.customjs != undefined) {
+      webview.executeJavaScript(settings.customjs);
+      loadingscreentxt.innerHTML = "Added Custom JS";
     }
 
     loadingscreentxt.innerHTML = "Loading Finished"
