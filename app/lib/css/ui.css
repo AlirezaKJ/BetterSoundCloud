@@ -353,7 +353,7 @@
   transition: all 0.4s ease-in-out;
   padding: 20px 16px;
   border: solid 2px var(--200);
-  border-radius: 50px;
+  border-radius: 20px;
   &:hover {
     border: solid 2px var(--800);
     border-radius: 10px;
