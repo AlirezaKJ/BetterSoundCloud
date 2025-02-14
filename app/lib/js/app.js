@@ -26,6 +26,19 @@ console.log(webview);
 let rclickmenu = document.querySelector(".mousectx");
 let interfaceel = document.querySelector(".interface");
 
+
+// CURSONGINFO
+let cursonginfo = {
+  songtitle: "",
+  songartist: "",
+  songcover: "",
+  songurl: "",
+  songliked: false,
+  songduration: "",
+  songcurrentdur: "",
+  songstate: "",
+}
+
 // ! READ CONSOLE MESSAGES
 // USED AS A CHANNEL FOR COMMUNICATION BETWEEN WEBVIEW AND RENDERER
 webview.addEventListener("console-message", (e) => {
@@ -49,6 +62,28 @@ webview.addEventListener("console-message", (e) => {
     } else if (e.message.split("|")[2] == "2") {
       sidebtns[2].click();
     }
+  } else if (e.message.split("|")[1] == "Paused") {
+    cursonginfo.songstate = "paused"
+  } else if (e.message.split("|")[1] == "Playing") {
+    cursonginfo.songstate = "playing"
+  } else if (e.message.split("|")[1] == "CurrentDur") {
+    cursonginfo.songcurrentdur = e.message.split("|")[2]
+  } else if (e.message.split("|")[1] == "EndDur") {
+    cursonginfo.songduration = e.message.split("|")[2]
+  } else if (e.message.split("|")[1] == "CurSongTitle") {
+    cursonginfo.songtitle = e.message.split("|")[2]
+  } else if (e.message.split("|")[1] == "CurSongArtist") {
+    cursonginfo.songartist = e.message.split("|")[2]
+  } else if (e.message.split("|")[1] == "CurSongLiked") {
+    if (e.message.split("|")[2] == "true") {
+      cursonginfo.songliked = true
+    } else {
+      cursonginfo.songliked = false
+    }
+  } else if (e.message.split("|")[1] == "CurSongCoverUrl") {
+    cursonginfo.songcover = e.message.split("|")[2]
+  } else if (e.message.split("|")[1] == "CurSongUrl") {
+    cursonginfo.songurl = "https://soundcloud.com/" + e.message.split("|")[2]
   }
 });
 

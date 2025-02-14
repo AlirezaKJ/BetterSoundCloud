@@ -25,8 +25,8 @@ function loadstop() {
     // LOAD RIGHTCLICK MENU ESSENTIALS
     addscript("\\app\\plugins\\ctxMenu.js")
     
-    // LOAD DISCORD RPC
-    // addscript("\\app\\plugins\\discordRPC.js")
+    // LOAD INFO TICKER
+    addscript("\\app\\plugins\\infoticker.js")
     
     // LOAD CUSTOMBG
     if (settings.custombg) {
