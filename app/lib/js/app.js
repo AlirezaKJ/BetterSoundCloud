@@ -100,15 +100,15 @@ function scdownloaderbtnreq() {
 
 // Handle Custom Media keys functionality
 ipcRenderer.on("appReqMediaPlayPause", function (evt, message) {
-  addscript(`playpausebtn.click()`);
+  webview.executeJavaScript(`playpausebtn.click()`);
   console.log("MediaPlayPause is pressed");
 });
 ipcRenderer.on("appReqMediaNextTrack", function (evt, message) {
-  addscript(`nextsongbtn.click()`);
+  webview.executeJavaScript(`nextsongbtn.click()`);
   console.log("MediaNextTrack is pressed");
 });
 ipcRenderer.on("appReqMediaPreviousTrack", function (evt, message) {
-  addscript(`previoussongbtn.click()`);
+  webview.executeJavaScript(`previoussongbtn.click()`);
   console.log("MediaPreviousTrack is pressed");
 });
 
