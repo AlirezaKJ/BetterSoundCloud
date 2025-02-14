@@ -66,14 +66,14 @@ app.on('window-all-closed', function () {
 
 app.on('browser-window-focus', function () {
 	console.log("window focused")
-  globalShortcut.register("CommandOrControl+R", () => {
-		mainWindow.webContents.send("appReqCtrlR")
-		console.log("CtrlR is pressed");
-	});
-  globalShortcut.register("F5", () => {
-		mainWindow.webContents.send("appReqF5")
-		console.log("F5 is pressed");
-	});
+  // globalShortcut.register("CommandOrControl+R", () => {
+	// 	mainWindow.webContents.send("appReqCtrlR")
+	// 	console.log("CtrlR is pressed");
+	// });
+  // globalShortcut.register("F5", () => {
+	// 	mainWindow.webContents.send("appReqF5")
+	// 	console.log("F5 is pressed");
+	// });
   globalShortcut.register("Esc", () => {
 		mainWindow.webContents.send("appReqEsc")
 		console.log("Esc is pressed");
