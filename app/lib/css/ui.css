@@ -351,12 +351,66 @@
   font-size: 20px;
   font-weight: 800;
   transition: all 0.4s ease-in-out;
-  padding: 20px 16px;
+  padding: 16px 14px;
   border: solid 2px var(--200);
   border-radius: 20px;
   &:hover {
     border: solid 2px var(--800);
     border-radius: 10px;
+  }
+}
+
+.interface .mainbar .supportsection {
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  width: 80%;
+  height: 500px;
+  margin: 20px 0px;
+}
+
+.interface .mainbar .supportsection .description {
+  display: flex;
+  align-items: center;
+  align-self: flex-start;
+  justify-content: center;
+  flex-direction: column;
+  height: 100%;
+  & p {
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--50);
+    margin: 20px 0px;
+  }
+  
+}
+.interface .mainbar .supportsection .linkicons {
+  display: flex;
+  align-items: center;
+  align-self: flex-end;
+  justify-content: center;
+  flex-direction: column;
+  height: 100%;
+  min-width: 150px;
+  gap: 40px;
+}
+.interface .mainbar .supportsection .linkicons .icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 60px;
+  transition: all 0.4s ease-in-out;
+  & svg {
+    transition: all 0.4s ease-in-out;
+    fill: var(--50);
+    height: 100%;
+  }
+  &:hover {
+    scale: 1.1;
+  }
+  &:hover svg {
+    fill: var(--200);
   }
 }
 
