@@ -3,9 +3,10 @@ const { ipcRenderer } = require("electron");
 const fs = require("fs");
 const packagefile = require("../package.json");
 const scdl = require("soundcloud-downloader").default;
-// const CLIENT_ID = 'YHtBnq6bxM7DhJkIfzrGq3gYrueyLDMM'
-clientVersion = packagefile.version
-console.log(clientVersion)
+const https = require('https');
+
+
+clientVersion = packagefile.version 
 
 let appdirectory;
 ipcRenderer.on("apppath", function (evt, message) {
@@ -84,9 +85,69 @@ webview.addEventListener("console-message", (e) => {
     cursonginfo.songcover = e.message.split("|")[2]
   } else if (e.message.split("|")[1] == "CurSongUrl") {
     cursonginfo.songurl = "https://soundcloud.com/" + e.message.split("|")[2]
+  } else if (e.message.split("|")[1] == "UIActivateLyricShowCase") {
+    updatelyricshowcase()
   }
 });
 
+
+let lyricshowcase = document.querySelector("#lyricshowcase")
+let lyriccoldiv = document.querySelector("#lyricshowcase .lyriccol")
+function updatelyricshowcase() {
+  var songname;
+  var songartist;
+  if (cursonginfo.songtitle.split("-").length == 2) {
+    songname = cursonginfo.songtitle.split("-")[1]
+    songartist = cursonginfo.songtitle.split("-")[0]
+  } else {
+    songname = cursonginfo.songtitle
+    songartist = cursonginfo.songartist
+  }
+  lyriccoldiv.innerHTML = `<div class="searchline">SEARCHING FOR ${songname} - ${songartist} THROUGH LRCLIB</div>`;
+
+
+  var url = `https://lrclib.net/api/get?artist_name=${songartist}&track_name=${songname}`
+  
+  https.get(url, function (response) {
+    var buffer = ""; 
+    var data;
+    var lyrics = "";
+
+    response.on("data", function (chunk) {
+        buffer += chunk;
+    }); 
+    response.on("end", function (err) {
+      console.log(buffer);
+      console.log("\n");
+      data = JSON.parse(buffer);
+      console.log(data);
+      if (data.syncedLyrics) { // TODO: USE THE SYNCED LYRICS TIMESTAMP TO HIGHLIGHT SPECIFIC LINE
+        console.log(data.syncedLyrics);
+        lyrics = data.syncedLyrics;
+        lyriccoldiv.innerHTML = ``;
+        lyrics.split("\n").forEach(line => {
+          lyriccoldiv.innerHTML += `<div class="lyricline">${line}</div>`;
+        });
+      } else if (data.plainLyrics) {
+        lyrics = data.plainLyrics;
+        lyriccoldiv.innerHTML = ``;
+        lyrics.split("\n").forEach(line => {
+          lyriccoldiv.innerHTML += `<div class="lyricline">${line}</div>`;
+        });
+      } else {
+        console.log("no lyrics found", err);
+        lyriccoldiv.innerHTML += `<div class="searchline">DIDN'T FIND ANY LYRICS FOR ${songname} - ${songartist}</div>`;
+      }
+      
+    })
+  })
+
+  lyricshowcase.classList.remove("fadelyricshowcase")
+}
+
+function lyricshowcasecls() {
+  lyricshowcase.classList.add("fadelyricshowcase")
+}
 
 // READ FILES
 function readfile(src) {
