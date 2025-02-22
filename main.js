@@ -104,8 +104,10 @@ app.on('browser-window-blur', function () {
 ipcMain.on("appReqMaximizeApp",() => {
   if (mainWindow.isFullScreen()) {
 		mainWindow.setFullScreen(false)
+    mainWindow.webContents.send("fixviewicons", "1icon")
 	} else {
 		mainWindow.setFullScreen(true)
+    mainWindow.webContents.send("fixviewicons", "3icon")
 	}
 })
 ipcMain.on("appReqFullscreenApp",() => {

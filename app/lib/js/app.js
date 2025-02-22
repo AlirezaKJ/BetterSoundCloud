@@ -84,9 +84,15 @@ webview.addEventListener("console-message", (e) => {
   } else if (e.message.split("|")[1] == "CurSongCoverUrl") {
     cursonginfo.songcover = e.message.split("|")[2]
   } else if (e.message.split("|")[1] == "CurSongUrl") {
-    cursonginfo.songurl = "https://soundcloud.com/" + e.message.split("|")[2]
+    songurlstring = "https://soundcloud.com/" + e.message.split("|")[2]
+    songurlstring = songurlstring.replace("t50x50","t500x500")
+    cursonginfo.songurl = songurlstring
   } else if (e.message.split("|")[1] == "UIActivateLyricShowCase") {
     updatelyricshowcase()
+  } else if (e.message.split("|")[1] == "UISettingPreviousFrame") {
+    webview.goBack()
+  } else if (e.message.split("|")[1] == "UISettingNextFrame") {
+    webview.goForward()
   }
 });
 
@@ -229,4 +235,17 @@ ipcRenderer.on("appReqF5", function (evt, message) {
     console.log("unbind f5");
   }
   console.log("F5 is pressed");
+});
+
+ipcRenderer.on("fixviewicons", function (evt, message) {
+  console.log(message);
+  if (message == "1icon") {
+    webview.executeJavaScript(`maximizebtn.classList.add("header__appmaximizebtn__alt")
+    minimizebtn.style.display = "none"
+    closebtn.style.display = "none"`)
+  } else if (message == "3icon") {
+    webview.executeJavaScript(`maximizebtn.classList.remove("header__appmaximizebtn__alt")
+    minimizebtn.style.display = "block"
+    closebtn.style.display = "block"`)
+  } 
 });
