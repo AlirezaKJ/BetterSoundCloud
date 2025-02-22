@@ -1,4 +1,3 @@
-const { log } = require("console");
 const { ipcRenderer } = require("electron");
 const fs = require("fs");
 const packagefile = require("../package.json");
@@ -38,6 +37,7 @@ let cursonginfo = {
   songduration: "",
   songcurrentdur: "",
   songstate: "",
+  songlyric: "",
 }
 
 // ! READ CONSOLE MESSAGES
@@ -130,21 +130,23 @@ function updatelyricshowcase() {
       if (data.syncedLyrics) { // TODO: USE THE SYNCED LYRICS TIMESTAMP TO HIGHLIGHT SPECIFIC LINE
         console.log(data.syncedLyrics);
         lyrics = data.syncedLyrics;
+        cursonginfo.songlyric = data.syncedLyrics
         lyriccoldiv.innerHTML = ``;
         lyrics.split("\n").forEach(line => {
           lyriccoldiv.innerHTML += `<div class="lyricline">${line}</div>`;
         });
       } else if (data.plainLyrics) {
         lyrics = data.plainLyrics;
+        cursonginfo.songlyric = data.plainLyrics
         lyriccoldiv.innerHTML = ``;
         lyrics.split("\n").forEach(line => {
           lyriccoldiv.innerHTML += `<div class="lyricline">${line}</div>`;
         });
       } else {
         console.log("no lyrics found", err);
+        cursonginfo.songlyric = "not found"
         lyriccoldiv.innerHTML += `<div class="searchline">DIDN'T FIND ANY LYRICS FOR ${songname} - ${songartist}</div>`;
       }
-      
     })
   })
 
@@ -249,3 +251,24 @@ ipcRenderer.on("fixviewicons", function (evt, message) {
     closebtn.style.display = "block"`)
   } 
 });
+
+let scrollerbtn = document.getElementById("scrollerbtn")
+if (settings.scrollerbtn == true) {
+  scrollerbtn.classList.add("scrlbtnvis")
+} 
+
+var btnscrlinterval;
+function scrollbtntgl() {
+  scrollerbtn.classList.toggle("scrlbtnactive")
+  if (scrollerbtn.classList.contains("scrlbtnactive")) {
+    btnscrlinterval = setInterval(webviewscrldown,50)
+  } else {
+    console.log("mamad")
+    clearInterval(btnscrlinterval)
+  }
+}
+
+function webviewscrldown() {
+  console.log("scrolling")
+  webview.executeJavaScript("window.scrollBy(0, 500)")
+}

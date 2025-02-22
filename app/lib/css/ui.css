@@ -540,3 +540,42 @@
   height: 100%;
   text-align: center;
 }
+
+#scrollerbtn {
+  position: fixed;
+  bottom: 60px;
+  right: 10px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  visibility: hidden;
+  opacity: 0;
+  transition: 0.25s ease-in-out opacity, 0.25s ease-in-out visibility, 0.25s ease-in-out border;
+  border: solid 1px var(--200);
+  border-radius: 50%;
+  background: var(--800);
+  & svg {
+    transition: 0.25s ease-in-out all;
+    fill: var(--50);
+    width: 50%;
+    height: 50%;
+  }
+}
+
+.scrlbtnvis {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.scrlbtnactive {
+  border: solid 1px var(--600) !important;
+  & svg {
+    fill: var(--600) !important;
+    width: 70%;
+    height: 70%;
+  }
+}

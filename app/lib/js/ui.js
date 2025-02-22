@@ -158,6 +158,13 @@ togglebuttons.forEach(function (tglbtn) {
     changeSettings(this.name, this.checked)
     if (this.name == "custombg") {
       webview.reload()
+    } else if (this.name == "scrollerbtn") {
+      if (this.checked) {
+        scrollerbtn.classList.add("scrlbtnvis")
+      } else {
+        scrollerbtn.classList.remove("scrlbtnvis")
+        clearInterval(btnscrlinterval)
+      }
     }
   })
 })
