@@ -1,11 +1,17 @@
 const { ipcRenderer } = require("electron");
 const fs = require("fs");
 const packagefile = require("../package.json");
+clientVersion = packagefile.version
 const scdl = require("soundcloud-downloader").default;
 const https = require('https');
+const clientId = "1054636117284106270"
+const DiscordRPC = require('discord-rpc')
+const RPC = new DiscordRPC.Client({ transport: 'ipc' })
 
 
-clientVersion = packagefile.version 
+
+
+
 
 let appdirectory;
 ipcRenderer.on("apppath", function (evt, message) {
@@ -95,6 +101,64 @@ webview.addEventListener("console-message", (e) => {
     webview.goForward()
   }
 });
+
+
+// ! Discord RPC LOOP function
+DiscordRPC.register(clientId)
+
+async function setDActivity() {
+  console.log("mamadddd")
+  if (!RPC) return;
+  var userdetail;
+  var userbigimage;
+  var userbigimagetext;
+  var usersmallimage;
+  var userviewpage = webview.getURL().split("//")[1].split("/")[1]
+  var userlisteningdurationtext
+  if (userviewpage == "you") {userviewpage = "Library"}
+  
+  if (!userlistening) {
+      userdetail = "Exploring SoundCloud"
+      userlisteningdurationtext = "At " + userviewpage
+      userbigimage = "bw-exploring-bordered-white"
+      usersmallimage = "bw-icon-bordered-white"
+      userbigimagetext = "Exploring"
+  } else {
+      userdetail = `Listening To ${cursonginfo.songtitle}`
+      userlisteningdurationtext = `${cursonginfo.songcurrentdur} | ${cursonginfo.songduration}`
+      userbigimage = cursonginfo.songcover
+      userbigimagetext = "By " + cursonginfo.songartist
+      usersmallimage = "bw-icon-bordered-white"
+  }    
+  RPC.setActivity({
+    details: userdetail,
+    state: userlisteningdurationtext,
+    largeImageKey: userbigimage,
+    largeImageText: userbigimagetext,
+    smallImageKey: usersmallimage,
+    smallImageText: `V${clientVersion}`,
+    instance: false,
+    buttons: [
+        {
+            label: "Download",
+            url: 'https://alirezakj.com/bsc',
+        },
+        {
+            label: "Github",
+            url: packagefile.repository,
+        }
+    ]
+  })
+}
+
+RPC.on('ready', async () => {
+  console.log("Discord RPC is ready!");
+  setInterval(() => {
+    if (settings.discordrpc == true) {
+      setDActivity();
+    }
+  }, 1000);
+})
 
 
 let lyricshowcase = document.querySelector("#lyricshowcase")

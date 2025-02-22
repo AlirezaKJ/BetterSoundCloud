@@ -2,7 +2,7 @@ const { app, globalShortcut, shell, ipcMain, BrowserWindow, Tray, Menu, nativeIm
 const path = require('node:path')
 const { ElectronBlocker } = require('@cliqz/adblocker-electron');
 const fetch = require('cross-fetch'); // required 'fetch'
-const { log } = require('node:console');
+
 
 let mainWindow;
 function createWindow () {

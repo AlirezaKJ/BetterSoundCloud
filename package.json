@@ -38,6 +38,7 @@
   "dependencies": {
     "@cliqz/adblocker-electron": "^1.34.0",
     "cross-fetch": "^4.0.0",
+    "discord-rpc": "^4.0.1",
     "electron-squirrel-startup": "^1.0.1",
     "soundcloud-downloader": "^1.0.0"
   }
