@@ -1,7 +1,6 @@
 const { ipcRenderer } = require("electron");
 const fs = require("fs");
 const packagefile = require("../package.json");
-clientVersion = packagefile.version
 const scdl = require("soundcloud-downloader").default;
 const https = require('https');
 const clientId = "1054636117284106270"
@@ -12,6 +11,7 @@ const RPC = new DiscordRPC.Client({ transport: 'ipc' })
 
 
 
+const clientVersion = packagefile.version
 
 let appdirectory;
 ipcRenderer.on("apppath", function (evt, message) {
@@ -108,7 +108,7 @@ DiscordRPC.register(clientId)
 
 async function setDActivity() {
   console.log("mamadddd")
-  if (!RPC) return;
+  if (!RPC) return; 
   var userdetail;
   var userbigimage;
   var userbigimagetext;
@@ -117,18 +117,18 @@ async function setDActivity() {
   var userlisteningdurationtext
   if (userviewpage == "you") {userviewpage = "Library"}
   
-  if (!userlistening) {
-      userdetail = "Exploring SoundCloud"
-      userlisteningdurationtext = "At " + userviewpage
-      userbigimage = "bw-exploring-bordered-white"
-      usersmallimage = "bw-icon-bordered-white"
-      userbigimagetext = "Exploring"
+  if (cursonginfo.songstate == "paused") {
+    userdetail = "Exploring SoundCloud"
+    userlisteningdurationtext = "At " + userviewpage
+    userbigimage = "bw-exploring-bordered-white"
+    usersmallimage = "bw-icon-bordered-white"
+    userbigimagetext = "Exploring"
   } else {
-      userdetail = `Listening To ${cursonginfo.songtitle}`
-      userlisteningdurationtext = `${cursonginfo.songcurrentdur} | ${cursonginfo.songduration}`
-      userbigimage = cursonginfo.songcover
-      userbigimagetext = "By " + cursonginfo.songartist
-      usersmallimage = "bw-icon-bordered-white"
+    userdetail = `Listening To ${cursonginfo.songtitle}`
+    userlisteningdurationtext = "By " + cursonginfo.songartist
+    userbigimage = cursonginfo.songcover
+    userbigimagetext = "By " + cursonginfo.songartist
+    usersmallimage = "bw-icon-bordered-white"
   }    
   RPC.setActivity({
     details: userdetail,
@@ -139,18 +139,23 @@ async function setDActivity() {
     smallImageText: `V${clientVersion}`,
     instance: false,
     buttons: [
-        {
-            label: "Download",
-            url: 'https://alirezakj.com/bsc',
-        },
-        {
-            label: "Github",
-            url: packagefile.repository,
-        }
+      {
+        label: "Download",
+        url: 'https://alirezakj.com/bsc',
+      },
+      {
+        label: "Github",
+        url: packagefile.repository,
+      }
     ]
   })
 }
 
+RPC.login({ clientId }).catch(err => console.error(err))
+
+RPC.on('disconnected', (event) => {
+  console.log(`Discord RPC disconnected! Code: ${event.code}, Reason: ${event.reason}`);
+})
 RPC.on('ready', async () => {
   console.log("Discord RPC is ready!");
   setInterval(() => {
