@@ -541,6 +541,72 @@
   text-align: center;
 }
 
+#songshowcase {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  z-index: 3;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  opacity: 1;
+  visibility: visible;
+  transition: 0.25s ease-in-out opacity, 0.25s ease-in-out visibility;
+  background-color: var(--rgba2);
+  backdrop-filter: blur(5px);
+  color: var(--200);
+}
+#songshowcase .row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: 70%;
+  background: green;
+}
+#songshowcase .row .coverimage {
+  height: 60%;
+  margin: 0px 50px;
+  background: red;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  & img {
+    height: 100%;
+  }
+}
+#songshowcase .smallrow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: 15%;
+}
+#songshowcase .closebtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  position: absolute;
+  right: 25px;
+  top: 25px;
+  & svg {
+    fill: var(--200);
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.fadesongshowcase {
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
 #scrollerbtn {
   position: fixed;
   bottom: 60px;

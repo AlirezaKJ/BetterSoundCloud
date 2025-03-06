@@ -95,6 +95,8 @@ webview.addEventListener("console-message", (e) => {
     cursonginfo.songurl = songurlstring
   } else if (e.message.split("|")[1] == "UIActivateLyricShowCase") {
     updatelyricshowcase()
+  } else if (e.message.split("|")[1] == "UIActivateShowCase") {
+    showsongshowcase()
   } else if (e.message.split("|")[1] == "UISettingPreviousFrame") {
     webview.goBack()
   } else if (e.message.split("|")[1] == "UISettingNextFrame") {
@@ -224,6 +226,26 @@ function updatelyricshowcase() {
 
 function lyricshowcasecls() {
   lyricshowcase.classList.add("fadelyricshowcase")
+}
+
+// FOR SONG SHOWCASE
+let songshowcase = document.getElementById("songshowcase")
+let songshowcaseInterval;
+let songshowcasecoverimgel = document.getElementById("songshowcasecoverimg")
+let songshowcasetitleel = document.getElementById("songshowcasesongtitle")
+let songshowcaseartistel = document.getElementById("songshowcasesongartist")
+function showsongshowcase() {
+  songshowcase.classList.remove("fadesongshowcase")
+  songshowcaseInterval = setInterval(() => {
+    songshowcasecoverimgel.src = cursonginfo.songcover
+    songshowcasetitleel.innerHTML = cursonginfo.songtitle
+    songshowcaseartistel.innerHTML = cursonginfo.songartist
+  }, 500);
+}
+
+function songshowcasecls() {
+  clearInterval(songshowcaseInterval);
+  songshowcase.classList.add("fadesongshowcase")
 }
 
 // READ FILES
