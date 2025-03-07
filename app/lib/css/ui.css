@@ -565,12 +565,10 @@
   justify-content: flex-start;
   width: 100%;
   height: 70%;
-  background: green;
 }
 #songshowcase .row .coverimage {
   height: 60%;
   margin: 0px 50px;
-  background: red;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -595,11 +593,71 @@
   position: absolute;
   right: 25px;
   top: 25px;
+  opacity: 0;
+  transition: all 0.2s ease-in-out;
   & svg {
+    transition: all 0.2s ease-in-out;
     fill: var(--200);
     width: 100%;
     height: 100%;
   }
+  &:hover svg {
+    fill: var(--50);
+  }
+}
+#songshowcase:hover .closebtn {
+  opacity: 1;
+}
+
+#songshowcase .detail {
+  height: 60%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  flex-direction: column;
+}
+#songshowcase h4 {
+  font-size: 30px;
+  color: var(--200);
+}
+#songshowcase #songshowcasesongtitle {
+  font-size: 40px;
+  color: var(--50);
+}
+#songshowcase .bottomrow {
+  align-items: center !important;
+  justify-content: center !important;
+  flex-direction: column;
+}
+#songshowcase .timestampbar {
+  width: 90%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 75px;
+}
+#songshowcase .timestampbar > div {
+  width: 50%;
+  font-size: 24px;
+  color: var(--200);
+  text-align: left;
+}
+#songshowcase .timestampbar #songshowcaseendtime {
+  text-align: right;
+}
+#songshowcase .progfullbar {
+  width: 95%;
+  height: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+#songshowcase .progfullbar #progfillbar {
+  width: 73%;
+  height: 100%;
+  transition: all 1s linear;
+  background: var(--200);
 }
 
 .fadesongshowcase {

@@ -88,7 +88,7 @@ webview.addEventListener("console-message", (e) => {
       cursonginfo.songliked = false
     }
   } else if (e.message.split("|")[1] == "CurSongCoverUrl") {
-    cursonginfo.songcover = e.message.split("|")[2]
+    cursonginfo.songcover = e.message.split("|")[2].replace("t50x50","t500x500")
   } else if (e.message.split("|")[1] == "CurSongUrl") {
     songurlstring = "https://soundcloud.com/" + e.message.split("|")[2]
     songurlstring = songurlstring.replace("t50x50","t500x500")
@@ -109,7 +109,6 @@ webview.addEventListener("console-message", (e) => {
 DiscordRPC.register(clientId)
 
 async function setDActivity() {
-  console.log("mamadddd")
   if (!RPC) return; 
   var userdetail;
   var userbigimage;
@@ -234,12 +233,29 @@ let songshowcaseInterval;
 let songshowcasecoverimgel = document.getElementById("songshowcasecoverimg")
 let songshowcasetitleel = document.getElementById("songshowcasesongtitle")
 let songshowcaseartistel = document.getElementById("songshowcasesongartist")
+let songshowcasecurtimeel = document.getElementById("songshowcasecurtime")
+let songshowcaseendtimeel = document.getElementById("songshowcaseendtime")
+let songshowcasefillbarel = document.getElementById("progfillbar")
 function showsongshowcase() {
   songshowcase.classList.remove("fadesongshowcase")
   songshowcaseInterval = setInterval(() => {
     songshowcasecoverimgel.src = cursonginfo.songcover
     songshowcasetitleel.innerHTML = cursonginfo.songtitle
     songshowcaseartistel.innerHTML = cursonginfo.songartist
+    songshowcasecurtimeel.innerHTML = cursonginfo.songcurrentdur
+    songshowcaseendtimeel.innerHTML = cursonginfo.songduration
+    var currentdur = cursonginfo.songcurrentdur.split(":")
+    if (currentdur.length == 2) {
+      currentdur = parseInt(currentdur[0]) * 60 + parseInt(currentdur[1])
+    } else {currentdur = parseInt(currentdur[0])}
+    var fulldur = cursonginfo.songduration.split(":")
+    if (fulldur.length == 2) {
+      fulldur = parseInt(fulldur[0]) * 60 + parseInt(fulldur[1])
+    } else {fulldur = parseInt(fulldur[0])}
+    console.log(currentdur)
+    console.log(fulldur)
+    var fill_percentage = currentdur / fulldur * 100
+    songshowcasefillbarel.style.width = fill_percentage + "%"
   }, 500);
 }
 
@@ -354,7 +370,6 @@ function scrollbtntgl() {
   if (scrollerbtn.classList.contains("scrlbtnactive")) {
     btnscrlinterval = setInterval(webviewscrldown,50)
   } else {
-    console.log("mamad")
     clearInterval(btnscrlinterval)
   }
 }
