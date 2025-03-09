@@ -5,6 +5,7 @@ const fetch = require('cross-fetch'); // required 'fetch'
 
 
 let mainWindow;
+let tray;
 function createWindow () {
 
   mainWindow = new BrowserWindow({
@@ -38,17 +39,30 @@ app.whenReady().then(() => {
 
   // ON MAIN WINDOW LOAD
   mainWindow.webContents.on('dom-ready', () => {
-
     mainWindow.webContents.send("apppath", apppath)
-
     // adblocker
     ElectronBlocker.fromPrebuiltAdsAndTracking(fetch).then((blocker) => {
       blocker.enableBlockingInSession(session.defaultSession);
     });
-
   });
   
   
+  var trayicon = nativeImage.createFromPath('app/lib/assets/sc-icon.jpg')
+  tray = new Tray(trayicon)
+  tray.setTitle('BetterSoundCloud')
+
+  tray.on('click', event => {
+    console.log('tray left clicked')
+    event.preventDefault
+    mainWindow.show()
+  })
+
+  var trayCtxMenu = Menu.buildFromTemplate([
+    { label: 'Play/Pause', type: 'normal', click: () => mainWindow.webContents.send("appReqMediaPlayPause") },
+    { label: 'Skip', type: 'normal', click: () => mainWindow.webContents.send("appReqMediaNextTrack") },
+    { label: 'Exit', type: 'normal', click: () => app.quit() },
+  ])
+  tray.setContextMenu(trayCtxMenu)
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
@@ -66,14 +80,14 @@ app.on('window-all-closed', function () {
 
 app.on('browser-window-focus', function () {
 	console.log("window focused")
-  // globalShortcut.register("CommandOrControl+R", () => {
-	// 	mainWindow.webContents.send("appReqCtrlR")
-	// 	console.log("CtrlR is pressed");
-	// });
-  // globalShortcut.register("F5", () => {
-	// 	mainWindow.webContents.send("appReqF5")
-	// 	console.log("F5 is pressed");
-	// });
+  globalShortcut.register("CommandOrControl+R", () => {
+		mainWindow.webContents.send("appReqCtrlR")
+		console.log("CtrlR is pressed");
+	});
+  globalShortcut.register("F5", () => {
+		mainWindow.webContents.send("appReqF5")
+		console.log("F5 is pressed");
+	});
   globalShortcut.register("Esc", () => {
 		mainWindow.webContents.send("appReqEsc")
 		console.log("Esc is pressed");
