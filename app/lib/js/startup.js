@@ -14,6 +14,7 @@ function loadstop() {
   }
   changeSettings("lasturlvisited", webview.getURL())
   setTimeout(() => { // TODO: figure out why it have to wait 2 seconds and load after
+    webview.executeJavaScript("let issciloaded = false")
     addscript("\\app\\plugins\\SCI.js")
     addstyle("\\app\\themes\\SCI.css")
 
@@ -60,11 +61,22 @@ function loadstop() {
       loadingscreentxt.innerHTML = "Added Custom JS";
     }
 
+
+
     loadingscreentxt.innerHTML = "Loading Finished"
     setTimeout(() => {
       loadingscreen.classList.add("fadels")
     }, 500);
   }, 3000);
 }
+
+sciloadingcheck = setInterval(() => {
+  webview.executeJavaScript(`
+  if (issciloaded) {
+    console.log("BSCReceive|sciloaded")
+  } else {
+    console.log("BSCReceive|scinotloaded")
+  }`)
+}, 1000);
 
 webview.addEventListener('did-stop-loading', loadstop)

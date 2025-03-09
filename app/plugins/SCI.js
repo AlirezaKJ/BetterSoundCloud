@@ -126,3 +126,5 @@ playControls__elements.appendChild(openshowcasebtn)
 let playpausebtn = document.querySelector(".playControls__elements .playControls__play")
 let previoussongbtn = document.querySelector(".playControls__elements .playControls__prev")
 let nextsongbtn = document.querySelector(".playControls__elements .playControls__next")
+
+issciloaded = true
