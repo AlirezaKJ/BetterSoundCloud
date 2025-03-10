@@ -8,7 +8,7 @@ function mainWindowload() {
 }
 
 function loadstop() {
-  webview.setZoomFactor(settings.zoomfactor / 100)
+  webview.setZoomFactor(settings.zoomfactorperc / 100)
   if (settings.startupfullscreen) {
     ipcRenderer.send("appReqFullscreenApp")
   }

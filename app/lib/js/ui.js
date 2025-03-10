@@ -76,7 +76,7 @@ function pastewv() { // TODO: ADD COPY FUNCTIONALITY
 
 // SETTINGS SLIDE UI RESPONSIBILITY
 let togglebuttons = document.querySelectorAll(".mainbar .settingitem .toggle input")
-let zoomfactorinp = document.querySelector(".mainbar .settingitem .manualinp input[name='zoomfactor']")
+let zoomfactorinp = document.querySelector(".mainbar .settingitem .manualinp input[name='zoomfactorperc']")
 let reloadbindsinp = document.querySelectorAll(".mainbar .settingitem .manualinp select")
 let startuppageinp = document.querySelector(".mainbar .settingitem .manualinp input[type='url']")
 let themeitemsdiv = document.querySelectorAll(".mainbar .selectthemes .themeitem")
@@ -116,7 +116,7 @@ function syncsettingsui() {
     }
   })
   
-  zoomfactorinp.value = settings["zoomfactor"]
+  zoomfactorinp.value = settings["zoomfactorperc"]
   
   reloadbindsinp.forEach(function (selectel) {
     if (settings[selectel.name]) {
@@ -179,8 +179,9 @@ reloadbindsinp.forEach(bindinp => {
 // ZOOMFACTOR INPUT ON VALUE EVENT
 zoomfactorinp.addEventListener("change", function () {
   if (9 < parseInt(this.value) && parseInt(this.value) < 501) {
+    console.log(this.name)
     changeSettings(this.name, parseInt(this.value))
-    webview.setZoomFactor(settings.zoomfactor / 100)
+    webview.setZoomFactor(settings.zoomfactorperc / 100)
   } else {
     this.value = settings[this.name]
   }

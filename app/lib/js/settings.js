@@ -10,7 +10,7 @@ let settings = {
   lasturlvisited: dbResolve("settings.lasturlvisited", "https://soundcloud.com/discover"),
   startupurl: dbResolve("settings.startupurl", false),
   scrollerbtn: dbResolve("settings.scrollerbtn", false),
-  zoomfactor: dbResolve("settings.zoomfactor", 100),
+  zoomfactorperc: dbResolve("settings.zoomfactorperc", 100),
   theme: dbResolve("settings.theme", "darkcloud"),
 }
 
@@ -26,7 +26,7 @@ function updateLS() {
   dbSetItem("settings.lasturlvisited", settings.lasturlvisited)
   dbSetItem("settings.startupurl", settings.startupurl)
   dbSetItem("settings.scrollerbtn", settings.scrollerbtn)
-  dbSetItem("settings.zoomfactor", settings.zoomfactor)
+  dbSetItem("settings.zoomfactorperc", settings.zoomfactorperc)
   dbSetItem("settings.theme", settings.theme)
 }
 
