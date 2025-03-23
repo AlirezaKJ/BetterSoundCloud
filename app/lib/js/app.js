@@ -103,7 +103,7 @@ webview.addEventListener("console-message", (e) => {
     webview.goForward()
   } else if (e.message.split("|")[1] == "scinotloaded") {
     console.log("Trying to add SCI script again")
-    addscript("\\app\\plugins\\SCI.js")
+    addscript("\\plugins\\SCI.js")
   } else if (e.message.split("|")[1] == "sciloaded") {
     console.log("SCI has been loaded succesfuly")
     clearInterval(sciloadingcheck)
