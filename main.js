@@ -12,7 +12,7 @@ function createWindow () {
     width: 1366,
     height: 768,
     // frame: false,
-    icon: __dirname + '/app/lib/assets/sc-icon.jpg',
+    icon: 'app/lib/assets/icon.ico',
     webPreferences: {
 			nodeIntegration: true,
 			contextIsolation: false,
@@ -46,8 +46,8 @@ app.whenReady().then(() => {
     });
   });
   
-  
-  var trayicon = nativeImage.createFromPath('app/lib/assets/sc-icon.jpg')
+  console.log(__dirname + '/app/lib/assets/icon.ico')
+  var trayicon = nativeImage.createFromPath(__dirname + '/app/lib/assets/icon.ico')
   tray = new Tray(trayicon)
   tray.setTitle('BetterSoundCloud')
 

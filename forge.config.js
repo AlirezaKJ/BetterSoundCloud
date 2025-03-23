@@ -4,6 +4,7 @@ const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 module.exports = {
   packagerConfig: {
     asar: true,
+    icon: "app/lib/assets/icon.ico"
   },
   // files: [
   //   'dist/**/*',
@@ -16,6 +17,7 @@ module.exports = {
       name: '@electron-forge/maker-appx',
       config: {
         publisher: 'CN=developmentca',
+        icon: "app/lib/assets/icon.ico"
         // devCert: 'C:\\devcert.pfx',
         // certPass: 'abcd'
       }
@@ -24,12 +26,14 @@ module.exports = {
       name: '@electron-forge/maker-wix',
       config: {
         language: 1033,
+        icon: "app/lib/assets/icon.ico"
         // manufacturer: 'My Awesome Company'
       }
     },
     {
       name: '@electron-forge/maker-squirrel',
       config: {
+        icon: "app/lib/assets/icon.ico"
         // certificateFile: './cert.pfx',
         // certificatePassword: process.env.CERTIFICATE_PASSWORD
       }
