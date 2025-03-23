@@ -4,7 +4,9 @@
   "description": "BetterSoundCloud PC Client",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make"
   },
   "repository": "https://github.com/AlirezaKJ/BetterSoundCloud",
   "downloadpage": "https://github.com/AlirezaKJ/BetterSoundCloud/releases",
@@ -18,94 +20,27 @@
     "song",
     "web"
   ],
-  "build": {
-    "appId": "com.bettersoundcloud.app",
-    "productName": "BetterSoundCloud",
-    "copyright": "Copyright © 2023 AlirezaKJ",
-    "mac": {
-      "category": "public.app-category.utilities",
-      "icon": "lib\\assets\\bw-icon.ico",
-      "target": [
-        "zip",
-        "dmg"
-      ],
-      "publish": [
-        "github"
-      ]
-    },
-    "win": {
-      "publisherName": "AlirezaKJ",
-      "icon": "lib/assets/bw-icon.ico",
-      "publish": [
-        "github"
-      ],
-      "target": [
-        "nsis",
-        "nsis-web",
-        "portable",
-        "appx",
-        "msi",
-        "squirrel"
-      ]
-    },
-    "linux": {
-      "target": [
-        "AppImage",
-        "tar.gz"
-      ]
-    },
-    "dmg": {
-      "background": "lib\\assets\\bw-icon.ico",
-      "icon": "lib\\assets\\bw-icon.ico",
-      "title": "Accurate Installer"
-    },
-    "nsis": {
-      "oneClick": false,
-      "perMachine": false,
-      "allowToChangeInstallationDirectory": true,
-      "installerIcon": "lib\\assets\\bw-icon.ico",
-      "installerSidebar": "lib\\assets\\bw-icon.ico",
-      "uninstallerSidebar": "lib\\assets\\bw-icon.ico",
-      "license": "",
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
-    },
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "AlirezaKJ",
-        "repo": "bettersoundcloud",
-        "vPrefixedTagName": true,
-        "private": true,
-        "releaseType": "draft"
-      }
-    ]
-  },
-  "plugins": {
-    "SCI": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud/plugins/SCI.js",
-    "ctxMenu": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud/plugins/ctxMenu.js",
-    "discordRPC": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud/plugins/discordRPC.js",
-    "silentAds": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud/plugins/silentads.js",
-    "reloadOnAds": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud/plugins/reloadonads.js",
-    "reloadAndPlayOnAds": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud/plugins/reloadandplay.js",
-    "custombg": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud/plugins/custombg.js"
-  },
-  "theme": {
-    "SCI": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud/themes/SCI.css",
-    "darkCloud": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud/themes/darkCloud.css",
-    "nocturnal": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud/themes/nocturnal.css",
-    "postMorphic": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud/themes/postMorphic.css",
-    "hover": "https://cdn.jsdelivr.net/gh/AlirezaKJ/BetterSoundCloud/themes/hover.css"
-  },
   "author": "AlirezaKJ",
-  "license": "",
+  "license": "MIT license",
   "devDependencies": {
-    "electron": "^31.0.0"
+    "@electron-forge/cli": "^7.5.0",
+    "@electron-forge/maker-appx": "^7.5.0",
+    "@electron-forge/maker-deb": "^7.5.0",
+    "@electron-forge/maker-rpm": "^7.5.0",
+    "@electron-forge/maker-squirrel": "^7.5.0",
+    "@electron-forge/maker-wix": "^7.5.0",
+    "@electron-forge/maker-zip": "^7.5.0",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.5.0",
+    "@electron-forge/plugin-fuses": "^7.5.0",
+    "@electron/fuses": "^1.8.0",
+    "electron": "^32.1.2",
+    "electron-wix-msi": "^5.1.3"
   },
   "dependencies": {
+    "@cliqz/adblocker-electron": "^1.34.0",
+    "cross-fetch": "^4.0.0",
     "discord-rpc": "^4.0.1",
-    "electron-dl": "^3.5.2",
-    "genius-lyrics-api": "^3.2.0",
+    "electron-squirrel-startup": "^1.0.1",
     "soundcloud-downloader": "^1.0.0"
   }
 }

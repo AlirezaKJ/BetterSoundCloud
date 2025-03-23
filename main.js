@@ -1,148 +1,98 @@
-const { app, globalShortcut, shell, ipcMain, BrowserWindow, Tray, Menu, nativeImage } = require('electron')
-const path = require('path')
-const fs = require('fs')
-const process = require('process')
-const {download} = require("electron-dl")
+const { app, globalShortcut, shell, ipcMain, BrowserWindow, Tray, Menu, nativeImage, screen, session} = require('electron')
+const path = require('node:path')
+const { ElectronBlocker } = require('@cliqz/adblocker-electron');
+const fetch = require('cross-fetch'); // required 'fetch'
+
 
 let mainWindow;
-
+let tray;
 function createWindow () {
-	// Create the browser window.
-	mainWindow = new BrowserWindow({
-		width: 1920,
-		height: 1080,
-		icon: "lib/assets/bw-icon.ico",
-		webPreferences: {
+
+  mainWindow = new BrowserWindow({
+    width: 1366,
+    height: 768,
+    // frame: false,
+    icon: 'app/lib/assets/icon.ico',
+    webPreferences: {
 			nodeIntegration: true,
 			contextIsolation: false,
 			webviewTag: true,
 		}
-	})
+  })
 
-	mainWindow.setMenuBarVisibility(false)
-	mainWindow.loadFile('lib/index.html')
-
-	
+  mainWindow.setMenuBarVisibility(false)
+  mainWindow.loadFile('app/index.html')
+  
+  // Open the DevTools.
+  // mainWindow.webContents.openDevTools()
 }
 
-// Root folders check
-if (!fs.existsSync("C://BetterSoundCloud")) {
-    fs.mkdirSync("C://BetterSoundCloud")
-}
-if (!fs.existsSync("C://BetterSoundCloud/Downloads")) {
-    fs.mkdirSync("C://BetterSoundCloud/Downloads")
-}
-if (!fs.existsSync("C://BetterSoundCloud/assets")) {
-    fs.mkdirSync("C://BetterSoundCloud/assets")
-}
-
-
-// Download Trayicon locally
-ipcMain.on("download", (event, info) => {
-	console.log("download started");
-	download(BrowserWindow.getFocusedWindow(), info.url, info.properties)
-		.then(dl => console.log("downloaded: " + dl.getSavePath()));
-});
-
-
-
-
-function localPluginsAndThemes() {
-	
-}
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
-	createWindow()
+  createWindow()
 
-	app.on('activate', function () {
-		// On macOS it's common to re-create a window in the app when the
-		// dock icon is clicked and there are no other windows open.
-		if (BrowserWindow.getAllWindows().length === 0) createWindow()
-	})
+  apppath = app.getAppPath()
+  console.log(apppath);
 
-	// Prevent window from closing and quitting app
-    // Instead make close simply hide main window
-    // Clicking on tray icon will bring back main window
-    mainWindow.on('close', event => {
-        event.preventDefault()
-        mainWindow.hide()
-    })
+  // ON MAIN WINDOW LOAD
+  mainWindow.webContents.on('dom-ready', () => {
+    mainWindow.webContents.send("apppath", apppath)
+    // adblocker
+    ElectronBlocker.fromPrebuiltAdsAndTracking(fetch).then((blocker) => {
+      blocker.enableBlockingInSession(session.defaultSession);
+    });
+  });
+  
+  console.log(__dirname + '/app/lib/assets/icon.ico')
+  var trayicon = nativeImage.createFromPath(__dirname + '/app/lib/assets/icon.ico')
+  tray = new Tray(trayicon)
+  tray.setTitle('BetterSoundCloud')
 
-    const icon = nativeImage.createFromPath('C:\\BetterSoundCloud\\assets\\bw-icon.ico')
-    let tray = new Tray(icon.resize({ width: 16, height: 16 }))
-    tray.setIgnoreDoubleClickEvents(true)
+  tray.on('click', event => {
+    console.log('tray left clicked')
+    event.preventDefault
+    mainWindow.show()
+  })
 
-    var trayMenu = Menu.buildFromTemplate([
-        {
-            label: 'Quit',
-            click: _ => {
-                console.log('Menu/Quit was clicked')
-                app.exit()
-            }
-        }
-    ]);
-    tray.setContextMenu(trayMenu)
+  var trayCtxMenu = Menu.buildFromTemplate([
+    { label: 'Play/Pause', type: 'normal', click: () => mainWindow.webContents.send("appReqMediaPlayPause") },
+    { label: 'Skip', type: 'normal', click: () => mainWindow.webContents.send("appReqMediaNextTrack") },
+    { label: 'Exit', type: 'normal', click: () => app.quit() },
+  ])
+  tray.setContextMenu(trayCtxMenu)
 
-    // Prevent menu from being shown on left click
-    // Instead make main window visible (if it had been invisible)
-    tray.on('click', event => {
-        console.log('tray left clicked')
-        event.preventDefault
-        mainWindow.show()
-    })
+  app.on('activate', function () {
+    // On macOS it's common to re-create a window in the app when the
+    // dock icon is clicked and there are no other windows open.
+    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+  })
 })
 
-// Handle Deep Links
-if (process.defaultApp) {
-    if (process.argv.length >= 2) {
-        app.setAsDefaultProtocolClient('bsc', process.execPath, [path.resolve(process.argv[1])])
-    }
-} else {
-    app.setAsDefaultProtocolClient('bsc')
-}
+// Quit when all windows are closed, except on macOS. There, it's common
+// for applications and their menu bar to stay active until the user quits
+// explicitly with Cmd + Q.
+app.on('window-all-closed', function () {
+  if (process.platform !== 'darwin') app.quit()
+})
 
-const gotTheLock = app.requestSingleInstanceLock()
-
-if (!gotTheLock) {
-	app.quit()
-} else {
-    app.on('second-instance', (event, commandLine) => {
-        // Someone tried to run a second instance, we should focus our window.
-        if (mainWindow) {
-			if (mainWindow.isMinimized()) mainWindow.restore()
-            mainWindow.focus()
-        }
-        // the commandLine is array of strings in which last element is deep link url
-        // the url str ends with /
-        mainWindow.webContents.send("appDeepUrl", commandLine.pop())
-        console.log(commandLine)
-    })
-
-    // Create mainWindow, load the rest of the app, etc...
-    // app.whenReady().then(() => {
-    //   createWindow()
-    // })
-}
-
-// Handle f5 and ctrl+r
 app.on('browser-window-focus', function () {
 	console.log("window focused")
-	globalShortcut.register("CommandOrControl+R", () => {
-		mainWindow.webContents.send("appReqCntrlR")
-		console.log("CommandOrControl+R is pressed");
+  globalShortcut.register("CommandOrControl+R", () => {
+		mainWindow.webContents.send("appReqCtrlR")
+		console.log("CtrlR is pressed");
 	});
-	globalShortcut.register("F5", () => {
+  globalShortcut.register("F5", () => {
 		mainWindow.webContents.send("appReqF5")
 		console.log("F5 is pressed");
 	});
-    globalShortcut.register("Esc", () => {
+  globalShortcut.register("Esc", () => {
 		mainWindow.webContents.send("appReqEsc")
 		console.log("Esc is pressed");
 	});
-    globalShortcut.register("MediaPlayPause", () => {
+  globalShortcut.register("MediaPlayPause", () => {
 		mainWindow.webContents.send("appReqMediaPlayPause")
 		console.log("MediaPlayPause is pressed");
 	});
@@ -155,6 +105,7 @@ app.on('browser-window-focus', function () {
 		console.log("MediaPreviousTrack is pressed");
 	});
 });
+
 app.on('browser-window-blur', function () {
 	console.log("window blurred")
 	globalShortcut.unregister('CommandOrControl+R');
@@ -162,45 +113,27 @@ app.on('browser-window-blur', function () {
 	globalShortcut.unregister('Esc');
 });
 
-ipcMain.on ("appReqClose", (event, args) => {
-	app.quit()
-});
-ipcMain.on ("appReqMaximize", (event, args) => {
-	if (mainWindow.isFullScreen()) {
+
+// TODO: Fix icon states in renderer when switching
+ipcMain.on("appReqMaximizeApp",() => {
+  if (mainWindow.isFullScreen()) {
 		mainWindow.setFullScreen(false)
+    mainWindow.webContents.send("fixviewicons", "1icon")
 	} else {
 		mainWindow.setFullScreen(true)
+    mainWindow.webContents.send("fixviewicons", "3icon")
 	}
-});
-ipcMain.on ("appReqJustFullscreen", (event, args) => {
+})
+ipcMain.on("appReqFullscreenApp",() => {
 	mainWindow.setFullScreen(true)
-	mainWindow.webContents.send("appReqJustFullscreenUIFIX")
+})
+ipcMain.on("appReqMinimizeApp",() => {
+  mainWindow.minimize();
 });
-ipcMain.on ("appReqMinimize", (event, args) => {
-	mainWindow.minimize()
+ipcMain.on("appReqCloseApp",() => {
+  app.quit();
 });
-// Restart window (made for handling custom cntrl + r and f5)
-ipcMain.on ("appReqRestartWindow", (event, args) => {
-	mainWindow.reload()
-})
-
-ipcMain.on ("appReqClearCache", (event, args) => {
-    bscpath = process.env.APPDATA + "\\"+ "bettersoundcloud";
-	fs.rmSync(bscpath, {recursive: true, force: true });
-    mainWindow.reload()
-})
-
-
-// Show downloaded item on file explorer
-ipcMain.on ("appDownloaderFinish", (event, args) => {
-	shell.openPath('C:\\BetterSoundCloud\\Downloads')
-})
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
-app.on('window-all-closed', function () {
-	if (process.platform !== 'darwin') app.quit()
-})
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
-
+ipcMain.on("appReqReloadApp",() => {
+  app.relaunch();
+  app.quit();
+});

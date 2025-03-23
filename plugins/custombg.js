@@ -24,6 +24,6 @@ custombgblurrer.style.backgroundColor = "rgba(122,122,122,0.5)"
 
 
 setInterval(() => {
-    custombg.style.backgroundImage = `url(${songinfocursongcoverurl})`
+    custombg.style.backgroundImage = `url(${songinfocursongcoverurl.replace("t50x50","t500x500")})`
     
 },100)

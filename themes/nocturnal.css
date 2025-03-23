@@ -14,16 +14,16 @@
 
 /* CSS For SCI Elements */
 .playControls__themebtn {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/ctx-themes-%23888.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/ctx-themes-%23888.png") !important;
 }
 .playControls__pluginbtn {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/ctx-plugins-%23888.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/ctx-plugins-%23888.png") !important;
 }
 .playControls__lyricbtn {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/round_mic_%23888.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/round_mic_%23888.png") !important;
 }
 .playControls__showcasebtn {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/baseline_smart_display_black_%23888.png");
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/baseline_smart_display_black_%23888.png");
 }
 
 .header__appclosebtn:hover {

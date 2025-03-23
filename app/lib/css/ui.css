@@ -1,0 +1,705 @@
+.interface {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: row;
+  visibility: visible;
+  opacity: 1;
+  transition: 0.25s ease-in-out opacity, 0.25s ease-in-out visibility;
+  background-color: var(--rgba2);
+  backdrop-filter: blur(5px);
+}
+
+.fadeui {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.interface .sidebar {
+  width: 15%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  background: var(--200);
+}
+.interface .sidebar a {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: 40px;
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--950);
+  text-decoration: none;
+  text-indent: 10px;
+  transition: all 0.2s ease-in-out;
+
+  &:hover {
+    background-color: var(--400);
+  }
+  & svg {
+    fill: var(--950);
+  }
+}
+.interface .sidebar a .icon {
+  margin-left: 5px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.interface .sidebar a .name {
+  height: 100%;
+  line-height: 40px;
+  display: flex;
+  align-items: center;
+}
+
+
+
+.interface .mainbar {
+  width: 85%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  overflow-y: scroll;
+  scroll-behavior: smooth;
+}
+
+.interface .mainbar h4 {
+  font-size: 35px;
+  font-weight: 900;
+  margin: 30px 0px;
+  color: var(--400);
+}
+.interface .mainbar section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  width: 100%;
+}
+.interface .mainbar .settingitem {
+  padding: 10px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 70%;
+  border: solid 2px rgba(0, 0, 0, 0);
+  color: var(--200);
+  transition: all 0.2s ease-in-out;
+}
+.interface .mainbar .settingitem:hover {
+  border-left: solid 2px var(--600);
+  border-right: solid 2px var(--600);
+}
+.interface .mainbar .settingitem > div {
+  margin: 0px 10px;
+  width: 50%;
+}
+.interface .mainbar .gapline {
+  width: 70%;
+  height: 2px;
+  background-color: var(--600);
+  /* margin: 10px 0px; */
+}
+
+.interface .mainbar .settingitem .name {
+  font-size: 25px;
+  font-weight: 700;
+  color: var();
+}
+.interface .mainbar .settingitem .description {
+  font-size: 18px;
+  font-weight: 300;
+  color: var();
+  white-space: nowrap;
+}
+.interface .mainbar .settingitem .toggle {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+.interface .mainbar .settingitem .toggle .switch {
+  font-size: 17px;
+  position: relative;
+  display: inline-block;
+  width: 3.5em;
+  height: 2em;
+}
+.interface .mainbar .settingitem .toggle .switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.interface .mainbar .settingitem .toggle .slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  border: 2px solid var(--200);
+  border-radius: 50px;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.interface .mainbar .settingitem .toggle .slider:before {
+  position: absolute;
+  content: "";
+  height: 1.4em;
+  width: 1.4em;
+  left: 0.2em;
+  bottom: 0.2em;
+  background-color: var(--200);
+  border-radius: inherit;
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
+  transform: translateY(1px);
+}
+.interface .mainbar .settingitem .toggle .switch input:checked + .slider {
+  box-shadow: 0 0 20px var(--boxshadow600);
+  border: 2px solid var(--600);
+}
+.interface .mainbar .settingitem .toggle .switch input:checked + .slider:before {
+  background-color: var(--600);
+  transform: translate(1.5em, 1px);
+}
+.interface .mainbar .settingitem .manualinp {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+.interface .mainbar .settingitem .manualinp select {
+  appearance: none;
+  text-align: center;
+  width: 240px;
+  height: 45px;
+  background-color: var(--950);
+	color: var(--200);
+	border: solid var(--200) 2px;
+  border-radius: 50px;
+	outline: none;
+  font-size: 18px;
+  transition: all 0.4s ease-in-out;
+  &:hover {
+    border: solid 2px var(--800);
+    border-radius: 8px;
+  }
+}
+.interface .mainbar .settingitem .manualinp input[type="number"] {
+  text-align: center;
+  width: 60px;
+  height: 35px;
+  font-size: 16px;
+  font-weight: 700;
+  background-color: rgba(0, 0, 0, 0);
+  border: solid 2px var(--200);
+  border-radius: 50px;
+  color: var(--200);
+  transition: all 0.4s ease-in-out;
+  &:focus {
+    border: solid 2px var(--600);
+    color: var(--600);
+    box-shadow: 0 0 20px var(--boxshadow600);
+  }
+}
+
+.interface .mainbar .settingitem .manualinp input[type="url"] {
+  width: 90%;
+  height: 35px;
+  font-size: 20px;
+  font-weight: 700;
+  background-color: rgba(0, 0, 0, 0);
+  color: var(--200);
+  border-bottom: solid 2px var(--200);
+  transition: all 0.4s ease-in-out;
+  &:focus {
+    border-bottom: solid 2px var(--600);
+    color: var(--600);
+  }
+}
+
+.interface .mainbar .bigsettingitem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 70%;
+}
+.interface .mainbar .bigsettingitem #downloadurl {
+  width: calc(98% - 120px);
+  height: 45px;
+  font-size: 20px;
+  font-weight: 700;
+  background-color: rgba(0, 0, 0, 0);
+  color: var(--200);
+  border-bottom: solid 2px var(--200);
+  transition: all 0.4s ease-in-out;
+  &:focus {
+    border-bottom: solid 2px var(--600);
+    color: var(--600);
+  }
+}
+.interface .mainbar .bigsettingitem #downloadbtn {
+  cursor: pointer;
+  width: 120px;
+  height: 45px;
+  font-size: 18px;
+  font-weight: 500;
+  background-color: var(--950);
+	color: var(--200);
+	border: solid var(--200) 2px;
+  border-radius: 50px;
+  transition: all 0.4s ease-in-out;
+  &:hover {
+    border: solid 2px var(--800);
+    border-radius: 8px;
+  }
+}
+.interface .mainbar #downloaderstatusspan {
+  margin: 30px 0;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--200);
+}
+.interface .mainbar .selectthemes {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 90%;
+}
+.interface .mainbar .selectthemes .themeitem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  width: 22.5%;
+  padding: 0px 20px;
+  border: solid 2px rgba(0, 0, 0, 0);
+  transition: all 0.4s ease-in-out;
+  border-radius: 10px;
+  &:hover {
+    cursor: pointer;
+    background: var(--rgba2);
+    border: solid 2px var(--200);
+  }
+  &.active {
+    background: var(--rgba);
+    border: solid 2px var(--600);
+  }
+  &.active h4 {
+    color: var(--950);
+  }
+  &.active h5 {
+    color: var(--800);
+  }
+}
+.interface .mainbar .selectthemes .themeitem .themeinfo {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  margin: 40px 0px 60px 0px;
+}
+.interface .mainbar .selectthemes .themeitem h4 {
+  display: inline-block;
+  font-size: 24px;
+  color: var(--50);
+  margin: 0;
+}
+.interface .mainbar .selectthemes .themeitem h5 {
+  display: inline-block;
+  font-size: 18px;
+  color: var(--200);
+}
+.interface .mainbar .selectthemes .themeitem img {
+  width: 100%;
+  margin: 20px 0px;
+}
+
+.interface .mainbar #customjsbox {
+  width: 80%;
+  height: 900px;
+  font-size: 18px;
+}
+.interface .mainbar #customcssbox {
+  width: 80%;
+  height: 900px;
+  font-size: 18px;
+}
+.interface .mainbar .btnsbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80%;
+  height: 60px;
+  margin: 20px 0px;
+  gap: 20px;
+}
+.interface .mainbar .btnsbar button {
+  cursor: pointer;
+  outline: none;
+  background: var(--950);
+  color: var(--200);
+  font-size: 20px;
+  font-weight: 800;
+  transition: all 0.4s ease-in-out;
+  padding: 16px 14px;
+  border: solid 2px var(--200);
+  border-radius: 20px;
+  &:hover {
+    border: solid 2px var(--800);
+    border-radius: 10px;
+  }
+}
+
+.interface .mainbar .supportsection {
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  width: 70%;
+  height: 500px;
+  margin: 20px 0px;
+}
+
+.interface .mainbar .supportsection .description {
+  display: flex;
+  align-items: center;
+  align-self: flex-start;
+  justify-content: center;
+  flex-direction: column;
+  height: 100%;
+  & p {
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--50);
+    margin: 20px 0px;
+  }
+  
+}
+.interface .mainbar .supportsection .linkicons {
+  display: flex;
+  align-items: center;
+  align-self: flex-end;
+  justify-content: center;
+  flex-direction: column;
+  height: 100%;
+  min-width: 150px;
+  gap: 40px;
+}
+.interface .mainbar .supportsection .linkicons .icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 60px;
+  transition: all 0.4s ease-in-out;
+  & svg {
+    transition: all 0.4s ease-in-out;
+    fill: var(--50);
+    height: 100%;
+  }
+  &:hover {
+    scale: 1.1;
+  }
+  &:hover svg {
+    fill: var(--200);
+  }
+}
+
+
+.interface .mainbar #changenote {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  flex-direction: column;
+  width: 70%;
+}
+.interface .mainbar #changenote hr {
+  background: var(--400);
+  outline: none;
+  border: none;
+  border: solid 1px var(--400);
+  height: 0px;
+  width: 100% ;
+}
+.interface .mainbar #changenote > a {
+  padding: 20px;
+  width: 100%;
+  color: var(--50);
+  text-decoration: none;
+  font-size: 18px;
+  font-weight: 500;
+  transition: all 0.4s ease-in-out;
+  border-left: solid 2px rgba(0, 0, 0, 0);
+  border-right: solid 2px rgba(0, 0, 0, 0);
+  &:hover {
+    background: var(--rgba2);
+    border-left: solid 2px var(--400);
+    border-right: solid 2px var(--400);
+  }
+}
+.interface .mainbar #changenote a > .note {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  flex-direction: column;
+}
+.interface .mainbar #changenote a > .note > h3 {
+  font-size: 28px;
+  color: var(--400);
+  margin: 20px 15px;
+}
+.interface .mainbar #changenote a > .note > p {
+  font-size: 20px;
+  margin: 5px 0px;
+}
+.interface .mainbar #changenote a > .note > p > a {
+  color: var(--200);
+  font-weight: 700;
+  transition: all 0.4s ease-in-out;
+  &:hover {
+    color: var(--400);
+  }
+}
+.interface .mainbar #changenote a > .note > .date {
+  margin: 20px 15px;
+  font-size: 24px;
+  color: var(--200);
+}
+
+#lyricshowcase {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  z-index: 3;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 1;
+  visibility: visible;
+  transition: 0.25s ease-in-out opacity, 0.25s ease-in-out visibility;
+  background-color: var(--rgba2);
+  backdrop-filter: blur(5px);
+}
+
+.fadelyricshowcase {
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+#lyricshowcase .closediv {
+  width: 20%;
+  height: 100%;
+}
+
+#lyricshowcase .lyriccol {
+  width: 60%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-direction: column;
+  overflow-y: scroll;
+  &::-webkit-scrollbar {
+    width: 10px;
+  }
+  &::-webkit-scrollbar-track {
+    background-color: var(--950);
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--200);
+  }
+}
+#lyricshowcase .lyriccol .lyricline {
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--200);
+  margin: 8px 0px;
+  width: 100%;
+  text-align: left;
+}
+
+#lyricshowcase .lyriccol .searchline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--200);
+  width: 100%;
+  height: 100%;
+  text-align: center;
+}
+
+#songshowcase {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  z-index: 3;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  opacity: 1;
+  visibility: visible;
+  transition: 0.25s ease-in-out opacity, 0.25s ease-in-out visibility;
+  background-color: var(--rgba2);
+  backdrop-filter: blur(5px);
+  color: var(--200);
+}
+#songshowcase .row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: 70%;
+}
+#songshowcase .row .coverimage {
+  height: 60%;
+  margin: 0px 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  & img {
+    height: 100%;
+  }
+}
+#songshowcase .smallrow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: 15%;
+}
+#songshowcase .closebtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  position: absolute;
+  right: 25px;
+  top: 25px;
+  opacity: 0;
+  transition: all 0.2s ease-in-out;
+  & svg {
+    transition: all 0.2s ease-in-out;
+    fill: var(--200);
+    width: 100%;
+    height: 100%;
+  }
+  &:hover svg {
+    fill: var(--50);
+  }
+}
+#songshowcase:hover .closebtn {
+  opacity: 1;
+}
+
+#songshowcase .detail {
+  height: 60%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  flex-direction: column;
+}
+#songshowcase h4 {
+  font-size: 30px;
+  color: var(--200);
+}
+#songshowcase #songshowcasesongtitle {
+  font-size: 40px;
+  color: var(--50);
+}
+#songshowcase .bottomrow {
+  align-items: center !important;
+  justify-content: center !important;
+  flex-direction: column;
+}
+#songshowcase .timestampbar {
+  width: 90%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 75px;
+}
+#songshowcase .timestampbar > div {
+  width: 50%;
+  font-size: 24px;
+  color: var(--200);
+  text-align: left;
+}
+#songshowcase .timestampbar #songshowcaseendtime {
+  text-align: right;
+}
+#songshowcase .progfullbar {
+  width: 95%;
+  height: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+#songshowcase .progfullbar #progfillbar {
+  width: 73%;
+  height: 100%;
+  transition: all 1s linear;
+  background: var(--200);
+}
+
+.fadesongshowcase {
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+#scrollerbtn {
+  position: fixed;
+  bottom: 60px;
+  right: 10px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  visibility: hidden;
+  opacity: 0;
+  transition: 0.25s ease-in-out opacity, 0.25s ease-in-out visibility, 0.25s ease-in-out border;
+  border: solid 1px var(--200);
+  border-radius: 50%;
+  background: var(--800);
+  & svg {
+    transition: 0.25s ease-in-out all;
+    fill: var(--50);
+    width: 50%;
+    height: 50%;
+  }
+}
+
+.scrlbtnvis {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.scrlbtnactive {
+  border: solid 1px var(--600) !important;
+  & svg {
+    fill: var(--600) !important;
+    width: 70%;
+    height: 70%;
+  }
+}

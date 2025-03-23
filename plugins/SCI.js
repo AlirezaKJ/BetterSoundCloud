@@ -3,9 +3,7 @@
 let rightnavbar = document.querySelector(".header__right .header__navMenu")
 document.querySelectorAll(".header__right .header__navMenu * ").forEach(element => {element.remove()});
 document.querySelectorAll(".header__right .header__link").forEach(element => {element.remove()});
-document.querySelector(".header__userNavActivitiesButton").remove()
-document.querySelector(".header__userNavMessagesButton").remove()
-document.querySelector(".header__soundInput").remove()
+
 
 let closebtn = document.createElement("li")
 closebtn.classList.add("header__appclosebtn")
@@ -114,13 +112,19 @@ playControls__elements.appendChild(openshowcasebtn)
 
 
 // After 1 second do all the operations (for div load up)
-setTimeout(() => {
-    let navbaradbuttons = [document.querySelector(".header__goUpsell_side_by_side_experience"),document.querySelector(".creatorSubscriptionsButton")]
-    
-    navbaradbuttons.forEach(element => {element.remove()});
-}, 1000);
+// TODO: dont work anymore for some reason
+// setTimeout(() => {
+//     let navbaradbuttons = [document.querySelector(".header__goUpsell_side_by_side_experience"),document.querySelector(".creatorSubscriptionsButton")]
+//     navbaradbuttons.forEach(element => {element.remove()});
+//     document.querySelector(".header__upsellWrapper").remove()
+//     document.querySelector(".header__userNavActivitiesButton").remove()
+//     document.querySelector(".header__userNavMessagesButton").remove()
+//     document.querySelector(".header__soundInput").remove()
+// }, 10000);
 
 // Media Player Btns Functions
 let playpausebtn = document.querySelector(".playControls__elements .playControls__play")
 let previoussongbtn = document.querySelector(".playControls__elements .playControls__prev")
 let nextsongbtn = document.querySelector(".playControls__elements .playControls__next")
+
+issciloaded = true
