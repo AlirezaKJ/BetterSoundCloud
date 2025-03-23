@@ -1,8 +1,24 @@
-let latestversion = "0.5.3"
+let latestversion = "0.6.0"
 let currentversion = clientVersion
 let patchnotesdiv = document.getElementById("changenote")
 
 let patchnotes = [
+    {
+        "title":"V0.6.0 (Beta)",
+        "changes":[
+            "- Added LRCLIB for lyrics api except of genius.",
+            "- Added complete adblock using @cliqz/adblocker-electron",
+            "- Reworked the loadingscreen for less screentime and a more debuging optimized version",
+            "- Reworked the rightclick menu with the new neumorphism version",
+            "- Reworked the settings interface which is all connected to one slide and can be scrolled down and up using the sidebar",
+            "- Reworked the themes section for further expansion of the themes list",
+            "- Reworked the file system so its possible to make linux distributions work",
+            "- Optimized custombg plugin image quality to the highest possible",
+            "- Optimized in soundcloud fullscreen and maximize buttons to always be in the right class state",
+        ],
+        "date":"23 March 2025",
+        "link":"https://github.com/AlirezaKJ/BetterSoundCloud/releases/tag/V0.6.0"
+    },
     {
         "title":"V0.5.3 (Beta)",
         "changes":[
