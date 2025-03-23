@@ -2,7 +2,7 @@
 
 A PC client of SoundCloud with themes and plugins made using electronjs
 
-![alt text](https://cdn.discordapp.com/attachments/1059412245077045278/1100409502282555422/blackandwhite.png?ex=65f98fb5&is=65e71ab5&hm=867b2841b656bfc146359f60aa4ccf439db73a9864f4218cf3b72459ad6a53b0&)
+![alt text](app/lib/assets/readme/demo.png)
 # Installation
 
 ## Auto Installers
@@ -38,6 +38,9 @@ npm start
 ```
 
 ## FAQ
+how to open the settings menu?
+> either by opening the right click menu or using the bottom right icons.
+
 is this app virus free?
 > yes, bettersoundcloud has been verified as 100% clean by [Softpedia](https://www.softpedia.com/get/Multimedia/Audio/Audio-Players/BetterSoundCloud.shtml#status).
 
