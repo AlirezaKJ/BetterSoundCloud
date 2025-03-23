@@ -31,30 +31,30 @@ html, body {
     color: #e0e0e0 !important;
     border: solid #555 1px !important;
 }
-.playControls__elements > .playControls__play {background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_play_arrow_white_24dp.png") !important;}
-.playControls__elements > .playing { /* Pause Icon */ background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_pause_white_24dp.png") !important;}
-.playControls__elements > .skipControl__previous {background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_skip_previous_white_24dp.png") !important;}
-.playControls__elements > .skipControl__next {    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_skip_next_white_24dp.png") !important;}
-.playControls__elements .playControls__shuffle .shuffleControl::before { background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_shuffle_white_24dp.png") !important;}
-.playControls__elements .playControls__shuffle .shuffleControl::after { background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_shuffle_orange_24dp.png") !important;}
-.playControls__elements .playControls__repeat .repeatControl.m-none { background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_repeat_white_24dp.png") !important;}
-.playControls__elements .playControls__repeat .repeatControl::before { background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_repeat_orange_24dp.png") !important;}
+.playControls__elements > .playControls__play {background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/darkcloud/round_play_arrow_white_24dp.png") !important;}
+.playControls__elements > .playing { /* Pause Icon */ background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/darkcloud/round_pause_white_24dp.png") !important;}
+.playControls__elements > .skipControl__previous {background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/darkcloud/round_skip_previous_white_24dp.png") !important;}
+.playControls__elements > .skipControl__next {    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/darkcloud/round_skip_next_white_24dp.png") !important;}
+.playControls__elements .playControls__shuffle .shuffleControl::before { background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/darkcloud/round_shuffle_white_24dp.png") !important;}
+.playControls__elements .playControls__shuffle .shuffleControl::after { background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/darkcloud/round_shuffle_orange_24dp.png") !important;}
+.playControls__elements .playControls__repeat .repeatControl.m-none { background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/darkcloud/round_repeat_white_24dp.png") !important;}
+.playControls__elements .playControls__repeat .repeatControl::before { background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/darkcloud/round_repeat_orange_24dp.png") !important;}
 .playControls__elements .playControls__repeat .repeatControl::after {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_repeat_orange_loop_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/darkcloud/round_repeat_orange_loop_24dp.png") !important;
     background-size: contain;
 }
 .playControls__elements .playbackTimeline * {color: #e0e0e0 !important;}
-.volume[data-level="0"] .volume__button {background: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_volume_off_white_24dp.png") no-repeat 0 !important;}
+.volume[data-level="0"] .volume__button {background: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/darkcloud/round_volume_off_white_24dp.png") no-repeat 0 !important;}
 .volume[data-level="1"] .volume__button,
 .volume[data-level="2"] .volume__button,
 .volume[data-level="3"] .volume__button,
 .volume[data-level="4"] .volume__button,
-.volume[data-level="5"] .volume__button {background: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_volume_down_white_24dp.png") no-repeat 0 !important;}
+.volume[data-level="5"] .volume__button {background: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/darkcloud/round_volume_down_white_24dp.png") no-repeat 0 !important;}
 .volume[data-level="6"] .volume__button,
 .volume[data-level="7"] .volume__button,
 .volume[data-level="8"] .volume__button,
 .volume[data-level="9"] .volume__button,
-.volume[data-level="10"] .volume__button {background: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_volume_up_white_24dp.png") no-repeat 0 !important;}
+.volume[data-level="10"] .volume__button {background: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/darkcloud/round_volume_up_white_24dp.png") no-repeat 0 !important;}
 
 .playbackSoundBadge .playbackSoundBadge__titleContextContainer .playbackSoundBadge__lightLink:hover {
     color: #fff !important;
@@ -95,22 +95,22 @@ html, body {
     color: #e0e0e0 !important;
 }
 .userBadge__actions .sc-button-follow::before {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_person_add_alt_white_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/darkcloud/round_person_add_alt_white_24dp.png") !important;
 }
 .userBadge__actions .sc-button-selected::before {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_how_to_reg_white_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/darkcloud/round_how_to_reg_white_24dp.png") !important;
 }
 .playbackSoundBadge__actions .playbackSoundBadge__like::before {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_favorite_white_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/darkcloud/round_favorite_white_24dp.png") !important;
 }
 .playbackSoundBadge__actions .playbackSoundBadge__like[title=Unlike]::before {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_favorite_orange_24dp.png") !important;    
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/darkcloud/round_favorite_orange_24dp.png") !important;    
 }
 .playbackSoundBadge__actions .playbackSoundBadge__follow::before {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_person_add_alt_white_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/darkcloud/round_person_add_alt_white_24dp.png") !important;
 }
 .playbackSoundBadge__actions .playbackSoundBadge__follow[title=Unfollow]::before {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_how_to_reg_orange_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/darkcloud/round_how_to_reg_orange_24dp.png") !important;
 }
 .playbackSoundBadge__actions .playbackSoundBadge__showQueue svg {
     display: none;
@@ -119,7 +119,7 @@ html, body {
     border-color: #555 !important;
     background-color: #2a2a2a !important;
     color: #e0e0e0 !important;
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_playlist_play_white_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/darkcloud/round_playlist_play_white_24dp.png") !important;
 }
 .playControls__queue .queue,
 .playControls__queue .queue__scrollableInner,
@@ -129,13 +129,13 @@ html, body {
 }
 
 .sc-button-group .sc-button-like::before {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_favorite_white_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/darkcloud/round_favorite_white_24dp.png") !important;
 }
 .sc-button-group .sc-button-like[title=Unlike]::before {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_favorite_orange_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/darkcloud/round_favorite_orange_24dp.png") !important;
 }
 .sc-button-group .sc-button-more::before {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_more_vert_white_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/darkcloud/round_more_vert_white_24dp.png") !important;
     background-size: cover !important;
 }
 .moreActions__group button::before {
@@ -175,19 +175,19 @@ html, body {
 }
 
 .sc-ministats-sounds::before {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_equalizer_white_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/darkcloud/round_equalizer_white_24dp.png") !important;
 }
 .sc-button-repost::before {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_autorenew_white_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/darkcloud/round_autorenew_white_24dp.png") !important;
 }
 .sc-button-share::before {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_share_white_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/darkcloud/round_share_white_24dp.png") !important;
 }
 .sc-button-copylink::before {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_content_copy_white_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/darkcloud/round_content_copy_white_24dp.png") !important;
 }
 .sc-button-queue::before {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_playlist_play_white_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/darkcloud/round_playlist_play_white_24dp.png") !important;
 }
 
 .soundActions .sc-button-group:nth-child(2) a {
@@ -219,16 +219,16 @@ html, body {
     color: #e0e0e0 !important;
 }
 .sc-button-startstation::before {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_radio_white_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/darkcloud/round_radio_white_24dp.png") !important;
 }
 .sc-button-message::before {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_email_white_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/darkcloud/round_email_white_24dp.png") !important;
 }
 .sc-button-addtoset::before {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_playlist_add_white_24dp.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/darkcloud/round_playlist_add_white_24dp.png") !important;
 }
 .sc-button-report::before {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/darkcloud/round_report_problem_white_24dp.png") !important;    
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/darkcloud/round_report_problem_white_24dp.png") !important;    
 }
 
 .visualSound__wrapper {
@@ -239,16 +239,16 @@ html, body {
 
 /* CSS For SCI Elements */
 .playControls__themebtn {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/ctx-themes-%23fff.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/ctx-themes-%23fff.png") !important;
 }
 .playControls__pluginbtn {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/ctx-plugins-%23fff.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/ctx-plugins-%23fff.png") !important;
 }
 .playControls__lyricbtn {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/round_mic_%23fff.png") !important;
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/round_mic_%23fff.png") !important;
 }
 .playControls__showcasebtn {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/lib/assets/baseline_smart_display_black_%23fff.png");
+    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/baseline_smart_display_black_%23fff.png");
 }
 
 .addToPlaylistItem__content{
