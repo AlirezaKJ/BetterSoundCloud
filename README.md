@@ -36,6 +36,23 @@ npm i
 ```ps
 npm start
 ```
+## Features TODO List
+- [ ] Linux and Mac packages
+- [ ] Proxy integration
+- [ ] load url using deep links
+- [ ] customize user agent string
+- [ ] listen offline integration
+- [ ] by pass this song is not available in your country
+- [ ] enchance soundcloud shuffle method
+- [ ] use soundcloud waveforms in fullscreen mode
+- [x] Custom css editor
+- [x] Custom js editor
+- [x] Themes made by several developers
+- [x] Full adblocker
+- [x] Soundcloud downloader
+- [x] lyrics integration using LRCLIB api
+- [x] DiscordRPC integration
+
 
 ## FAQ
 how to open the settings menu?
