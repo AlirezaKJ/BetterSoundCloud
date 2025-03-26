@@ -528,6 +528,9 @@
   width: 100%;
   text-align: left;
 }
+#lyricshowcase .lyriccol .lyricpassed {
+  color: var(--400);
+}
 
 #lyricshowcase .lyriccol .searchline {
   display: flex;

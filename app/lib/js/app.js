@@ -44,6 +44,7 @@ let cursonginfo = {
   songcurrentdur: "",
   songstate: "",
   songlyric: "",
+  lyricssynced: false,
 }
 
 // ! READ CONSOLE MESSAGES
@@ -182,6 +183,7 @@ RPC.on('ready', async () => {
 
 let lyricshowcase = document.querySelector("#lyricshowcase")
 let lyriccoldiv = document.querySelector("#lyricshowcase .lyriccol")
+let syncedlyricsinterval;
 function updatelyricshowcase() {
   var songname;
   var songartist;
@@ -214,13 +216,20 @@ function updatelyricshowcase() {
         console.log(data.syncedLyrics);
         lyrics = data.syncedLyrics;
         cursonginfo.songlyric = data.syncedLyrics
+        cursonginfo.lyricssynced = true
         lyriccoldiv.innerHTML = ``;
         lyrics.split("\n").forEach(line => {
-          lyriccoldiv.innerHTML += `<div class="lyricline">${line}</div>`;
+          time = line.split("]")[0].substring(1).slice(0, -3).split(":")
+          time = parseInt(time[0]) * 60 + parseInt(time[1])
+          bar = line.substring(10)
+          console.log(bar)
+          lyriccoldiv.innerHTML += `<div data-tstamp="${time}" class="lyricline">${bar}</div>`;
         });
+        lyricsyncloop()
       } else if (data.plainLyrics) {
         lyrics = data.plainLyrics;
         cursonginfo.songlyric = data.plainLyrics
+        cursonginfo.lyricssynced = false
         lyriccoldiv.innerHTML = ``;
         lyrics.split("\n").forEach(line => {
           lyriccoldiv.innerHTML += `<div class="lyricline">${line}</div>`;
@@ -228,10 +237,29 @@ function updatelyricshowcase() {
       } else {
         console.log("no lyrics found", err);
         cursonginfo.songlyric = "not found"
+        cursonginfo.lyricssynced = false
         lyriccoldiv.innerHTML += `<div class="searchline">DIDN'T FIND ANY LYRICS FOR ${songname} - ${songartist}</div>`;
       }
     })
   })
+}
+function lyricsyncloop() {
+  syncedlyricsinterval = setInterval(() => {
+    lyriclines = document.querySelectorAll("#lyricshowcase .lyriccol .lyricline")
+    currentsongtimesum = cursonginfo.songcurrentdur.split(":")
+    if (currentsongtimesum.length == 2) {
+      currentsongtimesum = parseInt(currentsongtimesum[0]) * 60 + parseInt(currentsongtimesum[1])
+    } else {currentsongtimesum = parseInt(currentsongtimesum[0])}
+    console.log(currentsongtimesum)
+    lyriclines.forEach(element => {
+      if (currentsongtimesum > element.dataset.tstamp) {
+        element.classList.add("lyricpassed")
+      }
+    });
+    if (lyricshowcase.classList.contains("fadelyricshowcase")) {
+      clearInterval(syncedlyricsinterval)
+    }
+  },500)
 }
 
 function lyricshowcaseopen() {
