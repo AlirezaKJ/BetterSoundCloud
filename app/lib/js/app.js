@@ -79,10 +79,12 @@ webview.addEventListener("console-message", (e) => {
     cursonginfo.songduration = e.message.split("|")[2]
   } else if (e.message.split("|")[1] == "CurSongTitle") {
     if (cursonginfo.songtitle != e.message.split("|")[2]) {
+      cursonginfo.songtitle = e.message.split("|")[2]
       console.log("songswap occured")
-      updatelyricshowcase()
+      setTimeout(updatelyricshowcase,1000)
+    } else {
+      cursonginfo.songtitle = e.message.split("|")[2]
     }
-    cursonginfo.songtitle = e.message.split("|")[2]
   } else if (e.message.split("|")[1] == "CurSongArtist") {
     cursonginfo.songartist = e.message.split("|")[2]
   } else if (e.message.split("|")[1] == "CurSongLiked") {
