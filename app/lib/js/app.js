@@ -78,6 +78,10 @@ webview.addEventListener("console-message", (e) => {
   } else if (e.message.split("|")[1] == "EndDur") {
     cursonginfo.songduration = e.message.split("|")[2]
   } else if (e.message.split("|")[1] == "CurSongTitle") {
+    if (cursonginfo.songtitle != e.message.split("|")[2]) {
+      console.log("songswap occured")
+      updatelyricshowcase()
+    }
     cursonginfo.songtitle = e.message.split("|")[2]
   } else if (e.message.split("|")[1] == "CurSongArtist") {
     cursonginfo.songartist = e.message.split("|")[2]
@@ -94,7 +98,7 @@ webview.addEventListener("console-message", (e) => {
     songurlstring = songurlstring.replace("t50x50","t500x500")
     cursonginfo.songurl = songurlstring
   } else if (e.message.split("|")[1] == "UIActivateLyricShowCase") {
-    updatelyricshowcase()
+    lyricshowcaseopen()
   } else if (e.message.split("|")[1] == "UIActivateShowCase") {
     showsongshowcase()
   } else if (e.message.split("|")[1] == "UISettingPreviousFrame") {
@@ -226,7 +230,10 @@ function updatelyricshowcase() {
       }
     })
   })
+}
 
+function lyricshowcaseopen() {
+  updatelyricshowcase()
   lyricshowcase.classList.remove("fadelyricshowcase")
 }
 
