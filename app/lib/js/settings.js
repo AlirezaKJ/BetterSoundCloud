@@ -12,6 +12,7 @@ let settings = {
   scrollerbtn: dbResolve("settings.scrollerbtn", false),
   zoomfactorperc: dbResolve("settings.zoomfactorperc", 100),
   theme: dbResolve("settings.theme", "darkcloud"),
+  useragent: dbResolve("settings.useragent", undefined)
 }
 
 function updateLS() {
@@ -28,6 +29,7 @@ function updateLS() {
   dbSetItem("settings.scrollerbtn", settings.scrollerbtn)
   dbSetItem("settings.zoomfactorperc", settings.zoomfactorperc)
   dbSetItem("settings.theme", settings.theme)
+  dbSetItem("settings.useragent", settings.useragent)
 }
 
 function changeSettings(name, value) {

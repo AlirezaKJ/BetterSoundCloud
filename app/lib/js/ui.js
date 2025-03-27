@@ -7,6 +7,7 @@ webview.addEventListener('context-menu', (e) => {
   rclickmenu.style.top = e.params.y + "px"
   rclickmenu.style.left = e.params.x + "px"
   rclickmenu.classList.remove("fademctx")
+  mouseinf.selection = e.params.selectionText
 })
 
 // functions related rclickmenu btns
@@ -65,11 +66,13 @@ function signoutwv() {
 }
 
 function copywv() { // TODO: ADD COPY FUNCTIONALITY
-  // navigator.clipboard.writeText(webview.getURL())
+  navigator.clipboard.writeText(mouseinf.selection)
+  console.log(mouseinf.selection)
   rclickmenu.classList.add("fademctx")
 }
 
 function pastewv() { // TODO: ADD COPY FUNCTIONALITY
+  webview.insertText("teste hajitt")
   rclickmenu.classList.add("fademctx")
 }
 

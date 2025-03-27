@@ -47,6 +47,10 @@ let cursonginfo = {
   lyricssynced: false,
 }
 
+let mouseinf = {
+  selection: "",
+}
+
 // ! READ CONSOLE MESSAGES
 // USED AS A CHANNEL FOR COMMUNICATION BETWEEN WEBVIEW AND RENDERER
 webview.addEventListener("console-message", (e) => {
