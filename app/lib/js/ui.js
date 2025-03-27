@@ -71,11 +71,6 @@ function copywv() { // TODO: ADD COPY FUNCTIONALITY
   rclickmenu.classList.add("fademctx")
 }
 
-function pastewv() { // TODO: ADD COPY FUNCTIONALITY
-  webview.insertText("teste hajitt")
-  rclickmenu.classList.add("fademctx")
-}
-
 
 // SETTINGS SLIDE UI RESPONSIBILITY
 let togglebuttons = document.querySelectorAll(".mainbar .settingitem .toggle input")
