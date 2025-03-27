@@ -76,7 +76,8 @@ function copywv() { // TODO: ADD COPY FUNCTIONALITY
 let togglebuttons = document.querySelectorAll(".mainbar .settingitem .toggle input")
 let zoomfactorinp = document.querySelector(".mainbar .settingitem .manualinp input[name='zoomfactorperc']")
 let reloadbindsinp = document.querySelectorAll(".mainbar .settingitem .manualinp select")
-let startuppageinp = document.querySelector(".mainbar .settingitem .manualinp input[type='url']")
+let startuppageinp = document.querySelector(".mainbar .settingitem .manualinp input[name='startupurl']")
+let useragentinp = document.querySelector(".mainbar .settingitem .manualinp input[name='useragent']")
 let themeitemsdiv = document.querySelectorAll(".mainbar .selectthemes .themeitem")
 // Custom CSS and JS editors handling 
 let customcssbox = document.querySelector("#customcssbox")
@@ -124,6 +125,9 @@ function syncsettingsui() {
 
   if (settings["startupurl"] != false) {
     startuppageinp.value = settings["startupurl"]
+  }
+  if (settings["useragent"] != undefined) {
+    useragentinp.value = settings["useragent"]
   }
 
   switch (settings.theme) {
@@ -187,6 +191,13 @@ zoomfactorinp.addEventListener("change", function () {
 
 // STARTUPPAGE INPUT ON VALUE EVENT
 startuppageinp.addEventListener("change", function () {
+  if (this.value === "") {
+    changeSettings(this.name, false)
+  } else {
+    changeSettings(this.name, this.value)
+  }
+})
+useragentinp.addEventListener("change", function () {
   if (this.value === "") {
     changeSettings(this.name, false)
   } else {

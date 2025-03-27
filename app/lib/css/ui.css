@@ -225,6 +225,20 @@
     color: var(--600);
   }
 }
+.interface .mainbar .settingitem .manualinp input[type="text"] {
+  width: 90%;
+  height: 35px;
+  font-size: 20px;
+  font-weight: 700;
+  background-color: rgba(0, 0, 0, 0);
+  color: var(--200);
+  border-bottom: solid 2px var(--200);
+  transition: all 0.4s ease-in-out;
+  &:focus {
+    border-bottom: solid 2px var(--600);
+    color: var(--600);
+  }
+}
 
 .interface .mainbar .bigsettingitem {
   display: flex;
