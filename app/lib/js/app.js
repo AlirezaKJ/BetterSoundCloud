@@ -252,7 +252,7 @@ function lyricsyncloop() {
     } else {currentsongtimesum = parseInt(currentsongtimesum[0])}
     console.log(currentsongtimesum)
     lyriclines.forEach(element => {
-      if (currentsongtimesum > element.dataset.tstamp) {
+      if (currentsongtimesum > element.dataset.tstamp - 1) {
         element.classList.add("lyricpassed")
       }
     });
