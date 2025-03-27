@@ -199,7 +199,7 @@ startuppageinp.addEventListener("change", function () {
 })
 useragentinp.addEventListener("change", function () {
   if (this.value === "") {
-    changeSettings(this.name, false)
+    changeSettings(this.name, undefined)
   } else {
     changeSettings(this.name, this.value)
   }

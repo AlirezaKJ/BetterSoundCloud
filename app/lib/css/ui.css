@@ -541,6 +541,7 @@
   margin: 8px 0px;
   width: 100%;
   text-align: left;
+  transition: all 0.3s ease-in-out;
 }
 #lyricshowcase .lyriccol .lyricpassed {
   color: var(--400);
