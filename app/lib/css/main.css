@@ -240,9 +240,28 @@ input::-webkit-inner-spin-button {
   color: var(--950);
   font-size: 35px;
 }
+#loadingscreen h5 {
+  color: var(--950);
+  font-size: 25px;
+}
 #loadingscreen span {
   color: var(--950);
   font-size: 25px;
+}
+#loadingscreen button {
+  outline: none;
+  border: solid 3px var(--800);
+  border-radius: 10px;
+  background: var(--950);
+  color: var(--50);
+  font-size: 22px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.25s ease-in-out;
+  &:hover {
+    border: solid 3px var(--400);
+    /* color: var(--50); */
+  }
 }
 #loadingscreen .row .linkicon {
   width: 50px;

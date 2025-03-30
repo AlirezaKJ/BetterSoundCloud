@@ -240,3 +240,8 @@ function applyCustomJS() {
   changeSettings("customjs",customjs)
   webview.reload()
 }
+
+function resetSettings() {
+  localStorage.clear()
+  location.reload()
+}
