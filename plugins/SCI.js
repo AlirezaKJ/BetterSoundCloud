@@ -97,9 +97,13 @@ let themebtn = document.createElement("div")
 let lyricbtn = document.createElement("div")
 let openshowcasebtn = document.createElement("div")
 pluginbtn.classList.add("playControls__pluginbtn")
+pluginbtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M352-120H120v-232q48 0 84-30.5t36-77.5q0-47-36-77.5T120-568v-232h240q0-42 29-71t71-29q42 0 71 29t29 71h240v240q42 0 71 29t29 71q0 42-29 71t-71 29v240H568q0-50-31.5-85T460-240q-45 0-76.5 35T352-120Z"/></svg>`
 themebtn.classList.add("playControls__themebtn")
+themebtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M480-80q-82 0-155-31.5t-127.5-86Q143-252 111.5-325T80-480q0-83 32.5-156t88-127Q256-817 330-848.5T488-880q80 0 151 27.5t124.5 76q53.5 48.5 85 115T880-518q0 115-70 176.5T640-280h-74q-9 0-12.5 5t-3.5 11q0 12 15 34.5t15 51.5q0 50-27.5 74T480-80ZM260-440q26 0 43-17t17-43q0-26-17-43t-43-17q-26 0-43 17t-17 43q0 26 17 43t43 17Zm120-160q26 0 43-17t17-43q0-26-17-43t-43-17q-26 0-43 17t-17 43q0 26 17 43t43 17Zm200 0q26 0 43-17t17-43q0-26-17-43t-43-17q-26 0-43 17t-17 43q0 26 17 43t43 17Zm120 160q26 0 43-17t17-43q0-26-17-43t-43-17q-26 0-43 17t-17 43q0 26 17 43t43 17Z"/></svg>`
 lyricbtn.classList.add("playControls__lyricbtn")
+lyricbtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M480-400q-50 0-85-35t-35-85v-240q0-50 35-85t85-35q50 0 85 35t35 85v240q0 50-35 85t-85 35Zm-40 280v-123q-104-14-172-93t-68-184h80q0 83 58.5 141.5T480-320q83 0 141.5-58.5T680-520h80q0 105-68 184t-172 93v123h-80Z"/></svg>`
 openshowcasebtn.classList.add("playControls__showcasebtn")
+openshowcasebtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="m380-300 280-180-280-180v360ZM80-160v-640h800v640H80Z"/></svg>`
 pluginbtn.setAttribute("onclick","console.log('BSCReceive|UISettingShowRequest|1')")
 themebtn.setAttribute("onclick","console.log('BSCReceive|UISettingShowRequest|2')")
 lyricbtn.setAttribute("onclick","console.log('BSCReceive|UIActivateLyricShowCase')")
