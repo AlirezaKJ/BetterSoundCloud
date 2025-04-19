@@ -2,8 +2,20 @@
 header > .header__inner {
     width: 100% !important;
 }
-.playControls > section > .playControls__wrapper {width: 100% !important;}
 
+/* General Optimization */
+.playControls > section > .playControls__wrapper {
+    width: 100% !important;
+    background: var(--background-surface-color);
+}
+
+.playControls__wrapper .playControls__elements .sc-button.sc-button-secondary {
+    background: none !important; /* remove unnecessary bg for secondary btns */
+}
+.playControls__wrapper .playbackSoundBadge__actions > * {
+    margin: none;
+    padding: var(--spacing-1x) 0px;
+}
 /* Added Custom Theme And Plugins Btn To Audio Bar */
 .playControls__themebtn {
     cursor: pointer;
@@ -57,11 +69,11 @@ header > .header__inner {
 }
 /* Previous And Next Header Btn */
 .header__appnextbtn {
-    background-color: black;
+    background-color: var(--background-surface-color);
     background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/sharp_arrow_forward_ios_white_48dp.png");
 }
 .header__apppreviousbtn {
-    background-color: black;
+    background-color: var(--background-surface-color);
     background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/sharp_arrow_back_ios_white_48dp.png");
 }
 /* Hide All Promotion Banners */
