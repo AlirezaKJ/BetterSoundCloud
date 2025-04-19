@@ -11,7 +11,6 @@ function createWindow () {
   mainWindow = new BrowserWindow({
     width: 1366,
     height: 768,
-    // frame: false,
     icon: 'app/lib/assets/icon.ico',
     webPreferences: {
 			nodeIntegration: true,
@@ -22,6 +21,7 @@ function createWindow () {
 
   mainWindow.setMenuBarVisibility(false)
   mainWindow.loadFile('app/index.html')
+  mainWindow.maximize();
   
   // Open the DevTools.
   // mainWindow.webContents.openDevTools()
