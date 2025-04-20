@@ -281,6 +281,9 @@ input::-webkit-inner-spin-button {
   animation: fadeOut 0.5s ease-in-out forwards;
 }
 
+.themeinfo > a:hover {
+  text-decoration: underline;
+}
 
 @keyframes fadeOut {
   0% {

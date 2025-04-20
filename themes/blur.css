@@ -1,0 +1,24 @@
+article[class="sidebarModule g-all-transitions-200-linear mobileApps"],
+div[class="l-footer sc-text-verylight sc-text-secondary standard sc-border-light-top"]{
+    opacity: 0 !important;
+    user-select: none;
+    pointer-events: none;
+    cursor: default;
+}
+
+.sc-classic .dropbar__content,
+.sc-classic .header{
+    background-color: rgb(24, 26, 26, 0.8) !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+.playControls__inner {
+    background-color: rgb(24, 26, 26, 0.8) !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+
+div[class="playControls__bg"],
+div[class="playControls__panel"] {
+    display: none;
+}
