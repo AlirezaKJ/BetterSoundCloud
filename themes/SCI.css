@@ -2,68 +2,109 @@
 header > .header__inner {
     width: 100% !important;
 }
-.playControls > section > .playControls__wrapper {width: 100% !important;}
 
+/* General Optimization */
+.playControls > section > .playControls__wrapper {
+    width: 100% !important;
+    background: var(--background-surface-color);
+}
+
+.playControls__wrapper .playControls__elements .sc-button.sc-button-secondary {
+    background: none !important; /* remove unnecessary bg for secondary btns */
+}
+.playControls__wrapper .playbackSoundBadge__actions > * {
+    margin: none;
+    padding: var(--spacing-1x) 0px;
+}
 /* Added Custom Theme And Plugins Btn To Audio Bar */
 .playControls__themebtn {
     cursor: pointer;
     width: 24px;
     height: 24px;
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/ctx-themes-%23333.png");
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: 70%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    & svg {
+        width: 80%;
+        height: auto;
+        fill: var(--primary-color);
+    }
 }
 .playControls__pluginbtn {
     cursor: pointer;
     width: 24px;
     height: 24px;
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/ctx-plugins-%23333.png");
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: 70%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    & svg {
+        width: 80%;
+        height: auto;
+        fill: var(--primary-color);
+    }
 }
 .playControls__lyricbtn {
     cursor: pointer;
     width: 24px;
     height: 24px;
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/round_mic_%23333.png");
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: 75%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    & svg {
+        width: 80%;
+        height: auto;
+        fill: var(--primary-color);
+    }
+}
+.playControls__showcasebtn {
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    & svg {
+        width: 80%;
+        height: auto;
+        fill: var(--primary-color);
+    }
 }
 
 .header__app__custombtns {
     cursor: pointer;
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     height: 46px;
     width: 46px;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: 60%;
+    & svg {
+        fill: var(--primary-color);
+    }
 }
-.header__app__custombtns:hover {background-color: #111;}
-.header__appclosebtn {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/baseline_close_white_24dp.png");
+/* ! TODO: add hover effect that rely on var color */
+/* .header__app__custombtns:hover {background-color: #111;} */
+
+.header__navMenu li .header__navMenuItem {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    border-right: none;
+    & svg {
+        fill: var(--primary-color) !important;
+    }
 }
-.header__appmaximizebtn {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/sharp_fullscreen_exit_white_48dp.png");
-}
-.header__appmaximizebtn__alt {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/baseline_fullscreen_white_48dp.png");
-}
-.header__appminimizebtn {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/outline_minimize_black_48dp.png");
-}
-/* Previous And Next Header Btn */
+
+/* Previous And Next Header Btn
 .header__appnextbtn {
-    background-color: black;
+    background-color: var(--background-surface-color);
     background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/sharp_arrow_forward_ios_white_48dp.png");
 }
 .header__apppreviousbtn {
-    background-color: black;
+    background-color: var(--background-surface-color);
     background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/sharp_arrow_back_ios_white_48dp.png");
-}
+} */
 /* Hide All Promotion Banners */
 .l-product-banners {display: none !important;}
 
@@ -73,18 +114,6 @@ body::-webkit-scrollbar-track {display: none;}
 body::-webkit-scrollbar-corner {display: none;}
 body::-webkit-scrollbar-thumb {background: #ff5500;}
 body::-webkit-scrollbar-thumb:hover {background: #ff7700;}
-
-/* SCI Showcase Plugin Styles */
-.playControls__showcasebtn {
-    cursor: pointer;
-    width: 24px;
-    height: 24px;
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/baseline_smart_display_black_%23333.png");
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: 75%;
-    margin-right: 20px;
-}
 
 /* Fix replaced icon scrollbar bug for high zoom */
 .header__navWrapper .header__navMenu li a {

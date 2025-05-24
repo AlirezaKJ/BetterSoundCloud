@@ -402,8 +402,8 @@ ipcRenderer.on("fixviewicons", function (evt, message) {
     closebtn.style.display = "none"`)
   } else if (message == "3icon") {
     webview.executeJavaScript(`maximizebtn.classList.remove("header__appmaximizebtn__alt")
-    minimizebtn.style.display = "block"
-    closebtn.style.display = "block"`)
+    minimizebtn.style.display = "flex"
+    closebtn.style.display = "flex"`)
   } 
 });
 

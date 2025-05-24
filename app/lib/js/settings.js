@@ -11,7 +11,7 @@ let settings = {
   startupurl: dbResolve("settings.startupurl", false),
   scrollerbtn: dbResolve("settings.scrollerbtn", false),
   zoomfactorperc: dbResolve("settings.zoomfactorperc", 100),
-  theme: dbResolve("settings.theme", "darkcloud"),
+  theme: dbResolve("settings.theme", "vanilla"),
   useragent: dbResolve("settings.useragent", undefined)
 }
 

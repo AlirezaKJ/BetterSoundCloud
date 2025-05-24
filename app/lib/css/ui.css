@@ -83,6 +83,13 @@
   margin: 30px 0px;
   color: var(--400);
 }
+.interface .mainbar p {
+  text-align: center;
+  font-size: 24px;
+  margin: 10px 0px;
+  color: var(--200);
+  width: 80%;
+}
 .interface .mainbar section {
   display: flex;
   align-items: center;
@@ -287,6 +294,7 @@
   align-items: center;
   justify-content: space-between;
   width: 90%;
+  margin: 25px 0px;
 }
 .interface .mainbar .selectthemes .themeitem {
   display: flex;
@@ -336,6 +344,22 @@
 .interface .mainbar .selectthemes .themeitem img {
   width: 100%;
   margin: 20px 0px;
+}
+.interface .mainbar button {
+  cursor: pointer;
+  outline: none;
+  background: var(--950);
+  color: var(--200);
+  font-size: 20px;
+  font-weight: 800;
+  transition: all 0.4s ease-in-out;
+  padding: 16px 14px;
+  border: solid 2px var(--200);
+  border-radius: 20px;
+  &:hover {
+    border: solid 2px var(--800);
+    border-radius: 10px;
+  }
 }
 
 .interface .mainbar #customjsbox {

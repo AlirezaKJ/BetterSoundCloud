@@ -2,7 +2,7 @@ let appcontainer = document.querySelector("#app")
 let contentcontainer = document.querySelector("#app .l-content")
 contentcontainer.style.zindex = "2"
 contentcontainer.style.position = "relative"
-contentcontainer.style.backgroundColor = "#ffffff"
+contentcontainer.style.backgroundColor = "var(--surface-color)"
 let custombg = document.createElement("div")
 custombg.classList.add("custombg")
 custombg.style.width = "100%"
