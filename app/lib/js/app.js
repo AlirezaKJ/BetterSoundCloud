@@ -3,15 +3,17 @@ const fs = require("fs");
 const packagefile = require("../package.json");
 const scdl = require("soundcloud-downloader").default;
 const https = require('https');
-const clientId = "1054636117284106270"
-const DiscordRPC = require('discord-rpc')
-const RPC = new DiscordRPC.Client({ transport: 'ipc' })
+const { f } = require("@cliqz/adblocker-electron");
 
-
-
-
+// Discord RPC
+const { Client, StatusDisplayType } = require('@xhayper/discord-rpc');
+const { ActivityType } = require("discord-api-types/v10")
+const client = new Client({
+    clientId: "1054636117284106270" // Discord App Client ID
+});
 
 const clientVersion = packagefile.version
+const startingTimestamp = Date.now();
 
 let appdirectory;
 ipcRenderer.on("apppath", function (evt, message) {
@@ -46,6 +48,40 @@ let cursonginfo = {
   songlyric: "",
   lyricssynced: false,
 }
+
+function toSeconds(hhmmss) {
+  if (!hhmmss) return 0;
+  const parts = hhmmss.split(":").map(Number);
+  if (parts.length === 3) return parts[0]*3600 + parts[1]*60 + parts[2];
+  if (parts.length === 2) return parts[0]*60 + parts[1];
+  return Number(parts[0] || 0);
+}
+
+function calcTimestamps(currentStr, totalStr) {
+  const now = Date.now();
+  const cur = toSeconds(currentStr);
+  const tot = toSeconds(totalStr);
+  if (!Number.isFinite(cur) || cur < 0 || !Number.isFinite(tot) || tot <= 0) return null;
+  const start = now - cur * 1000;
+  const end   = start + tot * 1000;
+  return { start, end };
+}
+
+let lastActivity = null;
+function shallowEqual(a, b) {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  const ka = Object.keys(a), kb = Object.keys(b);
+  if (ka.length !== kb.length) return false;
+  for (const k of ka) {
+    const va = a[k], vb = b[k];
+    if (typeof va === "object" && typeof vb === "object") {
+      if (!shallowEqual(va, vb)) return false;
+    } else if (va !== vb) return false;
+  }
+  return true;
+}
+
 
 let mouseinf = {
   selection: "",
@@ -124,65 +160,64 @@ webview.addEventListener("console-message", (e) => {
 ``
 
 // ! Discord RPC LOOP function
-DiscordRPC.register(clientId)
 
-async function setDActivity() {
-  if (!RPC) return; 
-  var userdetail;
-  var userbigimage;
-  var userbigimagetext;
-  var usersmallimage;
-  var userviewpage = webview.getURL().split("//")[1].split("/")[1]
-  var userlisteningdurationtext
-  if (userviewpage == "you") {userviewpage = "Library"}
-  
-  if (cursonginfo.songstate == "paused") {
-    userdetail = "Exploring SoundCloud"
-    userlisteningdurationtext = "At " + userviewpage
-    userbigimage = "bw-exploring-bordered-white"
-    usersmallimage = "bw-icon-bordered-white"
-    userbigimagetext = "Exploring"
-  } else {
-    userdetail = `Listening To ${cursonginfo.songtitle}`
-    userlisteningdurationtext = "By " + cursonginfo.songartist
-    userbigimage = cursonginfo.songcover
-    userbigimagetext = "By " + cursonginfo.songartist
-    usersmallimage = "bw-icon-bordered-white"
-  }    
-  RPC.setActivity({
-    details: userdetail,
-    state: userlisteningdurationtext,
-    largeImageKey: userbigimage,
-    largeImageText: userbigimagetext,
-    smallImageKey: usersmallimage,
+async function updateDiscordActivity() {
+  if (!client) return;
+
+  let userviewpage = "Discover";
+  try {
+    const url = new URL(webview.getURL());
+    userviewpage = (url.pathname.split("/")[1] || "Discover");
+  } catch {}
+
+  const isPause = cursonginfo.songstate === "paused";
+  const title = cursonginfo.songtitle || "Unknown Title";
+  const artist = cursonginfo.songartist || "Unknown Artist";
+
+  const largeImageKey = isPause ? "bw-exploring-bordered-white" : cursonginfo.songcover;
+  const largeImageText = isPause ? "Exploring SoundCloud" : '';
+
+  const ts = calcTimestamps(cursonginfo.songcurrentdur, cursonginfo.songduration);
+
+  const activity = {
+    type: ActivityType.Listening,
+    details: isPause ? "BetterSoundCloud" : `${title}`,
+    state: isPause ? `At ${userviewpage}` : `${artist}`,
+    largeImageKey,
+    largeImageText,
+    smallImageKey: "bw-icon-bordered-white",
     smallImageText: `V${clientVersion}`,
     instance: false,
-    buttons: [
-      {
-        label: "Download",
-        url: 'https://alirezakj.com/bsc',
-      },
-      {
-        label: "Github",
-        url: packagefile.repository,
-      }
-    ]
-  })
+    startTimestamp: startingTimestamp,
+    statusDisplayType: StatusDisplayType.DETAILS
+  }
+
+  if(!isPause && ts) {
+    activity.startTimestamp = ts.start;
+    activity.endTimestamp = ts.end;
+  }
+
+  if (shallowEqual(activity, lastActivity)) return;
+  lastActivity = activity;
+
+  await client.user.setActivity(activity);
 }
 
-RPC.login({ clientId }).catch(err => console.error(err))
 
-RPC.on('disconnected', (event) => {
+client.on('disconnected', (event) => {
   console.log(`Discord RPC disconnected! Code: ${event.code}, Reason: ${event.reason}`);
-})
-RPC.on('ready', async () => {
+});
+
+client.once('ready', () => {
   console.log("Discord RPC is ready!");
   setInterval(() => {
     if (settings.discordrpc == true) {
-      setDActivity();
+      updateDiscordActivity();
     }
   }, 1000);
-})
+});
+
+client.login().catch(err => console.error(err));
 
 
 let lyricshowcase = document.querySelector("#lyricshowcase")
