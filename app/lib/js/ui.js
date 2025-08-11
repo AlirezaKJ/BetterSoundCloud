@@ -140,6 +140,9 @@ function syncsettingsui() {
     case "postmorphic":
       themeitemsdiv[3].classList.add("active")
       break;
+    case "blur":
+      themeitemsdiv[4].classList.add("active")
+      break;
     default:
       themeitemsdiv[0].classList.add("active")
       break;
@@ -219,6 +222,9 @@ function selecttheme(index) {
       break;
     case 3:
       changeSettings("theme", "postmorphic")
+      break;
+    case 4:
+      changeSettings("theme", "blur")
       break;
   }
   themeitemsdiv.forEach(function (themeitem) {

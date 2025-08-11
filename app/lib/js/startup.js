@@ -49,6 +49,9 @@ function loadstop() {
       case "postmorphic":
         addstyle("\\themes\\postMorphic.css")
         break;
+      case "blur":
+        addstyle("\\themes\\blur.css")
+        break;
       default:
         console.log("No theme selected")
         break;
