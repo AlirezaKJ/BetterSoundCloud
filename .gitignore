@@ -1,2 +1,5 @@
 node_modules
-out/
+out
+build
+.tsbuildinfo
+app/lib/assets/inapp
