@@ -1,10 +1,10 @@
-const { FusesPlugin } = require('@electron-forge/plugin-fuses');
-const { FuseV1Options, FuseVersion } = require('@electron/fuses');
+const { FusesPlugin } = require("@electron-forge/plugin-fuses");
+const { FuseV1Options, FuseVersion } = require("@electron/fuses");
 
 module.exports = {
   packagerConfig: {
     asar: true,
-    icon: "app/lib/assets/icon.ico"
+    icon: "app/lib/assets/icon.ico",
   },
   // files: [
   //   'dist/**/*',
@@ -14,46 +14,46 @@ module.exports = {
   rebuildConfig: {},
   makers: [
     {
-      name: '@electron-forge/maker-appx',
+      name: "@electron-forge/maker-appx",
       config: {
-        publisher: 'CN=developmentca',
-        icon: "app/lib/assets/icon.ico"
+        publisher: "CN=developmentca",
+        icon: "app/lib/assets/icon.ico",
         // devCert: 'C:\\devcert.pfx',
         // certPass: 'abcd'
-      }
+      },
     },
     {
-      name: '@electron-forge/maker-wix',
+      name: "@electron-forge/maker-wix",
       config: {
         language: 1033,
-        icon: "app/lib/assets/icon.ico"
+        icon: "app/lib/assets/icon.ico",
         // manufacturer: 'My Awesome Company'
-      }
+      },
     },
     {
-      name: '@electron-forge/maker-squirrel',
+      name: "@electron-forge/maker-squirrel",
       config: {
-        icon: "app/lib/assets/icon.ico"
+        icon: "app/lib/assets/icon.ico",
         // certificateFile: './cert.pfx',
         // certificatePassword: process.env.CERTIFICATE_PASSWORD
-      }
+      },
     },
     {
-      name: '@electron-forge/maker-zip',
-      platforms: ['darwin'],
+      name: "@electron-forge/maker-zip",
+      platforms: ["darwin"],
     },
     {
-      name: '@electron-forge/maker-deb',
+      name: "@electron-forge/maker-deb",
       config: {},
     },
     {
-      name: '@electron-forge/maker-rpm',
+      name: "@electron-forge/maker-rpm",
       config: {},
     },
   ],
   plugins: [
     {
-      name: '@electron-forge/plugin-auto-unpack-natives',
+      name: "@electron-forge/plugin-auto-unpack-natives",
       config: {},
     },
     // Fuses are used to enable/disable various Electron functionality

@@ -1,5 +1,7 @@
-window.addEventListener('click', (event) => {mouseClick()});
+window.addEventListener("click", (event) => {
+  mouseClick();
+});
 
 function mouseClick() {
-    console.log("BSCReceive|MouseClicked")
+  console.log("BSCReceive|MouseClicked");
 }

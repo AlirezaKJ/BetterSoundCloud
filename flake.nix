@@ -23,7 +23,7 @@
           inherit pname version;
           src = ./.;
 
-          npmDepsHash = "";
+          npmDepsHash = "sha256-zEmUjwhEx734yjEYK8/2aMiCZRpaTaoKx/Mt+KEhlw0=";
           nativeBuildInputs = [electron];
           dontNpmBuild = true;
 
@@ -35,7 +35,7 @@
           '';
 
           meta = with lib; {
-            inherit (self) description;
+            description = "A PC client of SoundCloud with improvement made using electronjs";
             homepage = "https://github.com/AlirezaKJ/BetterSoundCloud";
             license = licenses.mit;
             inherit (electron.meta) platforms;
