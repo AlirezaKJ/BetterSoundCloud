@@ -144,16 +144,38 @@ playControls__elements.appendChild(themebtn);
 playControls__elements.appendChild(lyricbtn);
 playControls__elements.appendChild(openshowcasebtn);
 
-// After 1 second do all the operations (for div load up)
-// TODO: dont work anymore for some reason
-// setTimeout(() => {
-//     let navbaradbuttons = [document.querySelector(".header__goUpsell_side_by_side_experience"),document.querySelector(".creatorSubscriptionsButton")]
-//     navbaradbuttons.forEach(element => {element.remove()});
-//     document.querySelector(".header__upsellWrapper").remove()
-//     document.querySelector(".header__userNavActivitiesButton").remove()
-//     document.querySelector(".header__userNavMessagesButton").remove()
-//     document.querySelector(".header__soundInput").remove()
-// }, 10000);
+const waitForElement = (selector, timeout = 60 * 60) =>
+  new Promise((resolve, reject) => {
+    if (document.querySelector(selector)) {
+      return resolve(document.querySelector(selector));
+    }
+
+    const observer = new MutationObserver((mutationsList, observer) => {
+      const element = document.querySelector(selector);
+      if (element) {
+        observer.disconnect();
+        resolve(element);
+      }
+    });
+
+    if (timeout > 0) {
+      setTimeout(() => {
+        observer.disconnect();
+        reject();
+      }, timeout);
+    }
+
+    observer.observe(document.body, { childList: true, subtree: true });
+  });
+
+waitForElement(".header__goUpsell_side_by_side_experience").then((e) =>
+  e.remove(),
+);
+waitForElement(".creatorSubscriptionsButton").then((e) => e.remove());
+waitForElement(".header__upsellWrapper").then((e) => e.remove());
+waitForElement(".header__userNavActivitiesButton").then((e) => e.remove());
+waitForElement(".header__userNavMessagesButton").then((e) => e.remove());
+waitForElement(".header__soundInput").then((e) => e.remove());
 
 // Media Player Btns Functions
 let playpausebtn = document.querySelector(
