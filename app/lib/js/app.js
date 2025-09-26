@@ -212,22 +212,52 @@ async function updateDiscordActivity() {
   await client.user.setActivity(activity);
 }
 
+let updateActivityLoop = null;
 client.on("disconnected", (event) => {
-  console.log(
-    `Discord RPC disconnected! Code: ${event.code}, Reason: ${event.reason}`,
-  );
+  clearInterval(updateActivityLoop);
+  updateActivityLoop = null;
+  lastActivity = null;
+
+  console.log(`Discord RPC disconnected! Trying to reconnect...`);
+  startConnect();
 });
 
-client.once("ready", () => {
+client.on("ready", () => {
   console.log("Discord RPC is ready!");
-  setInterval(() => {
+
+  if (updateActivityLoop != null) {
+    clearInterval(updateActivityLoop);
+    updateActivityLoop = null;
+  }
+
+  updateActivityLoop = setInterval(() => {
     if (settings.discordrpc == true) {
       updateDiscordActivity();
     }
   }, 1000);
 });
 
-client.login().catch((err) => console.error(err));
+let rpcRetry = null;
+const startConnect = () => {
+  if (rpcRetry != null) {
+    clearInterval(rpcRetry);
+    rpcRetry = null;
+  }
+
+  rpcRetry = setInterval(async () => {
+    console.log("Trying to connect to Discord RPC...");
+    try {
+      await client.login();
+      clearInterval(rpcRetry);
+      rpcRetry = null;
+    } catch (err) {
+      console.error(
+        `Error while connecting to Discord RPC: ${err}\nRetrying in 5 seconds...`,
+      );
+    }
+  }, 5 * 1000);
+};
+startConnect();
 
 let lyricshowcase = document.querySelector("#lyricshowcase");
 let lyriccoldiv = document.querySelector("#lyricshowcase .lyriccol");
