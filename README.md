@@ -54,7 +54,7 @@ npm start
 - [ ] customize user agent string
 - [ ] listen offline integration
 - [ ] by pass this song is not available in your country
-- [ ] enchance soundcloud shuffle method
+- [ ] enhance soundcloud shuffle method
 - [ ] use soundcloud waveforms in fullscreen mode
 - [x] Custom css editor
 - [x] Custom js editor
