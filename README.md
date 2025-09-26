@@ -46,7 +46,6 @@ npm start
 
 ## Features TODO List
 
-- [ ] DiscordRPC not working when starting Discord after BSC
 - [ ] LastFM tracking
 - [ ] Linux and Mac packages
 - [ ] Proxy integration
@@ -56,6 +55,7 @@ npm start
 - [ ] by pass this song is not available in your country
 - [ ] enhance soundcloud shuffle method
 - [ ] use soundcloud waveforms in fullscreen mode
+- [X] DiscordRPC not working when starting Discord after BSC
 - [x] Custom css editor
 - [x] Custom js editor
 - [x] Themes made by several developers
