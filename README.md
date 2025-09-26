@@ -46,6 +46,8 @@ npm start
 
 ## Features TODO List
 
+- [ ] DiscordRPC not working when starting Discord after BSC
+- [ ] LastFM tracking
 - [ ] Linux and Mac packages
 - [ ] Proxy integration
 - [ ] load url using deep links
