@@ -19,8 +19,8 @@ function loadstop() {
   setTimeout(() => {
     // TODO: figure out why it have to wait 2 seconds and load after
     webview.executeJavaScript("let issciloaded = false");
-    addscript("\\plugins\\SCI.js");
-    addstyle("\\themes\\SCI.css");
+    addscript(path.join("plugins", "SCI.js"));
+    addstyle(path.join("themes", "SCI.css"));
 
     loadingscreentxt.innerHTML = "Loaded SoundCloud Window";
     console.log("loaded");
@@ -28,27 +28,27 @@ function loadstop() {
     // LOAD SCI SET
 
     // LOAD RIGHTCLICK MENU ESSENTIALS
-    addscript("\\plugins\\ctxMenu.js");
+    addscript(path.join("plugins", "ctxMenu.js"));
 
     // LOAD INFO TICKER
-    addscript("\\plugins\\infoticker.js");
+    addscript(path.join("plugins", "infoticker.js"));
 
     // LOAD CUSTOMBG
     if (settings.custombg) {
-      addscript("\\plugins\\custombg.js");
+      addscript(path.join("plugins", "custombg.js"));
       console.log("custombg loaded");
     }
 
     // LOAD THEME
     switch (settings.theme) {
       case "darkcloud":
-        addstyle("\\themes\\darkCloud.css");
+        addstyle(path.join("themes", "darkCloud.css"));
         break;
       case "nocturnal":
-        addstyle("\\themes\\nocturnal.css");
+        addstyle(path.join("themes", "nocturnal.css"));
         break;
       case "postmorphic":
-        addstyle("\\themes\\postMorphic.css");
+        addstyle(path.join("themes", "postMorphic.css"));
         break;
       default:
         console.log("No theme selected");

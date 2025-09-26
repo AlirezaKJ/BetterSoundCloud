@@ -4,6 +4,7 @@ const packagefile = require("../package.json");
 const scdl = require("soundcloud-downloader").default;
 const https = require("https");
 const { f } = require("@cliqz/adblocker-electron");
+const path = require("path");
 
 // Discord RPC
 const { Client, StatusDisplayType } = require("@xhayper/discord-rpc");
@@ -153,7 +154,7 @@ webview.addEventListener("console-message", (e) => {
     webview.goForward();
   } else if (e.message.split("|")[1] == "scinotloaded") {
     console.log("Trying to add SCI script again");
-    addscript("\\plugins\\SCI.js");
+    addscript(path.join("plugins", "SCI.js"));
   } else if (e.message.split("|")[1] == "sciloaded") {
     console.log("SCI has been loaded succesfuly");
     clearInterval(sciloadingcheck);
@@ -373,13 +374,13 @@ function readfile(src) {
 
 // FOR LOADING PLUGINS
 function addscript(src) {
-  let code = readfile(appdirectory + src);
+  let code = readfile(path.join(appdirectory, src));
   loadingscreentxt.innerHTML = "Added Script: " + src;
   webview.executeJavaScript(code);
 }
 // FOR LOADING THEMES
 function addstyle(src) {
-  var code = readfile(appdirectory + src);
+  var code = readfile(path.join(appdirectory, src));
   loadingscreentxt.innerHTML = "Added Style: " + src;
   webview.insertCSS(code);
 }
