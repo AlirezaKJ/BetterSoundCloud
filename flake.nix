@@ -19,15 +19,26 @@
       inherit (packageJson) version;
     in
       with pkgs; {
-        packages.default = buildNpmPackage {
+        packages.default = buildNpmPackage rec {
           inherit pname version;
           src = ./.;
 
           npmDepsHash = "sha256-zEmUjwhEx734yjEYK8/2aMiCZRpaTaoKx/Mt+KEhlw0=";
-          nativeBuildInputs = [electron];
+          nativeBuildInputs = [electron makeWrapper] ++ lib.optionals stdenv.isLinux [copyDesktopItems];
           dontNpmBuild = true;
 
           ELECTRON_SKIP_BINARY_DOWNLOAD = 1;
+
+          desktopItems = [
+            (makeDesktopItem {
+              name = pname;
+              exec = pname;
+              icon = "soundcloud";
+              comment = "A PC client of SoundCloud with improvement made using electronjs";
+              desktopName = "BetterSoundCloud";
+              categories = ["AudioVideo" "Audio"];
+            })
+          ];
 
           postInstall = ''
             makeWrapper ${lib.getExe electron} $out/bin/${pname} \
