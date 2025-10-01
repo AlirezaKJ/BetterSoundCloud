@@ -1,21 +1,26 @@
 [aria-role="img"] {
-    border-radius: 0px;
-    border-width: 2px;
-    border-style: solid;
-    border-image: radial-gradient(circle, rgba(255,255,255,0.6979166666666667) 0%, rgba(62,62,62,1) 100%) 1;
+  border-radius: 0px;
+  border-width: 2px;
+  border-style: solid;
+  border-image: radial-gradient(
+      circle,
+      rgba(255, 255, 255, 0.6979166666666667) 0%,
+      rgba(62, 62, 62, 1) 100%
+    )
+    1;
 }
 #l-container l-content {
-    background-image: url("https://i.imgur.com/hnWHAn3.png") !important;
-    background-repeat: repeat;
+  background-image: url("https://i.imgur.com/hnWHAn3.png") !important;
+  background-repeat: repeat;
 }
 #playControls {
-    background-color: #212121 !important;
+  background-color: #212121 !important;
 }
 html,
 .social-sign-in-separator span,
 .readMoreBadge__countWrapper {
-    background-image: url("https://i.imgur.com/hnWHAn3.png") !important;
-    background-repeat: repeat;
+  background-image: url("https://i.imgur.com/hnWHAn3.png") !important;
+  background-repeat: repeat;
 }
 body,
 .site,
@@ -62,7 +67,7 @@ body,
 .quotaMeterWrapper,
 .sc-background-white,
 .statsOverview__separator {
-    background: url("https://i.imgur.com/hnWHAn3.png") !important
+  background: url("https://i.imgur.com/hnWHAn3.png") !important;
 }
 .commentForm,
 .commentForm__inputWrapper,
@@ -73,12 +78,12 @@ body,
 .listenEngagement,
 .searchTitle__content,
 h1.searchTitle__text {
-    border: none !important
+  border: none !important;
 }
 .conversation__actions,
 .conversation__form,
 .listenEngagement {
-    box-shadow: none !important
+  box-shadow: none !important;
 }
 .dashbox,
 .listenDetails__login,
@@ -92,10 +97,10 @@ article.whoToFollowModule,
 .searchPremiumContentFooter,
 .searchPremiumContentHeader + .searchList__item,
 .streamHTUpsell {
-    display: none !important
+  display: none !important;
 }
 #flashAudioObject-container {
-    visibility: hidden !important
+  visibility: hidden !important;
 }
 
 body,
@@ -106,22 +111,22 @@ h3.conversationBadge__senderName,
 .sc-type-h3,
 .conversation .sc-link-dark,
 .active .trackItem__trackTitle {
-    color: #BBB !important
+  color: #bbb !important;
 }
 .sc-link-verylight,
 .sc-text-verylight {
-    color: #444 !important
+  color: #444 !important;
 }
 .sc-link-light:hover,
 .g-nav-item.active > .g-nav-link {
-    color: #FFF !important
+  color: #fff !important;
 }
 .sc-link-dark,
 .dropdownList__loading,
 .sound__uploadTime,
 .compactTrackListItem__trackTitle,
 .queueItemView__title {
-    color: #666 !important
+  color: #666 !important;
 }
 .sc-link-dark:hover,
 .sc-link-verylight:hover,
@@ -131,11 +136,11 @@ h3.conversationBadge__senderName,
 .activeUpload__sectionTitle,
 .blockCheckbox__title,
 .autoTagger__title {
-    color: #DDD !important
+  color: #ddd !important;
 }
 .userBadge.large .userBadge__title,
 .userBadge.large .userBadge__usernameLink {
-    color: #06C !important
+  color: #06c !important;
 }
 .active .soundTitle__title,
 .active .compactTrackListItem__trackTitle,
@@ -145,7 +150,7 @@ h3.conversationBadge__senderName,
 .listenInfoTeaser__description a:hover,
 .m-playing .queueItemView__title,
 .m-playing .queueItemView__title * {
-    color: #F60 !important
+  color: #f60 !important;
 }
 
 /*
@@ -173,7 +178,10 @@ h1.widgetCustomizationContent__title:after, .g-modal-title-h1:after {background:
 #app h1[class$="Main__title"],
 #app h1 span,
 h1.sc-type-h1 {
-    -webkit-mask-image: -webkit-linear-gradient(#000 55%, rgba(0, 0, 0, .2)) !important
+  -webkit-mask-image: -webkit-linear-gradient(
+    #000 55%,
+    rgba(0, 0, 0, 0.2)
+  ) !important;
 }
 .userDropbar__title,
 h2.selectionModule__titleText,
@@ -182,69 +190,81 @@ h2.selectionModule__titleText,
 .chartTrack__position,
 .collectionSection__heading,
 .insightsSidebarModule__plays {
-    /* background: linear-gradient(#1AF, #028) !important;
+  /* background: linear-gradient(#1AF, #028) !important;
 background-clip: text !important;
 -webkit-text-fill-color: transparent !important; */
-    -webkit-mask-image: -webkit-linear-gradient(#000 35%, rgba(0, 0, 0, .2)) !important;
-    /* mask: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPg0KICA8bWFzayBpZD0iMSIgbWFza1VuaXRzPSJvYmplY3RCb3VuZGluZ0JveCIgbWFza0NvbnRlbnRVbml0cz0ib2JqZWN0Qm91bmRpbmdCb3giPg0KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZyIgZ3JhZGllbnRVbml0cz0ib2JqZWN0Qm91bmRpbmdCb3giIHgyPSIwIiB5Mj0iMSI+DQogICAgICA8c3RvcCBzdG9wLWNvbG9yPSJ3aGl0ZSIgb2Zmc2V0PSIwLjM1Ii8+DQogICAgICA8c3RvcCBzdG9wLWNvbG9yPSJ3aGl0ZSIgc3RvcC1vcGFjaXR5PSIwLjIiIG9mZnNldD0iMSIvPg0KICAgIDwvbGluZWFyR3JhZGllbnQ+DQogICAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjEiIGhlaWdodD0iMSIgZmlsbD0idXJsKCNnKSIvPg0KICA8L21hc2s+DQo8L3N2Zz4=#1) !important; */
+  -webkit-mask-image: -webkit-linear-gradient(
+    #000 35%,
+    rgba(0, 0, 0, 0.2)
+  ) !important;
+  /* mask: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPg0KICA8bWFzayBpZD0iMSIgbWFza1VuaXRzPSJvYmplY3RCb3VuZGluZ0JveCIgbWFza0NvbnRlbnRVbml0cz0ib2JqZWN0Qm91bmRpbmdCb3giPg0KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZyIgZ3JhZGllbnRVbml0cz0ib2JqZWN0Qm91bmRpbmdCb3giIHgyPSIwIiB5Mj0iMSI+DQogICAgICA8c3RvcCBzdG9wLWNvbG9yPSJ3aGl0ZSIgb2Zmc2V0PSIwLjM1Ii8+DQogICAgICA8c3RvcCBzdG9wLWNvbG9yPSJ3aGl0ZSIgc3RvcC1vcGFjaXR5PSIwLjIiIG9mZnNldD0iMSIvPg0KICAgIDwvbGluZWFyR3JhZGllbnQ+DQogICAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjEiIGhlaWdodD0iMSIgZmlsbD0idXJsKCNnKSIvPg0KICA8L21hc2s+DQo8L3N2Zz4=#1) !important; */
 }
 .header__logo {
-    background: linear-gradient(#F50 40%, #510) !important;
-    box-shadow: inset 0 0 1px #111, inset 1px 0 #111, inset -1px 0 #111 !important;
+  background: linear-gradient(#f50 40%, #510) !important;
+  box-shadow:
+    inset 0 0 1px #111,
+    inset 1px 0 #111,
+    inset -1px 0 #111 !important;
 }
 #app h1.header__logo {
-    mask: none !important
+  mask: none !important;
 }
 #app h1,
 #app h1 *,
 .userDropbar__title,
 h2.selectionModule__titleText {
-    color: #06C !important;
-    text-shadow: 0 1px #38F !important
+  color: #06c !important;
+  text-shadow: 0 1px #38f !important;
 }
 #app h1 a:hover,
 .userDropbar__title:hover {
-    color: #18F !important;
-    text-shadow: 0 1px #4AF, 0 0 6px #18F !important
+  color: #18f !important;
+  text-shadow:
+    0 1px #4af,
+    0 0 6px #18f !important;
 }
 .insightsSidebarModule__plays {
-    text-shadow: 0 1px 0 #FFF !important
+  text-shadow: 0 1px 0 #fff !important;
 }
-
 
 .fullHero__title .soundTitle__title,
 .listen-content .soundTitle__title span {
-    text-shadow: 0 0 10px #000 !important;
-    font-family: "Champagne & Limousines", "eurofurence light", "Interstate", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", Garuda, Verdana, Tahoma, sans-serif !important
+  text-shadow: 0 0 10px #000 !important;
+  font-family:
+    "Champagne & Limousines", "eurofurence light", "Interstate",
+    "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", Garuda, Verdana,
+    Tahoma, sans-serif !important;
 }
 .waveform__emptyMessage,
 .waveform__playHint {
-    color: #EEE !important;
-    text-shadow: 0 0 5px !important
+  color: #eee !important;
+  text-shadow: 0 0 5px !important;
 }
 
 a {
-    text-shadow: 0 0 #000;
-    transition: 0.2s color, text-shadow
+  text-shadow: 0 0 #000;
+  transition:
+    0.2s color,
+    text-shadow;
 }
 .sc-link-dark:hover,
 .sc-link-light:hover,
 .trackPreviewItem__titleLink:hover {
-    text-shadow: 0 0 7px
+  text-shadow: 0 0 7px;
 }
 
 ::-moz-selection {
-    background-color: rgba(35, 35, 35, .7) !important;
-    color: #F60 !important;
-    text-shadow: 0 1px #000 !important
+  background-color: rgba(35, 35, 35, 0.7) !important;
+  color: #f60 !important;
+  text-shadow: 0 1px #000 !important;
 }
 ::selection {
-    background-color: rgba(35, 35, 35, .7) !important;
-    color: #F60 !important;
-    text-shadow: 0 1px #000 !important
+  background-color: rgba(35, 35, 35, 0.7) !important;
+  color: #f60 !important;
+  text-shadow: 0 1px #000 !important;
 }
 :focus {
-    outline: none !important
+  outline: none !important;
 }
 
 .sc-border-light-top,
@@ -269,7 +289,7 @@ a {
 .l-listen-wrapper .l-about-rows,
 .searchTitle,
 .selectionModule {
-    border-color: #111 !important
+  border-color: #111 !important;
 }
 .g-tabs,
 .g-tabs-item.active,
@@ -280,16 +300,15 @@ a {
 .conversation__form,
 .chartsMain_listHeader,
 .sc-border-light-left {
-    border-color: #333 !important
+  border-color: #333 !important;
 }
 .activeUpload__sectionHead,
 .listenInfoModal__heading,
 .composeMessage__bottomWrapper,
 .g-modal-title-h1 {
-    border-color: #222 !important;
-    box-shadow: 0 1px #000 !important
+  border-color: #222 !important;
+  box-shadow: 0 1px #000 !important;
 }
-
 
 /*** GRAYSCALE STYLE
 
@@ -312,87 +331,91 @@ filter: grayscale(0) !important;
 .sc-buylink,
 .categoriesButton,
 .murkupdatestart {
-    -moz-appearance: none !important;
-    -webkit-appearance: none !important;
-    background-color: #111 !important;
-    border: 1px solid #292929 !important;
-    box-shadow: inset 0 0 2px #000 !important;
-    color: #777 !important;
-    text-shadow: 0 1px #000 !important;
-    border-radius: 0 !important;
-    transition: color, border-color, background-color, ease 0.3s !important
+  -moz-appearance: none !important;
+  -webkit-appearance: none !important;
+  background-color: #111 !important;
+  border: 1px solid #292929 !important;
+  box-shadow: inset 0 0 2px #000 !important;
+  color: #777 !important;
+  text-shadow: 0 1px #000 !important;
+  border-radius: 0 !important;
+  transition:
+    color,
+    border-color,
+    background-color,
+    ease 0.3s !important;
 }
 .sc-button.blockButton,
 .sc-button.blockButton:active,
 .hintButton.sc-button-small,
 .hintButton.sc-button-small:active {
-    background-color: transparent !important;
-    border: none !important;
-    box-shadow: none !important
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 .sc-button.sc-button-selected,
 .sc-button.uploadButton.sc-button-selected {
-    border-color: #0066CC !important
+  border-color: #0066cc !important;
 }
 .sc-buylink,
 .sc-button-small.sc-button-text {
-    padding: 2px 7px !important
+  padding: 2px 7px !important;
 }
 .sc-buylink:before {
-    margin-left: 5px !important
+  margin-left: 5px !important;
 }
 .sc-buylink:before,
 .sc-button-medium:not(.sc-button-selected):before {
-    opacity: 0.4
+  opacity: 0.4;
 }
 .sc-buylink {
-    margin-bottom: -4px !important
+  margin-bottom: -4px !important;
 }
 
 .sc-button:hover,
 .sc-buylink:hover,
 .categoriesButton:hover,
 .murkupdatestart:hover {
-    border-color: #444 !important;
-    color: #999 !important
+  border-color: #444 !important;
+  color: #999 !important;
 }
 .sc-button:active,
 .sc-buylink:active,
 .categoriesButton:active,
 .murkupdatestart:active {
-    background-color: #333 !important;
-    transition-duration: 0.1s !important
+  background-color: #333 !important;
+  transition-duration: 0.1s !important;
 }
 .sc-button[disabled="disabled"] {
-    opacity: 0.5 !important
+  opacity: 0.5 !important;
 }
 .sc-button-play {
-    background: #ff5500 !important;
-    border: 1px solid #Ffff !important;
-    box-shadow: 0 0 5px #000 !important;
-    transition: ease 0.3s !important
+  background: #ff5500 !important;
+  border: 1px solid #ffff !important;
+  box-shadow: 0 0 5px #000 !important;
+  transition: ease 0.3s !important;
 }
 .sc-button-play:before {
-    margin-top: -1px !important
+  margin-top: -1px !important;
 }
 .sc-button-play:hover {
-    border-color: #fff !important;
-    box-shadow: 0 0 8px #fff !important
+  border-color: #fff !important;
+  box-shadow: 0 0 8px #fff !important;
 }
 .soundTitle.single .soundTitle__playButton .sc-button-large {
-    margin-top: 6px !important
+  margin-top: 6px !important;
 }
 
 .sc-toggle {
-    background: linear-gradient(#222, #111) !important;
-    border: 2px solid #191919 !important
+  background: linear-gradient(#222, #111) !important;
+  border: 2px solid #191919 !important;
 }
 .sc-toggle:before {
-    box-shadow: inset 0 0 2px #000 !important
+  box-shadow: inset 0 0 2px #000 !important;
 }
 .sc-toggle-handle {
-    background: #111 !important;
-    box-shadow: inset 0 0 2px #000 !important
+  background: #111 !important;
+  box-shadow: inset 0 0 2px #000 !important;
 }
 
 input,
@@ -401,32 +424,36 @@ input[type="radio"],
 textarea,
 .sc-input,
 input.widgetCustomization__colorInput {
-    -moz-appearance: none !important;
-    -webkit-appearance: none !important;
-    background: #222 !important;
-    border: 1px solid #292929 !important;
-    box-shadow: inset 0 0 2px #000 !important;
-    color: #777 !important;
-    text-shadow: 0 1px #000 !important;
-    border-radius: 0 !important;
-    transition: color, border-color, background-color, ease 0.3s !important
+  -moz-appearance: none !important;
+  -webkit-appearance: none !important;
+  background: #222 !important;
+  border: 1px solid #292929 !important;
+  box-shadow: inset 0 0 2px #000 !important;
+  color: #777 !important;
+  text-shadow: 0 1px #000 !important;
+  border-radius: 0 !important;
+  transition:
+    color,
+    border-color,
+    background-color,
+    ease 0.3s !important;
 }
 input[type="checkbox"],
 input[type="radio"] {
-    min-width: 12px !important;
-    min-height: 12px !important
+  min-width: 12px !important;
+  min-height: 12px !important;
 }
 input[type="radio"] {
-    border-radius: 20px !important
+  border-radius: 20px !important;
 }
 input[type="checkbox"]:active:hover,
 input[type="radio"]:active:hover {
-    background: #222 !important;
-    border: 1px solid #292929 !important;
-    color: #F70 !important
+  background: #222 !important;
+  border: 1px solid #292929 !important;
+  color: #f70 !important;
 }
 .tokenInput__input {
-    border: none !important
+  border: none !important;
 }
 
 input:hover,
@@ -435,49 +462,53 @@ input:focus,
 .sc-input:focus,
 textarea:hover,
 textarea:focus {
-    background: #333 !important
+  background: #333 !important;
 }
 input:focus,
 .sc-input:focus,
 textarea:focus {
-    color: #AAA !important
+  color: #aaa !important;
 }
 .commentForm .commentForm__input {
-    border-color: #333 !important
+  border-color: #333 !important;
 }
 
 .sc-button.uploadButton {
-    background: transparent !important;
-    border-color: #1C1C1C !important;
-    border-radius: 5px !important;
-    box-shadow: 0 1px 0 #3E3E3E, inset 0 1px 0 #464646 !important;
-    padding-top: 1px !important;
-    height: 25px !important
+  background: transparent !important;
+  border-color: #1c1c1c !important;
+  border-radius: 5px !important;
+  box-shadow:
+    0 1px 0 #3e3e3e,
+    inset 0 1px 0 #464646 !important;
+  padding-top: 1px !important;
+  height: 25px !important;
 }
 .sc-button.uploadButton:hover {
-    box-shadow: 0 1px 0 #3E3E3E, inset 0 0 3px #090909 !important
+  box-shadow:
+    0 1px 0 #3e3e3e,
+    inset 0 0 3px #090909 !important;
 }
 
 .radioGroup__active,
 .activeUpload__licenseSummary {
-    background-color: #222 !important
+  background-color: #222 !important;
 }
 
 a.shuffleButton {
-    background-position: 0 0 !important;
-    color: #DDD !important;
-    opacity: 0.3
+  background-position: 0 0 !important;
+  color: #ddd !important;
+  opacity: 0.3;
 }
 a.shuffleButton:hover {
-    opacity: 0.6 !important
+  opacity: 0.6 !important;
 }
 a.shuffleButton.active {
-    opacity: 1
+  opacity: 1;
 }
 
 input[type="checkbox"]:checked,
 input[type="radio"]:checked {
-    border-color: #F80 !important
+  border-color: #f80 !important;
 }
 /* select {
 padding-right: 12px !important;
@@ -488,55 +519,57 @@ background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAAKCAYAAABrGw
 .modal__modal,
 #ghostery-purple-bubble,
 .callout__bubble {
-    background: #151515 !important;
-    border: 1px solid #333 !important;
-    border-radius: 0 !important;
-    box-shadow: 0 0 10px #000, 0 0 10px #000 !important
+  background: #151515 !important;
+  border: 1px solid #333 !important;
+  border-radius: 0 !important;
+  box-shadow:
+    0 0 10px #000,
+    0 0 10px #000 !important;
 }
 .dialog__arrow,
 .callout__bubble::before {
-    background: #151515 !important;
-    border-color: #3C3C3C !important;
-    border-radius: 0 !important;
+  background: #151515 !important;
+  border-color: #3c3c3c !important;
+  border-radius: 0 !important;
 }
 .callout__bubble::before {
-    border-bottom: 1px solid #3C3C3C !important;
-    border-right: 1px solid #3C3C3C !important;
-    padding: 7px !important;
+  border-bottom: 1px solid #3c3c3c !important;
+  border-right: 1px solid #3c3c3c !important;
+  padding: 7px !important;
 }
 #ghostery-purple-bubble * {
-    background: transparent !important
+  background: transparent !important;
 }
 
 .g-selectable {
-    background: linear-gradient(#191919, #141414) !important;
-    color: #999 !important
+  background: linear-gradient(#191919, #141414) !important;
+  color: #999 !important;
 }
 .g-selectable:hover {
-    background: linear-gradient(#222, #1B1B1B) !important
+  background: linear-gradient(#222, #1b1b1b) !important;
 }
 .g-selectable.g-selected {
-    background: transparent !important;
-    color: #555 !important
+  background: transparent !important;
+  color: #555 !important;
 }
 
 .dropdownList {
-    background: #151515 !important;
-    border-color: #333 !important
+  background: #151515 !important;
+  border-color: #333 !important;
 }
 .dropdownMenu,
 #ui-datepicker-div,
 .repostOverlay__container {
-    background: #1C1C1C !important;
-    border: 1px solid #292929 !important;
-    box-shadow: 0 1px 1px #000 !important;
-    text-shadow: 0 1px #000 !important
+  background: #1c1c1c !important;
+  border: 1px solid #292929 !important;
+  box-shadow: 0 1px 1px #000 !important;
+  text-shadow: 0 1px #000 !important;
 }
 .dropdownMenu button,
 .moreActions__button,
 .moreActions__link,
 .headerMenu__link {
-    color: #999 !important
+  color: #999 !important;
 }
 .dropdownMenu > li:hover,
 .dropdownMenu button:hover,
@@ -545,35 +578,38 @@ background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAAKCAYAAABrGw
 .moreActions__link:hover,
 .headerMenu__link:hover,
 .notificationBadge__link:hover {
-    background-color: rgba(35, 35, 35, .6) !important;
-    color: #F60 !important;
-    text-shadow: 0 1px 0 #000 !important
+  background-color: rgba(35, 35, 35, 0.6) !important;
+  color: #f60 !important;
+  text-shadow: 0 1px 0 #000 !important;
 }
 .notificationBadge--unread {
-    background: linear-gradient(rgba(80, 60, 50, .4), rgba(5, 40, 40, .4)) !important
+  background: linear-gradient(
+    rgba(80, 60, 50, 0.4),
+    rgba(5, 40, 40, 0.4)
+  ) !important;
 }
 .headerMenu__link:active,
 .headerMenu__link:focus,
 .notificationBadge__link:active,
 .notificationBadge__link:focus {
-    background-color: rgba(70, 70, 70, .6) !important
+  background-color: rgba(70, 70, 70, 0.6) !important;
 }
 #suggestionsList li:hover * {
-    color: #F60 !important
+  color: #f60 !important;
 }
 #suggestionsList li > * > * > * > * {
-    color: #555 !important
+  color: #555 !important;
 }
 .dropdownMenu li.separator,
 div.headerMenu ul.headerMenu__list,
 .dropdownContent__main,
 .dropdownContent__header,
 .dropdownContent__listItem {
-    border-bottom: 1px solid #292929 !important
+  border-bottom: 1px solid #292929 !important;
 }
 .dropdownContent__listItem *,
 .moreActions__group:not(:first-child) {
-    border-color: #292929 !important
+  border-color: #292929 !important;
 }
 /* .dropdownMenu li,*/
 .dropdownMenu ul.sc-list-nostyle,
@@ -582,190 +618,209 @@ div.headerMenu ul.headerMenu__list,
 .headerMenu.m-light,
 .moreActions__button,
 .moreActions__link {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .userNav__button.selected:before {
-    border-bottom-color: #F60 !important
+  border-bottom-color: #f60 !important;
 }
 .userNav__button.selected:after {
-    border-bottom-color: #000 !important
+  border-bottom-color: #000 !important;
 }
 
 .gritter-item-wrapper,
 .activeUpload__hqNote {
-    background: linear-gradient(#282828, #1C1C1C) !important;
-    color: #CCC !important;
-    text-shadow: 0 1px #000 !important;
-    border-color: #333 !important;
-    box-shadow: 0 0 10px #000, 0 0 10px #000, inset 0 0 3px #111 !important
+  background: linear-gradient(#282828, #1c1c1c) !important;
+  color: #ccc !important;
+  text-shadow: 0 1px #000 !important;
+  border-color: #333 !important;
+  box-shadow:
+    0 0 10px #000,
+    0 0 10px #000,
+    inset 0 0 3px #111 !important;
 }
 .gritter-image {
-    top: 0 !important;
-    left: 0 !important
+  top: 0 !important;
+  left: 0 !important;
 }
 
 .ui-datepicker .ui-state-default {
-    color: #777;
-    background-color: #111
+  color: #777;
+  background-color: #111;
 }
 .ui-datepicker .ui-state-default.ui-state-highlight {
-    color: #000;
-    background-color: #999
+  color: #000;
+  background-color: #999;
 }
 .ui-datepicker .ui-state-default.ui-state-active {
-    color: #FFF;
-    background-color: #F60
+  color: #fff;
+  background-color: #f60;
 }
-.ui-datepicker .ui-state-default.ui-state-hover:not(.ui-state-highlight):not(.ui-state-active) {
-    color: #CCC;
-    background-color: #000
+.ui-datepicker
+  .ui-state-default.ui-state-hover:not(.ui-state-highlight):not(
+    .ui-state-active
+  ) {
+  color: #ccc;
+  background-color: #000;
 }
 .ui-datepicker .ui-datepicker-unselectable .ui-state-default,
 .ui-datepicker .ui-state-disabled .ui-state-default {
-    color: #555;
-    background-color: transparent
+  color: #555;
+  background-color: transparent;
 }
 
 .modal {
-    background: repeating-linear-gradient(-45deg, rgba(11, 11, 11, .8), rgba(11, 11, 11, .8) 60px, rgba(16, 16, 16, .8) 60px, rgba(16, 16, 16, .8) 120px) !important
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(11, 11, 11, 0.8),
+    rgba(11, 11, 11, 0.8) 60px,
+    rgba(16, 16, 16, 0.8) 60px,
+    rgba(16, 16, 16, 0.8) 120px
+  ) !important;
 }
 
 /* .dialog > .dialog__content > .userRichBadge > .userRichBadge__avatar > .userAvatarBadge.userRichBadge__avatar.sc-media-image.letterbox */
 .userRichBadge .userAvatarBadge__avatar {
-    margin: 0 !important
+  margin: 0 !important;
 }
 /* .dialog.sc-border-box.g-z-index-overlay {padding-bottom: 0 !important} */
 /* Soundcloud Stream Manager by Mr Brainz */
 #murkconsole {
-    height: 280px !important
+  height: 280px !important;
 }
 #murkconsole,
 #murkconsole > div {
-    background: #000 !important;
-    border-color: #111 !important
+  background: #000 !important;
+  border-color: #111 !important;
 }
 #murkconsole p,
 #murkconsole p input {
-    line-height: 14px !important;
-    vertical-align: top !important
+  line-height: 14px !important;
+  vertical-align: top !important;
 }
-
 
 /*** BOTTOM BAR PLAYER ***/
 .playControls__inner,
 .playControls__bg {
-    background: #1c1c1c !important;
-    border: none !important
+  background: #1c1c1c !important;
+  border: none !important;
 }
 .playbackTimeline__duration {
-    color: #999 !important;
+  color: #999 !important;
 }
 .playbackTimeline__progressBackground {
-    background: #999 !important
+  background: #999 !important;
 }
 .playbackTimeline__progressBackground,
 .playbackTimeline__progressBar {
-    box-shadow: 0 0 2px #FFFFFF !important;
-    height: 6px !important;
-    border-radius: 3px !important;
-    margin-top: -3px !important
+  box-shadow: 0 0 2px #ffffff !important;
+  height: 6px !important;
+  border-radius: 3px !important;
+  margin-top: -3px !important;
 }
 .playbackTimeline__progressHandle {
-    box-shadow: 0 0 2px #101010, inset 0 0 2px #1c1c1c !important;
-    margin-left: -4px !important;
-    margin-top: -4px !important
+  box-shadow:
+    0 0 2px #101010,
+    inset 0 0 2px #1c1c1c !important;
+  margin-left: -4px !important;
+  margin-top: -4px !important;
 }
 .playControls .playControls__icon,
 .playControls .volume__speakerIcon,
 button.playControls__control,
 .playControls__control > button,
 .playbackSoundBadge__showQueue {
-    filter: invert(66.5%) hue-rotate(180deg) !important;
-    -webkit-filter: invert(66.5%) hue-rotate(180deg) !important;
-    transition: 0.3s !important
+  filter: invert(66.5%) hue-rotate(180deg) !important;
+  -webkit-filter: invert(66.5%) hue-rotate(180deg) !important;
+  transition: 0.3s !important;
 }
 .playControls .playControls__icon:hover,
 .playControls .volume__speakerIcon:hover,
 button.playControls__control:hover,
 .playControls__control > button:hover,
 .playbackSoundBadge__showQueue:hover {
-    filter: invert(100%) hue-rotate(180deg) !important;
-    -webkit-filter: invert(100%) hue-rotate(180deg) !important
+  filter: invert(100%) hue-rotate(180deg) !important;
+  -webkit-filter: invert(100%) hue-rotate(180deg) !important;
 }
 .shuffleControl.m-shuffling,
 .repeatControl.m-one,
 .repeatControl.m-all,
 .m-queueVisible .playbackSoundBadge__showQueue {
-    filter: invert(100%) hue-rotate(180deg) !important
+  filter: invert(100%) hue-rotate(180deg) !important;
 }
 .volume__sliderWrapper {
-    background: #222 !important;
-    border-color: #000 !important;
+  background: #222 !important;
+  border-color: #000 !important;
 }
 .volume__sliderWrapper::after {
-    border-color: #222 !important;
+  border-color: #222 !important;
 }
 .volume__sliderWrapper::before {
-    border-color: #222 #222 #000 #000 !important;
+  border-color: #222 #222 #000 #000 !important;
 }
-
 
 /*** QUEUE ***/
 .queue {
-    background: #111 !important;
-    box-shadow: 0 0 20px 5px #000 !important;
+  background: #111 !important;
+  box-shadow: 0 0 20px 5px #000 !important;
 }
 .queue__itemsHeight,
 .queue__itemWrapper {
-    background: transparent !important;
+  background: transparent !important;
 }
 .queue__panel,
 .queueFallback__stationMode {
-    border-color: #333 !important;
+  border-color: #333 !important;
 }
 .queueItemView:hover {
-    background: #191919 !important;
-    box-shadow: inset 0 0 20px #050505 !important
+  background: #191919 !important;
+  box-shadow: inset 0 0 20px #050505 !important;
 }
 .queueItemView.m-active {
-    background: repeating-linear-gradient(-45deg, #151515, #151515 20px, #111 20px, #111 40px) !important;
-    border-color: #151515 !important;
-    box-shadow: inset 0 0 20px #050505 !important
+  background: repeating-linear-gradient(
+    -45deg,
+    #151515,
+    #151515 20px,
+    #111 20px,
+    #111 40px
+  ) !important;
+  border-color: #151515 !important;
+  box-shadow: inset 0 0 20px #050505 !important;
 }
 .removeFromNextUp,
 .queue__hide {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'><path fill='%23666' d='M15.5 9.205l-.705-.705L12 11.295 9.205 8.5l-.705.705L11.295 12 8.5 14.795l.705.705L12 12.705l2.795 2.795.705-.705L12.705 12z'></path></svg>") !important;
-    background-repeat: no-repeat !important
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'><path fill='%23666' d='M15.5 9.205l-.705-.705L12 11.295 9.205 8.5l-.705.705L11.295 12 8.5 14.795l.705.705L12 12.705l2.795 2.795.705-.705L12.705 12z'></path></svg>") !important;
+  background-repeat: no-repeat !important;
 }
 .sc-button-icon.removeFromNextUp {
-    background-position: center !important
+  background-position: center !important;
 }
 .removeFromNextUp,
 .queue__hide {
-    background-size: 32px 32px !important;
+  background-size: 32px 32px !important;
 }
 .queue__hide {
-    height: 26px !important
+  height: 26px !important;
 }
-
 
 /*** CONTENT ***/
 header.header {
-    background: linear-gradient(#222, #2D2D2D) !important;
-    box-shadow: 0 4px 8px #000 !important;
-    height: 46px !important
+  background: linear-gradient(#222, #2d2d2d) !important;
+  box-shadow: 0 4px 8px #000 !important;
+  height: 46px !important;
 }
 .left .header__navMenu > li > a {
-    box-shadow: inset 0 0 1px rgba(99, 99, 99, 0.5) !important
+  box-shadow: inset 0 0 1px rgba(99, 99, 99, 0.5) !important;
 }
 
 .g-tabs-item.active .g-tabs-link,
 .sc-ministats-small.sc-ministats-sounds:not(.sc-ministats-inverted):before,
 .sc-buylink:before,
-.sc-button-small:not(.sc-button-selected):not(.sc-button-play):not(.sc-button-lightfg):before,
+.sc-button-small:not(.sc-button-selected):not(.sc-button-play):not(
+    .sc-button-lightfg
+  ):before,
 .sc-button-small.sc-button-reply:before,
 .sc-button-small.hintButton,
 .sc-button-medium:not(.sc-button-selected):before,
@@ -773,27 +828,28 @@ header.header {
 .quotaMeter__dropdownButton,
 .ui-datepicker-prev,
 .ui-datepicker-next {
-    filter: invert(100%) !important;
-    -webkit-filter: invert(100%) !important
+  filter: invert(100%) !important;
+  -webkit-filter: invert(100%) !important;
 }
 .sc-button-small:not(.sc-button-selected):not(.sc-button-play):before {
-    opacity: 0.4 !important
+  opacity: 0.4 !important;
 }
-.audibleTile__actions .sc-button-small:not(.sc-button-selected):not(.sc-button-play):before,
+.audibleTile__actions
+  .sc-button-small:not(.sc-button-selected):not(.sc-button-play):before,
 .sc-button-medium.sc-button-cta.sc-button-follow::before {
-    filter: invert(0%) !important
+  filter: invert(0%) !important;
 }
 
 /* .waveform__layer .sceneLayer:nth-child(1) {opacity: 0.6 !important} */
 .fullHero__foreground {
-    background: rgba(0, 0, 0, 0.5) !important
+  background: rgba(0, 0, 0, 0.5) !important;
 }
 .fullHero,
 .profileHeaderBackground {
-    background: transparent !important
+  background: transparent !important;
 }
 .profileHeaderBackground .backgroundGradient__buffer1 {
-    opacity: 0.5 !important
+  opacity: 0.5 !important;
 }
 
 .userNetworkTop__inner,
@@ -804,8 +860,12 @@ header.header {
 .l-fixed-top-one-column > .l-top,
 .dropbar__content,
 .searchTitle {
-    background: linear-gradient(#000, rgba(0, 0, 0, .95), rgba(0, 0, 0, .82)) !important;
-    box-shadow: 0 6px 8px #000 !important
+  background: linear-gradient(
+    #000,
+    rgba(0, 0, 0, 0.95),
+    rgba(0, 0, 0, 0.82)
+  ) !important;
+  box-shadow: 0 6px 8px #000 !important;
 }
 
 /* .peopleHeader__tab, .sc-ministats-group .sc-ministats, .tagInput .tokenInput__tokenRemove, .tagInput__genreRemove, .tagInput__addTag, .listenInfoModal__extras.hasStats .listenInfoModal__duration {
@@ -820,12 +880,12 @@ margin-top: 1px !important}
 color: #222 !important;
 text-shadow: 0 0 7px #000 !important} */
 .listenNetworkInfo .g-tabs:before {
-    background: linear-gradient(to left, #333, #000);
-    width: 20px;
-    height: 1px;
-    left: 10px;
-    bottom: 0px;
-    position: absolute
+  background: linear-gradient(to left, #333, #000);
+  width: 20px;
+  height: 1px;
+  left: 10px;
+  bottom: 0px;
+  position: absolute;
 }
 /* #content .listenNetworkInfo:after {
 background: linear-gradient(to left, #333, #F00);
@@ -840,48 +900,67 @@ position: absolute}
 
 .sidebarHeader {border-bottom: 1px solid #111 !important} */
 .tabs li.current a {
-    background: #000 !important;
-    color: #DDD !important;
-    box-shadow: inset 0 6px 4px -6px #999, inset 6px 0 4px -6px #777, inset -6px 0 4px -6px #777 !important
+  background: #000 !important;
+  color: #ddd !important;
+  box-shadow:
+    inset 0 6px 4px -6px #999,
+    inset 6px 0 4px -6px #777,
+    inset -6px 0 4px -6px #777 !important;
 }
 
 .inboxItem.active,
 .composeMessage__bottomWrapper {
-    background-color: #191919 !important;
+  background-color: #191919 !important;
 }
 
 .soundBadge {
-    background: transparent !important;
-    border-color: transparent !important;
-    border-radius: 0 !important
+  background: transparent !important;
+  border-color: transparent !important;
+  border-radius: 0 !important;
 }
 .soundBadge__additional,
 .trackItemWithEdit__additional,
 .compactTrackListItem__additional,
 .commentItem__controls,
 .trackItem__additional {
-    background: linear-gradient(to right, rgba(0, 0, 0, .1), rgba(0, 0, 0, 1) 17px) !important
+  background: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0.1),
+    rgba(0, 0, 0, 1) 17px
+  ) !important;
 }
 .editTrackItem__additional {
-    background: linear-gradient(to right, rgba(21, 21, 21, .1), rgba(21, 21, 21, 1) 17px) !important
+  background: linear-gradient(
+    to right,
+    rgba(21, 21, 21, 0.1),
+    rgba(21, 21, 21, 1) 17px
+  ) !important;
 }
 .trackItem.hover:not(.active) .trackItem__additional,
 .trackItemWithEdit.hover,
 .hover .trackItemWithEdit__additional,
 .compactTrackListItem:hover .compactTrackListItem__additional,
 .commentsList__item:hover {
-    background: #111 !important;
-    box-shadow: inset 0 20px 20px -20px #000, inset 0 -20px 20px -20px #000 !important
+  background: #111 !important;
+  box-shadow:
+    inset 0 20px 20px -20px #000,
+    inset 0 -20px 20px -20px #000 !important;
 }
 .soundBadge:not(.active):not(.compact):hover .soundBadge__additional {
-    background: linear-gradient(to right, rgba(17, 17, 17, 0) 0px, rgba(17, 17, 17, 1) 17px, rgba(17, 17, 17, 1) 90%, rgba(17, 17, 17, 0)) !important
+  background: linear-gradient(
+    to right,
+    rgba(17, 17, 17, 0) 0px,
+    rgba(17, 17, 17, 1) 17px,
+    rgba(17, 17, 17, 1) 90%,
+    rgba(17, 17, 17, 0)
+  ) !important;
 }
 .active .soundBadge__additional,
 .active .compactTrackListItem__additional,
 .active .trackItem__additional,
 .active .trackItemWithEdit__additional,
 .commentItem:hover .commentItem__controls {
-    background: none !important
+  background: none !important;
 }
 .soundBadge.active,
 .compactTrackListItem.active,
@@ -895,20 +974,26 @@ position: absolute}
 .playlistConsumerSubUpsell__messageBox,
 .quotaMeterWrapper:not(.quotaMeter__noSidePadding),
 .banner.m-warning {
-    background: repeating-linear-gradient(-45deg, #151515, #151515 20px, #111 20px, #111 40px) !important;
-    border-color: #151515 !important;
-    box-shadow: inset 0 0 20px #000 !important
+  background: repeating-linear-gradient(
+    -45deg,
+    #151515,
+    #151515 20px,
+    #111 20px,
+    #111 40px
+  ) !important;
+  border-color: #151515 !important;
+  box-shadow: inset 0 0 20px #000 !important;
 }
 .editTrackItem.m-dragging {
-    background: #333 !important;
-    box-shadow: inset 0 0 3px #111 !important
+  background: #333 !important;
+  box-shadow: inset 0 0 3px #111 !important;
 }
 .soundBadge.active.compact {
-    margin-right: -6px !important;
-    margin-left: 6px !important
+  margin-right: -6px !important;
+  margin-left: 6px !important;
 }
 .uploadStatus.complete .uploadStatus__progress {
-    border-color: #151515 !important
+  border-color: #151515 !important;
 }
 .soundBadge:not(.active):not(.compact):hover,
 .trackList__item.sc-pointer:hover,
@@ -919,8 +1004,8 @@ position: absolute}
 .compactTrackList__moreLink:focus,
 .trackItem.hover:not(.active),
 .chartTracks__item:hover > .chartTrack {
-    background: #111 !important;
-    box-shadow: inset 0 0 20px #000 !important
+  background: #111 !important;
+  box-shadow: inset 0 0 20px #000 !important;
 }
 
 .g-type-shrinkwrap-inline,
@@ -929,8 +1014,10 @@ position: absolute}
 .g-type-shrinkwrap-block,
 .g-type-shrinkwrap-block:hover,
 .g-type-shrinkwrap-block:visited {
-    background: rgba(0, 0, 0, .75) !important;
-    box-shadow: 4px 0 rgba(0, 0, 0, .75), -4px 0 rgba(0, 0, 0, .75) !important
+  background: rgba(0, 0, 0, 0.75) !important;
+  box-shadow:
+    4px 0 rgba(0, 0, 0, 0.75),
+    -4px 0 rgba(0, 0, 0, 0.75) !important;
 }
 /* .soundTitle__usernameHeroContainer .soundTitle__username {color: #BBB !important} */
 .listenContent__parentLink,
@@ -940,194 +1027,199 @@ position: absolute}
 .commentFormDisabled,
 .autoTagger__wrapper,
 .newItemNotification {
-    background: #111 !important;
-    border: 2px dashed #333 !important;
-    box-shadow: inset 0 0 20px #000 !important
+  background: #111 !important;
+  border: 2px dashed #333 !important;
+  box-shadow: inset 0 0 20px #000 !important;
 }
 .listenContent__parentLink,
 .announcement {
-    border-top: none !important
+  border-top: none !important;
 }
 .commentFormDisabled {
-    border-width: 1px !important
+  border-width: 1px !important;
 }
 
 .topStatsModule__item,
 .topStatsModule__upsell {
-    background: #111 !important;
-    border: 2px dotted #333 !important;
-    box-shadow: inset 0 0 20px #000 !important
+  background: #111 !important;
+  border: 2px dotted #333 !important;
+  box-shadow: inset 0 0 20px #000 !important;
 }
 .topStatsModule__item:not(:last-child) {
-    border-bottom: none !important
+  border-bottom: none !important;
 }
 .topStats__wrapperEligible:hover {
-    background-color: rgba(35, 35, 35, .6) !important
+  background-color: rgba(35, 35, 35, 0.6) !important;
 }
 .topStatsItemPlaceholder__text::after,
 .topStatsItemPlaceholder__text::before {
-    background-color: #999
+  background-color: #999;
 }
 
 .sc-tag {
-    background: #333 !important;
-    border-color: #393939 !important;
-    box-shadow: inset -1px 1px rgba(0, 0, 0, .15) !important
+  background: #333 !important;
+  border-color: #393939 !important;
+  box-shadow: inset -1px 1px rgba(0, 0, 0, 0.15) !important;
 }
 .sc-tag-selected {
-    background: #DC3F00 !important;
-    border-color: #DC3F00 !important
+  background: #dc3f00 !important;
+  border-color: #dc3f00 !important;
 }
 .sc-tag:before {
-    border-color: transparent #333 transparent !important
+  border-color: transparent #333 transparent !important;
 }
 .sc-tag-selected:before {
-    border-color: transparent #DC3F00 transparent !important
+  border-color: transparent #dc3f00 transparent !important;
 }
 .tagInput__inputWrapper:before {
-    background: none !important;
-    width: 0 !important;
-    height: 0 !important;
-    border: 9px solid !important;
-    border-left: none !important;
-    border-color: transparent #393939 transparent !important
+  background: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  border: 9px solid !important;
+  border-left: none !important;
+  border-color: transparent #393939 transparent !important;
 }
 .sc-tag:after {
-    background: #000 !important;
-    border-color: #393939 !important;
-    box-shadow: 0 0 1px rgba(0, 0, 0, .5) !important
+  background: #000 !important;
+  border-color: #393939 !important;
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0.5) !important;
 }
 .sc-tag-selected:after {
-    border-color: #DC3F00 !important
+  border-color: #dc3f00 !important;
 }
 .sc-tag:hover {
-    opacity: 0.7 !important
+  opacity: 0.7 !important;
 }
 
 .sc-label-private,
 .groupInfo__status.sc-background-orange {
-    background: repeating-linear-gradient(-45deg, #D50, #D50 6px, #B40 6px, #B40 12px) !important;
-    border: 1px solid transparent !important;
-    border-radius: 4px !important;
-    box-shadow: inset -1px 1px rgba(0, 0, 0, .15) !important
+  background: repeating-linear-gradient(
+    -45deg,
+    #d50,
+    #d50 6px,
+    #b40 6px,
+    #b40 12px
+  ) !important;
+  border: 1px solid transparent !important;
+  border-radius: 4px !important;
+  box-shadow: inset -1px 1px rgba(0, 0, 0, 0.15) !important;
 }
 
 .listenInfoTeaser__descriptionFade,
 .truncatedAudioInfo.m-overflow.m-collapsed .truncatedAudioInfo__wrapper::after,
-.truncatedUserDescription.m-overflow.m-collapsed .truncatedUserDescription__wrapper::after {
-    background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 1)) !important
+.truncatedUserDescription.m-overflow.m-collapsed
+  .truncatedUserDescription__wrapper::after {
+  background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 1)) !important;
 }
 
 .tokenInput__token {
-    background: #2C2C2C !important
+  background: #2c2c2c !important;
 }
 
 .trackPreview__post {
-    background: #000 !important
+  background: #000 !important;
 }
 .trackPreview__post:before {
-    background: linear-gradient(to right, transparent, #000) !important
+  background: linear-gradient(to right, transparent, #000) !important;
 }
 
 .progressBar__outer {
-    background-color: #333 !important
+  background-color: #333 !important;
 }
 .uploadStatus__upload {
-    border-color: #333 !important
+  border-color: #333 !important;
 }
 .tagInput {
-    background: #222 !important;
-    border-color: #292929 !important;
-    border-radius: 0 !important;
-    border-bottom: none !important;
+  background: #222 !important;
+  border-color: #292929 !important;
+  border-radius: 0 !important;
+  border-bottom: none !important;
 }
 
 .g-form-section-head {
-    border-color: rgba(99, 99, 99, .1) !important;
-    box-shadow: 0 1px #000 !important
+  border-color: rgba(99, 99, 99, 0.1) !important;
+  box-shadow: 0 1px #000 !important;
 }
 .g-options-row.three-cell {
-    background: transparent !important
+  background: transparent !important;
 }
 
 /*** COVER EFFECT ***/
 a.sound__coverArt > .image {
-    transition: filter 0.6s;
-    -webkit-transition: -webkit-filter 0.6s
+  transition: filter 0.6s;
+  -webkit-transition: -webkit-filter 0.6s;
 }
 a.sound__coverArt:hover > .image {
-    filter: brightness(2);
-    -webkit-filter: brightness(1.8)
+  filter: brightness(2);
+  -webkit-filter: brightness(1.8);
 }
 
 .ownActivity__trackImg {
-    border-color: #111 !important
+  border-color: #111 !important;
 }
 .image__whiteOutline .image__full {
-    border-color: #000 !important
+  border-color: #000 !important;
 }
 
 .playlist .sound__coverArt {
-    background: none !important
+  background: none !important;
 }
 .playlist .sound__coverArt > .image {
-    box-shadow: 0 0 1px rgba(255, 255, 255, .35) !important
+  box-shadow: 0 0 1px rgba(255, 255, 255, 0.35) !important;
 }
 .playlist .sound__coverArt > .image:before,
 .playlist .sound__coverArt > .image:after {
-    content: '';
-    position: absolute;
-    z-index: -1 !important;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: 100%;
-    background: #222;
-    box-shadow: inset 0 0 1px #666;
-    transform: rotate(10deg);
-    -webkit-transform: rotate(10deg);
-    transition: transform ease 1s;
-    -webkit-transition: -webkit-transform ease 1s
+  content: "";
+  position: absolute;
+  z-index: -1 !important;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  background: #222;
+  box-shadow: inset 0 0 1px #666;
+  transform: rotate(10deg);
+  -webkit-transform: rotate(10deg);
+  transition: transform ease 1s;
+  -webkit-transition: -webkit-transform ease 1s;
 }
 .playlist .sound__coverArt .image:after {
-    background: #333;
-    transform: rotate(5deg);
-    -webkit-transform: rotate(5deg)
+  background: #333;
+  transform: rotate(5deg);
+  -webkit-transform: rotate(5deg);
 }
 .soundList__item:hover .playlist .sound__coverArt .image:before {
-    transform: rotate(24deg);
-    -webkit-transform: rotate(24deg)
+  transform: rotate(24deg);
+  -webkit-transform: rotate(24deg);
 }
 .soundList__item:hover .playlist .sound__coverArt .image:after {
-    transform: rotate(12deg);
-    -webkit-transform: rotate(12deg)
+  transform: rotate(12deg);
+  -webkit-transform: rotate(12deg);
 }
 
 .header__userMenu > li > a.selected:before {
-    border-bottom-color: #555 !important
+  border-bottom-color: #555 !important;
 }
 .header__userMenu > li > a.selected:after {
-    border-bottom-color: #0C0C0C !important
+  border-bottom-color: #0c0c0c !important;
 }
 
 .userInfo.isPremium .userInfo__title {
-    padding-right: 0px !important
+  padding-right: 0px !important;
 }
 
 .social-sign-in-separator {
-    background: #333 !important
+  background: #333 !important;
 }
-
 
 .inboxItem__link:hover,
 .inboxItem.unread .inboxItem__link,
 .inboxItem.active .inboxItem__link {
-    background: linear-gradient(to left, transparent, #222) !important
+  background: linear-gradient(to left, transparent, #222) !important;
 }
 .inboxItem__link:focus {
-    background: transparent !important
+  background: transparent !important;
 }
-
 
 /* .waveform__layer.waveform__scene > canvas:first-child {
 filter: blur(3px) !important;
@@ -1136,34 +1228,35 @@ filter: url(data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi
 */
 /*** LAYOUT CHANGE ***/
 .fullHero__playerArea {
-    bottom: 100px !important
+  bottom: 100px !important;
 }
 .listenEngagement__commentForm > *,
 .listenEngagement__footer > * {
-    z-index: 11 !important
+  z-index: 11 !important;
 }
 .l-about-main .l-about-top .listenEngagement__commentForm {
-    margin-top: -133px !important
+  margin-top: -133px !important;
 }
 .l-about-row.l-listen__mainContent {
-    margin-top: -14px !important
+  margin-top: -14px !important;
 }
 .sc-hyphenate {
-    word-break: normal !important
+  word-break: normal !important;
 }
 .fullHero__info .relativeTime:before {
-    content: attr(title) " (" !important
+  content: attr(title) " (" !important;
 }
 .fullHero__info .relativeTime:after {
-    content: ")" !important
+  content: ")" !important;
 }
 .fullHero__info {
-    width: 275px !important
+  width: 275px !important;
 }
 
 .truncatedAudioInfo.m-overflow.m-collapsed .truncatedAudioInfo__wrapper,
-.truncatedUserDescription.m-overflow.m-collapsed .truncatedUserDescription__wrapper {
-    max-height: 232px !important
+.truncatedUserDescription.m-overflow.m-collapsed
+  .truncatedUserDescription__wrapper {
+  max-height: 232px !important;
 }
 /*
 .listenInfoTeaser__description {max-height: 235px !important; transition-duration: 1s !important; transition-delay: 2s !important}
@@ -1184,105 +1277,113 @@ bottom: -10px}
 */
 /*** FRONTPAGE ***/
 .frontTeaser__phone {
-    background: transparent !important
+  background: transparent !important;
 }
 .l-front h1,
 .l-front h1 *,
 .l-front h2,
 .l-front h2 * {
-    text-shadow: 0 0 8px #000, 0 1px 2px #000 !important
+  text-shadow:
+    0 0 8px #000,
+    0 1px 2px #000 !important;
 }
 #app .l-front .frontHero h1 {
-    text-shadow: 0 0 8px #000, 0 1px 2px #000, 0 1px #38F !important
+  text-shadow:
+    0 0 8px #000,
+    0 1px 2px #000,
+    0 1px #38f !important;
 }
 .l-front h1 a,
 .l-front h2 a {
-    text-decoration: underline !important
+  text-decoration: underline !important;
 }
-
 
 /*** IMAGES ***/
 .loading,
 .loading.dark {
-    background-image: url(http://abload.de/img/throbber-cloud-greysc11uhe.gif) !important;
-    opacity: 0.8
+  background-image: url(http://abload.de/img/throbber-cloud-greysc11uhe.gif) !important;
+  opacity: 0.8;
 }
 .image__hasPlaceholder {
-    background: #222 !important
+  background: #222 !important;
 }
 .image__hasPlaceholder-200 {
-    background: url(http://abload.de/img/cloudx200uvuof.png) center no-repeat transparent !important
+  background: url(http://abload.de/img/cloudx200uvuof.png) center no-repeat
+    transparent !important;
 }
 img[src*="/default/cloudx50-"],
 .sound__coverArt img[src*="/default/cloudx120-"] {
-    width: 0 !important;
-    height: 50px !important;
-    padding-left: 50px !important;
-    background: url(http://abload.de/img/cloud_50bvb7w.png) center no-repeat transparent !important
+  width: 0 !important;
+  height: 50px !important;
+  padding-left: 50px !important;
+  background: url(http://abload.de/img/cloud_50bvb7w.png) center no-repeat
+    transparent !important;
 }
 img[src*="/default/cloudx120-"],
-.sound__coverArt img[src*="/default/cloudx120-"]/* .l-fixed-narrow-fluid .sound__coverArt img[src*="cloudx120-1ec56ce9.png"], .l-fixed-fluid .sound__coverArt img[src*="cloudx120-1ec56ce9.png"], .sound__coverArt img.image__full[src*="cloudx120-1ec56ce9.png"], img.imageUpload__preview[src*="cloudx120-1ec56ce9.png"] */
-{
-    width: 0 !important;
-    height: 120px !important;
-    padding-left: 120px !important;
-    background: url(http://abload.de/img/cloud_120jwrp2.png) center no-repeat transparent !important
+.sound__coverArt img[src*="/default/cloudx120-"]/* .l-fixed-narrow-fluid .sound__coverArt img[src*="cloudx120-1ec56ce9.png"], .l-fixed-fluid .sound__coverArt img[src*="cloudx120-1ec56ce9.png"], .sound__coverArt img.image__full[src*="cloudx120-1ec56ce9.png"], img.imageUpload__preview[src*="cloudx120-1ec56ce9.png"] */ {
+  width: 0 !important;
+  height: 120px !important;
+  padding-left: 120px !important;
+  background: url(http://abload.de/img/cloud_120jwrp2.png) center no-repeat
+    transparent !important;
 }
 img[src*="/default/cloudx200-"] {
-    width: 0 !important;
-    height: 200px !important;
-    padding-left: 200px !important;
-    background: url(http://abload.de/img/cloudx200uvuof.png) center no-repeat transparent !important
+  width: 0 !important;
+  height: 200px !important;
+  padding-left: 200px !important;
+  background: url(http://abload.de/img/cloudx200uvuof.png) center no-repeat
+    transparent !important;
 }
 img[src*="/default/cloudx500-"] {
-    width: 0 !important;
-    height: 500px !important;
-    padding-left: 500px !important;
-    background: url(http://abload.de/img/cloudx200uvuof.png) center no-repeat transparent !important
+  width: 0 !important;
+  height: 500px !important;
+  padding-left: 500px !important;
+  background: url(http://abload.de/img/cloudx200uvuof.png) center no-repeat
+    transparent !important;
 }
 img[src*="/default/userx40-"][width="40"] {
-    width: 0 !important;
-    height: 40px !important;
-    padding-left: 40px !important;
-    background: url(http://abload.de/img/user_400wyk0.png) !important
+  width: 0 !important;
+  height: 40px !important;
+  padding-left: 40px !important;
+  background: url(http://abload.de/img/user_400wyk0.png) !important;
 }
 img[src*="/default/userx50-"][width="50"] {
-    width: 0 !important;
-    height: 50px !important;
-    padding-left: 50px !important;
-    background: url(http://abload.de/img/user_50uml4w.png) !important
+  width: 0 !important;
+  height: 50px !important;
+  padding-left: 50px !important;
+  background: url(http://abload.de/img/user_50uml4w.png) !important;
 }
 img[src*="/default/userx120-"] {
-    width: 0 !important;
-    height: 120px !important;
-    padding-left: 120px !important;
-    background: url(http://abload.de/img/user_120c2yb5.png) !important
+  width: 0 !important;
+  height: 120px !important;
+  padding-left: 120px !important;
+  background: url(http://abload.de/img/user_120c2yb5.png) !important;
 }
 img[src*="/default/userx120-"][width="100"] {
-    width: 0 !important;
-    height: 100px !important;
-    padding-left: 100px !important;
-    background: url(http://abload.de/img/user_1007up61.png) !important
+  width: 0 !important;
+  height: 100px !important;
+  padding-left: 100px !important;
+  background: url(http://abload.de/img/user_1007up61.png) !important;
 }
 img[src*="/default/userx200-"] {
-    width: 0 !important;
-    height: 200px !important;
-    padding-left: 200px !important;
-    background: url(http://abload.de/img/user_200skzbp.png) !important
+  width: 0 !important;
+  height: 200px !important;
+  padding-left: 200px !important;
+  background: url(http://abload.de/img/user_200skzbp.png) !important;
 }
 .soundBadge.playlist .soundBadge__avatarLink,
 .soundBadge.playlist .soundBadge__artwork {
-    background-image: url(http://abload.de/img/playlist-cover-bg_smaabxf1.png) !important
+  background-image: url(http://abload.de/img/playlist-cover-bg_smaabxf1.png) !important;
 }
 
 .paging-eof:before,
 .premiumBottomContent__quota:after,
 .premiumContentFooter:before {
-    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAOCAAAAAB4YAGaAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAACpSURBVBgZpcFPS4NwAMfhr+4iQVYqgsHoHzOLMEdMNtouu3QoPQwPHSxC6vP+X8IgEn78sAXteaT/c9OXrquvHf2l4Vvtaael+FE7+pX7PMKjd6UhI7fSyeGXz5jeZll4skVPPscfCefcYWh9WW7amIycnDmmtSwzLih5pGSF6VWWe06Z8kDBAlMlS/oekZEx4RbTmSwH6REJMQHhG73P5lIDQgWKFGpPW9o1Q19pzVZlAAAAAElFTkSuQmCC) !important
+  background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAOCAAAAAB4YAGaAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAACpSURBVBgZpcFPS4NwAMfhr+4iQVYqgsHoHzOLMEdMNtouu3QoPQwPHSxC6vP+X8IgEn78sAXteaT/c9OXrquvHf2l4Vvtaael+FE7+pX7PMKjd6UhI7fSyeGXz5jeZll4skVPPscfCefcYWh9WW7amIycnDmmtSwzLih5pGSF6VWWe06Z8kDBAlMlS/oekZEx4RbTmSwH6REJMQHhG73P5lIDQgWKFGpPW9o1Q19pzVZlAAAAAElFTkSuQmCC) !important;
 }
 
 .g-back-link {
-    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAANCAYAAACQN/8FAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAACASURBVChTpZGxCoNAEAUXhKAEFMQipb+VOk2KEFGQFGn888ssvhDvjhAkD6bZmeLg7NtCCD1c4KhTPkVPWOAKldRnSeSM0Eiv45BGA/yM7lBLr+OQRjfIogL8He/I6aXjIU4wb8IJOul4iL/jVjoewuOHwl2xf2MplU/xGQ5mZi9fWef4MrlQWQAAAABJRU5ErkJggg==) !important
+  background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAANCAYAAACQN/8FAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAACASURBVChTpZGxCoNAEAUXhKAEFMQipb+VOk2KEFGQFGn888ssvhDvjhAkD6bZmeLg7NtCCD1c4KhTPkVPWOAKldRnSeSM0Eiv45BGA/yM7lBLr+OQRjfIogL8He/I6aXjIU4wb8IJOul4iL/jVjoewuOHwl2xf2MplU/xGQ5mZi9fWef4MrlQWQAAAABJRU5ErkJggg==) !important;
 }
 .soundBadge__remove,
 .soundBadge__remove.sc-button,
@@ -1292,25 +1393,26 @@ img[src*="/default/userx200-"] {
 .modal__closeButton,
 .gritter-close,
 .g-button-remove {
-    -moz-appearance: none !important;
-    background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAAPAQMAAAABGAcJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAGUExURf///93d3RxnYCYAAAABdFJOUwBA5thmAAAAIklEQVQI12NggAEBAQYOBQYWBwamBgZGBhAJZANFgOIwAAAu6AIeipbA5wAAAABJRU5ErkJggg==) no-repeat center #000 !important;
-    border: 1px solid #333 !important;
-    border-radius: 20px !important;
-    box-shadow: 0 0 2px #000 !important;
-    opacity: 0.5 !important
+  -moz-appearance: none !important;
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAAPAQMAAAABGAcJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAGUExURf///93d3RxnYCYAAAABdFJOUwBA5thmAAAAIklEQVQI12NggAEBAQYOBQYWBwamBgZGBhAJZANFgOIwAAAu6AIeipbA5wAAAABJRU5ErkJggg==)
+    no-repeat center #000 !important;
+  border: 1px solid #333 !important;
+  border-radius: 20px !important;
+  box-shadow: 0 0 2px #000 !important;
+  opacity: 0.5 !important;
 }
 .announcement__dismiss img {
-    width: 0 !important;
-    padding-left: 15px !important;
-    margin-top: -3px !important
+  width: 0 !important;
+  padding-left: 15px !important;
+  margin-top: -3px !important;
 }
 .gritter-close {
-    height: 15px !important;
-    top: 13px !important
+  height: 15px !important;
+  top: 13px !important;
 }
 .g-button-remove {
-    width: 19px !important;
-    height: 19px !important;
+  width: 19px !important;
+  height: 19px !important;
 }
 .soundBadge__remove:hover,
 .stream__hideNotice:hover,
@@ -1319,51 +1421,52 @@ img[src*="/default/userx200-"] {
 .modal__closeButton:hover,
 .gritter-close:hover,
 .g-button-remove:hover {
-    opacity: 1 !important
+  opacity: 1 !important;
 }
 
 .emptyNetworkPage .emptyNetworkPage__image {
-    opacity: 0.1 !important
+  opacity: 0.1 !important;
 }
 
 /* .blockCheckbox__icon {background-image: url(http://abload.de/img/big-checkboxyayvg.png) !important} */
 .soundBadge.dragHandle.editing {
-    background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAKCAYAAAC5Sw6hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAApSURBVChTY3BwcPhPDcygrKz8nxqYoaGhgSoYqyA5eDSMCOPBFkbK/wEctxZKLh9yPQAAAABJRU5ErkJggg==) no-repeat 16px center !important
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAKCAYAAAC5Sw6hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAApSURBVChTY3BwcPhPDcygrKz8nxqYoaGhgSoYqyA5eDSMCOPBFkbK/wEctxZKLh9yPQAAAABJRU5ErkJggg==)
+    no-repeat 16px center !important;
 }
 
 /* CSS For SCI Elements */
 .playControls__themebtn {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/ctx-themes-%23888.png") !important;
+  background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/ctx-themes-%23888.png") !important;
 }
 .playControls__pluginbtn {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/ctx-plugins-%23888.png") !important;
+  background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/ctx-plugins-%23888.png") !important;
 }
 .playControls__lyricbtn {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/round_mic_%23888.png") !important;
+  background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/round_mic_%23888.png") !important;
 }
 .playControls__showcasebtn {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/baseline_smart_display_black_%23888.png");
+  background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/baseline_smart_display_black_%23888.png");
 }
 
 .header__appclosebtn {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/baseline_close_white_24dp.png");
+  background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/baseline_close_white_24dp.png");
 }
 .header__appmaximizebtn {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/baseline_fullscreen_white_48dp.png");
+  background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/baseline_fullscreen_white_48dp.png");
 }
 .header__appminimizebtn {
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/outline_minimize_black_48dp.png");
+  background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/outline_minimize_black_48dp.png");
 }
 /* Previous And Next Header Btn */
 .header__appnextbtn {
-    background-color: #111;
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/sharp_arrow_forward_ios_white_48dp.png");
+  background-color: #111;
+  background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/sharp_arrow_forward_ios_white_48dp.png");
 }
 .header__apppreviousbtn {
-    background-color: #111;
-    background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/sharp_arrow_back_ios_white_48dp.png");
+  background-color: #111;
+  background-image: url("https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/refs/heads/before0.6/lib/assets/sharp_arrow_back_ios_white_48dp.png");
 }
 
 .l-container {
-    background-color: rgb(33, 33, 33) !important;
+  background-color: rgb(33, 33, 33) !important;
 }
