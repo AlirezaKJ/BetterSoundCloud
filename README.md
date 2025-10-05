@@ -5,14 +5,17 @@ A PC client of SoundCloud with themes and plugins made using electronjs
 ![alt text](app/lib/assets/readme/demo.png)
 
 # Installation
+## Auto Installers for Windows | Portable
+[![Github All Releases](https://img.shields.io/badge/Portable-Download-yellowgreen?style=for-the-badge&logo=electron-builder&logoColor=white)](https://github.com/AlirezaKJ/BetterSoundCloud/releases/download/V0.6.0/BetterSoundCloud.0.6.0.Portable.zip)
+[![Github All Releases](https://img.shields.io/badge/Windows-Download-blue?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/AlirezaKJ/BetterSoundCloud/releases/download/V0.6.0/BetterSoundCloud.0.6.0.msi)
+[![Github All Releases](https://img.shields.io/badge/Source-Download-yellow?style=for-the-badge&logo=javascript&logoColor=white)](https://github.com/AlirezaKJ/BetterSoundCloud/archive/refs/tags/V0.6.0.zip)
 
-## Auto Installers
 ### 🐧 Linux Auto Installer
 
-Run **BetterSoundCloud** on Linux with one simple command.  
+Install **BetterSoundCloud** on Linux with one simple command.  
 The installer will:
 
-- Install all dependencies automatically  
+- Install all dependencies + **BetterSoundCloud** automatically in your home directory 
 - Clone or update the repository  
 - Install project dependencies  
 - Create a `.desktop` launcher entry  
@@ -28,9 +31,6 @@ The installer will:
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/ULTRA-VAGUE/BetterSoundCloud-On-Linux/main/install_bettersoundcloud.sh)
 ```
-[![Github All Releases](https://img.shields.io/badge/Portable-Download-yellowgreen?style=for-the-badge&logo=electron-builder&logoColor=white)](https://github.com/AlirezaKJ/BetterSoundCloud/releases/download/V0.6.0/BetterSoundCloud.0.6.0.Portable.zip)
-[![Github All Releases](https://img.shields.io/badge/Windows-Download-blue?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/AlirezaKJ/BetterSoundCloud/releases/download/V0.6.0/BetterSoundCloud.0.6.0.msi)
-[![Github All Releases](https://img.shields.io/badge/Source-Download-yellow?style=for-the-badge&logo=javascript&logoColor=white)](https://github.com/AlirezaKJ/BetterSoundCloud/archive/refs/tags/V0.6.0.zip)
 
 ## Manual Installation
 
