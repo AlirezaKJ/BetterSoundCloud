@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout your fork’s master
+      - name: Checkout your fork’s main
         uses: actions/checkout@v4
         with:
           ref: main
@@ -30,10 +30,10 @@ jobs:
           git remote add upstream https://github.com/AlirezaKJ/BetterSoundCloud.git
           git fetch upstream
 
-      - name: Merge upstream/master into master
+      - name: Merge upstream/main into main
         run: |
-          git merge upstream/master --no-edit || echo "Merge conflict or no changes"
+          git merge upstream/main --no-edit || echo "Merge conflict or no changes"
 
       - name: Push merged result to your fork
         run: |
-          git push origin master
+          git push origin main
