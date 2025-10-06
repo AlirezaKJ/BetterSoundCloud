@@ -74,18 +74,21 @@ echo -e "${GREEN}✔ NPM packages installed.${RESET}"
 
 # --- Create start.sh ---
 echo -e "${CYAN}Creating start.sh...${RESET}"
-cat > "$START_SCRIPT" <<EOF
+cat > "$START_SCRIPT" <<'EOF'
 #!/usr/bin/env bash
 set -e
 
-cd "\$(dirname "\${BASH_SOURCE[0]}")"
+cd "$(dirname "${BASH_SOURCE[0]}")"
+
+REPO_URL="https://github.com/ULTRA-VAGUE/BetterSoundCloud-On-Linux"
 
 echo "🔄 Checking for updates..."
 if git rev-parse --is-inside-work-tree &>/dev/null; then
+    git remote set-url origin "$REPO_URL" 2>/dev/null || git remote add origin "$REPO_URL"
     git fetch origin main
-    LOCAL=\$(git rev-parse @)
-    REMOTE=\$(git rev-parse @{u})
-    if [ "\$LOCAL" != "\$REMOTE" ]; then
+    LOCAL=$(git rev-parse @)
+    REMOTE=$(git rev-parse @{u})
+    if [ "$LOCAL" != "$REMOTE" ]; then
         echo "⬆ Updating BetterSoundCloud..."
         git reset --hard origin/main
         git clean -fd
