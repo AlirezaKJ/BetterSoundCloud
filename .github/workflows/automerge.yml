@@ -7,33 +7,40 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write 
+  contents: write
 
 jobs:
   merge-upstream:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout your fork's main branch with full history
       - name: Checkout your fork’s main
         uses: actions/checkout@v4
         with:
           ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0  # Fetch full history to avoid shallow clone issues
 
+      # Set Git user details for commit/push
       - name: Configure Git user
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Add upstream remote
+      # Add upstream remote and fetch all history
+      - name: Add upstream remote and fetch
         run: |
           git remote add upstream https://github.com/AlirezaKJ/BetterSoundCloud.git
+          git fetch upstream --unshallow || true  # If repo is shallow, convert to full history
           git fetch upstream
 
+      # Merge upstream/main into your main, allow unrelated histories, handle conflicts gracefully
       - name: Merge upstream/main into main
         run: |
-          git merge upstream/main --no-edit || echo "Merge conflict or no changes"
+          git merge upstream/main --allow-unrelated-histories --no-edit || echo "Merge conflict or no changes"
 
+      # Push the merge back to your fork’s main branch
       - name: Push merged result to your fork
         run: |
           git push origin main
