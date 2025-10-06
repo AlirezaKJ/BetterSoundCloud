@@ -1,0 +1,39 @@
+name: Daily merge from upstream into master
+
+on:
+  schedule:
+    # Runs daily at 08:00 UTC 
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write 
+
+jobs:
+  merge-upstream:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout your fork’s master
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Add upstream remote
+        run: |
+          git remote add upstream https://github.com/AlirezaKJ/BetterSoundCloud.git
+          git fetch upstream
+
+      - name: Merge upstream/master into master
+        run: |
+          git merge upstream/master --no-edit || echo "Merge conflict or no changes"
+
+      - name: Push merged result to your fork
+        run: |
+          git push origin master
