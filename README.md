@@ -15,7 +15,7 @@ A PC client of SoundCloud with themes and plugins made using electronjs
 Install **BetterSoundCloud** on Linux with one simple command.  
 The installer will:
 
-- Install all dependencies + **BetterSoundCloud** automatically in your home directory 
+- Install **BetterSoundCloud** automatically in your home directory 
 - Clone or update the repository  
 - Install project dependencies  
 - Create a `.desktop` launcher entry  
