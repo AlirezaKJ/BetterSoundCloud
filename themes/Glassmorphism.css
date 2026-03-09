@@ -1,0 +1,348 @@
+/* CHANGE THE URL IN "..." FOR CUSTOM BACKGROUND */
+.custombg {
+  background: url("https://w.wallhaven.cc/full/je/wallhaven-je1row.jpg") center / cover no-repeat!important;
+  filter: blur(7px)!important;
+}
+
+#app {
+  display: flex!important;
+  justify-content: center!important;
+}
+
+.header.sc-selection-disabled, .playControls__inner {
+  width: 1240px!important;
+}
+
+.header.sc-selection-disabled {
+  margin-inline: 0 auto!important;
+}
+
+.playControls {
+  display: flex!important;
+  justify-content: center!important;
+  margin-inline: 0 auto!important;
+}
+
+.playControls__inner, .playControls__elements {
+  padding-inline: 20px!important;
+}
+
+.infoStats {
+  padding: 8px 16px!important;
+}
+
+.modular-home-mixed-selection, .sidebarModule.g-all-transitions-200-linear, .infoStats {
+  border-radius: 20px!important;
+}
+
+.sidebarModule {
+  margin-bottom: 0!important;
+}
+
+.sidebarModule.g-all-transitions-200-linear, .infoStats {
+  margin: 0 0 16px 0!important;
+}
+
+.playableTile__actionWrapper {
+  display: flex!important;
+  column-gap: 10px!important;
+}
+
+input, textarea, .tokenInput__wrapper{
+  border: 1px solid #9E9E9EFF!important;
+  border-radius: 20px!important;
+}
+
+.permalinkTextfield__inputWrapper.g-flex-row-centered > input, .permalinkTextfield__inputWrapper.g-flex-row-centered > span {
+  border-bottom: 1px solid #9E9E9EFF!important;
+  border-top: 1px solid #9E9E9EFF!important;
+}
+
+.permalinkTextfield__inputWrapper.g-flex-row-centered > input {
+  border-right: 1px solid #9E9E9EFF!important;
+  border-left: none!important;
+  border-radius: 0 20px 20px 0!important;
+}
+
+.permalinkTextfield__inputWrapper.g-flex-row-centered > span {
+  padding-block: 7px!important;
+  border-left: 1px solid #9E9E9EFF!important;
+  border-right: none!important;
+  border-radius: 20px 0 0 20px!important;
+}
+
+.tokenInput__inputContainer>input, input#tokenInput__tags {
+  border: none!important;
+}
+
+.l-about-row.l-listen__mainContent {
+  padding-bottom: 10px!important;
+}
+
+.l-about-main {
+  padding-right: 20px!important;
+}
+
+.userNetwork {
+  margin-top: 100px!important;
+  padding-inline: 16px!important;
+}
+
+.conversation {
+  padding: 0!important;
+  margin-left: 10px!important;
+}
+
+.sc-px-2x>.activitiesListFull.sc-pt-3x {
+  padding-inline: 10px!important;
+}
+
+.conversation__messages {
+  padding-inline: 3px!important;
+}
+
+.l-front-content {
+  padding: 1px 10px 10px 10px!important;
+  margin-top: 20px!important;
+}
+
+.l-front-signup-teaser {
+  margin-top: 20px!important;
+}
+
+.frontMobileTeaser {
+  border-radius: 20px 20px 0 0!important;
+}
+
+.auth-modal>.modal__modal {
+  background-color: transparent !important;
+  backdrop-filter: none!important;
+  box-shadow: none!important;
+}
+
+.onSoundCloudTeaser {
+  border-radius: 0 0 20px 20px!important;
+}
+
+.conversationMessage {
+  width: auto!important;
+  padding-block: 8px!important;
+  padding-inline: 3px!important;
+}
+
+.conversationMessage__time.sc-font-light {
+  padding-top: 5px!important;
+  padding-right: 10px!important;
+}
+
+.conversationBadge__dot {
+  position: absolute!important;
+  top: 20px!important;
+  right: -5px!important;
+}
+
+.conversation__stickyHeader {
+  box-shadow: none!important;
+}
+
+.inboxItem {
+  margin-bottom: 5px!important;
+}
+
+.l-messages-main {
+  padding-top: 29px!important;
+}
+
+.l-top.sc-border-box.g-z-index-fixed.sc-browsers-enable-gpu.l-inner-fullwidth.sc-pt-3x {
+  margin-block: 20px!important;
+}
+
+.l-main.g-main-scroll-area {
+  padding-top: 20px!important;
+}
+
+.l-fixed-top-one-column>.l-top {
+  padding-bottom: 10px!important;
+}
+
+.soundList.lazyLoadingList, .l-three-column.listen-about>.l-main.sc-border-light-right>.listenDetails>.commentsList {
+  padding-top: 10px!important;
+}
+
+.sound__body {
+  padding-right: 16px!important;
+}
+
+.badgeList__item {
+  max-height: 240px!important;
+}
+
+.badgeList__item>.audibleTile.playableTile.sc-mb-6x {
+  margin-bottom: 11px!important;
+}
+
+.dropbar.m-insideContent.m-active {
+  z-index: 1001!important;
+}
+
+.dropbar.m-active {
+  position: sticky!important;
+  transform: translateY(7px)!important;
+  visibility: visible!important;
+}
+
+.commentPopover__username.sc-truncate.sc-text-h5.sc-link-secondary.sc-py-0\.25x {
+  border-radius: 10px 0 0 10px!important;
+}
+
+.commentPopover__body.sc-truncate.sc-text-primary.sc-text-captions.sc-py-0\.25x {
+  border-radius: 0 10px 10px 0!important;
+}
+
+.collection, #content>div>.l-fixed-top-one-column>.l-main.g-main-scroll-area>.listenNetwork.sc-my-2x {
+  padding-inline: 20px!important;
+}
+
+.userMain {
+  padding-bottom: 10px!important;
+}
+
+.sc-mx-2x, .activitiesFull__header>.select__wrapper>.select__dropdownButton {
+  margin: 0!important;
+}
+
+.l-vertical-bar, .l-user-hero.sc-px-2x {
+  margin-bottom: 16px!important;
+}
+
+.l-user-hero.sc-px-2x, .l-hero-banner, .l-listen-hero {
+  margin-top: 16px!important;
+}
+
+.playbackSoundBadge__showQueue.sc-button.sc-button-secondary.sc-button-small.sc-button-icon {
+  margin-right: 5px!important;
+}
+
+.frontContent__search>.headerSearch>.headerSearch__submit {
+  position: absolute!important;
+  top: 6px!important;
+}
+
+.profileUploadFooter {
+  padding-bottom: 10px!important;
+}
+
+.queueItemView__actions>.queueItemView__like.sc-button-icon {
+  padding-left: 8px!important;
+}
+
+.soundBadge__additional {
+  background: linear-gradient(90deg, rgb(255 255 255 / 0%) 0%, rgb(181 181 181 / 30%) 50%)!important;
+}
+
+.playControls__queue {
+  background-color: #0C0C0CE5!important;
+}
+
+.queue__itemsHeight.sc-px-2x {
+  border-radius: 20px!important;
+  background: none!important;
+}
+
+.queue__panel.sc-p-2x.sc-pb-1x {
+  border-bottom: 1px solid #FFFFFF8C!important;
+}
+
+.sc-button-follow.sc-button.sc-button-medium.sc-button-cta.sc-button-primary, .sc-button-follow.sc-button.sc-button-medium.sc-button-primary.sc-button-selected, .notificationBadge__side>.sc-button-follow {
+  color: #FFFFFF!important;
+}
+
+.sc-tag.soundTitle__tag.sc-tag-small, .tileGallery__sliderButton, .sc-tag {
+  background-color: #0C0C0C99!important;
+}
+
+.headerMenu.profileMenu.m-light, .linkMenu, .moreActions, .dialog, .dropdownContent__container {
+  animation-name: slide!important;
+  animation-duration: 0.5s!important;
+}
+
+.readMoreTile__countWrapper {
+  border-radius: 8px!important;
+}
+
+.sc-button.moreActions__button.sc-button-medium.sc-button-tertiary {
+  border-radius: 0!important;
+}
+
+/* LONG COMBINED STYLES */
+
+.bgblurrer, .tooltip, .spotlight, .sidebarModule__webiEmbeddedModule, .dialog__arrow, .volume__sliderWrapper::after,.volume__sliderWrapper::before, .header__upsellWrapper.left, .composeMessage__searchViewWrapper:after, .creatorSubscriptionsButton, iframe.velvetCakeIframe, .playControls__themebtn, .playControls__lyricbtn, .playControls__showcasebtn, .playControls__pluginbtn {
+  display: none!important;
+}
+
+.l-container.l-content, .skipControl, .shuffleControl, .soundTitle__uploadTime, .editTrackList__item:hover, .dropbar__content, .sc-button-like.playbackSoundBadge__like, .minorProtectionBanner__container.sc-mt-4x, .sc-button-follow.playbackSoundBadge__follow, .repeatControl, .volume__button, .playbackSoundBadge__showQueue, .audibleEditForm__form, input, .queue.m-visible, textarea, .permalinkTextfield__inputWrapper.g-flex-row-centered > input, .permalinkTextfield__inputWrapper.g-flex-row-centered > span, .tokenInput__wrapper, .trackItem.g-flex-row.sc-type-small.sc-text-body.sc-type-light.sc-text-secondary.m-interactive.m-playable.hover, .header__app__custombtns, .playControls__bg, .playControls__inner, .audibleEditForm__form.sc-media.sc-mt-3x, .g-upsell-container, .queue__itemWrapper, .queue__itemWrapper.queue__fallback {
+  background-color: transparent!important;
+}
+
+.queueItemView, .sc-button.moreActions__button.sc-button-medium.sc-button-tertiary, .conversation__actions, .conversation__stickyHeader {
+  background: transparent!important;
+}
+
+.stream, .userMain, .userInfoBar, .headerMenu.profileMenu.m-light, .l-three-column.listen-about>.l-main.sc-border-light-right>.listenDetails>.commentsList, .ui-datepicker.ui-widget, .l-front-content, .l-front-signup-teaser, .downloadLanding, #content>div>.l-fixed-top-one-column>.l-main.g-main-scroll-area>.listenNetwork.sc-my-2x, .audibleTilePlaceholder:before, .conversation, .sc-px-2x>.activitiesListFull.sc-pt-3x, .gritter-item-wrapper, .linkMenu, .moreActions, .dialog, .dropdownContent__container, .modal__modal, .modal.modalWhiteout, .readMoreTile__countWrapper, .commentPopover__username.sc-truncate.sc-text-h5.sc-link-secondary.sc-py-0\.25x, .commentPopover__body.sc-truncate.sc-text-primary.sc-text-captions.sc-py-0\.25x, .modular-home-mixed-selection, .sidebarModule.g-all-transitions-200-linear, .infoStats, .playControls__wrapper.l-container.l-fullwidth, .l-about-rows, .header.sc-selection-disabled, .userDropbar.sc-media.sc-border-light-bottom, .systemPlaylistDetails, .repostOverlay__container, .l-nav.sc-mt-3x.sc-mb-2x, .l-main>.sc-px-2x, .l-main.sc-pb-5x, .l-fixed-top-one-column>.l-top, .userNetwork {
+  background-color: #0C0C0C80!important;
+}
+
+.stream, .userMain, .userInfoBar, .downloadLanding, .l-front-content, .l-three-column.listen-about>.l-main.sc-border-light-right>.listenDetails>.commentsList, .l-front-signup-teaser, .ui-datepicker.ui-widget, .trackItem.g-flex-row.sc-type-small.sc-text-body.sc-type-light.sc-text-secondary.m-interactive.m-playable.hover, .profileHeader, .systemPlaylistHero, .modal__modal, .headerMenu.profileMenu.m-light, .linkMenu, .moreActions, .dialog, .dropdownContent__container, .queue.m-visible, .fullListenHero, .modular-home-mixed-selection, .sidebarModule.g-all-transitions-200-linear, .infoStats, .userDropbar.sc-media.sc-border-light-bottom, .playControls__wrapper.l-container.l-fullwidth, .l-about-rows, .header.sc-selection-disabled, .systemPlaylistDetails, .repostOverlay__container, .l-nav.sc-mt-3x.sc-mb-2x, .l-main>.sc-px-2x, .l-main.sc-pb-5x, .l-fixed-top-one-column>.l-top, .userNetwork {
+  box-shadow: 0 2px 17px 4px #00000078!important;
+}
+
+.playControls__wrapper.l-container.l-fullwidth, .modal__modal, .l-three-column.listen-about>.l-main.sc-border-light-right>.listenDetails>.commentsList, .editTrackList__item:hover, .l-front-content, .ui-datepicker.ui-widget, .l-front-signup-teaser, .downloadLanding, .volume__sliderWrapper, .conversation, .trackItem.g-flex-row.sc-type-small.sc-text-body.sc-type-light.sc-text-secondary.m-interactive.m-playable.hover, .headerMenu.profileMenu.m-light, .linkMenu, .moreActions, .dialog, .dropdownContent__container, .modular-home-mixed-selection, .sidebarModule.g-all-transitions-200-linear, .infoStats, .l-about-rows, .header.sc-selection-disabled, .stream, .userMain, .userInfoBar, .userDropbar.sc-media.sc-border-light-bottom, .systemPlaylistDetails, .repostOverlay__container, .l-nav.sc-mt-3x.sc-mb-2x, .l-main>.sc-px-2x, .l-main.sc-pb-5x, .l-fixed-top-one-column>.l-top, .userNetwork {
+  backdrop-filter: blur(5px)!important;
+}
+
+.stream, .userMain, .userInfoBar, .gritter-item-wrapper, .l-front-content, .l-three-column.listen-about>.l-main.sc-border-light-right>.listenDetails>.commentsList, .ui-datepicker.ui-widget, .l-front-signup-teaser, .downloadLanding, #content>div>.l-fixed-top-one-column>.l-main.g-main-scroll-area>.listenNetwork.sc-my-2x, .conversation, .activitiesListFull__item.sc-mb-2x.sc-text-body, .sc-px-2x>.activitiesListFull.sc-pt-3x, .profileHeader, .systemPlaylistHero, .fullListenHero, .l-about-rows, .playControls__wrapper, .header.sc-selection-disabled, .userDropbar.sc-media.sc-border-light-bottom, .systemPlaylistDetails, .repostOverlay__container, .l-nav.sc-mt-3x.sc-mb-2x, .l-main>.sc-px-2x, .l-main.sc-pb-5x, .l-fixed-top-one-column>.l-top, .userNetwork {
+  border-radius: 10px!important;
+}
+
+.playControls__wrapper, .userNetwork.sc-mb-3x.sc-pr-2x.m-hasButtons, .l-vertical-bar, .queue__itemsHeight.sc-px-2x, .conversationMessages__item {
+  padding: 0!important;
+}
+
+.sc-button-like, .sc-button-repost, .sc-button-share, .editTrackList__headerButtons>.sc-button-secondary.sc-button.sc-button-medium, .audibleEditForm__formButtonsWrapper>.sc-button-secondary.sc-button.sc-button-medium, .signupModule__signIn>.loginButton, .frontHero__createAccountButton, .volume__sliderWrapper, .header__loginMenu>.loginButton, .conversationActions__markButton, .autoTagger__actions>.sc-button-tertiary, .uploadAudibleAttributeIcons>.sc-label.sc-media-image.sc-label-private.sc-label-icon-only, .inboxItem, .sc-label-private.sc-label-private-ghost, .sc-button-follow.sc-button.sc-button-medium.sc-button-cta.sc-button-primary, .sc-button-follow.sc-button.sc-button-medium.sc-button-primary.sc-button-selected, .sc-button-copylink, .sc-button-more, .sc-button-queue.addToNextUp, .sc-button-follow, .sc-button-startstation, .sc-button-message, .sc-button-edit, .sc-button-delete, .sc-button-upload, .listDisplayToggle__badgeToggle, .listDisplayToggle__listToggle, .sc-button-dropdown.sc-button.sc-button-medium.sc-button-responsive.sc-button-secondary, .sc-button.sc-button-tertiary.sc-text-h4.collectionSection__action.sc-button.sc-button-medium.sc-button-responsive, .commentForm__submitButton, .sc-button.sc-button-secondary.sc-button-medium.select__dropdownButton.sc-button-dropdown.sc-text-h4.sc-mr-2x, .queue__hide, .webProfilesControl__add, .profileSettings__formButtons>.sc-button-secondary.sc-button.sc-button-medium, .composeMessage__addSoundButton, .sc-button-dropdown, select#widgetCustomization__optionSize.widgetCustomization__height, .privateShare__reset, .modal__closeButton {
+  background-color: #0C0C0C4D !important;
+  border-radius: 50px!important;
+}
+
+.sc-button-insights, .webProfilesControl__addSupportLink, .inlineError>.sc-button.sc-button-primary.sc-button-medium, .editTrackList__headerButtons>.sc-button-cta.sc-button-primary.sc-ml-2x.sc-button.sc-button-medium, .audibleEditForm__formButtonsWrapper>.sc-button-cta.sc-button-primary.sc-ml-2x.sc-button.sc-button-medium, .frontHero__loginButton, .frontHeroSlide__footer>.frontHeroSlide__cta>.sc-button-cta, .onSoundCloudTeaser__cta, .signupModule__signupCta, .frontContent__uploadButton, .trendingTracks__ctaButton, .autoTagger__actions>.sc-button-cta, .header__loginMenu>.signupButton, .inbox>.send-message-button-container>.send-message-button, .profileSettings__formButtons>.sc-button-cta.sc-button-primary.sc-button.sc-button-medium, .emptyNetworkPage__button>a.sc-button, .audibleEditForm__formButtons>button.sc-button-cta.sc-button-primary.sc-button.sc-button-medium, .composeMessage__bottomWrapper>.composeMessage__toolbar.sc-clearfix>button.composeMessage__sendButton, .profileUploadFooter>.sc-button.sc-button-cta.sc-button-primary.sc-button-medium.sc-mt-1x.sc-font-light.profileUploadFooter__cta, .repostOverlay__formButtonContainer>button.repostOverlay__formButtonSubmit--isNew, .repostOverlay__formButton[type="submit"] {
+  background-color: #FFFFFF8C !important;
+  border-radius: 50px!important;
+}
+
+.queue.m-visible, .playControls__queue, .headerMenu.profileMenu.m-light, .linkMenu, .moreActions, .dialog, .dropdownContent__container, .modal__modal {
+  border-radius: 25px!important;
+}
+
+@keyframes slide {
+  from {
+    opacity: 0;
+    transform: scaleY(0);
+    transform-origin: 100% 0;
+  }
+  to {
+    opacity: 100%;
+    transform: scaleY(1);
+    transform-origin: 100% 0;
+  }
+}
+
+@media (max-width: 1239px) {
+  .header.sc-selection-disabled.fixed.g-z-index-header.sc-text-h4.show, .playControls__wrapper.l-container.l-fullwidth {
+    width: 1080px!important;
+  }
+}
+
+@media (max-width: 1079px) {
+  .header.sc-selection-disabled.fixed.g-z-index-header.sc-text-h4.show, .playControls__wrapper.l-container.l-fullwidth {
+    width: 960px!important;
+  }
+}
