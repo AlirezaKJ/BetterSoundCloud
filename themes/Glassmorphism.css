@@ -1,8 +1,8 @@
 /* CHANGE THE URL IN "..." FOR CUSTOM BACKGROUND */
-.custombg {
+/* .custombg {
   background: url("https://w.wallhaven.cc/full/je/wallhaven-je1row.jpg") center / cover no-repeat!important;
   filter: blur(7px)!important;
-}
+} */
 
 #app {
   display: flex!important;
@@ -276,7 +276,7 @@ input, textarea, .tokenInput__wrapper{
 
 /* LONG COMBINED STYLES */
 
-.bgblurrer, .tooltip, .spotlight, .sidebarModule__webiEmbeddedModule, .dialog__arrow, .volume__sliderWrapper::after,.volume__sliderWrapper::before, .header__upsellWrapper.left, .composeMessage__searchViewWrapper:after, .creatorSubscriptionsButton, iframe.velvetCakeIframe, .playControls__themebtn, .playControls__lyricbtn, .playControls__showcasebtn, .playControls__pluginbtn {
+.bgblurrer, .tooltip, .spotlight, .sidebarModule__webiEmbeddedModule, .dialog__arrow, .volume__sliderWrapper::after,.volume__sliderWrapper::before, .header__upsellWrapper.left, .composeMessage__searchViewWrapper:after, .creatorSubscriptionsButton, iframe.velvetCakeIframe {
   display: none!important;
 }
 

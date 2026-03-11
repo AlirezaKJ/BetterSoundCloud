@@ -228,17 +228,18 @@ function selecttheme(index) {
       changeSettings("theme", "vanilla");
       break;
     case 1:
-      changeSettings("theme", "darkcloud");
-      break;
-    case 2:
-      changeSettings("theme", "nocturnal");
-      break;
-    case 3:
-      changeSettings("theme", "postmorphic");
-      break;
-    case 4:
       changeSettings("theme", "glassmorphism");
       break;
+    case 2:
+      changeSettings("theme", "darkcloud");
+      break;
+    case 3:
+      changeSettings("theme", "nocturnal");
+      break;
+    case 4:
+      changeSettings("theme", "postmorphic");
+      break;
+    
   }
   themeitemsdiv.forEach(function (themeitem) {
     themeitem.classList.remove("active");

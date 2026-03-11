@@ -61,7 +61,7 @@ function loadstop() {
         addstyle(path.join("themes", "postMorphic.css"));
         break;
       case "glassmorphism":
-        addstyle(path.join("themes", "Glassmorphism.css"));
+        addstyle(path.join("themes", "glassmorphism.css"));
         break;
       default:
         console.log("No theme selected");
