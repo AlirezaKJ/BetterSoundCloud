@@ -236,6 +236,9 @@ function selecttheme(index) {
     case 3:
       changeSettings("theme", "postmorphic");
       break;
+    case 4:
+      changeSettings("theme", "glassmorphism");
+      break;
   }
   themeitemsdiv.forEach(function (themeitem) {
     themeitem.classList.remove("active");
