@@ -29,7 +29,7 @@ The installer will:
 
 💻 **One-line install command:**
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/ULTRA-VAGUE/BetterSoundCloud-On-Linux/main/install_bettersoundcloud.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/install_bettersoundcloud.sh)
 ```
 
 ## Manual Installation
