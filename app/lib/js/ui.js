@@ -147,14 +147,17 @@ function syncsettingsui() {
   }
 
   switch (settings.theme) {
-    case "darkcloud":
+    case "glassmorphism":
       themeitemsdiv[1].classList.add("active");
       break;
-    case "nocturnal":
+    case "darkcloud":
       themeitemsdiv[2].classList.add("active");
       break;
-    case "postmorphic":
+    case "nocturnal":
       themeitemsdiv[3].classList.add("active");
+      break;
+    case "postmorphic":
+      themeitemsdiv[4].classList.add("active");
       break;
     default:
       themeitemsdiv[0].classList.add("active");

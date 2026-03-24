@@ -1,0 +1,51 @@
+Category,Priority,Title,Description,File(s) Affected
+Bug Fix,Critical,event.preventDefault is a no-op,"Line 66 in main.js: `event.preventDefault` is missing parentheses — should be `event.preventDefault()`. Currently does nothing.",main.js
+Bug Fix,Critical,User agent setting case mismatch,"startup.js line 12 uses `settings.userAgent` but settings.js defines it as `settings.useragent` (lowercase). The user agent never actually gets applied.",app/lib/js/startup.js
+Bug Fix,Critical,Stray backtick causing syntax issues,"Line 164 of app.js has a stray double-backtick (`` ` ``) that could cause runtime errors or silent failures.",app/lib/js/app.js
+Bug Fix,High,custombg.js uses wrong CSS property casing,"Uses `style.zindex` instead of `style.zIndex` (camelCase). The z-index is never applied so the custom background layering may break.",plugins/custombg.js
+Bug Fix,High,LSDB dbResolve double-prefixes the key,"dbResolve calls `dbGetItem(LSDBPrefix + key)` and `dbSetItem(LSDBPrefix + key)` which double-applies the prefix since dbGetItem/dbSetItem already prepend LSDBPrefix.",app/lib/js/LSDB.js
+Bug Fix,Medium,Theme sync index mismatch for glassmorphism,"syncsettingsui in ui.js maps 'darkcloud' to themeitemsdiv[1] but selecttheme maps index 1 to 'glassmorphism'. The active highlight doesn't match the selected theme.",app/lib/js/ui.js
+Bug Fix,Medium,Last.fm credential injection vulnerability,"saveLastFmCredentials uses string interpolation to inject API key/secret directly into executeJavaScript. Special characters in input could break or exploit this.",app/lib/js/app.js
+Bug Fix,Low,HTML typo: Prefrences,"'Prefrences' is misspelled throughout index.html and sidebar — should be 'Preferences'.",app/index.html
+Bug Fix,Low,readfile status text typo,"Line 401 of app.js says 'Readed File' — should be 'Read File'.",app/lib/js/app.js
+Bug Fix,Low,Unclosed HTML tags in loading screen,"Line 523 of index.html has `<h5>...<p>` — an unclosed `<h5>` and a `<p>` used incorrectly inside it.",app/index.html
+Security,Critical,contextIsolation is disabled,"contextIsolation: false with nodeIntegration: true exposes the full Node.js API to the renderer and any webview content. This is a major security risk.",main.js
+Security,Critical,preload.js is empty and unused,"The preload script is empty. It should be used with contextBridge to safely expose only needed APIs to the renderer instead of disabling contextIsolation.",preload.js
+Security,High,updateCheck.js loaded from CDN at runtime,"index.html loads updateCheck.js from jsdelivr CDN. If the CDN or repo is compromised this script has full Node.js access. Should be bundled locally.",app/index.html
+Security,High,Custom JS editor executes arbitrary code,"User-provided JS from the custom editor is stored in localStorage and executed via webview.executeJavaScript with no sandboxing or validation.",app/lib/js/startup.js
+Security,Medium,webviewTag is deprecated,"The <webview> tag is deprecated in Electron. Consider migrating to BrowserView or webContents for better security and maintenance.",main.js
+Optimization,High,Replace console.log IPC with proper IPC channels,"Communication between webview and renderer uses console.log messages parsed with string splitting. This is fragile and noisy. Use ipcRenderer/ipcMain or MessageChannel instead.",plugins/infoticker.js; app/lib/js/app.js
+Optimization,High,Reduce infoticker polling frequency and logging,"infoticker.js fires every 1s and emits ~8 console.log messages per tick. This floods the console and wastes CPU. Use MutationObserver or reduce frequency.",plugins/infoticker.js
+Optimization,Medium,Debounce settings persistence,"Every settings change immediately calls updateLS() which writes all settings to localStorage. Should debounce to batch rapid changes.",app/lib/js/settings.js
+Optimization,Medium,Lazy-load Ace editor scripts,"Ace editor JS is loaded from CDN on every app launch via index.html even when the user never opens the CSS/JS editor. Load it on demand.",app/index.html
+Optimization,Medium,Cache lyrics API responses,"Lyrics are re-fetched from LRCLIB every time a song showcase opens or a song changes. Cache results in memory or localStorage to avoid redundant network calls.",app/lib/js/app.js
+Optimization,Medium,Adblocker initialized on every dom-ready,"ElectronBlocker.fromPrebuiltAdsAndTracking is called on every dom-ready event. Should initialize once on app-ready and reuse the blocker instance.",main.js
+Optimization,Low,Replace theme switch/case with a lookup map,"The theme loading in startup.js and syncsettingsui in ui.js both use verbose switch statements. A simple object map would be cleaner and easier to extend.",app/lib/js/startup.js; app/lib/js/ui.js
+Optimization,Low,Use const/let instead of implicit globals,"Multiple files use undeclared variables (result in LSDB.js; songtitle/url/state/time/bar in app.js/ui.js/SCI.js) which become implicit globals. Add proper declarations.",Multiple files
+Optimization,Low,Remove excessive console.log in production,"main.js and app.js have many debug console.log statements (e.g. 'window focused' / 'window blurred' / 'scrolling'). Add a debug flag or remove for production.",main.js; app/lib/js/app.js
+Optimization,Low,Downloads go to app directory instead of user Downloads,"scdownloaderbtnreq saves to `${appdirectory}/Downloads/` inside the app folder. Should use Electron's app.getPath('downloads') or let the user pick a directory.",app/lib/js/app.js
+Code Quality,High,Add error handling for DOM queries in plugins,"infoticker.js and SCI.js query SoundCloud DOM elements without null checks. If SC changes its layout these will throw and break the app silently.",plugins/infoticker.js; plugins/SCI.js
+Code Quality,High,Add a linter and formatter,"No ESLint or Prettier config exists. Adding these would catch bugs like the missing parentheses and undeclared variables automatically.",Project root
+Code Quality,Medium,Modularize app.js,"app.js is a ~570-line monolith handling Discord RPC / lyrics / song showcase / downloader / media keys / keyboard shortcuts / Last.fm. Split into modules.",app/lib/js/app.js
+Code Quality,Medium,Add unit and integration tests,"No test files or test framework exists. Critical logic like settings persistence / LSDB / lyrics parsing should have test coverage.",Project root
+Code Quality,Low,Consistent code style across plugins,"Some plugins use semicolons and some don't. Variable naming is inconsistent (camelCase vs lowercase). Standardize with a shared config.",plugins/
+Feature,High,System tray media info and controls,"The tray currently only shows Play/Pause and Skip. Add track title / artist display and a Previous Track option.",main.js
+Feature,High,Auto-update mechanism,"No auto-update functionality exists. Integrate electron-updater or Squirrel auto-update to notify and apply updates in-app.",main.js; package.json
+Feature,High,Minimize to tray instead of quitting,"Closing the window quits the app. Add an option to minimize to system tray and keep playing in the background.",main.js
+Feature,Medium,Keyboard shortcuts customization panel,"Shortcuts are hardcoded (Ctrl+R / F5 / Esc / media keys). Let users rebind these from the settings UI.",main.js; app/index.html
+Feature,Medium,Mini player / picture-in-picture mode,"A small floating window showing current track info and basic controls when the main window is minimized.",main.js
+Feature,Medium,Desktop notifications on track change,"Show a native OS notification with song title / artist / cover art when a new track starts playing.",app/lib/js/app.js
+Feature,Medium,Equalizer or audio enhancement controls,"Add a built-in audio equalizer or bass boost / normalization using Web Audio API within the webview.",New plugin
+Feature,Medium,Proxy support,"Listed in README TODO. Add proxy configuration in settings to route webview traffic through a user-specified proxy.",main.js; app/index.html
+Feature,Medium,Sleep timer,"Add a countdown timer that pauses playback after a set duration — useful for listening before sleeping.",app/lib/js/app.js; app/index.html
+Feature,Medium,Queue management panel,"Show and reorder the current playback queue from within the BetterSoundCloud UI.",New plugin
+Feature,Medium,Global search within app,"Add a search bar (Ctrl+K or Ctrl+L) that navigates directly to a SoundCloud search URL without opening the full settings panel.",app/lib/js/ui.js; app/index.html
+Feature,Medium,Linux and macOS distribution packages,"Listed in README TODO. Add electron-forge makers for DMG (macOS) / AppImage / deb / rpm (Linux) in forge.config.js.",forge.config.js
+Feature,Low,Offline listening / caching,"Listed in README TODO. Cache recently played tracks locally so they can be replayed without internet.",New feature
+Feature,Low,Geo-restriction bypass,"Listed in README TODO. Attempt to bypass 'this song is not available in your country' errors via proxy or user-agent tricks.",New feature
+Feature,Low,Enhanced shuffle algorithm,"Listed in README TODO. Override SoundCloud's default shuffle with a Fisher-Yates or weighted random that avoids repeats.",New plugin
+Feature,Low,Waveform visualization in fullscreen/showcase,"Listed in README TODO. Render the SoundCloud waveform data in the song showcase / fullscreen mode.",app/lib/js/app.js
+Feature,Low,Import/export settings and themes,"Let users export their settings / custom CSS / custom JS / theme choice to a file and import on another machine.",app/lib/js/settings.js
+Feature,Low,Plugin marketplace or community theme browser,"Allow users to browse and install community-created themes and plugins from within the settings panel.",app/index.html
+Feature,Low,Playback history log,"Keep a local history of played tracks with timestamps that users can browse and re-play.",New feature
+Feature,Low,Scrobble history viewer for Last.fm,"Show recent Last.fm scrobbles inline in the app so users can verify their scrobbling is working.",plugins/lastfm.js; app/index.html
