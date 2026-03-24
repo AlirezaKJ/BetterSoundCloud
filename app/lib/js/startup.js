@@ -9,7 +9,7 @@ function mainWindowload() {
 
 function loadstop() {
   if (settings.useragent) {
-    webview.setUserAgent(settings.userAgent);
+    webview.setUserAgent(settings.useragent);
   }
   webview.setZoomFactor(settings.zoomfactorperc / 100);
   if (settings.startupfullscreen) {
