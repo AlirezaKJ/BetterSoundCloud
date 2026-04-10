@@ -54,7 +54,7 @@
         };
 
         apps.default = flake-utils.lib.mkApp {
-          drv = self.packages.stdenv.${system}.default;
+          drv = self.packages.stdenv.hostPlatform.${system}.default;
         };
       });
 }
