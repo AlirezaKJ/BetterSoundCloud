@@ -3,7 +3,7 @@ set -e
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-REPO_URL="https://github.com/ULTRA-VAGUE/BetterSoundCloud-On-Linux"
+REPO_URL="https://github.com/AlirezaKJ/BetterSoundCloud"
 
 echo "🔄 Checking for updates..."
 if git rev-parse --is-inside-work-tree &>/dev/null; then
