@@ -48,6 +48,7 @@ app.whenReady().then(() => {
   // ON MAIN WINDOW LOAD
   mainWindow.webContents.on("dom-ready", () => {
     mainWindow.webContents.send("apppath", apppath);
+    mainWindow.webContents.send("userdatapath", app.getPath('userData'));
     // adblocker
     ElectronBlocker.fromPrebuiltAdsAndTracking(fetch).then((blocker) => {
       blocker.enableBlockingInSession(session.defaultSession);
