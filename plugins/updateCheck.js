@@ -1,8 +1,51 @@
-let latestversion = "0.6.0";
+let latestversion = "0.6.1";
 let currentversion = clientVersion;
 let patchnotesdiv = document.getElementById("changenote");
 
 let patchnotes = [
+  {
+    title: "V0.7.0 (Beta)",
+    changes: [
+      "- Added Glassmorphism Theme By <a href='https://github.com/reoireopit'>reoireopit</a>",
+      "- Added Last.fm scrobbling plugin By <a href='https://github.com/zwroee'>zwroee</a>",
+      "- Added Last.fm settings UI panel with api key and secret input fields",
+      "- Added user agent customization with an input field in the settings",
+      "- Added a reset settings button to the loading screen",
+      "- Added a copy option to the right click menu",
+      "- Added Nix flake support with a desktop entry By <a href='https://github.com/demenik'>demenik</a>",
+      "- Added an automated Linux installer with apt, pacman, dnf and zypper support and NVM integration By <a href='https://github.com/ULTRA-VAGUE'>ULTRA-VAGUE</a>",
+      "- Added a start.sh launcher for Linux that checks for updates before starting the app",
+      "- Added macOS app icon (icon.icns) for cross platform icon support By <a href='https://github.com/droptablemustafa'>droptablemustafa</a>",
+      "- Added a theme support button and description inside the themes section for the current theme support situation",
+      "- Added a LICENSE file to the repository",
+      "- Reworked the DiscordRPC to a modern version By <a href='https://github.com/LudoMinecraft'>LudoMinecraft</a>",
+      "- Reworked the glassmorphism theme to use the currently playing song background instead of a static custom bg",
+      "- Reworked the themes order based on the current support situation and added the remaining bsc buttons to the glassmorphism theme",
+      "- Reworked the header and playbar background to match the new soundcloud theme system",
+      "- Reworked the custombg script with a variable bg color for the new soundcloud theme system",
+      "- Replaced all audiobar player icons with svgs that color via css variables to match the chosen soundcloud theme",
+      "- Replaced all SCI plugin icons with svgs that color via css variables to match the chosen soundcloud theme",
+      "- Optimized plugin loading with deferred Last.fm loading and proper error handling",
+      "- Optimized the build configuration to use Squirrel and ZIP makers only",
+      "- Improved lyric timestamp sync with the music player time",
+      "- Improved the lyric page to auto refresh its content on song switch",
+      "- Improved lyric sync animation smoothness",
+      "- New feature: 1 second delay on lyric search when switching songs to prevent race conditions",
+      "- Fixed the DiscordRPC bug by <a href='https://github.com/demenik'>demenik</a>",
+      "- Fixed the glassmorphism sync inside the syncsettingsui function",
+      "- Fixed the prefrences typo and an unclosed h5 tag inside the loading screen",
+      "- Fixed the user agent typo inside the startup config",
+      "- Fixed empty user agent input handling on startup",
+      "- Fixed the upsell removal logic inside the SCI plugin",
+      "- Fixed path joining for cross platform compatibility",
+      "- Fixed song downloading by using a separate path for the downloader instead of the actual ASAR path",
+      "- Removed old ad plugins (silentad, reloadonads, reloadandplay) since adblocker-electron now handles them",
+      "- Removed the premade example file from the download folder",
+      "- Removed the paste option from the right click menu until proper implementation",
+    ],
+    date: "7 May 2026",
+    link: "https://github.com/AlirezaKJ/BetterSoundCloud/releases/tag/V0.7.0",
+  },
   {
     title: "V0.6.0 (Beta)",
     changes: [

@@ -15,9 +15,29 @@ module.exports = {
   makers: [
     {
       name: "@electron-forge/maker-squirrel",
+      platforms: ["win32"],
       config: {
         name: "BetterSoundCloud",
         icon: "app/lib/assets/icon.ico",
+      },
+    },
+    {
+      name: "@electron-forge/maker-wix",
+      platforms: ["win32"],
+      config: {
+        language: 1033,
+        icon: "app/lib/assets/icon.ico",
+        manufacturer: 'AKJStudio'
+      },
+    },
+    {
+      name: "@electron-forge/maker-appx",
+      platforms: ["win32"],
+      config: {
+        publisher: "CN=developmentca",
+        icon: "app/lib/assets/icon.ico",
+        // devCert: 'C:\\devcert.pfx',
+        // certPass: 'abcd'
       },
     },
     {
