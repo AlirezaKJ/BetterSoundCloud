@@ -2,9 +2,9 @@
 // Remove All Useless Buttons First
 let rightnavbar = document.querySelector(".header__right .header__navMenu");
 // document.querySelectorAll(".header__right .header__navMenu * ").forEach(element => {element.remove()});
-document.querySelectorAll(".header__right .header__link").forEach((element) => {
-  element.remove();
-});
+// document.querySelectorAll(".header__right .header__link").forEach((element) => {
+//   element.remove();
+// });
 
 let closebtn = document.createElement("li");
 closebtn.classList.add("header__appclosebtn");
@@ -168,14 +168,15 @@ const waitForElement = (selector, timeout = 60 * 60) =>
     observer.observe(document.body, { childList: true, subtree: true });
   });
 
-waitForElement(".header__goUpsell_side_by_side_experience").then((e) =>
-  e.remove(),
-);
-waitForElement(".creatorSubscriptionsButton").then((e) => e.remove());
-waitForElement(".header__upsellWrapper").then((e) => e.remove());
-waitForElement(".header__userNavActivitiesButton").then((e) => e.remove());
-waitForElement(".header__userNavMessagesButton").then((e) => e.remove());
-waitForElement(".header__soundInput").then((e) => e.remove());
+// waitForElement(".header__goUpsell_side_by_side_experience").then((e) =>
+//   e.remove(),
+// );
+// waitForElement(".creatorSubscriptionsButton").then((e) => e.remove());
+// waitForElement(".header__upsellWrapper").then((e) => e.remove());
+// waitForElement(".header__userNavActivitiesButton").then((e) => e.remove());
+// waitForElement(".header__userNavMessagesButton").then((e) => e.remove());
+// waitForElement(".header__soundInput").then((e) => e.remove());
+
 
 // Media Player Btns Functions
 let playpausebtn = document.querySelector(
