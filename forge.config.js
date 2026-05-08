@@ -5,6 +5,7 @@ module.exports = {
   packagerConfig: {
     asar: true,
     icon: "app/lib/assets/icon",
+    electronDist: require('path').join(__dirname, 'node_modules', 'electron', 'dist'),
   },
   // files: [
   //   'dist/**/*',
@@ -28,16 +29,6 @@ module.exports = {
         language: 1033,
         icon: "app/lib/assets/icon.ico",
         manufacturer: 'AKJStudio'
-      },
-    },
-    {
-      name: "@electron-forge/maker-appx",
-      platforms: ["win32"],
-      config: {
-        publisher: "CN=developmentca",
-        icon: "app/lib/assets/icon.ico",
-        // devCert: 'C:\\devcert.pfx',
-        // certPass: 'abcd'
       },
     },
     {

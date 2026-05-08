@@ -9,6 +9,7 @@ const {
   nativeImage,
   screen,
   session,
+  components,
 } = require("electron");
 const path = require("node:path");
 const { ElectronBlocker } = require("@cliqz/adblocker-electron");
@@ -39,7 +40,11 @@ function createWindow() {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
+// `components.whenReady()` waits for the castlabs Widevine CDM to register
+// before opening any window — otherwise EME calls would reject.
+app.whenReady()
+  .then(() => components.whenReady())
+  .then(() => {
   createWindow();
 
   apppath = app.getAppPath();
