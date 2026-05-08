@@ -1,8 +1,16 @@
-let latestversion = "0.6.1";
+let latestversion = "0.7.1";
 let currentversion = clientVersion;
 let patchnotesdiv = document.getElementById("changenote");
 
 let patchnotes = [
+  {
+    title: "V0.7.1 (Beta)",
+    changes: [
+      "- Migrated to Castlabs Electron to fix soundcloud added DRM conflict with Electron",
+    ],
+    date: "8 May 2026",
+    link: "https://github.com/AlirezaKJ/BetterSoundCloud/releases/tag/V0.7.1",
+  },
   {
     title: "V0.7.0 (Beta)",
     changes: [

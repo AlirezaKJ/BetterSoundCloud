@@ -6,9 +6,9 @@ A PC client of SoundCloud with themes and plugins made using electronjs
 
 # Installation
 ## Auto Installers for Windows | Portable
-[![Github All Releases](https://img.shields.io/badge/Portable-Download-yellowgreen?style=for-the-badge&logo=electron-builder&logoColor=white)](https://github.com/AlirezaKJ/BetterSoundCloud/releases/download/V0.7.0/BetterSoundCloud.0.7.0.zip)
-[![Github All Releases](https://img.shields.io/badge/Windows-Download-blue?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/AlirezaKJ/BetterSoundCloud/releases/download/V0.7.0/BetterSoundCloud.0.7.0.msi)
-[![Github All Releases](https://img.shields.io/badge/Source-Download-yellow?style=for-the-badge&logo=javascript&logoColor=white)](https://github.com/AlirezaKJ/BetterSoundCloud/archive/refs/tags/V0.7.0.zip)
+[![Github All Releases](https://img.shields.io/badge/Portable-Download-yellowgreen?style=for-the-badge&logo=electron-builder&logoColor=white)](https://github.com/AlirezaKJ/BetterSoundCloud/releases/download/V0.7.1/BetterSoundCloud.0.7.1.zip)
+[![Github All Releases](https://img.shields.io/badge/Windows-Download-blue?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/AlirezaKJ/BetterSoundCloud/releases/download/V0.7.1/BetterSoundCloud.0.7.1.msi)
+[![Github All Releases](https://img.shields.io/badge/Source-Download-yellow?style=for-the-badge&logo=javascript&logoColor=white)](https://github.com/AlirezaKJ/BetterSoundCloud/archive/refs/tags/V0.7.1.zip)
 
 ### 🐧 Linux Auto Installer
 
@@ -75,7 +75,7 @@ npm start
 - [ ] by pass this song is not available in your country
 - [ ] enhance soundcloud shuffle method
 - [ ] use soundcloud waveforms in fullscreen mode
-- [X] DiscordRPC not working when starting Discord after BSC
+- [x] DiscordRPC not working when starting Discord after BSC
 - [x] Custom css editor
 - [x] Custom js editor
 - [x] Themes made by several developers

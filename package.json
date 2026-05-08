@@ -1,6 +1,6 @@
 {
   "name": "bettersoundcloud",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "BetterSoundCloud PC Client",
   "main": "main.js",
   "scripts": {
