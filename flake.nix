@@ -23,7 +23,7 @@
           inherit pname version;
           src = ./.;
 
-          npmDepsHash = "sha256-oR2bMtRZ2qP63ElT/xcUvAln1GR7RK4IIRKKh+RIJj0=";
+          npmDepsHash = "sha256-Xj+NpXJloa+xVLVMQ3ScSBDpLCUApddr+jcUU2xLHXU=";
           nativeBuildInputs = [electron makeWrapper] ++ lib.optionals stdenv.isLinux [copyDesktopItems];
           dontNpmBuild = true;
 
