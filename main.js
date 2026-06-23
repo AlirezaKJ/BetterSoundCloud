@@ -12,6 +12,7 @@ const {
   components,
 } = require("electron");
 const path = require("node:path");
+const fs = require("fs");
 const { ElectronBlocker } = require("@cliqz/adblocker-electron");
 const fetch = require("cross-fetch"); // required 'fetch'
 
@@ -37,6 +38,11 @@ function createWindow() {
   // mainWindow.webContents.openDevTools()
 }
 
+const CHROME_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36';
+
+// Remove Electron automation fingerprint from Chromium
+app.commandLine.appendSwitch('disable-blink-features', 'AutomationControlled');
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
@@ -44,7 +50,48 @@ function createWindow() {
 // before opening any window — otherwise EME calls would reject.
 app.whenReady()
   .then(() => components.whenReady())
-  .then(() => {
+  .then(async () => {
+
+  // Override User-Agent on all outgoing requests so SoundCloud sees Chrome, not Electron
+  session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
+    details.requestHeaders['User-Agent'] = CHROME_UA;
+    callback({ requestHeaders: details.requestHeaders });
+  });
+
+  // Inject preload.js into all renderer contexts including webviews
+  session.defaultSession.setPreloads([path.join(__dirname, 'preload.js')]);
+
+  // Inject SoundCloud cookies from cookies.json so we're already logged in
+  const cookiesPath = path.join(__dirname, 'cookies.json');
+  if (fs.existsSync(cookiesPath)) {
+    try {
+      const cookies = JSON.parse(fs.readFileSync(cookiesPath, 'utf8'));
+      for (const cookie of cookies) {
+        try {
+          await session.defaultSession.cookies.set({
+            url: cookie.domain.startsWith('.')
+              ? `https://${cookie.domain.slice(1)}`
+              : `https://${cookie.domain}`,
+            name: cookie.name,
+            value: cookie.value,
+            domain: cookie.domain,
+            path: cookie.path || '/',
+            secure: cookie.secure || false,
+            httpOnly: cookie.httpOnly || false,
+            expirationDate: cookie.expirationDate,
+          });
+        } catch (e) {
+          console.warn(`Failed to set cookie ${cookie.name}:`, e.message);
+        }
+      }
+      console.log(`Injected ${cookies.length} cookies from cookies.json`);
+    } catch (e) {
+      console.error('Failed to load cookies.json:', e.message);
+    }
+  } else {
+    console.warn('cookies.json not found — skipping cookie injection');
+  }
+
   createWindow();
 
   apppath = app.getAppPath();
@@ -54,8 +101,16 @@ app.whenReady()
   mainWindow.webContents.on("dom-ready", () => {
     mainWindow.webContents.send("apppath", apppath);
     mainWindow.webContents.send("userdatapath", app.getPath('userData'));
-    // adblocker
+    // adblocker — whitelist SoundCloud auth domains so login isn't blocked
     ElectronBlocker.fromPrebuiltAdsAndTracking(fetch).then((blocker) => {
+      blocker.updateFromDiff({
+        added: [
+          '@@||soundcloud.com^',
+          '@@||sndcdn.com^',
+          '@@||api-auth.soundcloud.com^',
+          '@@||api.soundcloud.com^',
+        ]
+      });
       blocker.enableBlockingInSession(session.defaultSession);
     });
   });
