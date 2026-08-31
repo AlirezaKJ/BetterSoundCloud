@@ -3,6 +3,7 @@ import { BaseWindow, WebContentsView, nativeTheme } from 'electron'
 import type { BrowserWindow } from 'electron'
 import windowStateKeeper from 'electron-window-state'
 import { hardenSession, routeNewWindowsToBrowser } from './session'
+import { attachDiagnostics } from './diagnostics'
 import { CH } from '@shared/ipc'
 import type { NavState, WindowState } from '@shared/ipc'
 
@@ -89,6 +90,11 @@ export function createShell(userAgent: string): Shell {
 
   wireStateEvents(window, header, content)
 
+  if (isDev) {
+    enableDevToolsShortcut(header, content)
+    attachDiagnostics(content)
+  }
+
   // BaseWindow has no `ready-to-show` — that is a BrowserWindow event. Show once our
   // own chrome has painted, so the user never sees an unpainted frame.
   header.webContents.once('did-finish-load', () => window.show())
@@ -140,6 +146,28 @@ function wireStateEvents(
     if (!isMainFrame || code === -3 /* ERR_ABORTED, fires on normal navigation */) return
     console.error(`[content] load failed ${code} ${description} — ${url}`)
   })
+}
+
+/**
+ * Dev builds only: F12, or Ctrl/Cmd+Shift+I, opens DevTools for the view under the
+ * cursor. The window is frameless and has no menu, so without this there is no way in.
+ *
+ * This uses `before-input-event` rather than `globalShortcut` on purpose. Global
+ * shortcuts are system-wide and fire even when the app is not focused — v0.7.x
+ * registered the media keys that way and never released them, so it held them for its
+ * whole process lifetime (`main.js:174-192`).
+ */
+function enableDevToolsShortcut(...views: WebContentsView[]): void {
+  for (const view of views) {
+    view.webContents.on('before-input-event', (_event, input) => {
+      if (input.type !== 'keyDown') return
+
+      const f12 = input.key === 'F12'
+      const inspect = (input.control || input.meta) && input.shift && input.key === 'I'
+
+      if (f12 || inspect) view.webContents.openDevTools({ mode: 'detach' })
+    })
+  }
 }
 
 export function rendererUrl(entry: 'header' | 'settings'): string {

@@ -1,3 +1,4 @@
+import { join } from 'node:path'
 import { app, components, ipcMain, BrowserWindow } from 'electron'
 import { buildUserAgent, leaksAppIdentity } from '@shared/identity'
 import { CH } from '@shared/ipc'
@@ -25,6 +26,23 @@ if (leaksAppIdentity(USER_AGENT)) {
 
 app.userAgentFallback = USER_AGENT
 app.setName('BetterSoundCloud')
+
+// Printed in dev so the identity is verifiable at a glance without opening DevTools.
+// The two lines must agree: whatever Chromium major is reported, the UA must claim the
+// same one, and must not mention Electron or BetterSoundCloud.
+if (process.env['ELECTRON_RENDERER_URL']) {
+  console.log(`[bsc] chromium ${process.versions.chrome}`)
+  console.log(`[bsc] user agent ${USER_AGENT}`)
+}
+
+// Dev runs from its own profile directory. Without this, a `npm run dev` instance and an
+// installed build share one userData path, so they fight over the single-instance lock:
+// launching the installed app while dev is running makes it exit instantly and silently,
+// which reads as "the packaged build is broken" when nothing is wrong. It also keeps dev
+// cookies and settings out of the real profile.
+if (process.env['ELECTRON_RENDERER_URL']) {
+  app.setPath('userData', join(app.getPath('appData'), 'BetterSoundCloud (dev)'))
+}
 
 if (!settings.get('advanced.hardwareAcceleration')) {
   app.disableHardwareAcceleration()

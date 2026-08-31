@@ -46,6 +46,53 @@ it is where the `components` export used in `src/main/index.ts` comes from.
 `tsc --noEmit` does not look inside `.svelte` files, which is why `npm run check` runs
 `svelte-check` as well. Run `check` before pushing; CI runs it before it builds.
 
+Dev runs from its own profile (`%APPDATA%/BetterSoundCloud (dev)`), so a `npm run dev`
+instance and an installed build do not share settings or fight over the single-instance
+lock. If you launch the installed app while dev is running it will still exit immediately
+— that is the lock working, not a crash.
+
+## Release builds and VMP signing
+
+**Development does not need any of this.** It is required only to produce a build that can
+play SoundCloud's DRM-protected tracks.
+
+A Castlabs prebuilt carries only a _development_ Widevine signature, and production licence
+servers reject development clients. Without the signing step below, an installed build looks
+completely normal but greys out and skips DRM tracks — this is the v0.7.1 bug behind issues
+[#95](https://github.com/AlirezaKJ/BetterSoundCloud/issues/95) and
+[#105](https://github.com/AlirezaKJ/BetterSoundCloud/issues/105).
+
+One-time setup:
+
+1. Install Python 3 and make sure `py`, `python3`, or `python` runs.
+2. `pip install --upgrade castlabs-evs`
+3. Create a free Castlabs EVS account: `python -m castlabs_evs.account signup`
+   (already have one? `python -m castlabs_evs.account reauth`)
+
+Then build:
+
+```
+set STRICT_VMP_SIGNING=true
+npm run dist:win
+```
+
+`STRICT_VMP_SIGNING=true` makes the build **fail** if it cannot sign. Always set it for
+releases — the default is deliberately fail-open so contributors without an EVS account can
+still build locally, and a release that silently skipped signing is exactly the bug we are
+trying to stop shipping.
+
+The signing script searches for `py`, `python3`, then `python`. Set `EVS_PYTHON` to an
+interpreter path to override that — useful with a virtualenv.
+
+Signing happens at a different point per platform, which is why there are two hook files:
+`scripts/vmp-after-pack.js` (macOS, before code signing) and `scripts/vmp-after-sign.js`
+(Windows, after). Both call `signPackage()` in `scripts/vmp-sign.js`. Linux needs no VMP
+signature.
+
+> **`requestMediaKeySystemAccess()` is not a test for this.** It is a local capability
+> probe that never contacts a licence server, so it succeeds on an unsigned build. The only
+> real test is playing a track that is known to fail.
+
 ## Layout
 
 ```

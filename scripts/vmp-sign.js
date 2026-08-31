@@ -42,9 +42,51 @@ function handleProblem(message) {
   console.warn('[vmp] Continuing without VMP signing. This build cannot play DRM tracks.\n')
 }
 
-/** Run `python -m castlabs_evs.vmp <command> <appDir>`. Returns its output. */
-function runEvs(command, appDir) {
-  const result = spawnSync('python', ['-m', 'castlabs_evs.vmp', command, appDir], {
+/**
+ * Find a Python that has castlabs_evs installed.
+ *
+ * Which command works varies by machine: Windows installs usually provide `py`, most
+ * Linux and macOS setups provide `python3`, and a virtualenv provides `python`. Set
+ * EVS_PYTHON to skip the search and use a specific interpreter (a venv path, say).
+ *
+ * Returns the command name, or null with an explanation already printed.
+ */
+function findPython() {
+  const candidates = process.env.EVS_PYTHON
+    ? [process.env.EVS_PYTHON]
+    : ['py', 'python3', 'python']
+
+  let foundPython = null
+
+  for (const command of candidates) {
+    // Two probes, because "the command exists" is not the same as "Python works".
+    // Windows ships stub python.exe / python3.exe shims that only advertise the
+    // Microsoft Store; they run, print a notice, and exit non-zero for every input.
+    // Checking that Python itself runs first keeps us from reporting a missing package
+    // when what is really missing is Python.
+    const isPython = spawnSync(command, ['-c', 'print(1)'], { encoding: 'utf8' })
+    if (isPython.error || isPython.status !== 0) continue
+
+    foundPython = command
+
+    const hasEvs = spawnSync(command, ['-c', 'import castlabs_evs'], { encoding: 'utf8' })
+    if (hasEvs.status === 0) return command
+  }
+
+  if (foundPython) {
+    console.error(`[vmp] Found ${foundPython}, but castlabs_evs is not installed. Run:`)
+    console.error(`[vmp]   ${foundPython} -m pip install --upgrade castlabs-evs`)
+  } else {
+    console.error(`[vmp] No Python found (tried: ${candidates.join(', ')}).`)
+    console.error('[vmp] Install Python, or set EVS_PYTHON to an interpreter path.')
+  }
+
+  return null
+}
+
+/** Run `<python> -m castlabs_evs.vmp <command> <appDir>`. Returns its output. */
+function runEvs(python, command, appDir) {
+  const result = spawnSync(python, ['-m', 'castlabs_evs.vmp', command, appDir], {
     encoding: 'utf8'
   })
 
@@ -71,12 +113,12 @@ export function signPackage(context) {
     return
   }
 
-  if (strict && (!process.env.EVS_USERNAME || !process.env.EVS_PASSWORD)) {
-    console.error(
-      '[vmp] EVS_USERNAME and EVS_PASSWORD are required when STRICT_VMP_SIGNING=true'
-    )
-    process.exit(1)
-  }
+  // Note there is no credentials precondition here. There are two valid ways to be
+  // authenticated with EVS — a stored token from `castlabs_evs.account signup/reauth`
+  // (what a developer machine uses) and EVS_USERNAME / EVS_PASSWORD (what CI uses).
+  // Requiring the env vars, as soundcloud-rpc's script does, fails the build for anyone
+  // signed in the normal way. The rule that actually matters is simpler and is enforced
+  // below: in strict mode, signing must succeed.
 
   const appDir = path.resolve(context.appOutDir)
 
@@ -85,10 +127,16 @@ export function signPackage(context) {
     return
   }
 
+  const python = findPython()
+  if (!python) {
+    handleProblem('castlabs-evs is not available, so the build cannot be VMP signed.')
+    return
+  }
+
   console.log(`[vmp] Signing ${appDir}`)
 
   try {
-    console.log(runEvs('sign-pkg', appDir).trim())
+    console.log(runEvs(python, 'sign-pkg', appDir).trim())
   } catch (error) {
     handleProblem(`Signing failed: ${error.message}`)
     return
@@ -97,7 +145,7 @@ export function signPackage(context) {
   // Verify separately. A zero exit code from the signer is not proof that the resulting
   // package actually validates.
   try {
-    console.log(runEvs('verify-pkg', appDir).trim())
+    console.log(runEvs(python, 'verify-pkg', appDir).trim())
     console.log('[vmp] Signature verified.')
   } catch (error) {
     handleProblem(`Verification failed: ${error.message}`)
