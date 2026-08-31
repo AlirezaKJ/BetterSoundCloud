@@ -1,3 +1,23 @@
-node_modules
+node_modules/
 out/
-result
+dist/
+release/
+*.log
+npm-debug.log*
+
+# Local env / secrets. EVS_USERNAME + EVS_PASSWORD for Castlabs VMP signing live here.
+.env
+.env.*
+
+# The v0.7.x community login workaround. Never commit a live session dump.
+cookies.json
+
+# Editors / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# Castlabs EVS signing artefact
+engine.bin

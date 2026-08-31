@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!--
+      This CSP is real, not decoration. Our chrome loads no remote anything. v0.7.x
+      pulled Ace from cdnjs and updateCheck.js from jsDelivr — the latter with no
+      integrity hash, into a renderer running nodeIntegration: true.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'"
+    />
+    <title>BetterSoundCloud</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

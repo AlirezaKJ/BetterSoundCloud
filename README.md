@@ -1,103 +1,87 @@
-# BetterSoundCloud | <a href="https://www.buymeacoffee.com/alirezakj" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-red.png" alt="Buy Me A Coffee" style="height: 30px !important;width: 100px !important;" ></a> [![](https://data.jsdelivr.com/v1/package/gh/AlirezaKJ/BetterSoundCloud/badge)](https://www.jsdelivr.com/package/gh/AlirezaKJ/BetterSoundCloud) [![Downloads](https://img.shields.io/github/downloads/AlirezaKJ/BetterSoundCloud/total.svg)](https://github.com/AlirezaKJ/BetterSoundCloud/releases)
+# BetterSoundCloud
 
-A PC client of SoundCloud with themes and plugins made using electronjs
+A desktop client for SoundCloud — Discord Rich Presence, Last.fm scrobbling, themes,
+plugins, synced lyrics.
 
-![alt text](app/lib/assets/readme/demo.png)
+> **This branch is the v2 rewrite.** v0.7.x lives on `main`. The rewrite exists to fix two
+> things that make the current release unusable for many people: tracks that grey out and
+> auto-skip, and "we detected unusual activity" blocks on sign-in, liking and following.
 
-# Installation
-## Auto Installers for Windows | Portable
-[![Github All Releases](https://img.shields.io/badge/Portable-Download-yellowgreen?style=for-the-badge&logo=electron-builder&logoColor=white)](https://github.com/AlirezaKJ/BetterSoundCloud/releases/download/V0.7.1/BetterSoundCloud.0.7.1.zip)
-[![Github All Releases](https://img.shields.io/badge/Windows-Download-blue?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/AlirezaKJ/BetterSoundCloud/releases/download/V0.7.1/BetterSoundCloud.0.7.1.msi)
-[![Github All Releases](https://img.shields.io/badge/Source-Download-yellow?style=for-the-badge&logo=javascript&logoColor=white)](https://github.com/AlirezaKJ/BetterSoundCloud/archive/refs/tags/V0.7.1.zip)
+## Requirements
 
-### 🐧 Linux Auto Installer
+- Node.js >= 22.12
+- Python with [`castlabs-evs`](https://pypi.org/project/castlabs-evs/) — only for producing
+  signed release builds, not for development
 
-Install **BetterSoundCloud** on Linux with one simple command.  
-The installer will:
+## Getting started
 
-- Install **BetterSoundCloud** automatically in your home directory 
-- Clone or update the repository  
-- Install project dependencies  
-- Create a `.desktop` launcher entry  
-
-**Supported package managers:**
-
-- `apt` — Debian, Ubuntu, and derivatives  
-- `pacman` — Arch, Manjaro, and derivatives  
-- `dnf` — Fedora, CentOS, RHEL  
-- `zypper` — openSUSE  
-
-💻 **One-line install command:**
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/AlirezaKJ/BetterSoundCloud/main/install_bettersoundcloud.sh)
+npm install
+npm run dev
 ```
 
-## Manual Installation
+`npm install` pulls Electron from
+[castlabs/electron-releases](https://github.com/castlabs/electron-releases), not npm. That
+build ships the Widevine CDM, which SoundCloud now requires for part of its catalogue, and
+it is where the `components` export used in `src/main/index.ts` comes from.
 
-### Prerequisites
+> **Why there is a `postinstall` script.** The Castlabs package ships no `scripts` field,
+> so unlike the stock `electron` package it has no `postinstall` to fetch the binary. Left
+> alone you get an empty `node_modules/electron` with no `dist/` and no `path.txt`, and
+> every tool fails with `Error: Electron uninstall` — this is issue
+> [#99](https://github.com/AlirezaKJ/BetterSoundCloud/issues/99). Our `postinstall` runs
+> the vendored `install.js` to fix it. If you ever install with `--ignore-scripts`, run
+> `node node_modules/electron/install.js` by hand.
 
-- [Git](https://git-scm.com)
-- [Node.js](https://nodejs.org/en/) (with [npm](https://www.npmjs.com/)).
-- Command line of your choice.
+## Scripts
 
-### 1: Clone the repository
+| Command                                          | What it does                                               |
+| ------------------------------------------------ | ---------------------------------------------------------- |
+| `npm run dev`                                    | electron-vite dev server with renderer HMR                 |
+| `npm run check`                                  | `tsc` (both projects) + `svelte-check` + ESLint + Prettier |
+| `npm test`                                       | Vitest                                                     |
+| `npm run pack`                                   | Unpacked build into `release/`                             |
+| `npm run dist:win` \| `dist:mac` \| `dist:linux` | Installers                                                 |
 
-```ps
-git clone https://github.com/AlirezaKJ/BetterSoundCloud
+`tsc --noEmit` does not look inside `.svelte` files, which is why `npm run check` runs
+`svelte-check` as well. Run `check` before pushing; CI runs it before it builds.
+
+## Layout
+
+```
+src/
+├── main/        Electron main process — windows, session, settings, services
+├── preload/     chrome.ts (our own UI) · content.ts (soundcloud.com, read-only)
+├── renderer/    Svelte 5 — the 32px header and the settings panel
+└── shared/      Types, IPC channel names, the settings schema
+resources/       Bundled themes and plugins, seeded into userData on first launch
+scripts/         VMP signing
 ```
 
-### 2: Move To Project Directory
+## Rules this codebase is built around
 
-```ps
-cd "BetterSoundCloud"
-```
+These are not style preferences. Each one is a bug we already shipped.
 
-### 3: Install dependencies
+1. **One user agent, set once, at the lowest layer.** `app.userAgentFallback` before
+   `whenReady()`, derived from `process.versions.chrome`. No header rewriting, no JS
+   property spoofing, and no touching `sec-ch-ua` — Chromium's own client hints then agree
+   with it. v0.7.1 rewrote only the header, so its sign-in request described one browser in
+   its headers and a different one in its body.
+2. **Never write into SoundCloud's DOM.** No `innerHTML` on existing nodes, no insertion
+   into React containers, no `.remove()`. Cosmetic changes are CSS-only via `insertCSS`.
+   Our chrome is a separate view stacked above the page, which is what makes this rule
+   affordable.
+3. **No polling on the SoundCloud origin, ever.** MutationObserver and `addEventListener`
+   only. ESLint enforces this.
+4. **No synthetic clicks on SoundCloud's controls.** Media keys are handled by
+   SoundCloud's own Media Session handlers.
+5. **Take the session by reference off the view you created.** Never `session.defaultSession`
+   and never a partition string.
+6. **Nothing is loaded from a CDN at runtime.** Every renderer ships a CSP that forbids it.
 
-```ps
-npm i
-```
+The reasoning behind each, with issue references, is in the project vault under
+"BetterSoundCloud v2 Tech Stack and Approach".
 
-### 4: Run The App
+## Licence
 
-```ps
-npm start
-```
-
-## Features TODO List
-
-- [ ] LastFM tracking
-- [ ] Linux and Mac packages
-- [ ] Proxy integration
-- [ ] load url using deep links
-- [ ] customize user agent string
-- [ ] listen offline integration
-- [ ] by pass this song is not available in your country
-- [ ] enhance soundcloud shuffle method
-- [ ] use soundcloud waveforms in fullscreen mode
-- [x] DiscordRPC not working when starting Discord after BSC
-- [x] Custom css editor
-- [x] Custom js editor
-- [x] Themes made by several developers
-- [x] Full adblocker
-- [x] Soundcloud downloader
-- [x] lyrics integration using LRCLIB api
-- [x] DiscordRPC integration
-
-## FAQ
-
-how to open the settings menu?
-
-> either by opening the right click menu or using the bottom right icons.
-
-is this app virus free?
-
-> yes, bettersoundcloud has been verified as 100% clean by [Softpedia](https://www.softpedia.com/get/Multimedia/Audio/Audio-Players/BetterSoundCloud.shtml#status).
-
-does my soundcloud account get banned for using bettersoundcloud?
-
-> no, since we launched bettersoundcloud no one has been banned for using this client.
-
-how can i report a bug or a feature idea?
-
-> you can open a request at the repository issue page and i reach you under 24hours.
+MIT — see [LICENSE](LICENSE).

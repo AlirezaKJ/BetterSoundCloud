@@ -1,0 +1,6 @@
+out/
+release/
+node_modules/
+package-lock.json
+LICENSE
+resources/themes/

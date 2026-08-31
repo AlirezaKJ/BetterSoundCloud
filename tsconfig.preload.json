@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.base.json",
+  "include": ["src/preload/**/*.ts", "src/shared/**/*.ts"],
+  "compilerOptions": {
+    "composite": true,
+    // Preload is the one hybrid context: it imports from `electron` and it touches the
+    // DOM. Both libs, deliberately, and only here.
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["node"],
+    "outDir": "./node_modules/.tmp/tsconfig.preload"
+  }
+}

@@ -1,0 +1,88 @@
+appId: com.alirezakj.bettersoundcloud
+productName: BetterSoundCloud
+copyright: Copyright © 2023-2026 Alireza Karimi Jafari
+
+directories:
+  output: release
+  buildResources: build-resources
+
+files:
+  - out/**/*
+  - resources/**/*
+  - package.json
+  - '!node_modules/electron/**/*'
+
+# Take the Castlabs Widevine build straight out of node_modules rather than a download
+# mirror. `npm install github:castlabs/electron-releases#vXX+wvcus` has already put it
+# there; pointing at it cannot mis-resolve, works offline, and is immune to the v27
+# rename of `electronDownload` -> `electronGet`.
+electronDist: node_modules/electron/dist
+
+# Ported from the v0.7.x forge.config.js FusesPlugin. These run during packing, i.e.
+# BEFORE the afterPack/afterSign hooks below — which is the required order, because
+# flipping a fuse mutates the very bytes a VMP signature covers.
+electronFuses:
+  runAsNode: false
+  enableCookieEncryption: true
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false
+  enableEmbeddedAsarIntegrityValidation: true
+  onlyLoadAppFromAsar: true
+
+# Castlabs is explicit that the ordering differs by platform:
+#   macOS  -> VMP sign BEFORE code signing  (afterPack)
+#   Windows-> VMP sign AFTER  code signing  (afterSign)
+# One script, branching on context.electronPlatformName, no-opping on the other platform.
+# soundcloud-rpc registers a single afterSign for both and is wrong on macOS.
+afterPack: scripts/sign-vmp.js
+afterSign: scripts/sign-vmp.js
+
+publish:
+  provider: github
+  owner: AlirezaKJ
+  repo: BetterSoundCloud
+  releaseType: release
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+  icon: build-resources/icon.ico
+  artifactName: BetterSoundCloud-${version}-win-${arch}.${ext}
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  perMachine: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+
+mac:
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+  icon: build-resources/icon.icns
+  category: public.app-category.music
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build-resources/entitlements.mac.plist
+  entitlementsInherit: build-resources/entitlements.mac.inherit.plist
+  artifactName: BetterSoundCloud-${version}-mac-${arch}.${ext}
+
+linux:
+  target:
+    - AppImage
+    - deb
+    - rpm
+  icon: build-resources/icon.png
+  category: AudioVideo
+  executableName: bettersoundcloud
+  synopsis: A desktop client for SoundCloud
+  artifactName: BetterSoundCloud-${version}-linux-${arch}.${ext}
+  desktop:
+    entry:
+      Name: BetterSoundCloud
+      Categories: AudioVideo;Audio;Music;
+      StartupWMClass: BetterSoundCloud

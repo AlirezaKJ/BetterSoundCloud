@@ -1,0 +1,58 @@
+/*
+ * The theming public API.
+ *
+ * These custom properties and the `data-bsc-*` attributes in the markup are the
+ * versioned contract that user themes target. Svelte's generated hash classes
+ * (`.s-AbC123`) change between builds and must never be targeted by a theme — that is
+ * documented for theme authors in docs/CUSTOM_THEMES.md.
+ *
+ * Svelte scopes CSS in the ordinary document rather than a shadow root, so a user
+ * theme's `[data-bsc-header] { background: ... }` still matches. That property is the
+ * reason Svelte was chosen over Lit.
+ */
+
+:root {
+  --bsc-bg-primary: #f2f2f2;
+  --bsc-bg-secondary: #ffffff;
+  --bsc-bg-hover: rgb(0 0 0 / 8%);
+  --bsc-text-primary: #1a1a1a;
+  --bsc-text-secondary: #5c5c5c;
+  --bsc-text-disabled: #a8a8a8;
+  --bsc-accent: #f50;
+  --bsc-border: rgb(0 0 0 / 12%);
+  --bsc-danger: #d33;
+
+  --bsc-header-bg: var(--bsc-bg-primary);
+  --bsc-header-height: 32px;
+
+  --bsc-radius: 6px;
+  --bsc-font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bsc-bg-primary: #121212;
+    --bsc-bg-secondary: #1c1c1c;
+    --bsc-bg-hover: rgb(255 255 255 / 10%);
+    --bsc-text-primary: #f2f2f2;
+    --bsc-text-secondary: #a0a0a0;
+    --bsc-text-disabled: #5c5c5c;
+    --bsc-border: rgb(255 255 255 / 14%);
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--bsc-font);
+  color: var(--bsc-text-primary);
+  background: var(--bsc-bg-primary);
+  -webkit-font-smoothing: antialiased;
+}
