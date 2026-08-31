@@ -32,10 +32,10 @@ electronFuses:
 # Castlabs is explicit that the ordering differs by platform:
 #   macOS  -> VMP sign BEFORE code signing  (afterPack)
 #   Windows-> VMP sign AFTER  code signing  (afterSign)
-# One script, branching on context.electronPlatformName, no-opping on the other platform.
-# soundcloud-rpc registers a single afterSign for both and is wrong on macOS.
-afterPack: scripts/sign-vmp.js
-afterSign: scripts/sign-vmp.js
+# Two small wrapper files, each one obviously named for the platform it handles. Both
+# call signPackage() in scripts/vmp-sign.js.
+afterPack: scripts/vmp-after-pack.js
+afterSign: scripts/vmp-after-sign.js
 
 publish:
   provider: github

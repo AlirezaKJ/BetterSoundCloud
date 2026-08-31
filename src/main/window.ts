@@ -1,5 +1,6 @@
 import { join } from 'node:path'
 import { BaseWindow, WebContentsView, nativeTheme } from 'electron'
+import type { BrowserWindow } from 'electron'
 import windowStateKeeper from 'electron-window-state'
 import { hardenSession, routeNewWindowsToBrowser } from './session'
 import { CH } from '@shared/ipc'
@@ -92,7 +93,10 @@ export function createShell(userAgent: string): Shell {
   // own chrome has painted, so the user never sees an unpainted frame.
   header.webContents.once('did-finish-load', () => window.show())
 
-  state.manage(window as unknown as Parameters<typeof state.manage>[0])
+  // electron-window-state is typed against BrowserWindow, but it only calls getBounds,
+  // isMaximized, isFullScreen and on(), all of which BaseWindow has. The cast is safe;
+  // there is no BaseWindow-aware version of the package.
+  state.manage(window as unknown as BrowserWindow)
 
   return { window, header, content }
 }

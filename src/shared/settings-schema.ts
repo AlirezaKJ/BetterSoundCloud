@@ -135,16 +135,41 @@ export const SETTINGS = {
 
 export type SettingKey = keyof typeof SETTINGS
 
-type ValueOf<D> = D extends { kind: 'boolean' }
+/*
+ * ─────────────────────────────────────────────────────────────────────────────
+ * You do not need to read or change anything below to add a setting.
+ * Add an entry to SETTINGS above and you are done — the type, the settings form
+ * and the validation all follow automatically.
+ *
+ * The two types below are what makes that true. They are the only clever code in
+ * this file, and they are worth it: the alternative is hand-writing the `Settings`
+ * type as well, which means every new setting is two edits in two places that can
+ * drift apart. Avoiding exactly that is why this file exists — v0.7.x defined each
+ * setting in four places and they did drift.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+/**
+ * Maps one schema entry to the type of its value:
+ *   { kind: 'boolean' }                      -> boolean
+ *   { kind: 'number' }                       -> number
+ *   { kind: 'enum', options: ['a', 'b'] }    -> 'a' | 'b'
+ *   { kind: 'string' }                       -> string
+ */
+type ValueOf<Def> = Def extends { kind: 'boolean' }
   ? boolean
-  : D extends { kind: 'number' }
+  : Def extends { kind: 'number' }
     ? number
-    : D extends { kind: 'enum'; options: readonly (infer O)[] }
-      ? O
-      : D extends { kind: 'string' }
+    : Def extends { kind: 'enum'; options: readonly (infer Option)[] }
+      ? Option
+      : Def extends { kind: 'string' }
         ? string
         : never
 
+/**
+ * The settings object, with one correctly-typed property per entry in SETTINGS.
+ * `-readonly` strips the `as const` readonly markers so settings stay assignable.
+ */
 export type Settings = {
   -readonly [K in SettingKey]: ValueOf<(typeof SETTINGS)[K]>
 }
