@@ -1,0 +1,30 @@
+# Line endings are LF everywhere, including in the working tree on Windows.
+#
+# Why this file exists: without it, a Windows checkout with `core.autocrlf=true`
+# gets CRLF, and `npm install` then rewrites package.json and package-lock.json
+# with CRLF. Prettier defaults to LF, so `npm run check` starts failing after a
+# routine install with a diff that shows every line changed and no real change in
+# any of them. That is a confusing first experience for a new contributor.
+#
+# `eol=lf` overrides core.autocrlf for this repository only; it does not touch a
+# contributor's global git config.
+* text=auto eol=lf
+
+# Binary — never convert, never diff as text.
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.ico    binary
+*.icns   binary
+*.woff   binary
+*.woff2  binary
+*.ttf    binary
+*.otf    binary
+*.mp3    binary
+*.node   binary
+*.asar   binary
+*.sig    binary
+
+# Generated. Collapse in diffs and exclude from language stats.
+package-lock.json linguist-generated=true
