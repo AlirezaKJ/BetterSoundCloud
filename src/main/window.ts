@@ -25,6 +25,14 @@ export type Shell = {
   window: BaseWindow
   header: WebContentsView
   content: WebContentsView
+  /**
+   * Created the first time the user opens settings, then kept. Null means closed.
+   * Building it lazily keeps a renderer process out of startup for a panel most
+   * launches never open.
+   */
+  settings: WebContentsView | null
+  /** Kept so the settings view can be hardened with the same identity as the others. */
+  userAgent: string
 }
 
 export function createShell(userAgent: string): Shell {
@@ -77,10 +85,14 @@ export function createShell(userAgent: string): Shell {
   window.contentView.addChildView(content)
   window.contentView.addChildView(header)
 
+  const shell: Shell = { window, header, content, settings: null, userAgent }
+
   const layout = (): void => {
     const { width, height } = window.getContentBounds()
     header.setBounds({ x: 0, y: 0, width, height: HEADER_HEIGHT })
     content.setBounds({ x: 0, y: HEADER_HEIGHT, width, height: height - HEADER_HEIGHT })
+    // The settings panel only exists while it is open, so check before resizing it.
+    if (shell.settings) fitBelowHeader(window, shell.settings)
   }
   layout()
   window.on('resize', layout)
@@ -104,7 +116,74 @@ export function createShell(userAgent: string): Shell {
   // there is no BaseWindow-aware version of the package.
   state.manage(window as unknown as BrowserWindow)
 
-  return { window, header, content }
+  return shell
+}
+
+/**
+ * Show or hide the settings panel.
+ *
+ * The panel is its own `WebContentsView` covering the content area, stacked above
+ * SoundCloud and below nothing. Opening it does not navigate, reload or pause the
+ * SoundCloud view — that keeps playing underneath.
+ *
+ * Why a separate view rather than markup in the header: the header is 32px and is a
+ * window drag region, so growing it to full height would make the whole panel draggable.
+ * A separate view also cannot be reached by anything running on soundcloud.com.
+ */
+export function toggleSettings(shell: Shell): void {
+  if (shell.settings) {
+    closeSettings(shell)
+    return
+  }
+
+  const view = new WebContentsView({
+    webPreferences: {
+      preload: join(import.meta.dirname, '../preload/chrome.cjs'),
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+      webSecurity: true,
+      devTools: isDev
+    }
+  })
+
+  hardenSession(view.webContents.session, shell.userAgent)
+  routeNewWindowsToBrowser(view.webContents)
+
+  // Transparent so the panel can animate itself in over a dimmed SoundCloud rather than
+  // the whole view snapping in as an opaque rectangle. A native view's bounds cannot be
+  // tweened smoothly, so all the motion happens in CSS inside the page.
+  view.setBackgroundColor('#00000000')
+
+  shell.settings = view
+  shell.window.contentView.addChildView(view)
+  fitBelowHeader(shell.window, view)
+
+  if (isDev) enableDevToolsShortcut(view)
+
+  void view.webContents.loadURL(rendererUrl('settings'))
+
+  // Focus it so Escape and Tab reach the panel without the user clicking first. The
+  // renderer owns Escape, because it also has to play the exit animation before the view
+  // is destroyed.
+  view.webContents.once('did-finish-load', () => view.webContents.focus())
+}
+
+export function closeSettings(shell: Shell): void {
+  const view = shell.settings
+  if (!view) return
+
+  shell.settings = null
+  shell.window.contentView.removeChildView(view)
+  // Destroy rather than keep it hidden: a settings panel is opened rarely and briefly,
+  // so holding a renderer process for the rest of the session is the wrong trade.
+  view.webContents.close()
+}
+
+/** The settings panel occupies exactly the area the content view does. */
+function fitBelowHeader(window: BaseWindow, view: WebContentsView): void {
+  const { width, height } = window.getContentBounds()
+  view.setBounds({ x: 0, y: HEADER_HEIGHT, width, height: height - HEADER_HEIGHT })
 }
 
 function wireStateEvents(

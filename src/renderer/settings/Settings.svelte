@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { SECTIONS, SETTINGS, SETTING_KEYS } from '@shared/settings-schema'
+  import { fade, fly } from 'svelte/transition'
+  import { cubicOut } from 'svelte/easing'
+  import { SECTIONS, SECTION_LABELS, SETTINGS, SETTING_KEYS } from '@shared/settings-schema'
   import type { Section, SettingKey, Settings } from '@shared/settings-schema'
 
   /*
@@ -11,8 +13,17 @@
    *
    * There are four write handlers here, one per `kind`, rather than one per setting.
    * That ratio is the point.
+   *
+   * Closing is a two-step dance. The panel lives in its own transparent WebContentsView,
+   * and main destroys that view — but if it destroyed it the moment the user pressed
+   * Escape, the exit animation would never be seen. So Escape and the close button only
+   * set `open = false`; when the outro transition ends we tell main to destroy the view.
    */
 
+  const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const DURATION = REDUCED_MOTION ? 0 : 180
+
+  let open = $state(false)
   let values = $state<Settings | null>(null)
   let active = $state<Section>('general')
 
@@ -20,9 +31,42 @@
     SETTING_KEYS.filter((k) => SETTINGS[k].section === section)
 
   onMount(() => {
+    open = true
+
+    // Escape is registered first, deliberately: if loading settings ever fails, the panel
+    // must still be dismissable rather than trapping the user in a modal.
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') requestClose()
+    }
+    window.addEventListener('keydown', onKey)
+
     void window.bsc.getSettings().then((s) => (values = s))
-    return window.bsc.onSettingsChanged((s) => (values = s))
+    const stopWatching = window.bsc.onSettingsChanged((s) => (values = s))
+
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      stopWatching()
+    }
   })
+
+  let destroyRequested = false
+
+  /** Start the exit animation. The view itself is destroyed later, in `destroyView`. */
+  function requestClose(): void {
+    if (!open) return
+    open = false
+    // `onoutroend` normally does this when the animation finishes. This backstop covers
+    // the case where that event never arrives — a settings panel that cannot be closed
+    // is far worse than one that closes without animating.
+    setTimeout(destroyView, DURATION + 100)
+  }
+
+  /** Idempotent: both the transition end and the backstop timer call it. */
+  function destroyView(): void {
+    if (destroyRequested) return
+    destroyRequested = true
+    window.bsc.closeSettings()
+  }
 
   async function update(key: SettingKey, value: unknown): Promise<void> {
     // Main re-validates and returns the authoritative snapshot; we never assume our
@@ -31,76 +75,196 @@
   }
 </script>
 
-<div class="wrap">
-  <nav data-bsc-settings-nav>
-    {#each SECTIONS as section (section)}
-      <button class:active={active === section} onclick={() => (active = section)}>
-        {section}
+{#if open}
+  <!--
+    A button rather than a div so closing by clicking outside the card is reachable by
+    keyboard and screen readers, and so no a11y rule has to be suppressed.
+  -->
+  <button
+    class="scrim"
+    aria-label="Close settings"
+    onclick={requestClose}
+    transition:fade={{ duration: DURATION }}
+  ></button>
+
+  <div
+    class="panel"
+    data-bsc-settings-panel
+    role="dialog"
+    aria-modal="true"
+    aria-label="Settings"
+    transition:fly={{ y: 14, duration: DURATION, easing: cubicOut }}
+    onoutroend={destroyView}
+  >
+    <header data-bsc-settings-title>
+      <h1>Settings</h1>
+      <button
+        class="close"
+        title="Close (Esc)"
+        aria-label="Close settings"
+        onclick={requestClose}
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17" /></svg>
       </button>
-    {/each}
-  </nav>
+    </header>
 
-  <main data-bsc-settings-panel>
-    {#if !values}
-      <p class="loading">Loading…</p>
-    {:else}
-      {#each keysIn(active) as key (key)}
-        {@const def = SETTINGS[key]}
-        <div class="row">
-          <div class="label">
-            <label for={key}>{def.label}</label>
-            {#if 'help' in def && def.help}<p class="help">{def.help}</p>{/if}
-          </div>
-
-          <div class="control">
-            {#if def.kind === 'boolean'}
-              <input
-                id={key}
-                type="checkbox"
-                checked={values[key] as boolean}
-                onchange={(e) => update(key, e.currentTarget.checked)}
-              />
-            {:else if def.kind === 'number'}
-              <input
-                id={key}
-                type="number"
-                min={def.min}
-                max={def.max}
-                step={def.step ?? 1}
-                value={values[key] as number}
-                onchange={(e) => update(key, e.currentTarget.valueAsNumber)}
-              />
-            {:else if def.kind === 'enum'}
-              <select
-                id={key}
-                value={values[key] as string}
-                onchange={(e) => update(key, e.currentTarget.value)}
-              >
-                {#each def.options as option (option)}
-                  <option value={option}>{option}</option>
-                {/each}
-              </select>
-            {:else}
-              <input
-                id={key}
-                type="text"
-                value={values[key] as string}
-                onchange={(e) => update(key, e.currentTarget.value)}
-              />
-            {/if}
-          </div>
-        </div>
+    <nav data-bsc-settings-nav>
+      {#each SECTIONS as section (section)}
+        <button class:active={active === section} onclick={() => (active = section)}>
+          {SECTION_LABELS[section]}
+        </button>
       {/each}
-    {/if}
-  </main>
-</div>
+    </nav>
+
+    <main data-bsc-settings-content>
+      {#if !values}
+        <p class="loading">Loading…</p>
+      {:else}
+        {#each keysIn(active) as key (key)}
+          {@const def = SETTINGS[key]}
+          <!-- `as const` narrows each entry to its literal shape, so entries that are
+               wired have no `wired` property at all — hence the `in` guard. -->
+          {@const pending = 'wired' in def && def.wired === false}
+          <div class="row" class:pending>
+            <div class="label">
+              <label for={key}>{def.label}</label>
+              {#if 'help' in def && def.help}<p class="help">{def.help}</p>{/if}
+              <!--
+                Honesty about what does not exist yet. The schema is written ahead of the
+                features, so without this the panel would offer controls that silently do
+                nothing — and every one would become a bug report.
+              -->
+              {#if pending}<p class="pending-note">Not implemented yet</p>{/if}
+            </div>
+
+            <div class="control">
+              {#if def.kind === 'boolean'}
+                <input
+                  id={key}
+                  type="checkbox"
+                  disabled={pending}
+                  checked={values[key] as boolean}
+                  onchange={(e) => update(key, e.currentTarget.checked)}
+                />
+              {:else if def.kind === 'number'}
+                <input
+                  id={key}
+                  type="number"
+                  disabled={pending}
+                  min={def.min}
+                  max={def.max}
+                  step={def.step ?? 1}
+                  value={values[key] as number}
+                  onchange={(e) => update(key, e.currentTarget.valueAsNumber)}
+                />
+              {:else if def.kind === 'enum'}
+                <select
+                  id={key}
+                  disabled={pending}
+                  value={values[key] as string}
+                  onchange={(e) => update(key, e.currentTarget.value)}
+                >
+                  {#each def.options as option (option)}
+                    <option value={option}>{option}</option>
+                  {/each}
+                </select>
+              {:else}
+                <input
+                  id={key}
+                  type="text"
+                  disabled={pending}
+                  value={values[key] as string}
+                  onchange={(e) => update(key, e.currentTarget.value)}
+                />
+              {/if}
+            </div>
+          </div>
+        {/each}
+      {/if}
+    </main>
+  </div>
+{/if}
 
 <style>
-  .wrap {
+  /*
+   * This page renders into a transparent WebContentsView stacked over SoundCloud, so it
+   * must not paint a background of its own — the scrim below is what dims the page.
+   */
+  :global(html),
+  :global(body) {
+    background: transparent;
+    overflow: hidden;
+  }
+
+  .scrim {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: rgb(0 0 0 / 45%);
+    cursor: default;
+  }
+
+  .panel {
+    position: fixed;
+    inset: 0;
     display: grid;
     grid-template-columns: 160px 1fr;
-    height: 100vh;
+    grid-template-rows: auto 1fr;
+    width: min(760px, calc(100% - 48px));
+    height: min(560px, calc(100% - 48px));
+    margin: auto;
+    overflow: hidden;
+    border: 1px solid var(--bsc-border);
+    border-radius: 10px;
     background: var(--bsc-bg-primary);
+    box-shadow:
+      0 12px 40px rgb(0 0 0 / 35%),
+      0 2px 8px rgb(0 0 0 / 20%);
+  }
+
+  header {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px 10px 16px;
+    border-bottom: 1px solid var(--bsc-border);
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .close {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--bsc-radius);
+    background: transparent;
+    color: var(--bsc-text-secondary);
+    cursor: pointer;
+  }
+
+  .close:hover {
+    background: var(--bsc-danger);
+    color: #fff;
+  }
+
+  .close svg {
+    width: 15px;
+    height: 15px;
+    fill: none;
+    stroke: currentcolor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
   }
 
   nav {
@@ -121,7 +285,6 @@
     font: inherit;
     font-size: 13px;
     text-align: left;
-    text-transform: capitalize;
     cursor: pointer;
   }
 
@@ -148,6 +311,10 @@
     border-bottom: 1px solid var(--bsc-border);
   }
 
+  .row:last-child {
+    border-bottom: 0;
+  }
+
   .label {
     flex: 1;
     min-width: 0;
@@ -164,8 +331,26 @@
     color: var(--bsc-text-secondary);
   }
 
+  .row.pending label {
+    color: var(--bsc-text-disabled);
+  }
+
+  .pending-note {
+    margin: 4px 0 0;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--bsc-text-disabled);
+  }
+
   .control {
     flex: 0 0 auto;
+  }
+
+  .control :disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   input[type='number'],

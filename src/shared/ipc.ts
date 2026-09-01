@@ -10,6 +10,7 @@ export const CH = {
   navForward: 'nav:forward',
   navReload: 'nav:reload',
   settingsToggle: 'settings:toggle',
+  settingsClose: 'settings:close',
 
   // main -> chrome
   navStateChanged: 'nav:state-changed',
@@ -43,6 +44,7 @@ export type ChromeApi = {
   forward(): void
   reload(): void
   toggleSettings(): void
+  closeSettings(): void
   onNavState(cb: (state: NavState) => void): () => void
   onWindowState(cb: (state: WindowState) => void): () => void
 

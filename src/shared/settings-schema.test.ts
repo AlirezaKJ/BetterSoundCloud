@@ -36,6 +36,27 @@ describe('schema integrity', () => {
     }
   })
 
+  // The value is assigned straight to Electron's `nativeTheme.themeSource`, which accepts
+  // exactly these three strings. Adding a fourth option here would typecheck and then fail
+  // at runtime, so pin it.
+  it('keeps colorScheme options in sync with nativeTheme.themeSource', () => {
+    const def = SETTINGS['appearance.colorScheme']
+    expect(def.kind).toBe('enum')
+    expect([...def.options]).toEqual(['system', 'light', 'dark'])
+    expect(def.default).toBe('system')
+  })
+
+  it('marks every setting nothing reads yet as not wired', () => {
+    // Keep this list in step with what main actually reads. Clearing a `wired: false`
+    // without wiring the setting is the failure this guards against.
+    const wired = SETTING_KEYS.filter((k) => !('wired' in SETTINGS[k]))
+    expect(wired.sort()).toEqual([
+      'advanced.hardwareAcceleration',
+      'appearance.colorScheme',
+      'appearance.zoomFactor'
+    ])
+  })
+
   it('ships the ad blocker off by default', () => {
     // Deliberate: in v0.7.x enablement was nondeterministic and it is a live suspect
     // in the sign-in blocks. Changing this needs a decision, not a drive-by edit.

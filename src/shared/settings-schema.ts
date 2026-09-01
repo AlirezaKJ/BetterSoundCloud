@@ -21,11 +21,34 @@ export const SECTIONS = [
 
 export type Section = (typeof SECTIONS)[number]
 
+/**
+ * How each section is written in the UI. Capitalising the key gave "Lastfm", and no
+ * amount of CSS fixes a name that has a full stop in the middle of it.
+ */
+export const SECTION_LABELS: Record<Section, string> = {
+  general: 'General',
+  appearance: 'Appearance',
+  discord: 'Discord',
+  lastfm: 'Last.fm',
+  shortcuts: 'Shortcuts',
+  advanced: 'Advanced'
+}
+
 type Base = {
   readonly label: string
   readonly section: Section
   /** Shown under the control in the settings UI. */
   readonly help?: string
+  /**
+   * Set to `false` while the feature behind a setting does not exist yet. The settings
+   * panel renders those disabled with a "not implemented yet" note instead of offering a
+   * control that silently does nothing. Omit it once the setting is actually read
+   * somewhere — an omitted `wired` means the setting works.
+   *
+   * This exists because the schema is written ahead of the features. Without it, the
+   * release meant to restore trust would ship eight toggles that do nothing.
+   */
+  readonly wired?: false
 }
 
 export type SettingDef =
@@ -50,20 +73,24 @@ export const SETTINGS = {
     default: 'discover',
     options: ['discover', 'stream', 'library', 'lastVisited'],
     label: 'On startup, open',
-    section: 'general'
+    section: 'general',
+    wired: false
   },
   'general.minimizeToTray': {
     kind: 'boolean',
     default: false,
     label: 'Minimize to tray on close',
-    section: 'general'
+    section: 'general',
+    help: 'Needs a tray icon, which does not exist yet.',
+    wired: false
   },
   'general.checkForUpdates': {
     kind: 'boolean',
     default: true,
     label: 'Check for updates automatically',
     section: 'general',
-    help: 'Disabled automatically when installed from a distro package or Nix.'
+    help: 'Disabled automatically when installed from a distro package or Nix.',
+    wired: false
   },
 
   'appearance.zoomFactor': {
@@ -76,32 +103,44 @@ export const SETTINGS = {
     section: 'appearance',
     help: 'Percent.'
   },
+  'appearance.colorScheme': {
+    kind: 'enum',
+    default: 'system',
+    options: ['system', 'light', 'dark'],
+    label: 'Appearance',
+    section: 'appearance',
+    help: 'Applies to BetterSoundCloud’s own chrome. SoundCloud’s page keeps its own setting.'
+  },
   'appearance.theme': {
     kind: 'string',
     default: 'vanilla',
     label: 'Theme',
     section: 'appearance',
-    help: 'Filename stem of a CSS file in the themes folder.'
+    help: 'Filename stem of a CSS file in the themes folder.',
+    wired: false
   },
 
   'discord.enabled': {
     kind: 'boolean',
     default: true,
     label: 'Discord Rich Presence',
-    section: 'discord'
+    section: 'discord',
+    wired: false
   },
   'discord.showWhenPaused': {
     kind: 'boolean',
     default: false,
     label: 'Keep showing presence while paused',
-    section: 'discord'
+    section: 'discord',
+    wired: false
   },
 
   'lastfm.enabled': {
     kind: 'boolean',
     default: false,
     label: 'Last.fm scrobbling',
-    section: 'lastfm'
+    section: 'lastfm',
+    wired: false
   },
 
   'shortcuts.mediaKeys': {
@@ -110,8 +149,9 @@ export const SETTINGS = {
     label: 'Respond to media keys',
     section: 'shortcuts',
     help:
-      'Handled by SoundCloud’s own Media Session handlers. BetterSoundCloud never ' +
-      'synthesises clicks on the player.'
+      'Will be handled by SoundCloud’s own Media Session handlers — BetterSoundCloud ' +
+      'will not synthesise clicks on the player.',
+    wired: false
   },
 
   // Off by default, deliberately. In v0.7.x the blocker was registered inside a
@@ -122,7 +162,8 @@ export const SETTINGS = {
     default: false,
     label: 'Block ads and trackers',
     section: 'advanced',
-    help: 'Experimental. May interfere with sign-in. Off by default.'
+    help: 'Experimental. May interfere with sign-in. Off by default.',
+    wired: false
   },
   'advanced.hardwareAcceleration': {
     kind: 'boolean',
