@@ -58,7 +58,8 @@ export default defineConfig({
       rollupOptions: {
         input: {
           header: resolve('src/renderer/header/index.html'),
-          settings: resolve('src/renderer/settings/index.html')
+          settings: resolve('src/renderer/settings/index.html'),
+          embedded: resolve('src/renderer/embedded/index.html')
         }
       }
     }

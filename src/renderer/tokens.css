@@ -56,3 +56,32 @@ body {
   background: var(--bsc-bg-primary);
   -webkit-font-smoothing: antialiased;
 }
+
+/*
+ * One scrollbar language across the whole product: our own panels and the SoundCloud view
+ * get the same 8px transparent-track treatment. The matching rule for SoundCloud's page is
+ * injected from `applyContentCss` in src/main/window.ts, using literal colours because our
+ * tokens do not exist on their origin.
+ *
+ * Neutral at rest, accent while grabbed — the accent marks a state rather than decorating,
+ * per the Borrowed Accent Rule.
+ */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background: var(--bsc-text-disabled);
+}
+
+::-webkit-scrollbar-thumb:hover,
+::-webkit-scrollbar-thumb:active {
+  background: var(--bsc-accent);
+}

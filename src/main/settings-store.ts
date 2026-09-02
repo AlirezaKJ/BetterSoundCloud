@@ -23,16 +23,31 @@ type Persisted = {
 
 const SCHEMA_VERSION = 1
 
-const store = new Store<Persisted>({
-  name: 'settings',
-  defaults: { schemaVersion: SCHEMA_VERSION, values: {} }
-})
+/**
+ * Constructed on first use, never at import.
+ *
+ * electron-store resolves its file path from `app.getPath('userData')` in its
+ * constructor. This module is imported at the top of `index.ts`, which is *before*
+ * `app.setPath('userData')` switches dev onto its own profile — so building the store
+ * eagerly captured the default path and made dev and installed builds share one
+ * settings file. Toggling a setting in one silently changed the other, which is a
+ * genuinely confusing way to lose an afternoon.
+ */
+let store: Store<Persisted> | null = null
+
+function db(): Store<Persisted> {
+  store ??= new Store<Persisted>({
+    name: 'settings',
+    defaults: { schemaVersion: SCHEMA_VERSION, values: {} }
+  })
+  return store
+}
 
 let cache: Settings | null = null
 
 export function getAll(): Settings {
   if (cache) return cache
-  cache = coerceAll(migrate(store.store).values)
+  cache = coerceAll(migrate(db().store).values)
   return cache
 }
 
@@ -50,14 +65,14 @@ export function set(key: unknown, value: unknown): Settings {
   const next = { ...getAll() } as Record<SettingKey, unknown>
   next[key] = coerce(key, value)
   cache = next as Settings
-  store.set('values', cache)
+  db().set('values', cache)
   return cache
 }
 
 /** Preserves window state; only the schema-defined values are reset. */
 export function reset(): Settings {
   cache = defaults()
-  store.set('values', cache)
+  db().set('values', cache)
   return cache
 }
 
@@ -73,6 +88,6 @@ function migrate(raw: Persisted): Persisted {
     schemaVersion: SCHEMA_VERSION,
     values: version === 0 ? {} : (raw.values ?? {})
   }
-  store.store = migrated
+  db().store = migrated
   return migrated
 }

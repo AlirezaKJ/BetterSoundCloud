@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import type { NavState, WindowState } from '@shared/ipc'
+  import WindowControls from '../lib/WindowControls.svelte'
 
   let nav = $state<NavState>({ canGoBack: false, canGoForward: false })
   let win = $state<WindowState>({ maximized: false, focused: true })
@@ -51,6 +52,22 @@
 
   <div class="controls" data-bsc-header-controls>
     <!--
+      Hands the window to SoundCloud: this bar disappears and the window buttons reappear
+      inside SoundCloud's own header. The button to come back sits there.
+    -->
+    <button
+      title="Hide this bar"
+      aria-label="Hide the BetterSoundCloud bar"
+      onclick={() => window.bsc.toggleMenuBar()}
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"
+        />
+      </svg>
+    </button>
+
+    <!--
       A cog, not a sun. The earlier icon was a circle with eight radiating lines, which
       reads as a brightness or theme control — and BetterSoundCloud has no theme toggle in
       the header; appearance lives inside settings.
@@ -63,28 +80,7 @@
         />
       </svg>
     </button>
-    <button title="Minimize" aria-label="Minimize" onclick={() => window.bsc.minimize()}>
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12" /></svg>
-    </button>
-    <button
-      title={win.maximized ? 'Restore' : 'Maximize'}
-      aria-label={win.maximized ? 'Restore' : 'Maximize'}
-      onclick={() => window.bsc.maximizeToggle()}
-    >
-      {#if win.maximized}
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <rect x="8" y="5" width="11" height="11" />
-          <path d="M5 8v11h11" />
-        </svg>
-      {:else}
-        <svg viewBox="0 0 24 24" aria-hidden="true"
-          ><rect x="6" y="6" width="12" height="12" /></svg
-        >
-      {/if}
-    </button>
-    <button class="close" title="Close" aria-label="Close" onclick={() => window.bsc.close()}>
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17" /></svg>
-    </button>
+    <WindowControls maximized={win.maximized} />
   </div>
 </header>
 
@@ -148,11 +144,6 @@
   button:focus-visible {
     outline: 2px solid var(--bsc-accent);
     outline-offset: -2px;
-  }
-
-  button.close:hover {
-    background: var(--bsc-danger);
-    color: #fff;
   }
 
   svg {

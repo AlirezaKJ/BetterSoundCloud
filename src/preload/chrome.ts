@@ -24,6 +24,7 @@ const api: ChromeApi = {
   forward: () => ipcRenderer.send(CH.navForward),
   reload: () => ipcRenderer.send(CH.navReload),
   toggleSettings: () => ipcRenderer.send(CH.settingsToggle),
+  toggleMenuBar: () => ipcRenderer.send(CH.menuBarToggle),
   closeSettings: () => ipcRenderer.send(CH.settingsClose),
 
   onNavState: (cb: (state: NavState) => void) => subscribe(CH.navStateChanged, cb),

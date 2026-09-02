@@ -2,7 +2,7 @@ import { join } from 'node:path'
 import { app, components, ipcMain, nativeTheme, BrowserWindow } from 'electron'
 import { buildUserAgent, leaksAppIdentity } from '@shared/identity'
 import { CH } from '@shared/ipc'
-import { createShell, toggleSettings, closeSettings } from './window'
+import { createShell, toggleSettings, closeSettings, setContentAppearance } from './window'
 import { createTray } from './tray'
 import type { Shell } from './window'
 import type { Settings } from '@shared/settings-schema'
@@ -98,7 +98,8 @@ function registerIpc(): void {
    * app. Checking the sender closes that channel permanently.
    */
   const fromChrome = (event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent): boolean =>
-    shell !== null && event.sender === shell.header.webContents
+    shell !== null &&
+    (event.sender === shell.header.webContents || event.sender === shell.embedded?.webContents)
 
   /** The header drives the window; the settings panel only reads and writes settings. */
   const fromSettingsUi = (
@@ -123,6 +124,13 @@ function registerIpc(): void {
     // flag so Quit is not swallowed by the same hide, and `general.minimizeToTray` stays
     // `wired: false` in the schema until then.
     shell.window.close()
+  })
+
+  ipcMain.on(CH.menuBarToggle, (e) => {
+    if (!fromChrome(e)) return
+    const next = settings.set('appearance.hideMenuBar', !settings.get('appearance.hideMenuBar'))
+    applyLiveSettings()
+    broadcastSettings(next)
   })
 
   ipcMain.on(CH.settingsToggle, (e) => {
@@ -180,4 +188,10 @@ function applyLiveSettings(): void {
   if (!shell) return
   shell.content.webContents.setZoomFactor(settings.get('appearance.zoomFactor') / 100)
   nativeTheme.themeSource = settings.get('appearance.colorScheme')
+  // Called after the zoom above, deliberately: the overlay's height and the CSS space it
+  // reserves are both derived from the current zoom factor.
+  setContentAppearance(shell, {
+    hideMenuBar: settings.get('appearance.hideMenuBar'),
+    fullWidth: settings.get('appearance.fullWidthLayout')
+  })
 }

@@ -81,7 +81,7 @@ export const SETTINGS = {
     default: false,
     label: 'Minimize to tray on close',
     section: 'general',
-    help: 'Needs a tray icon, which does not exist yet.',
+    help: 'The tray exists; this still needs a quitting flag so tray Quit is not swallowed.',
     wired: false
   },
   'general.checkForUpdates': {
@@ -110,6 +110,25 @@ export const SETTINGS = {
     label: 'Appearance',
     section: 'appearance',
     help: 'Applies to BetterSoundCloud’s own chrome. SoundCloud’s page keeps its own setting.'
+  },
+  'appearance.hideMenuBar': {
+    kind: 'boolean',
+    default: false,
+    label: 'Hide the BetterSoundCloud bar',
+    section: 'appearance',
+    help:
+      'Gives the whole window to SoundCloud and moves the window buttons into its own ' +
+      'header. Toggle it from the expand button at either end — the top bar, or ' +
+      'SoundCloud’s header once it is hidden.'
+  },
+  'appearance.fullWidthLayout': {
+    kind: 'boolean',
+    default: true,
+    label: 'Stretch the SoundCloud bars',
+    section: 'appearance',
+    help:
+      'SoundCloud centres its top menu and bottom player at 1240px. This stretches those ' +
+      'two bars to the window width. Page content keeps its own layout.'
   },
   'appearance.theme': {
     kind: 'string',

@@ -306,6 +306,20 @@ The settings rail — a vertical stack of section buttons, 2px apart.
 - **Internal Padding:** 10–16px in the header row, 16px × 20px in the content column.
 - **Shadow Strategy:** the Overlay shadow, per Elevation & Depth.
 
+### Scrollbars
+
+One treatment across both surfaces — our own panels and the SoundCloud view.
+
+- **Width:** 2px (Chrome's default is 15px, which reads as a grey slab down the side of the
+  page and collides with the window buttons drawn over SoundCloud's header).
+- **Track and corner:** fully transparent. Only the thumb is ever visible.
+- **Thumb:** 4px radius. `--bsc-text-disabled` in our own UI; mid-grey alpha
+  (`rgb(128 128 128 / 40%)`) on SoundCloud's page, because our tokens do not exist on their
+  origin and their theme may be either light or dark.
+- **Hover and active:** the accent. This is the one place the accent appears outside focus
+  and selection, and it still obeys the Borrowed Accent Rule — grabbing a scrollbar is a
+  state, not decoration.
+
 ### Signature Component: the pending setting
 
 A setting whose feature does not exist yet renders as a full row — label, help text, and a real

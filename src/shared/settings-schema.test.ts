@@ -53,6 +53,8 @@ describe('schema integrity', () => {
     expect(wired.sort()).toEqual([
       'advanced.hardwareAcceleration',
       'appearance.colorScheme',
+      'appearance.fullWidthLayout',
+      'appearance.hideMenuBar',
       'appearance.zoomFactor'
     ])
   })

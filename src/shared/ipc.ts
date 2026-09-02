@@ -10,6 +10,7 @@ export const CH = {
   navForward: 'nav:forward',
   navReload: 'nav:reload',
   settingsToggle: 'settings:toggle',
+  menuBarToggle: 'window:menu-bar-toggle',
   settingsClose: 'settings:close',
 
   // main -> chrome
@@ -44,6 +45,8 @@ export type ChromeApi = {
   forward(): void
   reload(): void
   toggleSettings(): void
+  /** Swap between the 32px strip and the controls drawn inside SoundCloud’s header. */
+  toggleMenuBar(): void
   closeSettings(): void
   onNavState(cb: (state: NavState) => void): () => void
   onWindowState(cb: (state: WindowState) => void): () => void
