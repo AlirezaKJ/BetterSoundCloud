@@ -11,8 +11,8 @@ web
 **Primary: people who already installed BetterSoundCloud and left.** v0.7.x shipped two
 failures that made it unusable — tracks that grey out and auto-skip, and "we detected unusual
 activity" blocks on sign-in, liking and following. Ten of the eighteen most-commented open
-issues are one of those two. The job is simply *"let me listen to SoundCloud on my desktop
-without the app fighting me."*
+issues are one of those two. The job is simply _"let me listen to SoundCloud on my desktop
+without the app fighting me."_
 
 Their situation, from the tracker rather than assumption:
 
@@ -56,7 +56,7 @@ credentials. v2's stated goal is to carry all of it.
   UI inside a content view. BetterSoundCloud owns a 32px chrome strip, a settings panel, and
   overlays. Anything SoundCloud changes is outside our control and can break us.
 - **Part of the catalogue is DRM-protected.** SoundCloud serves Widevine-CENC HLS for some
-  tracks. Playing them requires the Castlabs Electron build *and* a VMP signature applied to the
+  tracks. Playing them requires the Castlabs Electron build _and_ a VMP signature applied to the
   packaged app. This is verified, not theoretical.
 - **SoundCloud runs bot and abuse detection.** Its sign-in path loads DataDome and computes a
   client signature. A desktop client that emits automation signals gets its users challenged or
@@ -120,11 +120,8 @@ funding; Discord client ID reuse vs. new; whether to ship a default Last.fm API 
   The two headline clusters are documented with named reporters willing to re-test.
 - **A verified fix.** VMP signing demonstrably resolves the auto-skip bug — EVS reported
   `Existing signature invalid` on first sign, then `Signature is valid: streaming, 1417 days
-  left`, and a track that greys out on v0.7.1 plays on the signed build (2026-09-01).
-- **Planning record** in the maintainer's Obsidian vault: the v2 roadmap, a feature-gap analysis
-  against soundcloud-rpc, and the tech-stack decision record.
+left`, and a track that greys out on v0.7.1 plays on the signed build (2026-09-01).
 - **[TODO.md](TODO.md)** — 120 items across 13 milestones, each traced to a file, issue or phase.
-- **Two reference implementations:** v0.7.x at git `fb3bfdd`, and `richardhbtz/soundcloud-rpc`.
 
 **Absent — must not be fabricated:** no install or user counts, no testimonials, no reviews, no
 press, no benchmarks, no revenue or pricing. There is no marketing site copy under version

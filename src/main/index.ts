@@ -3,6 +3,7 @@ import { app, components, ipcMain, nativeTheme, BrowserWindow } from 'electron'
 import { buildUserAgent, leaksAppIdentity } from '@shared/identity'
 import { CH } from '@shared/ipc'
 import { createShell, toggleSettings, closeSettings } from './window'
+import { createTray } from './tray'
 import type { Shell } from './window'
 import type { Settings } from '@shared/settings-schema'
 import * as settings from './settings-store'
@@ -54,7 +55,11 @@ if (!app.requestSingleInstanceLock()) {
 } else {
   app.on('second-instance', () => {
     if (!shell) return
+    // show() matters as well as restore(): with a tray the window can be hidden, and a
+    // hidden window is not a minimised one. Without this, launching the app again while
+    // it sits in the tray would appear to do nothing.
     if (shell.window.isMinimized()) shell.window.restore()
+    if (!shell.window.isVisible()) shell.window.show()
     shell.window.focus()
   })
 
@@ -66,6 +71,7 @@ if (!app.requestSingleInstanceLock()) {
     .then(() => {
       registerIpc()
       shell = createShell(USER_AGENT)
+      createTray(shell)
       applyLiveSettings()
 
       app.on('activate', () => {
@@ -111,11 +117,11 @@ function registerIpc(): void {
 
   ipcMain.on(CH.windowClose, (e) => {
     if (!fromChrome(e) || !shell) return
-    // Deliberately always closes. `general.minimizeToTray` is marked `wired: false` in the
-    // schema because there is no tray yet — hiding here would strand the app with no way
-    // back: `window-all-closed` never fires for a hidden window, and `second-instance`
-    // focuses without showing, so only Task Manager could recover it. Restore the branch
-    // in the same change that adds the Tray, not before.
+    // Still always closes. The tray now exists, so hiding would no longer strand the app
+    // — "Show BetterSoundCloud", a tray click, and second-instance can all bring it back.
+    // Turning the setting on is a separate, deliberate change: it needs its own quitting
+    // flag so Quit is not swallowed by the same hide, and `general.minimizeToTray` stays
+    // `wired: false` in the schema until then.
     shell.window.close()
   })
 

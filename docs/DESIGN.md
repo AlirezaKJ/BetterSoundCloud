@@ -2,82 +2,82 @@
 name: BetterSoundCloud
 description: The quiet frame around SoundCloud — a 32px chrome that holds someone else's app without competing with it.
 colors:
-  bg-primary: "#f2f2f2"
-  bg-secondary: "#ffffff"
-  bg-hover: "rgb(0 0 0 / 8%)"
-  text-primary: "#1a1a1a"
-  text-secondary: "#5c5c5c"
-  text-disabled: "#a8a8a8"
-  border: "rgb(0 0 0 / 12%)"
-  accent: "#f50"
-  danger: "#d33"
-  scrim: "rgb(0 0 0 / 45%)"
+  bg-primary: '#f2f2f2'
+  bg-secondary: '#ffffff'
+  bg-hover: 'rgb(0 0 0 / 8%)'
+  text-primary: '#1a1a1a'
+  text-secondary: '#5c5c5c'
+  text-disabled: '#a8a8a8'
+  border: 'rgb(0 0 0 / 12%)'
+  accent: '#f50'
+  danger: '#d33'
+  scrim: 'rgb(0 0 0 / 45%)'
 typography:
   title:
     fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
-    fontSize: "15px"
+    fontSize: '15px'
     fontWeight: 600
   body:
     fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
-    fontSize: "14px"
+    fontSize: '14px'
     fontWeight: 400
   label:
     fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
-    fontSize: "13px"
+    fontSize: '13px'
     fontWeight: 400
   caption:
     fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
-    fontSize: "12px"
+    fontSize: '12px'
     fontWeight: 400
     lineHeight: 1.4
   overline:
     fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
-    fontSize: "11px"
+    fontSize: '11px'
     fontWeight: 600
-    letterSpacing: "0.03em"
+    letterSpacing: '0.03em'
 rounded:
-  sm: "6px"
-  md: "10px"
+  sm: '6px'
+  md: '10px'
 spacing:
-  xs: "4px"
-  sm: "8px"
-  md: "12px"
-  lg: "16px"
-  xl: "20px"
+  xs: '4px'
+  sm: '8px'
+  md: '12px'
+  lg: '16px'
+  xl: '20px'
 components:
   button-chrome:
-    backgroundColor: "transparent"
-    textColor: "{colors.text-primary}"
-    rounded: "{rounded.sm}"
-    width: "30px"
-    height: "26px"
+    backgroundColor: 'transparent'
+    textColor: '{colors.text-primary}'
+    rounded: '{rounded.sm}'
+    width: '30px'
+    height: '26px'
   button-chrome-hover:
-    backgroundColor: "{colors.bg-hover}"
+    backgroundColor: '{colors.bg-hover}'
   button-chrome-disabled:
-    textColor: "{colors.text-disabled}"
+    textColor: '{colors.text-disabled}'
   button-close-hover:
-    backgroundColor: "{colors.danger}"
-    textColor: "#ffffff"
+    backgroundColor: '{colors.danger}'
+    textColor: '#ffffff'
   nav-item:
-    backgroundColor: "transparent"
-    textColor: "{colors.text-secondary}"
-    typography: "{typography.label}"
-    rounded: "{rounded.sm}"
-    padding: "8px 10px"
+    backgroundColor: 'transparent'
+    textColor: '{colors.text-secondary}'
+    typography: '{typography.label}'
+    rounded: '{rounded.sm}'
+    padding: '8px 10px'
   nav-item-active:
-    backgroundColor: "{colors.bg-hover}"
-    textColor: "{colors.text-primary}"
+    backgroundColor: '{colors.bg-hover}'
+    textColor: '{colors.text-primary}'
   field:
-    backgroundColor: "{colors.bg-secondary}"
-    textColor: "{colors.text-primary}"
-    typography: "{typography.label}"
-    rounded: "{rounded.sm}"
-    padding: "6px 8px"
+    backgroundColor: '{colors.bg-secondary}'
+    textColor: '{colors.text-primary}'
+    typography: '{typography.label}'
+    rounded: '{rounded.sm}'
+    padding: '6px 8px'
   panel:
-    backgroundColor: "{colors.bg-primary}"
-    rounded: "{rounded.md}"
-    width: "760px"
-    height: "560px"
+    backgroundColor: '{colors.bg-primary}'
+    rounded: '{rounded.md}'
+    width: '760px'
+    height: '560px'
 ---
 
 # Design System: BetterSoundCloud

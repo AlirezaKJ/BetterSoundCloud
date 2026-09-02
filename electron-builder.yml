@@ -49,7 +49,7 @@ win:
       arch: [x64]
     - target: portable
       arch: [x64]
-  icon: build-resources/icon.png
+  icon: resources/icon.png
   artifactName: BetterSoundCloud-${version}-win-${arch}.${ext}
 
 nsis:
@@ -63,7 +63,7 @@ mac:
   target:
     - target: dmg
       arch: [x64, arm64]
-  icon: build-resources/icon.png
+  icon: resources/icon.png
   category: public.app-category.music
   hardenedRuntime: true
   gatekeeperAssess: false
@@ -76,7 +76,7 @@ linux:
     - AppImage
     - deb
     - rpm
-  icon: build-resources/icon.png
+  icon: resources/icon.png
   category: AudioVideo
   executableName: bettersoundcloud
   synopsis: A desktop client for SoundCloud
