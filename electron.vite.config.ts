@@ -43,6 +43,14 @@ export default defineConfig({
         output: {
           format: 'cjs',
           entryFileNames: '[name].cjs'
+          /*
+           * Each preload must be ONE self-contained file: a sandboxed preload's `require`
+           * resolves only Electron's allowlist, never a relative path, so a shared chunk
+           * makes it fail to load outright. Rollup will hoist any module two entries both
+           * import, and it cannot be talked out of it — so the rule is enforced in the
+           * preloads themselves (see the channel constant in content.ts), and pinned by a
+           * test that fails if a chunk ever appears here.
+           */
         }
       }
     }
@@ -59,7 +67,8 @@ export default defineConfig({
         input: {
           header: resolve('src/renderer/header/index.html'),
           settings: resolve('src/renderer/settings/index.html'),
-          embedded: resolve('src/renderer/embedded/index.html')
+          embedded: resolve('src/renderer/embedded/index.html'),
+          player: resolve('src/renderer/player/index.html')
         }
       }
     }

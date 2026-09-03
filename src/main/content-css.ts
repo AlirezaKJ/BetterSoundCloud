@@ -35,6 +35,11 @@ export interface ContentCssOptions {
    * one without us curating an exception for it.
    */
   theme?: string
+  /**
+   * CSS pixels to reserve at the right-hand end of the play controls for our own buttons,
+   * or null when they are switched off.
+   */
+  playerReserve?: number | null
   /** Override SoundCloud's centred container so the bars span the window. */
   fullWidth: boolean
   /**
@@ -44,7 +49,12 @@ export interface ContentCssOptions {
   reserve: number | null
 }
 
-export function buildContentCss({ fullWidth, reserve, theme }: ContentCssOptions): string {
+export function buildContentCss({
+  fullWidth,
+  reserve,
+  theme,
+  playerReserve
+}: ContentCssOptions): string {
   // Always applied. Chrome's default scrollbar is 15px of opaque grey, and because
   // SoundCloud's header is sized to `clientWidth` it stops short by exactly that much —
   // which is what our window buttons were colliding with. A thin transparent track stops
@@ -94,6 +104,14 @@ export function buildContentCss({ fullWidth, reserve, theme }: ContentCssOptions
     rules.push(
       '.header { -webkit-app-region: drag; }\n' + '.header * { -webkit-app-region: no-drag; }'
     )
+  }
+
+  if (playerReserve) {
+    // Their bar already carries 16px here; ours replaces it, so the number is the whole
+    // distance from the right edge rather than an addition to it. No media query, unlike the
+    // header reservation: `.playControls__elements` is a flex row whose timeline absorbs the
+    // loss, where the header was `nowrap` and wrapped its contents onto the page instead.
+    rules.push(`.playControls__wrapper { padding-right: ${playerReserve}px !important; }`)
   }
 
   // Last, so a theme can override everything above it. A theme author who wants a different

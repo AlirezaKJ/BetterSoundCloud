@@ -53,4 +53,23 @@ describe('buildContentCss', () => {
     expect(stylesheet(true, 115)).toContain('padding-right: 115px')
     expect(stylesheet(true, 180)).toContain('padding-right: 180px')
   })
+
+  it('reserves room in the play controls only when the buttons are on', () => {
+    expect(stylesheet(false, null)).not.toContain('playControls__wrapper { padding-right')
+    expect(buildContentCss({ fullWidth: false, reserve: null, playerReserve: 92 })).toContain(
+      '.playControls__wrapper { padding-right: 92px !important; }'
+    )
+  })
+
+  it('keeps the two reservations independent of each other', () => {
+    // The header overlay belongs to `hideMenuBar`; the player buttons are their own setting.
+    // Neither may imply the other, or turning one on would silently move the other's bar.
+    const headerOnly = buildContentCss({ fullWidth: false, reserve: 144, playerReserve: null })
+    expect(headerOnly).toContain('.header__inner { padding-right: 144px !important; }')
+    expect(headerOnly).not.toContain('playControls__wrapper { padding-right')
+
+    const playerOnly = buildContentCss({ fullWidth: false, reserve: null, playerReserve: 92 })
+    expect(playerOnly).toContain('.playControls__wrapper { padding-right: 92px !important; }')
+    expect(playerOnly).not.toContain('.header__inner { padding-right')
+  })
 })

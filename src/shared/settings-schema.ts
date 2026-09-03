@@ -154,6 +154,21 @@ export const SETTINGS = {
       'SoundCloud centres its top menu and bottom player at 1240px. This stretches those ' +
       'two bars to the window width. Page content keeps its own layout.'
   },
+  // Off by default, and it must stay off until the buttons do something. They are drawn
+  // disabled and say "not implemented yet" on hover, so turning it on shows the layout
+  // without pretending the features exist. Independent of `hideMenuBar`: that setting owns
+  // the header overlay because that overlay carries the only way back, which has nothing to
+  // do with the player.
+  'appearance.playerButtons': {
+    kind: 'boolean',
+    default: false,
+    label: 'Show extra buttons in the player bar',
+    section: 'appearance',
+    help:
+      'Adds a lyrics and a full-screen button to the right of SoundCloud’s play ' +
+      'controls. Neither does anything yet — they are placeholders for the layout.'
+  },
+
   // `string`, not `enum`, on purpose: `coerce` validates an enum against a fixed list, and a
   // theme id is a filename the user invents. Validation happens where it can be true — the
   // theme loader falls back to no theme when the selected file is gone.

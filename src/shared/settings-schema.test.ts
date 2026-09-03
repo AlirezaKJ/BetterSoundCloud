@@ -58,6 +58,7 @@ describe('schema integrity', () => {
       'appearance.colorScheme',
       'appearance.fullWidthLayout',
       'appearance.hideMenuBar',
+      'appearance.playerButtons',
       'appearance.theme',
       'appearance.zoomFactor'
     ])

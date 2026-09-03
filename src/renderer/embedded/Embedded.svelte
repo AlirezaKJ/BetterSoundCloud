@@ -2,6 +2,7 @@
   import { onMount } from 'svelte'
   import WindowControls from '../lib/WindowControls.svelte'
   import type { WindowState } from '@shared/ipc'
+  import type { PageTheme } from '@shared/page-theme'
 
   /*
    * The window controls, drawn over SoundCloud's own header.
@@ -17,8 +18,23 @@
    */
 
   let win = $state<WindowState>({ maximized: false, focused: true })
+  /*
+   * Follows SOUNDCLOUD's light/dark setting, not ours. This view is a separate document
+   * composited over their header, so it cannot inherit their colours through CSS — main
+   * tells it. Hard-coded white vanished completely when somebody chose Light in SoundCloud's
+   * settings, which with the BetterSoundCloud bar hidden also meant losing the only way to
+   * get it back.
+   */
+  let page = $state<PageTheme>('dark')
 
-  onMount(() => window.bsc.onWindowState((s) => (win = s)))
+  onMount(() => {
+    const stopWindow = window.bsc.onWindowState((s) => (win = s))
+    const stopTheme = window.bsc.onPageTheme((t) => (page = t))
+    return () => {
+      stopWindow()
+      stopTheme()
+    }
+  })
 </script>
 
 <!--
@@ -26,7 +42,12 @@
   the window by, so the empty space to the left of the buttons is the grab handle.
   WindowControls marks itself `no-drag`, so the buttons stay clickable.
 -->
-<div class="embedded" data-bsc-embedded-controls class:unfocused={!win.focused}>
+<div
+  class="embedded"
+  data-bsc-embedded-controls
+  class:unfocused={!win.focused}
+  class:light={page === 'light'}
+>
   <button
     class="restore"
     title="Show the BetterSoundCloud bar"
@@ -64,11 +85,26 @@
     /* SoundCloud's header is dark in both of its themes, so the glyphs are light here
        regardless of our own appearance setting. */
     color: #f2f2f2;
+    /* Set here rather than inherited from tokens.css, and overridden below for a light page.
+       The token follows OUR appearance setting, but this overlay sits on SoundCloud's page,
+       so its hover has to follow theirs. Custom properties cross Svelte's component scoping,
+       which is what lets this reach WindowControls' buttons without a `:global` escape. */
+    --bsc-bg-hover: rgb(255 255 255 / 14%);
     -webkit-app-region: drag;
   }
 
   .embedded.unfocused {
     color: #8a8a8a;
+  }
+
+  /* SoundCloud's own dark grey for controls on a light page. */
+  .embedded.light {
+    color: #333;
+    --bsc-bg-hover: rgb(0 0 0 / 8%);
+  }
+
+  .embedded.light.unfocused {
+    color: #999;
   }
 
   .restore {
@@ -86,7 +122,7 @@
   }
 
   .restore:hover {
-    background: rgb(255 255 255 / 14%);
+    background: var(--bsc-bg-hover);
   }
 
   .restore:focus-visible {

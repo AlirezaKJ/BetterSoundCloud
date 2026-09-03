@@ -1,5 +1,6 @@
 import type { Settings, SettingKey } from './settings-schema'
 import type { ThemeSummary } from './themes'
+import type { PageTheme } from './page-theme'
 
 /** Every IPC channel name, in one place. Strings are never written inline. */
 export const CH = {
@@ -21,6 +22,10 @@ export const CH = {
   // settings renderer <-> main
   settingsGetAll: 'settings:get-all',
   themesList: 'themes:list',
+
+  // content preload -> main, then main -> our overlays. SoundCloud's own light/dark choice.
+  pageTheme: 'page:theme',
+  pageThemeChanged: 'page:theme-changed',
   settingsSet: 'settings:set',
   settingsChanged: 'settings:changed',
 
@@ -59,4 +64,10 @@ export type ChromeApi = {
 
   /** Themes found on disk, for a control whose choices are not known at compile time. */
   listThemes(): Promise<ThemeSummary[]>
+
+  /**
+   * SoundCloud's own light/dark setting, so an overlay drawn on top of their page can match
+   * it. Fires on load and whenever the user changes it in SoundCloud's settings.
+   */
+  onPageTheme(cb: (theme: PageTheme) => void): () => void
 }

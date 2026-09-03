@@ -8,6 +8,7 @@ import { attachBlocker } from './blocker'
 import { isDev } from './env'
 import { buildContentCss } from './content-css'
 import { themeCss, NO_THEME } from './themes'
+import type { PageTheme } from '@shared/page-theme'
 import { CH } from '@shared/ipc'
 import type { NavState, WindowState } from '@shared/ipc'
 
@@ -47,6 +48,14 @@ export type Shell = {
    * so the reload handler can re-apply it without window.ts needing to read settings.
    */
   fullWidthLayout: boolean
+  /** Our buttons over the right end of SoundCloud's play controls, when the setting is on. */
+  player: WebContentsView | null
+  /**
+   * SoundCloud's own light/dark setting, as last reported by the content preload. Held so an
+   * overlay created after the page loaded can be told straight away rather than sitting in
+   * the wrong colours until the user next flips the setting.
+   */
+  pageTheme: PageTheme
   /** Selected theme id. Held here for the same reason as `fullWidthLayout`: the reload
    *  handler re-injects the stylesheet and needs to know what to put in it. */
   theme: string
@@ -77,6 +86,19 @@ const SC_HEADER_HEIGHT = 46
  * `applyContentCss`.
  */
 const EMBEDDED_WIDTH = 144
+
+/**
+ * SoundCloud's play controls bar, and the strip we take at its right-hand end.
+ *
+ * Measured on the live page: the bar is 48 CSS px tall, and its right end holds like (40),
+ * follow (40) and queue (24), finishing 16px short of the edge because
+ * `.playControls__wrapper` already carries that much padding. Our two 30px buttons plus the
+ * gap between them need 78; 92 keeps a comfortable margin and, as with the header, the
+ * reservation must never be narrower than the overlay or their controls slide underneath a
+ * transparent view — visible, but dead to clicks.
+ */
+const PLAY_CONTROLS_HEIGHT = 48
+const PLAYER_BUTTONS_WIDTH = 92
 
 export function createShell(userAgent: string): Shell {
   const state = windowStateKeeper({ defaultWidth: 1366, defaultHeight: 768 })
@@ -134,6 +156,8 @@ export function createShell(userAgent: string): Shell {
     content,
     settings: null,
     embedded: null,
+    player: null,
+    pageTheme: 'dark',
     hideMenuBar: false,
     reservationKey: null,
     fullWidthLayout: false,
@@ -165,6 +189,7 @@ export function createShell(userAgent: string): Shell {
     // The settings panel only exists while it is open, so check before resizing it.
     if (shell.settings) fitBelowHeader(window, shell.settings, strip)
     if (shell.embedded) fitOverSoundCloudHeader(shell)
+    if (shell.player) fitOverPlayControls(shell)
   }
   shell.layout = layout
   layout()
@@ -311,12 +336,12 @@ async function applyContentCss(shell: Shell, fullWidth: boolean, theme: string):
 
   // Reserved space is measured in window pixels, but the rule lands inside a page that
   // may be zoomed, so convert before writing it.
-  const reserve = shell.embedded
-    ? Math.round(EMBEDDED_WIDTH / webContents.getZoomFactor())
-    : null
+  const zoom = webContents.getZoomFactor()
+  const reserve = shell.embedded ? Math.round(EMBEDDED_WIDTH / zoom) : null
+  const playerReserve = shell.player ? Math.round(PLAYER_BUTTONS_WIDTH / zoom) : null
 
   shell.reservationKey = await webContents
-    .insertCSS(buildContentCss({ fullWidth, reserve, theme: themeCss(theme) }))
+    .insertCSS(buildContentCss({ fullWidth, reserve, theme: themeCss(theme), playerReserve }))
     .catch(() => null)
 }
 
@@ -330,7 +355,7 @@ async function applyContentCss(shell: Shell, fullWidth: boolean, theme: string):
  */
 export function setContentAppearance(
   shell: Shell,
-  options: { hideMenuBar: boolean; fullWidth: boolean; theme: string }
+  options: { hideMenuBar: boolean; fullWidth: boolean; theme: string; playerButtons: boolean }
 ): void {
   shell.fullWidthLayout = options.fullWidth
   shell.theme = options.theme
@@ -339,6 +364,7 @@ export function setContentAppearance(
   // The embedded bar exists exactly while our own bar is hidden — it carries the only
   // way back, so the two states are one thing, not two settings that could disagree.
   setEmbedded(shell, options.hideMenuBar)
+  setPlayerButtons(shell, options.playerButtons)
   shell.layout()
   void applyContentCss(shell, options.fullWidth, options.theme)
 }
@@ -376,8 +402,116 @@ function setEmbedded(shell: Shell, enabled: boolean): void {
   shell.embedded = view
   shell.window.contentView.addChildView(view)
   fitOverSoundCloudHeader(shell)
+  sendPageThemeOnLoad(shell, view)
 
   void view.webContents.loadURL(rendererUrl('embedded'))
+}
+
+/**
+ * Position our buttons over the right end of SoundCloud's play controls.
+ *
+ * Anchored to the bottom of the window rather than the top: the play bar is the last 48 CSS
+ * px of the content view, and the content view runs to the window's bottom edge whether or
+ * not our own bar is showing. Height follows the zoom factor for the same reason the header
+ * overlay's does — SoundCloud's 48 CSS px is 48 * zoom window pixels, and this view is not
+ * zoomed.
+ */
+function fitOverPlayControls(shell: Shell): void {
+  const view = shell.player
+  if (!view) return
+
+  const { width, height } = shell.window.getContentBounds()
+  const zoom = shell.content.webContents.getZoomFactor()
+  const barHeight = Math.round(PLAY_CONTROLS_HEIGHT * zoom)
+
+  const bounds = {
+    x: Math.round(width - PLAYER_BUTTONS_WIDTH),
+    y: height - barHeight,
+    width: PLAYER_BUTTONS_WIDTH,
+    height: barHeight
+  }
+  view.setBounds(bounds)
+
+  // A new overlay over somebody else's bar is exactly the kind of thing that is easier to
+  // check from a number than from a screenshot.
+  if (isDev) console.log('[player] buttons at ' + JSON.stringify(bounds))
+}
+
+/**
+ * Create or destroy the play-control buttons.
+ *
+ * Deliberately a separate switch from `setEmbedded`. The header overlay exists exactly while
+ * our own bar is hidden — the two are one state, because that overlay carries the only way
+ * back. These buttons are not part of that: they are their own setting, and they stay put
+ * whether the BetterSoundCloud bar is showing or not.
+ */
+function setPlayerButtons(shell: Shell, enabled: boolean): void {
+  if (enabled === !!shell.player) return
+
+  if (!enabled) {
+    const view = shell.player
+    shell.player = null
+    if (view) {
+      shell.window.contentView.removeChildView(view)
+      view.webContents.close()
+    }
+    return
+  }
+
+  const view = new WebContentsView({
+    webPreferences: {
+      preload: join(import.meta.dirname, '../preload/chrome.cjs'),
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+      webSecurity: true,
+      devTools: isDev
+    }
+  })
+
+  hardenSession(view.webContents.session, shell.userAgent)
+  routeNewWindowsToBrowser(view.webContents)
+  // Transparent, so SoundCloud's player bar shows through behind the glyphs.
+  view.setBackgroundColor('#00000000')
+
+  shell.player = view
+  shell.window.contentView.addChildView(view)
+  fitOverPlayControls(shell)
+  sendPageThemeOnLoad(shell, view)
+
+  void view.webContents.loadURL(rendererUrl('player'))
+}
+
+/**
+ * Give a freshly created overlay the current page theme once it can receive it.
+ *
+ * `once('did-finish-load')` rather than sending immediately: the view is created and the
+ * message would be sent before its renderer exists to hear it, and the overlay would then
+ * stay in the default colours until SoundCloud's theme next changed — which for most users
+ * is never.
+ */
+function sendPageThemeOnLoad(shell: Shell, view: WebContentsView): void {
+  view.webContents.once('did-finish-load', () => {
+    if (!view.webContents.isDestroyed()) {
+      view.webContents.send(CH.pageThemeChanged, shell.pageTheme)
+    }
+  })
+}
+
+/**
+ * Push SoundCloud's light/dark choice out to every overlay drawn on top of their page.
+ *
+ * Only the overlays: our own header and settings panel are our surfaces and follow the
+ * user's `appearance.colorScheme`, not SoundCloud's.
+ */
+export function setPageTheme(shell: Shell, theme: PageTheme): void {
+  if (isDev && theme !== shell.pageTheme) console.log(`[theme] SoundCloud page is ${theme}`)
+  shell.pageTheme = theme
+  for (const view of [shell.embedded, shell.player]) {
+    if (view && !view.webContents.isDestroyed()) {
+      view.webContents.send(CH.pageThemeChanged, theme)
+    }
+  }
 }
 
 /** The settings panel occupies exactly the area the content view does. */
@@ -455,7 +589,7 @@ function enableDevToolsShortcut(...views: WebContentsView[]): void {
   }
 }
 
-export function rendererUrl(entry: 'header' | 'settings' | 'embedded'): string {
+export function rendererUrl(entry: 'header' | 'settings' | 'embedded' | 'player'): string {
   const devServer = process.env['ELECTRON_RENDERER_URL']
   return devServer
     ? `${devServer}/${entry}/index.html`

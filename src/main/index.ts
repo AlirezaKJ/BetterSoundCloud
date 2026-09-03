@@ -2,7 +2,13 @@ import { join } from 'node:path'
 import { app, components, ipcMain, nativeTheme, BrowserWindow } from 'electron'
 import { buildUserAgent, leaksAppIdentity } from '@shared/identity'
 import { CH } from '@shared/ipc'
-import { createShell, toggleSettings, closeSettings, setContentAppearance } from './window'
+import {
+  createShell,
+  toggleSettings,
+  closeSettings,
+  setContentAppearance,
+  setPageTheme
+} from './window'
 import { createTray } from './tray'
 import {
   loadBlockerEngine,
@@ -165,6 +171,19 @@ function registerIpc(): void {
     if (fromChrome(e)) shell?.content.webContents.reload()
   })
 
+  /**
+   * SoundCloud's own light/dark setting, reported by the content preload.
+   *
+   * Sender-checked like everything else: only the SoundCloud view may send this, so a
+   * compromised overlay cannot drive the others' colours. The payload is validated rather
+   * than trusted — it crosses from the page's preload, which is the least trusted of ours.
+   */
+  ipcMain.on(CH.pageTheme, (e, theme: unknown) => {
+    if (!shell || e.sender !== shell.content.webContents) return
+    if (theme !== 'light' && theme !== 'dark') return
+    setPageTheme(shell, theme)
+  })
+
   ipcMain.handle(CH.settingsGetAll, (e) => (fromSettingsUi(e) ? settings.getAll() : null))
 
   // The CSS never leaves main — the panel only needs enough to draw a list, and shipping a
@@ -254,6 +273,7 @@ function applyLiveSettings(): void {
   setContentAppearance(shell, {
     hideMenuBar: settings.get('appearance.hideMenuBar'),
     fullWidth: settings.get('appearance.fullWidthLayout'),
-    theme: settings.get('appearance.theme')
+    theme: settings.get('appearance.theme'),
+    playerButtons: settings.get('appearance.playerButtons')
   })
 }

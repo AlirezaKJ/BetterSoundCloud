@@ -29,7 +29,22 @@
  */
 
 import { ipcRenderer } from 'electron'
-import { CH } from '@shared/ipc'
+import { detectPageTheme } from '@shared/page-theme'
+import type { PageTheme } from '@shared/page-theme'
+
+/*
+ * The one channel this preload sends on, written out rather than imported from `@shared/ipc`.
+ *
+ * Not a style choice. `chrome.ts` imports that module too, and Rollup hoists anything two
+ * entries share into `chunks/…cjs` which each entry then `require`s — but a SANDBOXED preload
+ * resolves `require` against Electron's allowlist only, never a relative path, so the preload
+ * fails to load with "module not found" and everything it does silently stops. That is exactly
+ * what happened when this file first started using its import; before that the shared module
+ * was tree-shaken away and the problem was invisible.
+ *
+ * `src/preload/content.test.ts` fails if this string and `CH.pageTheme` ever drift apart.
+ */
+const PAGE_THEME_CHANNEL = 'page:theme'
 
 type Disposer = () => void
 
@@ -79,14 +94,40 @@ function teardown(): void {
   }
 }
 
+/**
+ * Report SoundCloud's own light/dark setting to main, so our overlays can match it.
+ *
+ * Read-only and event-driven, per the contract above: it observes the `class` attribute on
+ * `<body>` — which is where SoundCloud carries `theme-light` — and never polls. Switching
+ * the theme in their settings rewrites that class without a reload, which is exactly the
+ * mutation this waits for.
+ */
+function watchPageTheme(): void {
+  let last: PageTheme | null = null
+
+  const report = (): void => {
+    const theme = detectPageTheme(
+      document.body.className,
+      getComputedStyle(document.body).backgroundColor
+    )
+    // Only on a real change. The observer fires for every class SoundCloud toggles on body,
+    // and most of them have nothing to do with the theme.
+    if (theme === last) return
+    last = theme
+    ipcRenderer.send(PAGE_THEME_CHANNEL, theme)
+  }
+
+  report()
+  observe(document.body, { attributes: true, attributeFilter: ['class'] }, report)
+}
+
 function start(): void {
+  watchPageTheme()
+
   // Phase 1: observe the play button and the sound badge here, and send
   // `CH.trackUpdate` with a validated payload. Intentionally empty for now — an empty
   // observer set is the correct Phase 0 state, not a TODO to paper over.
-  void observe
   void listen
-  void CH
-  void ipcRenderer
 }
 
 if (document.readyState === 'loading') {

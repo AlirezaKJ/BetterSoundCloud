@@ -3,6 +3,7 @@ import { CH } from '@shared/ipc'
 import type { ChromeApi, NavState, WindowState } from '@shared/ipc'
 import type { SettingKey, Settings } from '@shared/settings-schema'
 import type { ThemeSummary } from '@shared/themes'
+import type { PageTheme } from '@shared/page-theme'
 
 /**
  * Preload for OUR OWN chrome (header, settings). This never runs on soundcloud.com —
@@ -37,6 +38,8 @@ const api: ChromeApi = {
 
   /** Themes available on disk right now, for the theme picker. Read-only. */
   listThemes: () => ipcRenderer.invoke(CH.themesList) as Promise<ThemeSummary[]>,
+
+  onPageTheme: (cb: (theme: PageTheme) => void) => subscribe(CH.pageThemeChanged, cb),
   onSettingsChanged: (cb: (settings: Settings) => void) => subscribe(CH.settingsChanged, cb)
 }
 
