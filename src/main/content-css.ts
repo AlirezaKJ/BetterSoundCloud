@@ -29,6 +29,12 @@
 export const RESERVATION_MIN_WIDTH = 1100
 
 export interface ContentCssOptions {
+  /**
+   * The selected theme's CSS, or empty for none. Appended last so a theme can override the
+   * rules above it — a theme author who wants a different scrollbar should be able to have
+   * one without us curating an exception for it.
+   */
+  theme?: string
   /** Override SoundCloud's centred container so the bars span the window. */
   fullWidth: boolean
   /**
@@ -38,7 +44,7 @@ export interface ContentCssOptions {
   reserve: number | null
 }
 
-export function buildContentCss({ fullWidth, reserve }: ContentCssOptions): string {
+export function buildContentCss({ fullWidth, reserve, theme }: ContentCssOptions): string {
   // Always applied. Chrome's default scrollbar is 15px of opaque grey, and because
   // SoundCloud's header is sized to `clientWidth` it stops short by exactly that much —
   // which is what our window buttons were colliding with. A thin transparent track stops
@@ -89,6 +95,10 @@ export function buildContentCss({ fullWidth, reserve }: ContentCssOptions): stri
       '.header { -webkit-app-region: drag; }\n' + '.header * { -webkit-app-region: no-drag; }'
     )
   }
+
+  // Last, so a theme can override everything above it. A theme author who wants a different
+  // scrollbar should get one without us curating an exception for it.
+  if (theme) rules.push(theme)
 
   return rules.join('\n')
 }

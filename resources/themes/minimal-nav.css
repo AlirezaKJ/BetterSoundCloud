@@ -1,0 +1,122 @@
+/**
+ * @name Minimal navigation
+ * @author BetterSoundCloud
+ * @version 1.0.0
+ * @description Replaces SoundCloud's header labels with icons and hides the upsells, so the
+ *              bar carries the same links in about half the width.
+ * @license MIT
+ */
+
+/*
+ * Ported from v0.7.x's SCI.js, but by a different mechanism.
+ *
+ * That version did `navItem.innerHTML = '<svg .../>'` — it rewrote SoundCloud's DOM. v2 must
+ * not (safety contract rule 1), so every icon here is a `::before` pseudo-element instead: a
+ * paint-time effect that adds no node to their document. If SoundCloud renames a class the
+ * rule stops matching and the label comes back, which is the failure mode we want.
+ *
+ * Icons are drawn with `mask` + `background-color: currentColor` rather than a fill-coloured
+ * SVG, so they inherit SoundCloud's own text colour — including the dimmed default, the hover
+ * state and the brighter "selected" state — in both of their themes. The v0.7.x version
+ * hard-coded `fill: var(--primary-color)` and lost all three.
+ *
+ * Widths below are measured from the live header: Home 54, Feed 47, Library 62, Try Go+ 66,
+ * Try Artist Pro 108, Artist Studio 96, Upload 62. The three nav links become square 46px
+ * icon boxes matching the header's own height; everything else on the right that is not an
+ * account control is hidden.
+ */
+
+/* The label text is hidden with `font-size: 0` rather than `display: none` on a child, so the
+   anchor keeps its accessible name — a screen reader still announces "Home", "Feed", … */
+.header__navMenu li .header__navMenuItem {
+  /* Every box the same 46px square, and the icon centred against it absolutely.
+     Measured before this was here: the anchors collapsed to their content, giving heights of
+     22, 24 and 46 in the same row, so each icon sat at a different height. The 24 was Home —
+     its 2px "selected" underline is a bottom border, which would keep shifting the icon up
+     even at a uniform height if the icon were centred by flex. Positioning it at exactly half
+     the bar height instead makes the border irrelevant. */
+  position: relative;
+  display: inline-flex !important;
+  /* Without this the box is baseline-aligned, which both drops it ~5px below its neighbours
+     and adds descender space under the line — measured, that grew SoundCloud's 46px header
+     to 51.3px. `middle` takes the box out of baseline layout entirely. */
+  vertical-align: middle;
+  box-sizing: border-box;
+  width: 46px;
+  min-width: 46px;
+  height: 46px;
+  padding: 0 !important;
+  font-size: 0 !important;
+  /* v0.7.x needed this: without it the replaced icon overflows and the page grows a
+     horizontal scrollbar at high zoom. */
+  overflow: hidden;
+}
+
+.header__navMenu li .header__navMenuItem::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 23px;
+  transform: translate(-50%, -50%);
+  width: 22px;
+  height: 22px;
+  background-color: currentColor;
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+}
+
+/* Targeted by href, not by position: `:nth-child` would silently put the wrong icon on the
+   wrong link the day SoundCloud reorders the menu. */
+.header__navMenuItem[href='/discover']::before {
+  -webkit-mask-image: var(--bsc-icon-home);
+  mask-image: var(--bsc-icon-home);
+}
+
+.header__navMenuItem[href='/feed']::before {
+  -webkit-mask-image: var(--bsc-icon-feed);
+  mask-image: var(--bsc-icon-feed);
+}
+
+.header__navMenuItem[href='/you/library']::before {
+  -webkit-mask-image: var(--bsc-icon-library);
+  mask-image: var(--bsc-icon-library);
+}
+
+
+
+/* Everything on the right that is not an account control. The two upsells are advertising for
+   a paid tier; Artist Studio and Upload are pages you visit deliberately rather than things
+   worth permanent space in the bar. All four stay reachable — the upsells from the account
+   menu, the other two at /artists and /upload. That is 332px of header between them. */
+.header__right .header__fanUpsell,
+.header__right .creatorSubscriptionsButton,
+.header__right .header__forArtistsButton,
+.header__right .uploadButton,
+.header__upsellWrapper {
+  display: none !important;
+}
+
+/* SoundCloud puts a 16px right margin on the avatar button to separate it from the promo
+   links beside it. Those are gone now, so that margin is left as a stray gap between the
+   account chevron and the notifications bell. Measured: the avatar box ends at 814 and the
+   bell starts at 830. The other two items in this group already carry no margin, so setting
+   the whole group to zero changes exactly the one that is wrong. */
+.header__userNav .header__userNavButton {
+  margin-right: 0 !important;
+}
+
+/* Promo banners across the top of the page, same reasoning. */
+.l-product-banners,
+.banner.m-promotion {
+  display: none !important;
+}
+
+:root {
+  --bsc-icon-home: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10 19v-5h4v5c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-7h1.7c.46 0 .68-.57.33-.87L12.67 3.6c-.38-.34-.96-.34-1.34 0l-8.36 7.53c-.34.3-.13.87.33.87H5v7c0 .55.45 1 1 1h3c.55 0 1-.45 1-1z'/%3E%3C/svg%3E");
+  --bsc-icon-feed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6.18 15.64a2.18 2.18 0 0 1 2.18 2.18A2.18 2.18 0 0 1 6.18 20 2.18 2.18 0 0 1 4 17.82a2.18 2.18 0 0 1 2.18-2.18M4 4.44A15.56 15.56 0 0 1 19.56 20h-2.83A12.73 12.73 0 0 0 4 7.27V4.44m0 5.66a9.9 9.9 0 0 1 9.9 9.9h-2.83A7.07 7.07 0 0 0 4 12.93V10.1z'/%3E%3C/svg%3E");
+  --bsc-icon-library: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M20 2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm-3 5h-2v5.37a2.63 2.63 0 0 1-2.16 2.6 2.5 2.5 0 0 1-2.8-2.95 2.4 2.4 0 0 1 2.3-2.02c.63-.04 1.2.16 1.66.51V6a1 1 0 0 1 1-1h2a1 1 0 0 1 0 2zM3 6a1 1 0 0 0-1 1v13a2 2 0 0 0 2 2h13a1 1 0 0 0 0-2H5a1 1 0 0 1-1-1V7a1 1 0 0 0-1-1z'/%3E%3C/svg%3E");
+}

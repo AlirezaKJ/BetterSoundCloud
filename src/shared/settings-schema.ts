@@ -64,6 +64,13 @@ type Base = {
    * forbids hand-typed "requires a restart" help strings.
    */
   readonly applies?: 'reload' | 'restart'
+  /**
+   * Where a control's choices come from, when they are not known at compile time.
+   *
+   * `themes` is filled from the themes folders at render time. A static `options` list
+   * cannot work here: the whole point of a theme folder is that the user adds files to it.
+   */
+  readonly optionsFrom?: 'themes'
 }
 
 export type SettingDef =
@@ -147,13 +154,18 @@ export const SETTINGS = {
       'SoundCloud centres its top menu and bottom player at 1240px. This stretches those ' +
       'two bars to the window width. Page content keeps its own layout.'
   },
+  // `string`, not `enum`, on purpose: `coerce` validates an enum against a fixed list, and a
+  // theme id is a filename the user invents. Validation happens where it can be true — the
+  // theme loader falls back to no theme when the selected file is gone.
   'appearance.theme': {
     kind: 'string',
     default: 'vanilla',
     label: 'Theme',
     section: 'appearance',
-    help: 'Filename stem of a CSS file in the themes folder.',
-    wired: false
+    optionsFrom: 'themes',
+    help:
+      'Restyles SoundCloud’s page. Drop a .css file in the themes folder in your ' +
+      'BetterSoundCloud data directory to add your own.'
   },
 
   'discord.enabled': {

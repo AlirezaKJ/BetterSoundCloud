@@ -13,6 +13,7 @@ import {
 import type { Shell } from './window'
 import type { Settings } from '@shared/settings-schema'
 import * as settings from './settings-store'
+import { listThemes } from './themes'
 
 let shell: Shell | null = null
 
@@ -166,6 +167,21 @@ function registerIpc(): void {
 
   ipcMain.handle(CH.settingsGetAll, (e) => (fromSettingsUi(e) ? settings.getAll() : null))
 
+  // The CSS never leaves main — the panel only needs enough to draw a list, and shipping a
+  // whole stylesheet over IPC for every render would be waste.
+  ipcMain.handle(CH.themesList, (e) =>
+    fromSettingsUi(e)
+      ? listThemes().map(({ id, name, author, version, description, builtIn }) => ({
+          id,
+          name,
+          author,
+          version,
+          description,
+          builtIn
+        }))
+      : null
+  )
+
   ipcMain.handle(CH.settingsSet, (e, key: unknown, value: unknown) => {
     if (!fromSettingsUi(e)) return null
     settings.set(key, value)
@@ -237,6 +253,7 @@ function applyLiveSettings(): void {
   // reserves are both derived from the current zoom factor.
   setContentAppearance(shell, {
     hideMenuBar: settings.get('appearance.hideMenuBar'),
-    fullWidth: settings.get('appearance.fullWidthLayout')
+    fullWidth: settings.get('appearance.fullWidthLayout'),
+    theme: settings.get('appearance.theme')
   })
 }

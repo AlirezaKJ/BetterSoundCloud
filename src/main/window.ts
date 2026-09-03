@@ -7,6 +7,7 @@ import { attachDiagnostics } from './diagnostics'
 import { attachBlocker } from './blocker'
 import { isDev } from './env'
 import { buildContentCss } from './content-css'
+import { themeCss, NO_THEME } from './themes'
 import { CH } from '@shared/ipc'
 import type { NavState, WindowState } from '@shared/ipc'
 
@@ -46,6 +47,9 @@ export type Shell = {
    * so the reload handler can re-apply it without window.ts needing to read settings.
    */
   fullWidthLayout: boolean
+  /** Selected theme id. Held here for the same reason as `fullWidthLayout`: the reload
+   *  handler re-injects the stylesheet and needs to know what to put in it. */
+  theme: string
   /** Kept so the settings view can be hardened with the same identity as the others. */
   userAgent: string
   /** Re-runs the view layout. Assigned in `createShell`; call it after changing a mode. */
@@ -133,6 +137,7 @@ export function createShell(userAgent: string): Shell {
     hideMenuBar: false,
     reservationKey: null,
     fullWidthLayout: false,
+    theme: NO_THEME,
     userAgent,
     layout: () => {}
   }
@@ -294,7 +299,7 @@ function fitOverSoundCloudHeader(shell: Shell): void {
  * the session. The rules themselves live in content-css.ts, which is pure and tested;
  * this function only decides what to pass it and owns the handle for removing it again.
  */
-async function applyContentCss(shell: Shell, fullWidth: boolean): Promise<void> {
+async function applyContentCss(shell: Shell, fullWidth: boolean, theme: string): Promise<void> {
   const { webContents } = shell.content
 
   if (shell.reservationKey) {
@@ -311,7 +316,7 @@ async function applyContentCss(shell: Shell, fullWidth: boolean): Promise<void> 
     : null
 
   shell.reservationKey = await webContents
-    .insertCSS(buildContentCss({ fullWidth, reserve }))
+    .insertCSS(buildContentCss({ fullWidth, reserve, theme: themeCss(theme) }))
     .catch(() => null)
 }
 
@@ -325,16 +330,17 @@ async function applyContentCss(shell: Shell, fullWidth: boolean): Promise<void> 
  */
 export function setContentAppearance(
   shell: Shell,
-  options: { hideMenuBar: boolean; fullWidth: boolean }
+  options: { hideMenuBar: boolean; fullWidth: boolean; theme: string }
 ): void {
   shell.fullWidthLayout = options.fullWidth
+  shell.theme = options.theme
   shell.hideMenuBar = options.hideMenuBar
 
   // The embedded bar exists exactly while our own bar is hidden — it carries the only
   // way back, so the two states are one thing, not two settings that could disagree.
   setEmbedded(shell, options.hideMenuBar)
   shell.layout()
-  void applyContentCss(shell, options.fullWidth)
+  void applyContentCss(shell, options.fullWidth, options.theme)
 }
 
 function setEmbedded(shell: Shell, enabled: boolean): void {
@@ -404,7 +410,7 @@ function wireStateEvents(shell: Shell): void {
 
   content.webContents.on(
     'did-finish-load',
-    () => void applyContentCss(shell, shell.fullWidthLayout)
+    () => void applyContentCss(shell, shell.fullWidthLayout, shell.theme)
   )
 
   content.webContents.on('did-navigate', sendNav)

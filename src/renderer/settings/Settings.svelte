@@ -10,6 +10,7 @@
     APPLIES_NOTES
   } from '@shared/settings-schema'
   import type { Section, SettingKey, Settings } from '@shared/settings-schema'
+  import type { ThemeSummary } from '@shared/themes'
 
   /*
    * The entire form is generated from the schema. Adding a setting means adding one
@@ -31,6 +32,7 @@
 
   let open = $state(false)
   let values = $state<Settings | null>(null)
+  let themes = $state<ThemeSummary[]>([])
   let active = $state<Section>('general')
 
   const keysIn = (section: Section): SettingKey[] =>
@@ -47,6 +49,9 @@
     window.addEventListener('keydown', onKey)
 
     void window.bsc.getSettings().then((s) => (values = s))
+    // Read once when the panel opens. A theme author saves a file and reopens settings to
+    // see it, which is simpler than a file watcher and good enough until themes are plural.
+    void window.bsc.listThemes().then((t) => (themes = t))
     const stopWatching = window.bsc.onSettingsChanged((s) => (values = s))
 
     return () => {
@@ -180,6 +185,25 @@
                 >
                   {#each def.options as option (option)}
                     <option value={option}>{option}</option>
+                  {/each}
+                </select>
+              {:else if 'optionsFrom' in def && def.optionsFrom === 'themes'}
+                <!--
+                  The one control whose choices are not in the schema. The point of a themes
+                  folder is that the user adds files to it, so the list is read from disk.
+                  `vanilla` is listed first and is never a file, so nothing can shadow it.
+                -->
+                <select
+                  id={key}
+                  disabled={pending}
+                  value={values[key] as string}
+                  onchange={(e) => update(key, e.currentTarget.value)}
+                >
+                  <option value="vanilla">None (SoundCloud as-is)</option>
+                  {#each themes as theme (theme.id)}
+                    <option value={theme.id}
+                      >{theme.name}{theme.builtIn ? '' : ' (yours)'}</option
+                    >
                   {/each}
                 </select>
               {:else}

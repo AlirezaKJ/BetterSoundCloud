@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 import { CH } from '@shared/ipc'
 import type { ChromeApi, NavState, WindowState } from '@shared/ipc'
 import type { SettingKey, Settings } from '@shared/settings-schema'
+import type { ThemeSummary } from '@shared/themes'
 
 /**
  * Preload for OUR OWN chrome (header, settings). This never runs on soundcloud.com —
@@ -33,6 +34,9 @@ const api: ChromeApi = {
   getSettings: () => ipcRenderer.invoke(CH.settingsGetAll) as Promise<Settings>,
   setSetting: (key: SettingKey, value: unknown) =>
     ipcRenderer.invoke(CH.settingsSet, key, value) as Promise<Settings>,
+
+  /** Themes available on disk right now, for the theme picker. Read-only. */
+  listThemes: () => ipcRenderer.invoke(CH.themesList) as Promise<ThemeSummary[]>,
   onSettingsChanged: (cb: (settings: Settings) => void) => subscribe(CH.settingsChanged, cb)
 }
 
