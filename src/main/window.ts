@@ -4,14 +4,15 @@ import type { BrowserWindow } from 'electron'
 import windowStateKeeper from 'electron-window-state'
 import { hardenSession, routeNewWindowsToBrowser } from './session'
 import { attachDiagnostics } from './diagnostics'
+import { attachBlocker } from './blocker'
+import { isDev } from './env'
+import { buildContentCss } from './content-css'
 import { CH } from '@shared/ipc'
 import type { NavState, WindowState } from '@shared/ipc'
 
 export const HEADER_HEIGHT = 32
 
 const START_URL = 'https://soundcloud.com/discover'
-
-const isDev = !!process.env['ELECTRON_RENDERER_URL']
 
 /**
  * Our chrome is a separate view stacked above SoundCloud, never injected into it.
@@ -138,9 +139,22 @@ export function createShell(userAgent: string): Shell {
 
   const layout = (): void => {
     const { width, height } = window.getContentBounds()
-    // Zero-height rather than removed: the view keeps its renderer and its subscriptions,
-    // so toggling back is instant and does not reload our own chrome.
     const strip = shell.hideMenuBar ? 0 : HEADER_HEIGHT
+
+    // Hidden, not merely flattened to zero height.
+    //
+    // A zero-height view stops painting, but the page inside it keeps its own layout, and
+    // Header.svelte declares `-webkit-app-region: drag` over a bar with a FIXED 32px height.
+    // Chromium hands that draggable region to the window WITHOUT clipping it to the view's
+    // bounds, so collapsing the view left a full-width 32px strip across the top of
+    // SoundCloud that swallowed every mouse-down: their nav links and search box were dead
+    // above y=32 and worked below it. Measured, not guessed — clicks at y<32 never reached
+    // the document at all.
+    //
+    // `setVisible(false)` withdraws the region, and unlike removing the child view it keeps
+    // the view parented with its renderer and IPC subscriptions alive, so toggling the bar
+    // back is still instant and reloads nothing.
+    header.setVisible(!shell.hideMenuBar)
     header.setBounds({ x: 0, y: 0, width, height: strip })
     content.setBounds({ x: 0, y: strip, width, height: height - strip })
     // The settings panel only exists while it is open, so check before resizing it.
@@ -155,6 +169,10 @@ export function createShell(userAgent: string): Shell {
   void content.webContents.loadURL(START_URL)
 
   wireStateEvents(shell)
+
+  // Not dev-gated: the listener is the only thing that can filter a request, and it
+  // must exist in production for the setting to do anything.
+  attachBlocker(shell)
 
   if (isDev) {
     enableDevToolsShortcut(header, content)
@@ -270,24 +288,11 @@ function fitOverSoundCloudHeader(shell: Shell): void {
 }
 
 /**
- * Everything we ask SoundCloud's page to look like, as one stylesheet.
+ * Push the current appearance into SoundCloud's page as one stylesheet.
  *
- * CSS only — no node is added to their document. Re-applied on every load because
- * `insertCSS` lasts for the life of one document, not the session.
- *
- * Two rules, both optional and independent:
- *
- * 1. **Full-width bars.** `.l-container` hard-codes `width: 1240px`, so at anything wider
- *    SoundCloud centres its content and leaves dead margin on both sides — 332px each at
- *    1920. The rule targets the two *bars* by name rather than `.l-container` itself:
- *    that class is also on the page content, and widening the whole page is a different
- *    (and unrequested) change. Measured on the live site, not guessed.
- * 2. **Header reservation.** Padding at the right end of the header so our window buttons
- *    have somewhere to sit that is not on top of SoundCloud's own controls.
- *
- * The two work best together: with the centred layout, the buttons are pinned to the
- * window edge while SoundCloud's controls stop hundreds of pixels short of it. They are
- * still independent settings, because preferring the centred layout is a legitimate taste.
+ * Re-applied on every load because `insertCSS` lasts for the life of one document, not
+ * the session. The rules themselves live in content-css.ts, which is pure and tested;
+ * this function only decides what to pass it and owns the handle for removing it again.
  */
 async function applyContentCss(shell: Shell, fullWidth: boolean): Promise<void> {
   const { webContents } = shell.content
@@ -299,53 +304,15 @@ async function applyContentCss(shell: Shell, fullWidth: boolean): Promise<void> 
 
   if (webContents.isDestroyed()) return
 
-  // Always applied. Chrome's default scrollbar is 15px of opaque grey, and because
-  // SoundCloud's header is sized to `clientWidth` it stops short by exactly that much —
-  // which is what our window buttons were colliding with. 8px with a transparent track
-  // halves the intrusion and stops it reading as a slab down the side of the page.
-  //
-  // Neutral at rest, accent on hover: that keeps the accent marking a *state* rather than
-  // decorating, per the Borrowed Accent Rule in docs/DESIGN.md. The thumb is mid-grey
-  // alpha rather than a token value because SoundCloud has its own light and dark themes
-  // and we cannot know which one is showing.
-  const rules: string[] = [
-    `::-webkit-scrollbar { width: 2px; height: 2px; }
-     ::-webkit-scrollbar-track { background: transparent; }
-     ::-webkit-scrollbar-corner { background: transparent; }
-     ::-webkit-scrollbar-thumb { background: rgb(128 128 128 / 40%); border-radius: 4px; }
-     ::-webkit-scrollbar-thumb:hover,
-     ::-webkit-scrollbar-thumb:active { background: #f50; }`
-  ]
+  // Reserved space is measured in window pixels, but the rule lands inside a page that
+  // may be zoomed, so convert before writing it.
+  const reserve = shell.embedded
+    ? Math.round(EMBEDDED_WIDTH / webContents.getZoomFactor())
+    : null
 
-  if (fullWidth) {
-    rules.push(
-      '.header__inner, .playControls__wrapper' +
-        ' { width: 100% !important; max-width: none !important; }'
-    )
-  }
-
-  if (shell.embedded) {
-    // Reserved space is measured in window pixels, but the rule lands inside a page that
-    // may be zoomed, so convert before writing it.
-    const cssPx = Math.round(EMBEDDED_WIDTH / webContents.getZoomFactor())
-    rules.push(`.header__inner { padding-right: ${cssPx}px !important; }`)
-
-    // With our own bar hidden, SoundCloud's header IS the titlebar, so it should behave
-    // like one. Every descendant is explicitly `no-drag`, so only the bare background
-    // between their controls becomes a grab handle — links, the search field and their
-    // buttons all keep working. The `*` is what makes this safe: there is no element it
-    // can miss.
-    //
-    // If `.header` is ever renamed the window simply stops being draggable there, which
-    // is why the overlay keeps its own small handle around the buttons as a fallback.
-    rules.push(
-      '.header { -webkit-app-region: drag; }\n' + '.header * { -webkit-app-region: no-drag; }'
-    )
-  }
-
-  if (rules.length === 0) return
-
-  shell.reservationKey = await webContents.insertCSS(rules.join('\n')).catch(() => null)
+  shell.reservationKey = await webContents
+    .insertCSS(buildContentCss({ fullWidth, reserve }))
+    .catch(() => null)
 }
 
 /**
@@ -439,6 +406,7 @@ function wireStateEvents(shell: Shell): void {
     'did-finish-load',
     () => void applyContentCss(shell, shell.fullWidthLayout)
   )
+
   content.webContents.on('did-navigate', sendNav)
   content.webContents.on('did-navigate-in-page', sendNav)
   header.webContents.on('did-finish-load', () => {

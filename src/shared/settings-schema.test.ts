@@ -6,7 +6,8 @@ import {
   coerce,
   coerceAll,
   defaults,
-  isSettingKey
+  isSettingKey,
+  APPLIES_NOTES
 } from './settings-schema'
 
 describe('schema integrity', () => {
@@ -51,6 +52,8 @@ describe('schema integrity', () => {
     // without wiring the setting is the failure this guards against.
     const wired = SETTING_KEYS.filter((k) => !('wired' in SETTINGS[k]))
     expect(wired.sort()).toEqual([
+      'advanced.adBlocker',
+      'advanced.blockAudioAds',
       'advanced.hardwareAcceleration',
       'appearance.colorScheme',
       'appearance.fullWidthLayout',
@@ -123,5 +126,41 @@ describe('isSettingKey', () => {
     expect(isSettingKey('constructor')).toBe(false)
     expect(isSettingKey('__proto__')).toBe(false)
     expect(isSettingKey(7)).toBe(false)
+  })
+})
+
+describe('applies', () => {
+  const entries = SETTING_KEYS.map((k) => [k, SETTINGS[k]] as const)
+
+  it('marks the two settings whose effect is not immediate, and no others', () => {
+    const withApplies = entries
+      .filter(([, def]) => 'applies' in def && def.applies)
+      .map(([key, def]) => `${key}:${(def as { applies: string }).applies}`)
+      .sort()
+
+    // Everything else applies live — the main process reads it per request, or re-injects
+    // CSS into the open document. Pinned so that adding a setting that needs a reload or a
+    // restart forces a deliberate decision here rather than a silent lie in the panel.
+    expect(withApplies).toEqual([
+      'advanced.adBlocker:reload',
+      'advanced.hardwareAcceleration:restart'
+    ])
+  })
+
+  it('never states timing as hand-typed help prose', () => {
+    // `advanced.hardwareAcceleration` used to carry "Requires a restart." as its ENTIRE help
+    // string, so the setting was never actually explained and nothing could test the claim.
+    const offenders = entries
+      .filter(([, def]) => 'help' in def && /restart|reload|relaunch/i.test(def.help ?? ''))
+      .map(([key]) => key)
+    expect(offenders).toEqual([])
+  })
+
+  it('has copy for every applies value it can take', () => {
+    for (const [, def] of entries) {
+      if ('applies' in def && def.applies) {
+        expect(APPLIES_NOTES[def.applies]).toBeTruthy()
+      }
+    }
   })
 })

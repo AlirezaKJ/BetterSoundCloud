@@ -25,6 +25,9 @@
 *.node   binary
 *.asar   binary
 *.sig    binary
+# The compiled ad-blocking engine. `text=auto` above would otherwise leave it to git's
+# content sniffing, and a mis-sniff means eol conversion silently corrupting 3.6 MB.
+*.bin    binary
 
 # Generated. Collapse in diffs and exclude from language stats.
 package-lock.json linguist-generated=true

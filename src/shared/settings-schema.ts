@@ -34,6 +34,12 @@ export const SECTION_LABELS: Record<Section, string> = {
   advanced: 'Advanced'
 }
 
+/** Rendered under a control whose effect is not immediate. */
+export const APPLIES_NOTES = {
+  reload: 'Applies to the next page load — reload SoundCloud to see it now.',
+  restart: 'Takes effect after restarting BetterSoundCloud.'
+} as const
+
 type Base = {
   readonly label: string
   readonly section: Section
@@ -49,6 +55,15 @@ type Base = {
    * release meant to restore trust would ship eight toggles that do nothing.
    */
   readonly wired?: false
+  /**
+   * When the effect lands, if not immediately. Omitted means immediate.
+   *
+   * Most settings apply live: the main process reads them per request or re-injects CSS
+   * into the open document. A few cannot. Saying so in the schema rather than in prose
+   * keeps the claim next to the setting and testable — see the guard in the test that
+   * forbids hand-typed "requires a restart" help strings.
+   */
+  readonly applies?: 'reload' | 'restart'
 }
 
 export type SettingDef =
@@ -109,7 +124,9 @@ export const SETTINGS = {
     options: ['system', 'light', 'dark'],
     label: 'Appearance',
     section: 'appearance',
-    help: 'Applies to BetterSoundCloud’s own chrome. SoundCloud’s page keeps its own setting.'
+    help:
+      'Applies to BetterSoundCloud’s own chrome, and to SoundCloud’s page wherever it ' +
+      'follows the system light or dark preference.'
   },
   'appearance.hideMenuBar': {
     kind: 'boolean',
@@ -173,23 +190,53 @@ export const SETTINGS = {
     wired: false
   },
 
-  // Off by default, deliberately. In v0.7.x the blocker was registered inside a
-  // `dom-ready` handler with no await and no catch, depending on a live fetch of 14
-  // filter lists at every launch — so whether it was even active varied run to run.
+  // On by default, unlike the filter-list blocker below. This one is a single request to a
+  // single known endpoint — it needs no engine, no downloaded list and no network fetch, and
+  // it cannot touch sign-in or playback. Blocking it lands on a path SoundCloud's own client
+  // already handles: its `parse()` returns `{ is_malformed: true }` when the response has no
+  // `promoted` key.
+  'advanced.blockAudioAds': {
+    kind: 'boolean',
+    default: true,
+    label: 'Skip the audio ads between tracks',
+    section: 'advanced',
+    help:
+      'Blocks the request SoundCloud makes when an audio ad is due, so the ad never loads. ' +
+      'Works on its own — the filter-list blocker below does not need to be on. Takes effect ' +
+      'from the next ad; one already playing will finish.'
+  },
+
+  // Off by default, deliberately. v0.7.x fetched 14 filter lists at every launch inside a
+  // `dom-ready` handler with no `await` and no `catch`, so whether blocking was active varied
+  // run to run — which is why the sign-in reports could not be reproduced. v2 ships a
+  // prebuilt engine and never filters SoundCloud's own hosts, but the sign-in cluster is
+  // still open, so this stays opt-in until it is closed.
   'advanced.adBlocker': {
     kind: 'boolean',
     default: false,
-    label: 'Block ads and trackers',
+    label: 'Block other ads and trackers',
     section: 'advanced',
-    help: 'Experimental. May interfere with sign-in. Off by default.',
-    wired: false
+    // `reload`, unlike the audio-ad setting above. This one governs scripts rather than one
+    // endpoint: switching it ON cannot unload trackers the page has already run, and
+    // switching it OFF cannot fetch back what was blocked earlier in the document's life —
+    // so a page that loaded while blocking was on stays degraded until it is reloaded. That
+    // OFF direction is the one users hit, because turning the blocker off is exactly what
+    // someone does when a page looks broken.
+    applies: 'reload',
+    help:
+      'Blocks display ads and third-party tracking scripts using filter lists. Sign-in, ' +
+      'anti-bot checks and playback are never filtered. Audio ads have their own setting above.'
   },
+
   'advanced.hardwareAcceleration': {
     kind: 'boolean',
     default: true,
     label: 'Hardware acceleration',
     section: 'advanced',
-    help: 'Requires a restart.'
+    applies: 'restart',
+    help:
+      'Lets the GPU decode audio and draw the page. Turn it off only if you see visual ' +
+      'glitches or the window renders blank.'
   }
 } as const satisfies Record<string, SettingDef>
 

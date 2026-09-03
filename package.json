@@ -12,6 +12,7 @@
   },
   "scripts": {
     "postinstall": "node node_modules/electron/install.js",
+    "blocker:build": "node scripts/build-blocker-engine.mjs",
     "dev": "electron-vite dev",
     "start": "electron-vite preview",
     "build": "npm run check && electron-vite build",
@@ -26,6 +27,7 @@
     "dist:linux": "npm run build && electron-builder --linux"
   },
   "dependencies": {
+    "@ghostery/adblocker": "2.18.2",
     "electron-store": "11.0.2",
     "electron-updater": "6.8.9",
     "electron-window-state": "5.0.3"

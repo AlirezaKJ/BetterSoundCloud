@@ -19,5 +19,7 @@ cookies.json
 .DS_Store
 Thumbs.db
 
-# Castlabs EVS signing artefact
-engine.bin
+# Anchored to the root ON PURPOSE. The shipped ad-blocking engine lives at
+# resources/engine.bin and IS committed; an unanchored `engine.bin` here silently swallowed
+# it, so the file appeared to build fine and shipped missing.
+/engine.bin

@@ -2,7 +2,13 @@
   import { onMount } from 'svelte'
   import { fade, fly } from 'svelte/transition'
   import { cubicOut } from 'svelte/easing'
-  import { SECTIONS, SECTION_LABELS, SETTINGS, SETTING_KEYS } from '@shared/settings-schema'
+  import {
+    SECTIONS,
+    SECTION_LABELS,
+    SETTINGS,
+    SETTING_KEYS,
+    APPLIES_NOTES
+  } from '@shared/settings-schema'
   import type { Section, SettingKey, Settings } from '@shared/settings-schema'
 
   /*
@@ -135,6 +141,14 @@
                 nothing — and every one would become a bug report.
               -->
               {#if pending}<p class="pending-note">Not implemented yet</p>{/if}
+              <!--
+                Timing, for the few settings whose effect is not immediate. A caption rather
+                than a second badge: DESIGN.md reserves the Overline treatment for the
+                "not implemented yet" badge alone.
+              -->
+              {#if 'applies' in def && def.applies}
+                <p class="help">{APPLIES_NOTES[def.applies]}</p>
+              {/if}
             </div>
 
             <div class="control">

@@ -4,6 +4,12 @@ import { buildUserAgent, leaksAppIdentity } from '@shared/identity'
 import { CH } from '@shared/ipc'
 import { createShell, toggleSettings, closeSettings, setContentAppearance } from './window'
 import { createTray } from './tray'
+import {
+  loadBlockerEngine,
+  isBlockerAvailable,
+  setBlockingEnabled,
+  setAudioAdBlocking
+} from './blocker'
 import type { Shell } from './window'
 import type { Settings } from '@shared/settings-schema'
 import * as settings from './settings-store'
@@ -70,6 +76,9 @@ if (!app.requestSingleInstanceLock()) {
     .then(() => components.whenReady())
     .then(() => {
       registerIpc()
+      // Synchronous, and before any view exists, so blocking is either fully on or
+      // fully off from the first request — never half-applied mid-load.
+      loadBlockerEngine()
       shell = createShell(USER_AGENT)
       createTray(shell)
       applyLiveSettings()
@@ -128,9 +137,10 @@ function registerIpc(): void {
 
   ipcMain.on(CH.menuBarToggle, (e) => {
     if (!fromChrome(e)) return
-    const next = settings.set('appearance.hideMenuBar', !settings.get('appearance.hideMenuBar'))
+    settings.set('appearance.hideMenuBar', !settings.get('appearance.hideMenuBar'))
     applyLiveSettings()
-    broadcastSettings(next)
+    // After applying, for the same reason as the settingsSet handler below.
+    broadcastSettings(settings.getAll())
   })
 
   ipcMain.on(CH.settingsToggle, (e) => {
@@ -158,11 +168,44 @@ function registerIpc(): void {
 
   ipcMain.handle(CH.settingsSet, (e, key: unknown, value: unknown) => {
     if (!fromSettingsUi(e)) return null
-    const next = settings.set(key, value)
+    settings.set(key, value)
     applyLiveSettings()
+    // Read the store AFTER applying, never before. `applyLiveSettings` -> `applyBlocking` is
+    // allowed to correct a setting — it turns the ad blocker back off when the engine failed
+    // to load — and broadcasting a snapshot taken beforehand would overwrite that correction
+    // with the value the user just clicked, leaving a ticked checkbox over a blocker that is
+    // doing nothing. That is the exact failure `applyBlocking` exists to prevent.
+    const next = settings.getAll()
     broadcastSettings(next)
     return next
   })
+}
+
+/**
+ * Follow the ad-blocker settings, and refuse to lie about them.
+ *
+ * If the engine could not load, the filter-list setting turns itself back off, so the
+ * checkbox visibly unticks rather than claiming to block. A control that silently does
+ * nothing is the exact failure the schema's `wired` flag exists to prevent.
+ *
+ * It only writes the store — it does not broadcast. Both callers re-read the store after
+ * calling this and broadcast once, which is what makes the correction survive instead of
+ * being overwritten by the snapshot the user's click produced.
+ */
+function applyBlocking(): void {
+  // Audio ads first, and unconditionally: this one needs no engine, so it is never turned
+  // off on our own initiative the way the filter-list blocker below can be.
+  setAudioAdBlocking(settings.get('advanced.blockAudioAds'))
+
+  const wanted = settings.get('advanced.adBlocker')
+
+  if (wanted && !isBlockerAvailable()) {
+    setBlockingEnabled(false)
+    settings.set('advanced.adBlocker', false)
+    return
+  }
+
+  setBlockingEnabled(wanted)
 }
 
 /** Tell every one of our own renderers about a settings change. */
@@ -181,13 +224,15 @@ function broadcastSettings(next: Settings): void {
  * `colorScheme` goes through `nativeTheme.themeSource`, which is what `prefers-color-scheme`
  * reports in every renderer we own. That means tokens.css needs no `data-theme` attribute
  * and no IPC of its own — the existing `@media (prefers-color-scheme: dark)` block just
- * starts following this setting. It does not affect soundcloud.com, which keeps its own
- * appearance setting.
+ * starts following this setting. It reaches soundcloud.com too: `themeSource` rewrites
+ * `prefers-color-scheme` for every web contents in the app, measured — a page loaded in
+ * the content view reports `prefers-color-scheme: dark` the moment this is set to dark.
  */
 function applyLiveSettings(): void {
   if (!shell) return
   shell.content.webContents.setZoomFactor(settings.get('appearance.zoomFactor') / 100)
   nativeTheme.themeSource = settings.get('appearance.colorScheme')
+  applyBlocking()
   // Called after the zoom above, deliberately: the overlay's height and the CSS space it
   // reserves are both derived from the current zoom factor.
   setContentAppearance(shell, {

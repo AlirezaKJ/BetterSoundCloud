@@ -65,7 +65,7 @@ export default ts.config(
   // Plain .js config and build scripts are not part of any tsconfig project, so the
   // type-aware parser must be turned off for them rather than asked to find a project.
   {
-    files: ['**/*.js'],
+    files: ['**/*.js', '**/*.mjs'],
     ...ts.configs.disableTypeChecked,
     languageOptions: {
       globals: { ...globals.node },
