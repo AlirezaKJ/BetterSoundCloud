@@ -6,7 +6,12 @@ import { hardenSession, routeNewWindowsToBrowser } from './session'
 import { attachDiagnostics } from './diagnostics'
 import { attachBlocker } from './blocker'
 import { isDev } from './env'
-import { buildContentCss } from './content-css'
+import {
+  buildContentCss,
+  COMPACT_HEADER_WIDTH,
+  FIT_HEADER_WIDTH,
+  MIN_EMBED_WIDTH
+} from './content-css'
 import { themeCss, NO_THEME } from './themes'
 import type { PageTheme } from '@shared/page-theme'
 import { CH } from '@shared/ipc'
@@ -56,11 +61,29 @@ export type Shell = {
    * the wrong colours until the user next flips the setting.
    */
   pageTheme: PageTheme
+  /**
+   * Whether the embedded overlay is actually on screen. Distinct from `hideMenuBar`: the
+   * setting can be on while the window is too narrow to honour it. The stylesheet's
+   * reservation follows THIS, so the gap and the buttons can never disagree.
+   */
+  embeddedShowing: boolean
+  /**
+   * Whether SoundCloud's promo links are being hidden to free the width our buttons need.
+   * Width-driven and temporary, unlike a theme doing the same thing by choice.
+   */
+  compactHeader: boolean
+  /**
+   * Whether their header is additionally being forced down to the viewport, below the width
+   * at which it stops shrinking on its own.
+   */
+  fitHeader: boolean
   /** Selected theme id. Held here for the same reason as `fullWidthLayout`: the reload
    *  handler re-injects the stylesheet and needs to know what to put in it. */
   theme: string
   /** Kept so the settings view can be hardened with the same identity as the others. */
   userAgent: string
+  /** Guards against two overlapping `applyContentCss` calls clobbering each other. */
+  cssGeneration: number
   /** Re-runs the view layout. Assigned in `createShell`; call it after changing a mode. */
   layout: () => void
 }
@@ -108,7 +131,8 @@ export function createShell(userAgent: string): Shell {
     y: state.y,
     width: state.width,
     height: state.height,
-    minWidth: 800,
+    // The same number as MIN_EMBED_WIDTH, whose doc comment asserts they are equal.
+    minWidth: MIN_EMBED_WIDTH,
     minHeight: 600,
     frame: false,
     show: false,
@@ -158,8 +182,12 @@ export function createShell(userAgent: string): Shell {
     embedded: null,
     player: null,
     pageTheme: 'dark',
+    embeddedShowing: false,
+    compactHeader: false,
+    fitHeader: false,
     hideMenuBar: false,
     reservationKey: null,
+    cssGeneration: 0,
     fullWidthLayout: false,
     theme: NO_THEME,
     userAgent,
@@ -168,7 +196,22 @@ export function createShell(userAgent: string): Shell {
 
   const layout = (): void => {
     const { width, height } = window.getContentBounds()
-    const strip = shell.hideMenuBar ? 0 : HEADER_HEIGHT
+
+    // This function is the ONLY place that decides how narrow is too narrow. Three booleans
+    // come out of one width, and the stylesheet is re-injected below whenever any of them
+    // flips — the CSS is not width-reactive on its own, deliberately. An earlier version put
+    // the reservation behind a media query and kept a second, stricter JS threshold for the
+    // overlay, and the band between the two was a bug in both directions: our buttons on top
+    // of SoundCloud's controls at one width, a reserved gap with no buttons in it at another.
+    //
+    // `hideMenuBar` is the user's setting; `embeddedShows` is whether it can be honoured. Below
+    // MIN_EMBED_WIDTH it cannot, so the setting stays on and the effect falls back to our own
+    // bar, which carries the same buttons. Nothing is destroyed on the way through.
+    const cssWidth = pageCssWidth(shell)
+    const embeddedShows = shell.hideMenuBar && cssWidth >= MIN_EMBED_WIDTH
+    const compactHeader = embeddedShows && cssWidth < COMPACT_HEADER_WIDTH
+    const fitHeader = embeddedShows && cssWidth < FIT_HEADER_WIDTH
+    const strip = embeddedShows ? 0 : HEADER_HEIGHT
 
     // Hidden, not merely flattened to zero height.
     //
@@ -183,13 +226,37 @@ export function createShell(userAgent: string): Shell {
     // `setVisible(false)` withdraws the region, and unlike removing the child view it keeps
     // the view parented with its renderer and IPC subscriptions alive, so toggling the bar
     // back is still instant and reloads nothing.
-    header.setVisible(!shell.hideMenuBar)
+    header.setVisible(!embeddedShows)
     header.setBounds({ x: 0, y: 0, width, height: strip })
     content.setBounds({ x: 0, y: strip, width, height: height - strip })
     // The settings panel only exists while it is open, so check before resizing it.
     if (shell.settings) fitBelowHeader(window, shell.settings, strip)
-    if (shell.embedded) fitOverSoundCloudHeader(shell)
+    if (shell.embedded) {
+      shell.embedded.setVisible(embeddedShows)
+      fitOverSoundCloudHeader(shell, embeddedShows)
+    }
+    // Both overlays, every layout. Dropping this line once was a real regression: the player
+    // buttons are anchored to `width - 92` and `height - barHeight`, so after any resize they
+    // sat over the wrong part of SoundCloud's play bar, covering their like/follow/queue
+    // controls with a transparent view. Zoom was worse — `applyContentCss` recomputes the
+    // reservation from the new zoom factor while nothing recomputed the overlay's height, so
+    // the two disagreed by construction.
     if (shell.player) fitOverPlayControls(shell)
+
+    // Only when it actually flips — crossing the width is rare, and re-injecting on every
+    // resize tick would rebuild the whole stylesheet dozens of times during a drag.
+    // Only when one of them actually flips — crossing a width is rare, and re-injecting on
+    // every resize tick would rebuild the whole stylesheet dozens of times during a drag.
+    if (
+      embeddedShows !== shell.embeddedShowing ||
+      compactHeader !== shell.compactHeader ||
+      fitHeader !== shell.fitHeader
+    ) {
+      shell.embeddedShowing = embeddedShows
+      shell.compactHeader = compactHeader
+      shell.fitHeader = fitHeader
+      void applyContentCss(shell, shell.fullWidthLayout, shell.theme)
+    }
   }
   shell.layout = layout
   layout()
@@ -259,7 +326,11 @@ export function toggleSettings(shell: Shell): void {
 
   shell.settings = view
   shell.window.contentView.addChildView(view)
-  fitBelowHeader(shell.window, view, shell.hideMenuBar ? 0 : HEADER_HEIGHT)
+  // `embeddedShowing`, not `hideMenuBar`: those differ in exactly the fallback case, where the
+  // setting is on but the window is too narrow to honour it. Re-deriving it here would place
+  // the panel at y=0 over our own bar — including the window buttons — until the next resize.
+  // A second place deciding "is our bar showing" is the fault this whole change removed.
+  fitBelowHeader(shell.window, view, shell.embeddedShowing ? 0 : HEADER_HEIGHT)
 
   if (isDev) enableDevToolsShortcut(view)
 
@@ -300,7 +371,18 @@ export function closeSettings(shell: Shell): void {
  */
 
 /** Position the overlay over the right end of SoundCloud's header. */
-function fitOverSoundCloudHeader(shell: Shell): void {
+/**
+ * The page's own width in CSS pixels, which is what every layout decision here is about.
+ *
+ * Not the window's width: the page is zoomable and these overlay views are not, so an 800px
+ * window at 150% zoom is a 533 CSS px page.
+ */
+function pageCssWidth(shell: Shell): number {
+  const { width } = shell.window.getContentBounds()
+  return width / shell.content.webContents.getZoomFactor()
+}
+
+function fitOverSoundCloudHeader(shell: Shell, showing: boolean): void {
   const view = shell.embedded
   if (!view) return
 
@@ -311,7 +393,7 @@ function fitOverSoundCloudHeader(shell: Shell): void {
 
   view.setBounds({
     x: Math.round(width - EMBEDDED_WIDTH),
-    y: shell.hideMenuBar ? 0 : HEADER_HEIGHT,
+    y: showing ? 0 : HEADER_HEIGHT,
     width: EMBEDDED_WIDTH,
     height: Math.round(SC_HEADER_HEIGHT * zoom)
   })
@@ -327,22 +409,47 @@ function fitOverSoundCloudHeader(shell: Shell): void {
 async function applyContentCss(shell: Shell, fullWidth: boolean, theme: string): Promise<void> {
   const { webContents } = shell.content
 
-  if (shell.reservationKey) {
-    await webContents.removeInsertedCSS(shell.reservationKey).catch(() => undefined)
-    shell.reservationKey = null
-  }
+  // Two calls can be in flight at once — `setContentAppearance` triggers one, and a resize
+  // that crosses the width threshold triggers another. Both await, so without this the older
+  // call could insert its stylesheet after the newer one and win.
+  const generation = ++shell.cssGeneration
 
-  if (webContents.isDestroyed()) return
+  const previous = shell.reservationKey
+  shell.reservationKey = null
+  if (previous) await webContents.removeInsertedCSS(previous).catch(() => undefined)
+
+  if (webContents.isDestroyed() || generation !== shell.cssGeneration) return
 
   // Reserved space is measured in window pixels, but the rule lands inside a page that
   // may be zoomed, so convert before writing it.
   const zoom = webContents.getZoomFactor()
-  const reserve = shell.embedded ? Math.round(EMBEDDED_WIDTH / zoom) : null
+  // `embeddedShowing`, not `embedded`: the view exists whenever the setting is on, but it is
+  // only on screen when the window is wide enough. Reserving for a hidden overlay is the gap
+  // with no buttons in it.
+  const reserve = shell.embeddedShowing ? Math.round(EMBEDDED_WIDTH / zoom) : null
   const playerReserve = shell.player ? Math.round(PLAYER_BUTTONS_WIDTH / zoom) : null
+  const compactHeader = shell.compactHeader
+  const fitHeader = shell.fitHeader
 
-  shell.reservationKey = await webContents
-    .insertCSS(buildContentCss({ fullWidth, reserve, theme: themeCss(theme), playerReserve }))
+  const key = await webContents
+    .insertCSS(
+      buildContentCss({
+        fullWidth,
+        reserve,
+        theme: themeCss(theme),
+        playerReserve,
+        compactHeader,
+        fitHeader
+      })
+    )
     .catch(() => null)
+
+  if (generation !== shell.cssGeneration) {
+    // A newer call owns the stylesheet now; drop ours rather than leaking it.
+    if (key) void webContents.removeInsertedCSS(key).catch(() => undefined)
+    return
+  }
+  shell.reservationKey = key
 }
 
 /**
@@ -401,7 +508,9 @@ function setEmbedded(shell: Shell, enabled: boolean): void {
 
   shell.embedded = view
   shell.window.contentView.addChildView(view)
-  fitOverSoundCloudHeader(shell)
+  // Position and visibility are `layout()`'s job — it is called immediately after this, and
+  // it owns the "is there room for the overlay" decision. Placing the view here as well would
+  // mean two places deciding, which is how the two got out of step in the first place.
   sendPageThemeOnLoad(shell, view)
 
   void view.webContents.loadURL(rendererUrl('embedded'))
