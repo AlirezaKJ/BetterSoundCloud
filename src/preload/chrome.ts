@@ -4,10 +4,11 @@ import type { ChromeApi, NavState, WindowState } from '@shared/ipc'
 import type { SettingKey, Settings } from '@shared/settings-schema'
 import type { ThemeSummary } from '@shared/themes'
 import type { PageTheme } from '@shared/page-theme'
+import type { ContextMenuAction, ContextMenuRequest, GoToUrlResult } from '@shared/context-menu'
 
 /**
- * Preload for OUR OWN chrome (header, settings). This never runs on soundcloud.com —
- * that page gets `content.ts`, which exposes nothing.
+ * Preload for OUR OWN chrome (header, settings, the overlays, the right-click menu). This
+ * never runs on soundcloud.com — that page gets `content.ts`, which exposes nothing.
  *
  * Sandboxed, so this file is emitted as CommonJS. See electron.vite.config.ts.
  */
@@ -40,7 +41,15 @@ const api: ChromeApi = {
   listThemes: () => ipcRenderer.invoke(CH.themesList) as Promise<ThemeSummary[]>,
 
   onPageTheme: (cb: (theme: PageTheme) => void) => subscribe(CH.pageThemeChanged, cb),
-  onSettingsChanged: (cb: (settings: Settings) => void) => subscribe(CH.settingsChanged, cb)
+  onSettingsChanged: (cb: (settings: Settings) => void) => subscribe(CH.settingsChanged, cb),
+
+  onContextMenu: (cb: (request: ContextMenuRequest) => void) =>
+    subscribe(CH.contextMenuShow, cb),
+  contextMenuAction: (action: ContextMenuAction, text?: string) =>
+    ipcRenderer.send(CH.contextMenuAction, action, text),
+  goToUrl: (text: string) =>
+    ipcRenderer.invoke(CH.contextMenuGoToUrl, text) as Promise<GoToUrlResult>,
+  closeContextMenu: () => ipcRenderer.send(CH.contextMenuClose)
 }
 
 contextBridge.exposeInMainWorld('bsc', api)

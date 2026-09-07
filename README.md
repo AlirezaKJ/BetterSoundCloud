@@ -99,7 +99,7 @@ signature.
 src/
 ├── main/        Electron main process — windows, session, settings, services
 ├── preload/     chrome.ts (our own UI) · content.ts (soundcloud.com, read-only)
-├── renderer/    Svelte 5 — the 32px header and the settings panel
+├── renderer/    Svelte 5 — the 32px header, the settings panel, the right-click menu, overlays
 └── shared/      Types, IPC channel names, the settings schema
 resources/       Bundled themes and plugins, seeded into userData on first launch
 scripts/         VMP signing

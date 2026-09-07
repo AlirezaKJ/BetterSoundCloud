@@ -48,6 +48,13 @@ describe('the content preload', () => {
       expect(CODE).not.toContain(forbidden)
     }
   })
+
+  it('has no part in the right-click menu', () => {
+    // The menu is driven entirely from main's `context-menu` event (src/main/context-menu.ts).
+    // v0.7.x needed a script inside the page just to learn when to dismiss its menu; v2 needs
+    // nothing here, and this keeps it that way.
+    expect(CODE).not.toMatch(/context-?menu/i)
+  })
 })
 
 describe('the built preloads', () => {

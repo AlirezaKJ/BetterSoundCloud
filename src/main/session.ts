@@ -77,7 +77,7 @@ export function hardenSession(sess: Session, userAgent: string): void {
  */
 export function routeNewWindowsToBrowser(contents: WebContents): void {
   contents.setWindowOpenHandler(({ url }) => {
-    if (/^https?:$/.test(safeProtocol(url))) void shell.openExternal(url)
+    openInBrowser(url)
     return { action: 'deny' }
   })
 
@@ -85,9 +85,18 @@ export function routeNewWindowsToBrowser(contents: WebContents): void {
   contents.on('will-navigate', (event, url) => {
     if (!isInternalUrl(url)) {
       event.preventDefault()
-      if (/^https?:$/.test(safeProtocol(url))) void shell.openExternal(url)
+      openInBrowser(url)
     }
   })
+}
+
+/**
+ * Open a URL in the user's real browser — and only an http(s) one. `shell.openExternal`
+ * would happily hand `file:` or a custom scheme to the OS, which is how a page gets to launch
+ * programs, so the scheme is checked here rather than trusted at each call site.
+ */
+export function openInBrowser(rawUrl: string): void {
+  if (/^https?:$/.test(safeProtocol(rawUrl))) void shell.openExternal(rawUrl)
 }
 
 function safeProtocol(rawUrl: string): string {

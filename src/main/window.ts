@@ -14,6 +14,7 @@ import {
 } from './content-css'
 import { themeCss, NO_THEME } from './themes'
 import type { PageTheme } from '@shared/page-theme'
+import type { ContextMenuRequest } from '@shared/context-menu'
 import { CH } from '@shared/ipc'
 import type { NavState, WindowState } from '@shared/ipc'
 
@@ -55,6 +56,14 @@ export type Shell = {
   fullWidthLayout: boolean
   /** Our buttons over the right end of SoundCloud's play controls, when the setting is on. */
   player: WebContentsView | null
+  /**
+   * The right-click menu: a transparent view covering the content area, created once by
+   * `attachContextMenu` and hidden between uses so a menu appears the instant it is asked
+   * for. Everything about it lives in context-menu.ts; this file only keeps it positioned.
+   */
+  contextMenu: WebContentsView | null
+  /** The right-click the menu is open for, so main can act on it. Null while hidden. */
+  contextMenuRequest: ContextMenuRequest | null
   /**
    * SoundCloud's own light/dark setting, as last reported by the content preload. Held so an
    * overlay created after the page loaded can be told straight away rather than sitting in
@@ -181,6 +190,8 @@ export function createShell(userAgent: string): Shell {
     settings: null,
     embedded: null,
     player: null,
+    contextMenu: null,
+    contextMenuRequest: null,
     pageTheme: 'dark',
     embeddedShowing: false,
     compactHeader: false,
@@ -231,6 +242,8 @@ export function createShell(userAgent: string): Shell {
     content.setBounds({ x: 0, y: strip, width, height: height - strip })
     // The settings panel only exists while it is open, so check before resizing it.
     if (shell.settings) fitBelowHeader(window, shell.settings, strip)
+    // The menu view is attached after the shell is built, so it too can be absent here.
+    if (shell.contextMenu) fitBelowHeader(window, shell.contextMenu, strip)
     if (shell.embedded) {
       shell.embedded.setVisible(embeddedShows)
       fitOverSoundCloudHeader(shell, embeddedShows)
@@ -623,8 +636,8 @@ export function setPageTheme(shell: Shell, theme: PageTheme): void {
   }
 }
 
-/** The settings panel occupies exactly the area the content view does. */
-function fitBelowHeader(window: BaseWindow, view: WebContentsView, top: number): void {
+/** The settings panel and the right-click menu occupy exactly the area the content view does. */
+export function fitBelowHeader(window: BaseWindow, view: WebContentsView, top: number): void {
   const { width, height } = window.getContentBounds()
   view.setBounds({ x: 0, y: top, width, height: height - top })
 }
@@ -685,7 +698,7 @@ function wireStateEvents(shell: Shell): void {
  * registered the media keys that way and never released them, so it held them for its
  * whole process lifetime (`main.js:174-192`).
  */
-function enableDevToolsShortcut(...views: WebContentsView[]): void {
+export function enableDevToolsShortcut(...views: WebContentsView[]): void {
   for (const view of views) {
     view.webContents.on('before-input-event', (_event, input) => {
       if (input.type !== 'keyDown') return
@@ -698,7 +711,9 @@ function enableDevToolsShortcut(...views: WebContentsView[]): void {
   }
 }
 
-export function rendererUrl(entry: 'header' | 'settings' | 'embedded' | 'player'): string {
+export function rendererUrl(
+  entry: 'header' | 'settings' | 'embedded' | 'player' | 'context-menu'
+): string {
   const devServer = process.env['ELECTRON_RENDERER_URL']
   return devServer
     ? `${devServer}/${entry}/index.html`

@@ -29,6 +29,14 @@ describe('layout() owns every view position', () => {
     expect(body).toContain('fitOverPlayControls')
   })
 
+  it('keeps the right-click menu view over the content area', () => {
+    // The menu view is created after the shell (context-menu.ts) and never positions itself;
+    // if layout() forgot it, a menu opened after a resize would be drawn against stale bounds
+    // and its click-catcher would cover the wrong part of the window.
+    const body = layoutBody()
+    expect(body).toMatch(/fitBelowHeader\(window, shell\.contextMenu, strip\)/)
+  })
+
   it('is the only place that decides whether our own bar shows', () => {
     // Two places deciding this is the fault the narrow-window work removed. `toggleSettings`
     // used to re-derive it from `hideMenuBar`, which differs from `embeddedShowing` in exactly

@@ -225,15 +225,18 @@ Surfaces do not float. Separation is done with 1px hairline borders and a single
 between the shell and field colours — nothing in the chrome or the panel body carries a shadow.
 
 A shadow appears in exactly one circumstance: something has floated above the application and
-taken over input. Today that is the settings panel; tomorrow it is any dialog or overlay. When
-it happens, two things arrive together — a scrim dimming everything behind, and a two-layer
-shadow under the floating surface. They are one signal, never used apart.
+taken over input. Today that is the settings panel, the right-click menu and the Go to URL
+prompt; tomorrow it is any dialog or overlay. For a dialog, two things arrive together — a
+scrim dimming everything behind, and a two-layer shadow under the floating surface. A
+transient popup — the context menu — gets the shadow alone: it takes input, but any click
+dismisses it, and dimming the page for something that brief would read as noise.
 
 ### Shadow Vocabulary
 
 - **Overlay** (`box-shadow: 0 12px 40px rgb(0 0 0 / 35%), 0 2px 8px rgb(0 0 0 / 20%)`): The only
   shadow in the system. A wide ambient layer for separation from the page beneath, plus a tight
-  contact layer so the card's edge stays crisp. Always paired with the scrim.
+  contact layer so the card's edge stays crisp. Paired with the scrim on dialogs; alone on the
+  context menu.
 
 ### Named Rules
 
@@ -241,13 +244,19 @@ shadow under the floating surface. They are one signal, never used apart.
 over input". A surface that does not block interaction does not get a shadow. If you reach for
 elevation to make something look important, use a border and a tonal step instead.
 
+**The Transient Rule.** The scrim marks a dialog, something the user has to finish or cancel.
+A popup that any click closes — a menu — floats without one. If a surface needs a scrim to be
+understood, it is a dialog and should behave like one.
+
 ## Shapes
 
 Rectangles with two radii and nothing else.
 
 - **6px** on every control: chrome buttons, navigation items, inputs, selects, the panel's close
   button. Enough to read as a soft target, not enough to read as a pill.
-- **10px** on the floating settings card, the one surface that needs to look detached.
+- **10px** on the surfaces that float: the settings card, the context menu and the Go to URL
+  prompt. The menu's 10px is its 6px item radius plus its 4px padding, so the corners are
+  concentric rather than a third number.
 
 There are no pills, no circles, no asymmetric corners, no clipping shapes, and no decorative
 geometry anywhere. Borders are always 1px and always the Hairline alpha token.
@@ -305,6 +314,40 @@ The settings rail — a vertical stack of section buttons, 2px apart.
   in dark mode where the shadow largely disappears.
 - **Internal Padding:** 10–16px in the header row, 16px × 20px in the content column.
 - **Shadow Strategy:** the Overlay shadow, per Elevation & Depth.
+
+### Context Menu
+
+The right-click menu over SoundCloud's page. It lives in its own transparent view
+(`src/renderer/context-menu`), so nothing here is a node in their document.
+
+- **Surface:** Shell Grey, 1px Hairline, 10px radius, the Overlay shadow, no scrim. 4px inner
+  padding, 208–320px wide, and it scrolls rather than clips when a window is shorter than it.
+- **Placement:** top-left corner at the cursor; flipped to the other side of the cursor when it
+  would run off an edge, never clamped so that it covers the click.
+- **Note row:** one Caption line above the items, Muted Ink, ellipsized, saying which link,
+  image or quoted text the menu is about — so "Copy link" says which link. Absent in a text
+  field, where the field is the context.
+- **Items:** 28px rows, 13px Ink label, a 15px outline glyph in Muted Ink on a 16px column, 6px
+  radius. One highlight — the Hover Wash — driven by state, so the mouse and the keyboard can
+  never show two. Keyboard focus adds the 2px accent outline on top. Disabled items drop to
+  Ghost Ink and are skipped by the arrow keys. Separators are 1px Hairline with 4px × 8px
+  margins.
+- **Only items that can act appear.** "Copy clean link" is listed only when the link carries
+  something to strip; "Inspect element" only in dev builds; Cut/Paste only in a text field.
+- **Motion:** a 100ms fade with a 4px rise on open, none on close — a menu that lingers after a
+  click reads as slow. Reduced motion removes the fade.
+- **Cursor:** `default`, as on every chrome control.
+
+### Prompt
+
+The Go to URL prompt, and the model for any small dialog that asks for one thing.
+
+- A 460px card at `top: 96px`, centred, 16px padding, the Overlay shadow, and — because it is a
+  dialog — the scrim. It enters with the settings panel's 180ms fly.
+- A Body-size label, then one Field with the accent caret and a transparent "Go" button
+  beside it, then a Caption help line beneath that doubles as the error line. Errors are
+  written in Ink, not red, and say what to try; the field's text is reselected so the next
+  attempt overwrites it.
 
 ### Scrollbars
 

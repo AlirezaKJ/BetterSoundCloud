@@ -1,6 +1,7 @@
 import type { Settings, SettingKey } from './settings-schema'
 import type { ThemeSummary } from './themes'
 import type { PageTheme } from './page-theme'
+import type { ContextMenuAction, ContextMenuRequest, GoToUrlResult } from './context-menu'
 
 /** Every IPC channel name, in one place. Strings are never written inline. */
 export const CH = {
@@ -28,6 +29,12 @@ export const CH = {
   pageThemeChanged: 'page:theme-changed',
   settingsSet: 'settings:set',
   settingsChanged: 'settings:changed',
+
+  // main -> the right-click menu overlay, then the overlay -> main
+  contextMenuShow: 'context-menu:show',
+  contextMenuAction: 'context-menu:action',
+  contextMenuGoToUrl: 'context-menu:go-to-url',
+  contextMenuClose: 'context-menu:close',
 
   // content preload -> main (Phase 1: AudioMonitor)
   trackUpdate: 'content:track-update'
@@ -70,4 +77,16 @@ export type ChromeApi = {
    * it. Fires on load and whenever the user changes it in SoundCloud's settings.
    */
   onPageTheme(cb: (theme: PageTheme) => void): () => void
+
+  /**
+   * The right-click menu, which lives in its own overlay view. Main sends a request for
+   * every right-click on SoundCloud's page; the overlay answers with a verb, or with nothing.
+   */
+  onContextMenu(cb: (request: ContextMenuRequest) => void): () => void
+  /** `text` only travels with `replace-misspelling` — the word to put in. */
+  contextMenuAction(action: ContextMenuAction, text?: string): void
+  /** The "Go to URL" prompt. Main navigates on success and says what it did with the text. */
+  goToUrl(text: string): Promise<GoToUrlResult>
+  /** Dismissed without choosing anything. */
+  closeContextMenu(): void
 }

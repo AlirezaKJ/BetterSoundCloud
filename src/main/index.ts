@@ -11,6 +11,13 @@ import {
 } from './window'
 import { createTray } from './tray'
 import {
+  attachContextMenu,
+  hideContextMenu,
+  runContextMenuAction,
+  goToUrlFromMenu
+} from './context-menu'
+import { isContextMenuAction } from '@shared/context-menu'
+import {
   loadBlockerEngine,
   isBlockerAvailable,
   setBlockingEnabled,
@@ -87,12 +94,14 @@ if (!app.requestSingleInstanceLock()) {
       // fully off from the first request — never half-applied mid-load.
       loadBlockerEngine()
       shell = createShell(USER_AGENT)
+      attachContextMenu(shell)
       createTray(shell)
       applyLiveSettings()
 
       app.on('activate', () => {
         if (!shell && BrowserWindow.getAllWindows().length === 0) {
           shell = createShell(USER_AGENT)
+          attachContextMenu(shell)
         }
       })
     })
@@ -169,6 +178,29 @@ function registerIpc(): void {
 
   ipcMain.on(CH.navReload, (e) => {
     if (fromChrome(e)) shell?.content.webContents.reload()
+  })
+
+  /**
+   * The right-click menu. Only its own overlay may drive it, and it sends verbs rather than
+   * data: main acts on the request it sent (src/main/context-menu.ts), so a compromised
+   * overlay could at most pick a menu item.
+   */
+  const fromContextMenu = (
+    event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent
+  ): boolean => shell !== null && event.sender === shell.contextMenu?.webContents
+
+  ipcMain.on(CH.contextMenuAction, (e, action: unknown, text: unknown) => {
+    if (!fromContextMenu(e) || !shell || !isContextMenuAction(action)) return
+    runContextMenuAction(shell, action, typeof text === 'string' ? text : '')
+  })
+
+  ipcMain.on(CH.contextMenuClose, (e) => {
+    if (fromContextMenu(e) && shell) hideContextMenu(shell)
+  })
+
+  ipcMain.handle(CH.contextMenuGoToUrl, (e, text: unknown) => {
+    if (!fromContextMenu(e) || !shell || typeof text !== 'string') return 'invalid'
+    return goToUrlFromMenu(shell, text)
   })
 
   /**

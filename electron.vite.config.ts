@@ -68,7 +68,8 @@ export default defineConfig({
           header: resolve('src/renderer/header/index.html'),
           settings: resolve('src/renderer/settings/index.html'),
           embedded: resolve('src/renderer/embedded/index.html'),
-          player: resolve('src/renderer/player/index.html')
+          player: resolve('src/renderer/player/index.html'),
+          'context-menu': resolve('src/renderer/context-menu/index.html')
         }
       }
     }
