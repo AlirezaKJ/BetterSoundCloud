@@ -4,7 +4,7 @@ This is the working backlog for the v2 rewrite. It supersedes the scattered surv
 
 **How to read an item.** Every item carries a source label — `parity: v0.7.x`, `parity: soundcloud-rpc`, `user request`, `infrastructure`, or `proposal` — plus the file/issue/phase it traces to and a rough effort (S / M / L / XL). Nothing is here that does not trace to code, an issue, or the roadmap.
 
-**Ordering.** Milestones run in the order the work should actually happen. Milestone 1 is deliberately not feature work: four of the highest-priority items below are currently written against an _unverified_ assumption about how SoundCloud's sign-in is reached, and one twenty-minute instrumented run decides whether the headline fix is a total blocker or a no-op.
+**Ordering.** Milestones run in the order the work should actually happen. Milestone 1 is deliberately not feature work: four of the highest-priority items below were written against an _unverified_ assumption about how SoundCloud's sign-in is reached, and one instrumented run decides whether the headline fix is a total blocker or a no-op. **That run happened on 2026-09-08** — the assumption was wrong in both of its competing forms, and Milestone 3's headline item shrank accordingly. Milestone 1 records what was measured; the one part still open needs a real sign-in attempt.
 
 **Scope.** The project's posture is _parity, not evasion_: make a real desktop client look like the ordinary browser it wraps, for real logged-in users. See "Explicitly declined".
 
@@ -36,26 +36,68 @@ Phase 0 and most of Phase 0.5 are complete and verified in the working tree:
 
 No feature code in this milestone. Four of the P0 items below are currently written against contradictory assumptions, and one of them (the fingerprint audit) cannot be run at all until the first item answers its question.
 
-- [ ] **Verify how sign-in is actually reached, before writing the popup fix**
+**Status, 2026-09-08: four of five done.** Item 1 was answered and _both_ competing surveys turned out to be wrong; that unblocked item 5, which came back clean apart from one `Accept-Language` mismatch. Item 3's rule is written below and in force. Item 4's suspected silent failure does not happen. Only item 2 is left, and it cannot be finished without a real sign-in attempt.
+
+- [x] **Verify how sign-in is actually reached, before writing the popup fix** — ANSWERED 2026-09-08
       Log every URL that reaches `setWindowOpenHandler` and every URL that reaches `will-navigate` on the content view, then click Sign in on a real launch. Two surveys assert opposite mechanisms and neither verified it in this tree: one says sign-in is a `window.open` popup that gets externalised, the other says `secure.soundcloud.com` being in `ALLOWED_HOSTS` means it signs in _in place_ — the second is wrong reasoning (`ALLOWED_HOSTS` gates `will-navigate` only, never `window.open`), but that does not make the first true.
-      `source: proposal` · `evidence: src/main/session.ts:79-82 (no origin test) vs :85-90 (has one); prior capture of frame-ancestors 'none' on secure.soundcloud.com/sign-in was against v0.7.x's <webview>` · `effort: S`
 
-- [ ] **Capture the sign-in failure reason code, not just the fingerprint**
+      **Finding: neither. It is an in-page iframe.** On a logged-out profile with both handlers instrumented, clicking Sign in fires **neither** `setWindowOpenHandler` **nor** `will-navigate`, and the top-level URL stays on `/discover`. What appears is a 450×900 iframe inside a modal `div`, at `https://secure.soundcloud.com/web-auth?client_id=…&device_id=…&theme=dark&ui_evo=true`, listed by `mainFrame.framesInSubtree`.
+
+      So sign-in already happens in-app — but **not** because `secure.soundcloud.com` sits in `ALLOWED_HOSTS`. Iframe loads never consult `isInternalUrl` at all; that allowance is doing nothing here. Neither handler governs sign-in, so neither is the fix.
+
+      Re-run with a real injected input event (`sendInputEvent` down+up, which grants transient user activation) to rule out Chromium silently swallowing an unactivated `window.open`: identical result. The popup path is genuinely unused, not suppressed.
+
+      Also settled: the earlier `frame-ancestors 'none'` capture was taken against `/sign-in`. The surface actually embedded is `/web-auth`, which permits framing.
+      `source: proposal` · `evidence: src/main/session.ts:79-82 (no origin test) vs :85-90 (has one); measured 2026-09-08 with scratchpad probes signin-probe.cjs and signin-gesture.cjs` · `effort: S`
+
+- [ ] **Capture the sign-in failure reason code, not just the fingerprint** — NEEDS A REAL SIGN-IN ATTEMPT
       SoundCloud's auth module returns a named failure reason on a blocked sign-in — `DATADOME_BLOCKED`, `DEVICE_TOKEN_FAILED`, `RECAPTCHA_FAILED`, `DATADOME_CHECK_REQUIRED`. These have different causes and different fixes: a device-token failure points at client identity we control, a DataDome block points at IP/session reputation we do not. Without this the fingerprint audit can come back completely clean while the block persists, and the project has no next move.
-      `source: user request` · `evidence: #93, #97, #110, #111; captured sign-in page ships window.__sc_features with datadome/recaptcha killswitches` · `effort: S`
 
-- [ ] **Freeze `src/preload/content.ts` and the shared session until a clean baseline is recorded**
+      **Groundwork done; the capture itself is blocked on a human.** The feature flags read live out of the auth frame say both defences are active: `{"auth_ui_datadome_killswitch":false,"api_auth_turn_recaptcha_off":false,"auth_ui_show_email_consent":false,"auth_ui_magic_link_sign_in":false}`. Item 1 also settles _where_ to instrument — the `secure.soundcloud.com/web-auth` frame, reachable from main via `webFrameMain.executeJavaScript`, not a popup and not the top frame. What remains needs somebody to attempt a sign-in with their own credentials while that frame's auth responses are recorded, so it cannot be done unattended.
+      `source: user request` · `evidence: #93, #97, #110, #111; window.__sc_features read live from the auth frame 2026-09-08` · `effort: S`
+
+- [x] **Freeze `src/preload/content.ts` and the shared session until a clean baseline is recorded** — RULE WRITTEN 2026-09-08, IN FORCE
       A written sequencing rule, not code. The empty `start()` and the single shared session are the _control condition_ for the login and like/follow clusters — the only controlled experiment this project will get. AudioMonitor, the adblocker and the session partition each destroy it; they must land one at a time with a login retest between, and the fingerprint audit plus a clean login pass must be recorded against today's build first.
-      `source: proposal` · `evidence: src/preload/content.ts:82-90 (deliberately empty); src/main/window.ts:72-73 (hardenSession called twice on the same defaultSession); src/main/diagnostics.ts:14-16 (v0.7.x's confounded-causes failure)` · `effort: S`
 
-- [ ] **Prove the packaged renderer actually executes under its own CSP**
+      **The rule:**
+
+      1. `src/preload/content.ts` gains no new observer, and the content view gains no session partition of its own, until a **clean login pass has been recorded against a build that has neither**. The fingerprint audit (item 5) is done; the login pass is item 2 and is still outstanding, so the freeze is currently active.
+      2. When they do land, they land **one at a time, each with a login retest in between**. AudioMonitor, the session partition, and any further in-page work are separate commits — never one.
+      3. Anything that must go in before the baseline exists is read-only and event-driven, and is written down here as an exception with its own retest. **One exception exists:** the page-theme observer added 2026-09-03 — a `MutationObserver` on `<body>`'s class attribute. No polling, no writes to their DOM, no page-visible globals; pinned by `src/preload/content.test.ts`.
+      4. The reason, so it is not re-argued: v0.7.x's diagnosis failed because four candidate causes changed at once and none could be ruled out. This project gets one clean control condition and must not spend it by accident.
+
+      `source: proposal` · `evidence: src/preload/content.ts (start() calls only watchPageTheme); src/main/window.ts (hardenSession per view, same session by reference); src/main/diagnostics.ts:14-16 (v0.7.x's confounded-causes failure)` · `effort: S`
+
+- [x] **Prove the packaged renderer actually executes under its own CSP** — ANSWERED 2026-09-08, ONE RESIDUAL
       In production the header and settings views load over `file://` from inside `app.asar`, and the built HTML emits `<script type="module" crossorigin src="…">` under `default-src 'none'; script-src 'self'`. Nobody has ever launched the packaged app: dev loads over `http://localhost:5173` where both trivially pass. The failure is silent by construction — `window.show()` fires on the header's `did-finish-load`, which fires whether or not the module ran, so a blocked script gives an empty 32px strip and a normal-looking window.
-      `source: proposal` · `evidence: out/renderer/header/index.html; src/main/window.ts:88, :100, :173-177; .github/workflows/ci.yml:49 ends at npm run pack with no launch` · `effort: S`
 
-- [ ] **Run the fingerprint parity audit in whichever sign-in surface item 1 identifies**
+      **Finding: all four renderers execute.** The built HTML does ship exactly the suspected combination — `default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'` alongside a `<script type="module" crossorigin src="../assets/….js">`. Loading each built `out/renderer/<entry>/index.html` over a `file:` origin and asking the only question that matters — did the component mount — gives `#app` child counts of 1 (header), 2 (settings), 1 (embedded) and 1 (player), with no CSP violation reported. The silent blank-strip failure does not occur.
+
+      **Residual:** this loaded from disk, not from inside `app.asar`, and the packaged binary still has not been launched. The scheme and the CSP are identical either way, so the CSP question itself is closed; what stays unproven is asar-specific behaviour (the `onlyLoadAppFromAsar` and integrity fuses). Cheapest close: install one build and confirm the header strip is populated rather than blank — folded into the release item in Milestone 4.
+      `source: proposal` · `evidence: out/renderer/*/index.html; measured 2026-09-08 with scratchpad probe csp-probe.cjs; .github/workflows/ci.yml:49 ends at npm run pack with no launch` · `effort: S`
+
+- [x] **Run the fingerprint parity audit in whichever sign-in surface item 1 identifies** — RUN 2026-09-08, ONE MISMATCH
       Dump `navigator.userAgent`, `navigator.userAgentData.getHighEntropyValues`, `navigator.webdriver`, `navigator.plugins.length`, `navigator.languages` and the `sec-ch-ua*` headers _as actually sent_, in three places: real Chrome on the same machine, the v2 content view, and the v2 sign-in surface. Commit the diff. Fold in the falsification tests: `typeof process|global|require` all undefined on the sign-in origin, `Object.getOwnPropertyDescriptor(navigator,'userAgent')` undefined, `navigator.hasOwnProperty('webdriver')` false, and zero `console.log` calls per second with a track playing. **Do not add spoofing if a mismatch appears** — a mismatch means identity is set in the wrong place and the fix is to move it lower.
-      `source: user request` · `evidence: roadmap Phase 0.5 (unchecked); src/main/index.ts:20-36; #106, #93, #97` · `effort: M`
 
+      **Finding: clean, except the language pair.** All three legs are now run. Our two surfaces — the content view and the `web-auth` frame item 1 identified — agree with each other exactly, and every falsification test passes in both: `typeof process`, `global` and `require` all `undefined`; `Object.getOwnPropertyDescriptor(navigator,'userAgent')` `undefined`, so nothing is monkey-patched; `navigator.hasOwnProperty('webdriver')` false and `navigator.webdriver` false; `plugins.length` 5; `platform` `Win32`. No Electron or BetterSoundCloud string anywhere.
+
+      The third leg — real Chrome on this machine, throwaway profile, same loopback page and the same probe in both — is the one that was missing, and it is the one that pays:
+
+      | | real Chrome 152 | v2 (Chromium 150) |
+      | --- | --- | --- |
+      | UA header vs `navigator.userAgent` | identical | identical |
+      | `sec-ch-ua` brands | Chromium 152, Not?A_Brand 24, **Google Chrome 152** | Not;A=Brand 8, Chromium 150 |
+      | `navigator.languages` | `["en-US","en"]` | `["en-US","en-AU","fa"]` |
+      | `Accept-Language` | `en-US,en;q=0.9` | `en-US` |
+      | `navigator.language` | `en-US` | `en-US` |
+      | plugins / webdriver / platform / platformVersion | 5 / false / Win32 / 19.0.0 | identical |
+
+      **The missing "Google Chrome" brand is not a mismatch, and this is worth recording because it looks like one.** Stock Chromium also puts `Chrome/NNN` in its UA string while omitting that brand from its hints, so our UA-plus-hints pair is exactly what a real Chromium build sends. It is internally consistent, and `src/shared/identity.ts`'s doc comment — the claim that leaving `sec-ch-ua` alone yields brands agreeing with both the UA string and `navigator.userAgentData` — **survives a real-Chrome differential**. The accepted cost is population size: Chromium users are rarer than Chrome users, which is a reputation input, not an inconsistency, and the project's posture takes that trade knowingly. Same for the 150-vs-152 version lag: real installs lag.
+
+      **The one genuine mismatch is the language pair, and it is worse than first recorded** — *both* halves differ from Chrome, not just one. Chrome derives a weighted `en-US,en;q=0.9` from its own `["en-US","en"]`; we send a bare `en-US` while reporting the raw three-entry OS preference list. Note what Chrome does with the same OS settings: it does **not** surface `en-AU` or `fa` at all, and it appends the base `en`. So the target is known exactly, which is what makes the Milestone 3 fix cheap. Per this item's own rule the fix is **not** to rewrite the header.
+
+      One probe artifact, so nobody re-reads this and panics: over plain-HTTP loopback our Electron sent no `sec-ch-ua*` headers at all while Chrome sent them. Irrelevant to the real target — the same audit against `dwt.`, `api-auth.` and `api-v2.soundcloud.com` over HTTPS shows the hints present and consistent.
+      `source: user request` · `evidence: measured 2026-09-08 — scratchpad probes fingerprint-probe.cjs (content view + secure.soundcloud.com/web-auth frame) and probe-server.cjs (real Chrome vs our Electron, same page, same run); src/shared/identity.ts; src/main/index.ts:42-58` · `effort: M`
 ---
 
 ## Milestone 2 — Merge gate: what breaks the day `rewrite` lands on `main`
@@ -97,8 +139,23 @@ These are not independent tasks. They are all assertions about one moment, and o
 The remaining headline bug. This is the only milestone where "the app is not credible without it" is literally true.
 
 - [ ] **Keep SoundCloud's own sign-in inside the app; route only third-party OAuth out**
-      `setWindowOpenHandler` returns `{action:'deny'}` for **every** URL and calls `shell.openExternal`, with no origin test — while the `will-navigate` handler ten lines below it does check. If sign-in is a first-party popup, it opens in the user's real browser, authenticates there, and drops the cookie in the wrong jar: the app stays logged out no matter how many times the user succeeds. That is #110 and #74 verbatim. Branch on `isInternalUrl()`; internal origins get `{action:'allow'}` with `overrideBrowserWindowOptions` carrying the same preload, the same `userAgent`, `contextIsolation`, `sandbox`, and — critically — **the same session object taken by reference**, never a fresh partition or `defaultSession`. Add a `will-navigate` allowance so the popup can redirect within `secure.soundcloud.com`. Effort is L, not M: verification means confirming the cookie lands in the content view's jar, not that a window opened. **Blocked on Milestone 1 item 1** — if sign-in navigates in place, this shrinks to nothing.
-      `source: user request` · `evidence: src/main/session.ts:78-90; src/main/session.test.ts covers isInternalUrl but never the window-open path; #110, #74, #58, #111, #100` · `effort: L`
+      `setWindowOpenHandler` returns `{action:'deny'}` for **every** URL and calls `shell.openExternal`, with no origin test — while the `will-navigate` handler ten lines below it does check. If sign-in is a first-party popup, it opens in the user's real browser, authenticates there, and drops the cookie in the wrong jar: the app stays logged out no matter how many times the user succeeds. That is #110 and #74 verbatim. Branch on `isInternalUrl()`; internal origins get `{action:'allow'}` with `overrideBrowserWindowOptions` carrying the same preload, the same `userAgent`, `contextIsolation`, `sandbox`, and — critically — **the same session object taken by reference**, never a fresh partition or `defaultSession`. Add a `will-navigate` allowance so the popup can redirect within `secure.soundcloud.com`. Effort is L, not M: verification means confirming the cookie lands in the content view's jar, not that a window opened.
+
+      **Unblocked, and mostly dissolved (2026-09-08).** Milestone 1 item 1 measured it: SoundCloud's own email/password sign-in is an **iframe inside the page**, so it never reaches `setWindowOpenHandler` at all and the wrong-cookie-jar theory does not apply to it. The headline bug this item was written for is not this bug.
+
+      What survives is the narrower half already in the title — **third-party OAuth**. The social buttons live inside that auth iframe and have not been clicked under instrumentation, so whether they use `window.open` is still unmeasured; if they do, today's blanket `{action:'deny'}` sends them to the real browser and the returning session never reaches our jar. Measure that first, from the frame item 1 identified, then fix only what the measurement shows. The blanket handler is worth an origin test regardless — it is the same no-origin-check defect either way — but it is no longer the login fix.
+      `source: user request` · `evidence: src/main/session.ts:78-90; src/main/session.test.ts covers isInternalUrl but never the window-open path; Milestone 1 item 1; #110, #74, #58, #111, #100` · `effort: M`
+
+- [ ] **Make `Accept-Language` and `navigator.languages` agree — by setting the list, not the header**
+      The only mismatch the Milestone 1 fingerprint audit found, and the real-Chrome leg says **both** halves are wrong, not one. Measured on this machine, same page, same run:
+
+      | | `navigator.languages` | `Accept-Language` |
+      | --- | --- | --- |
+      | real Chrome 152 | `["en-US","en"]` | `en-US,en;q=0.9` |
+      | v2 today | `["en-US","en-AU","fa"]` | `en-US` |
+
+      Two separate tells. The header is unweighted and does not follow from the list, which is visible to any script that compares them — exactly what bot detection does. And the list itself is the raw OS preference chain: Chrome with the *same* OS settings surfaces neither `en-AU` nor `fa`, and appends the base `en`. Per Milestone 1's rule, **do not rewrite the header** — that is spoofing, it treats the symptom, and it leaves the two sources independent and free to drift apart again. Set the language list once, to Chrome's shape, and let the header derive from it; then re-run the probe and confirm both cells moved together. Gotcha: this becomes part of the app's identity, so it belongs beside the user agent in `src/main/index.ts`, not buried in a view's construction. Second gotcha: `en-AU` and `fa` are presumably in the OS list because the user put them there — dropping them from what SoundCloud sees is a parity fix, but if any UI language selection is ever added it must not be wired to the same value.
+      `source: proposal` · `evidence: Milestone 1 item 5, measured 2026-09-08; src/main/index.ts:42-58 (identity is set here); src/main/session.ts (headers are rewritten here)` · `effort: S`
 
 - [ ] **Give the content view a visible, recoverable failure state**
       `did-fail-load` exists and correctly filters `ERR_ABORTED` and subframes, but its only action is `console.error` — invisible in a packaged build, so the user's experience is unchanged from #50. On a main-frame failure, load a bundled local error page into the content view with the error code, a Retry, and an Open Settings button, plus `net` online/offline driving a backoff retry. Make it a **real navigation, not an overlay** — v0.7.x's `#loadingscreen` was an overlay dismissed by the last statement of an unguarded block, which is what stranded #109 and #55. Add `render-process-gone` and `unresponsive` while here. Gotcha: **do not try to detect blocks here** — a DataDome interstitial returns HTTP 200 and never reaches `did-fail-load`.
@@ -171,7 +228,7 @@ Nothing publishes today. The updater, the signing decisions and the Linux verifi
       `source: infrastructure` · `evidence: electron-builder.yml:19, :62-65; node_modules/app-builder-lib/out/electron/ElectronFramework.js:198-202 and :162-195; ls release/win-unpacked/resources` · `effort: M`
 
 - [ ] **Make CI build and verify something, and stop it from running `check` twice**
-      Four fixes together, because the release workflow is the first moment any of them can be discovered. `npm run pack` is `--dir`, so no installer target is exercised anywhere; add `actions/upload-artifact` and a headless smoke launch that asserts the header view reaches `did-finish-load`. Producing an `.rpm` needs `rpmbuild` on the runner (`apt-get install -y rpm`) — fpm shells out to it. `npm run pack` re-runs the whole `check` suite the `check` job just ran, on three OSes. And the CI comment names `scripts/sign-vmp.js`; the file is `scripts/vmp-sign.js`.
+      Four fixes together, because the release workflow is the first moment any of them can be discovered. `npm run pack` is `--dir`, so no installer target is exercised anywhere; add `actions/upload-artifact` and a headless smoke launch. **Do not assert `did-finish-load`** — Milestone 1 item 4 is the reason: that event fires whether or not the renderer's module ran, which is precisely why a CSP-blocked script produces an empty strip and a normal-looking window. Assert that `#app` has children, which is the thing that actually distinguishes them. This is also where Milestone 1 item 4's residual closes: that check was run against the built output on disk, never from inside `app.asar`, so running it on a packaged artifact settles the asar fuses (`onlyLoadAppFromAsar`, `enableEmbeddedAsarIntegrityValidation`) at the same time. Producing an `.rpm` needs `rpmbuild` on the runner (`apt-get install -y rpm`) — fpm shells out to it. `npm run pack` re-runs the whole `check` suite the `check` job just ran, on three OSes. And the CI comment names `scripts/sign-vmp.js`; the file is `scripts/vmp-sign.js`.
       `source: infrastructure` · `evidence: .github/workflows/ci.yml:27-49; package.json:17, :23; electron-builder.yml:74-83` · `effort: M`
 
 - [ ] **Wire electron-updater to GitHub Releases**
