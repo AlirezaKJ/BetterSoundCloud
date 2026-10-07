@@ -41,5 +41,8 @@
     "cross-fetch": "^4.1.0",
     "electron-squirrel-startup": "^1.0.1",
     "soundcloud-downloader": "^1.0.0"
+  },
+  "overrides": {
+    "yauzl": "^3.4.0"
   }
 }
