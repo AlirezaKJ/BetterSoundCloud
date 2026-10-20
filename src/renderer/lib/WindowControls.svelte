@@ -11,32 +11,34 @@
   let { maximized }: Props = $props()
 </script>
 
-<div class="controls" data-bsc-window-controls>
-  <button title="Minimize" aria-label="Minimize" onclick={() => window.bsc.minimize()}>
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12" /></svg>
-  </button>
+{#if window.bsc.platform !== 'darwin'}
+  <div class="controls" data-bsc-window-controls>
+    <button title="Minimize" aria-label="Minimize" onclick={() => window.bsc.minimize()}>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12" /></svg>
+    </button>
 
-  <button
-    title={maximized ? 'Restore' : 'Maximize'}
-    aria-label={maximized ? 'Restore' : 'Maximize'}
-    onclick={() => window.bsc.maximizeToggle()}
-  >
-    {#if maximized}
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <rect x="8" y="5" width="11" height="11" />
-        <path d="M5 8v11h11" />
-      </svg>
-    {:else}
-      <svg viewBox="0 0 24 24" aria-hidden="true"
-        ><rect x="6" y="6" width="12" height="12" /></svg
-      >
-    {/if}
-  </button>
+    <button
+      title={maximized ? 'Restore' : 'Maximize'}
+      aria-label={maximized ? 'Restore' : 'Maximize'}
+      onclick={() => window.bsc.maximizeToggle()}
+    >
+      {#if maximized}
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="8" y="5" width="11" height="11" />
+          <path d="M5 8v11h11" />
+        </svg>
+      {:else}
+        <svg viewBox="0 0 24 24" aria-hidden="true"
+          ><rect x="6" y="6" width="12" height="12" /></svg
+        >
+      {/if}
+    </button>
 
-  <button class="close" title="Close" aria-label="Close" onclick={() => window.bsc.close()}>
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17" /></svg>
-  </button>
-</div>
+    <button class="close" title="Close" aria-label="Close" onclick={() => window.bsc.close()}>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17" /></svg>
+    </button>
+  </div>
+{/if}
 
 <style>
   .controls {

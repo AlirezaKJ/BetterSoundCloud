@@ -22,7 +22,11 @@
   <li> elements into SoundCloud's own React-managed `.header__navMenu` and overwrote
   `innerHTML` on three live React nodes.
 -->
-<header data-bsc-header class:unfocused={!win.focused}>
+<header
+  data-bsc-header
+  class:macos={window.bsc.platform === 'darwin'}
+  class:unfocused={!win.focused}
+>
   <div class="nav" data-bsc-header-nav>
     <button
       title="Back"
@@ -86,6 +90,7 @@
 
 <style>
   header {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 4px;
@@ -95,6 +100,10 @@
     border-bottom: 1px solid var(--bsc-border);
     user-select: none;
     -webkit-app-region: drag;
+  }
+
+  header.macos {
+    padding-left: 80px;
   }
 
   header.unfocused {
@@ -109,8 +118,16 @@
     -webkit-app-region: no-drag;
   }
 
+  .controls {
+    margin-left: auto;
+  }
+
   .title {
-    flex: 1;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: calc(100% - 400px);
+    pointer-events: none;
     text-align: center;
     font-size: 12px;
     font-weight: 500;

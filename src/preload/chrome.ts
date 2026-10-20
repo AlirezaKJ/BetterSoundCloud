@@ -20,6 +20,7 @@ function subscribe<T>(channel: string, cb: (value: T) => void): () => void {
 }
 
 const api: ChromeApi = {
+  platform: process.platform,
   minimize: () => ipcRenderer.send(CH.windowMinimize),
   maximizeToggle: () => ipcRenderer.send(CH.windowMaximizeToggle),
   close: () => ipcRenderer.send(CH.windowClose),

@@ -52,6 +52,7 @@ export type WindowState = {
 
 /** Shape exposed on `window.bsc` in our own chrome renderers. Never in SoundCloud's page. */
 export type ChromeApi = {
+  readonly platform: string
   minimize(): void
   maximizeToggle(): void
   close(): void

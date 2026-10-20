@@ -1,6 +1,5 @@
 import { join } from 'node:path'
 import { app, Menu, Tray, nativeImage } from 'electron'
-import type { Shell } from './window'
 
 /**
  * The tray icon and its right-click menu.
@@ -16,17 +15,9 @@ import type { Shell } from './window'
 // icon disappears from the tray with no error.
 let tray: Tray | null = null
 
-/** Bring the window back whether it is minimised, hidden, or merely behind something. */
-function showWindow(shell: Shell): void {
-  const { window } = shell
-  if (window.isMinimized()) window.restore()
-  if (!window.isVisible()) window.show()
-  window.focus()
-}
-
-function buildMenu(shell: Shell): Menu {
+function buildMenu(showWindow: () => void): Menu {
   return Menu.buildFromTemplate([
-    { label: 'Show BetterSoundCloud', click: () => showWindow(shell) },
+    { label: 'Show BetterSoundCloud', click: showWindow },
     { type: 'separator' },
     // Enabled once playback control exists. See docs/TODO.md.
     { label: 'Play', enabled: false },
@@ -37,7 +28,7 @@ function buildMenu(shell: Shell): Menu {
   ])
 }
 
-export function createTray(shell: Shell): void {
+export function createTray(showWindow: () => void): void {
   // One icon file serves the installer, the window and the tray. It is 1000x1000, so it
   // is resized here rather than shipping a second asset that can drift from the first.
   // `resources/` is inside the asar at runtime and beside `out/` in dev, so this one
@@ -49,12 +40,12 @@ export function createTray(shell: Shell): void {
 
   tray = new Tray(icon)
   tray.setToolTip('BetterSoundCloud')
-  tray.setContextMenu(buildMenu(shell))
+  tray.setContextMenu(buildMenu(showWindow))
 
   // Windows and macOS raise the window on a plain click. Linux tray implementations
   // often deliver no click event at all, which is why "Show BetterSoundCloud" is the
   // first menu item rather than relying on this.
-  tray.on('click', () => showWindow(shell))
+  tray.on('click', showWindow)
 
   // Windows can leave a ghost icon in the notification area if the process exits without
   // destroying the tray.

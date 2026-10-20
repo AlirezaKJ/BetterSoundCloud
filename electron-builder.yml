@@ -22,6 +22,8 @@ electronDist: node_modules/electron/dist
 # BEFORE the afterPack/afterSign hooks below — which is the required order, because
 # flipping a fuse mutates the very bytes a VMP signature covers.
 electronFuses:
+  # Fuse edits invalidate the prebuilt signature; local Apple Silicon builds need a new one.
+  resetAdHocDarwinSignature: true
   runAsNode: false
   enableCookieEncryption: true
   enableNodeOptionsEnvironmentVariable: false
@@ -63,7 +65,7 @@ mac:
   target:
     - target: dmg
       arch: [x64, arm64]
-  icon: resources/icon.png
+  icon: resources/icon.icns
   category: public.app-category.music
   hardenedRuntime: true
   gatekeeperAssess: false
