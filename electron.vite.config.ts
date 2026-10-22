@@ -2,6 +2,12 @@ import { resolve } from 'node:path'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 
+// Electron-based terminals (VS Code, Orca) pass their desktop identity to children.
+// Castlabs Electron crashes in its Linux zygote before main runs when it inherits it.
+// Clear it in the launcher process, while keeping Chromium's sandbox enabled.
+// https://github.com/castlabs/electron-releases/issues/165
+if (process.platform === 'linux') delete process.env['CHROME_DESKTOP']
+
 /**
  * Three build targets from one config.
  *

@@ -22,8 +22,11 @@ npm run dev
 
 `npm install` pulls Electron from
 [castlabs/electron-releases](https://github.com/castlabs/electron-releases), not npm. That
-build ships the Widevine CDM, which SoundCloud now requires for part of its catalogue, and
+build installs the Widevine CDM on first launch, which SoundCloud now requires for part of its catalogue, and
 it is where the `components` export used in `src/main/index.ts` comes from.
+
+The first launch of each profile waits for that download before opening a window. This
+can take a few minutes on a slow connection; subsequent launches use the installed CDM.
 
 > **Why there is a `postinstall` script.** The Castlabs package ships no `scripts` field,
 > so unlike the stock `electron` package it has no `postinstall` to fetch the binary. Left
@@ -32,6 +35,12 @@ it is where the `components` export used in `src/main/index.ts` comes from.
 > [#99](https://github.com/AlirezaKJ/BetterSoundCloud/issues/99). Our `postinstall` runs
 > the vendored `install.js` to fix it. If you ever install with `--ignore-scripts`, run
 > `node node_modules/electron/install.js` by hand.
+
+On Linux, the Vite config clears an inherited `CHROME_DESKTOP` before launching
+Electron. Without this, starting from an Electron-based terminal such as VS Code or
+Orca can crash in `zygote_host_impl_linux.cc` before the app runs
+([Castlabs #165](https://github.com/castlabs/electron-releases/issues/165)). For direct
+Electron launches, use `env -u CHROME_DESKTOP node_modules/.bin/electron .`.
 
 ## Scripts
 
