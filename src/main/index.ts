@@ -1,5 +1,5 @@
 import { join } from 'node:path'
-import { app, components, ipcMain, nativeTheme, BrowserWindow } from 'electron'
+import { app, components, ipcMain, nativeTheme } from 'electron'
 import { buildUserAgent, leaksAppIdentity } from '@shared/identity'
 import { CH } from '@shared/ipc'
 import {
@@ -29,6 +29,11 @@ import * as settings from './settings-store'
 import { listThemes } from './themes'
 
 let shell: Shell | null = null
+let quitting = false
+
+app.on('before-quit', () => {
+  quitting = true
+})
 
 /*
  * ORDER MATTERS IN THIS FILE.
@@ -73,16 +78,6 @@ if (!settings.get('advanced.hardwareAcceleration')) {
 if (!app.requestSingleInstanceLock()) {
   app.quit()
 } else {
-  app.on('second-instance', () => {
-    if (!shell) return
-    // show() matters as well as restore(): with a tray the window can be hidden, and a
-    // hidden window is not a minimised one. Without this, launching the app again while
-    // it sits in the tray would appear to do nothing.
-    if (shell.window.isMinimized()) shell.window.restore()
-    if (!shell.window.isVisible()) shell.window.show()
-    shell.window.focus()
-  })
-
   app
     .whenReady()
     // Castlabs' Widevine CDM must be registered before any window opens, or EME calls
@@ -93,17 +88,10 @@ if (!app.requestSingleInstanceLock()) {
       // Synchronous, and before any view exists, so blocking is either fully on or
       // fully off from the first request — never half-applied mid-load.
       loadBlockerEngine()
-      shell = createShell(USER_AGENT)
-      attachContextMenu(shell)
-      createTray(shell)
-      applyLiveSettings()
-
-      app.on('activate', () => {
-        if (!shell && BrowserWindow.getAllWindows().length === 0) {
-          shell = createShell(USER_AGENT)
-          attachContextMenu(shell)
-        }
-      })
+      showMainWindow()
+      createTray(showMainWindow)
+      app.on('activate', showMainWindow)
+      app.on('second-instance', showMainWindow)
     })
     .catch((error: unknown) => {
       console.error('[main] startup failed:', error)
@@ -114,6 +102,42 @@ if (!app.requestSingleInstanceLock()) {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
+
+/** Recreate a closed window, or raise the existing one, from every entry point. */
+function showMainWindow(): void {
+  if (!shell) {
+    const next = createShell(USER_AGENT)
+    shell = next
+    next.window.on('close', (event) => {
+      if (process.platform === 'darwin' && !quitting) {
+        // Keep SoundCloud's renderer (and its audio) alive until the user quits.
+        event.preventDefault()
+        next.window.hide()
+      }
+    })
+    next.window.once('closed', () => {
+      if (shell === next) shell = null
+      // BaseWindow does not own the lifetime of its WebContentsViews.
+      for (const view of [
+        next.header,
+        next.content,
+        next.settings,
+        next.embedded,
+        next.player,
+        next.contextMenu
+      ]) {
+        if (view && !view.webContents.isDestroyed()) view.webContents.close()
+      }
+    })
+    attachContextMenu(next)
+    applyLiveSettings()
+    return
+  }
+
+  if (shell.window.isMinimized()) shell.window.restore()
+  if (!shell.window.isVisible()) shell.window.show()
+  shell.window.focus()
+}
 
 function registerIpc(): void {
   /**
@@ -143,11 +167,7 @@ function registerIpc(): void {
 
   ipcMain.on(CH.windowClose, (e) => {
     if (!fromChrome(e) || !shell) return
-    // Still always closes. The tray now exists, so hiding would no longer strand the app
-    // — "Show BetterSoundCloud", a tray click, and second-instance can all bring it back.
-    // Turning the setting on is a separate, deliberate change: it needs its own quitting
-    // flag so Quit is not swallowed by the same hide, and `general.minimizeToTray` stays
-    // `wired: false` in the schema until then.
+    // macOS hides the window in its close handler to keep playback running.
     shell.window.close()
   })
 

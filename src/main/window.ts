@@ -117,7 +117,8 @@ const SC_HEADER_HEIGHT = 46
  * Drag comes from SoundCloud's header instead of from empty space here; see
  * `applyContentCss`.
  */
-const EMBEDDED_WIDTH = 144
+// macOS only needs the restore-bar button here; its native controls live on the left.
+const EMBEDDED_WIDTH = process.platform === 'darwin' ? 50 : 144
 
 /**
  * SoundCloud's play controls bar, and the strip we take at its right-hand end.
@@ -143,7 +144,10 @@ export function createShell(userAgent: string): Shell {
     // The same number as MIN_EMBED_WIDTH, whose doc comment asserts they are equal.
     minWidth: MIN_EMBED_WIDTH,
     minHeight: 600,
-    frame: false,
+    frame: process.platform === 'darwin',
+    ...(process.platform === 'darwin'
+      ? { titleBarStyle: 'hidden' as const, trafficLightPosition: { x: 12, y: 9 } }
+      : {}),
     show: false,
     backgroundColor: nativeTheme.shouldUseDarkColors ? '#121212' : '#f2f2f2',
     title: 'BetterSoundCloud'
@@ -223,6 +227,14 @@ export function createShell(userAgent: string): Shell {
     const compactHeader = embeddedShows && cssWidth < COMPACT_HEADER_WIDTH
     const fitHeader = embeddedShows && cssWidth < FIT_HEADER_WIDTH
     const strip = embeddedShows ? 0 : HEADER_HEIGHT
+    if (process.platform === 'darwin') {
+      // Native buttons stay on the left in both header modes; their coordinates are
+      // window pixels, even when SoundCloud's header is zoomed.
+      const barHeight = embeddedShows
+        ? SC_HEADER_HEIGHT * content.webContents.getZoomFactor()
+        : HEADER_HEIGHT
+      window.setWindowButtonPosition({ x: 12, y: Math.round((barHeight - 14) / 2) })
+    }
 
     // Hidden, not merely flattened to zero height.
     //
@@ -449,6 +461,7 @@ async function applyContentCss(shell: Shell, fullWidth: boolean, theme: string):
       buildContentCss({
         fullWidth,
         reserve,
+        nativeControlsReserve: process.platform === 'darwin' ? Math.ceil(80 / zoom) : 0,
         theme: themeCss(theme),
         playerReserve,
         compactHeader,

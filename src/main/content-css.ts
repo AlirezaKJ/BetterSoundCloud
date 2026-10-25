@@ -86,6 +86,7 @@ export interface ContentCssOptions {
    * CSS pixels to reserve at the right end of the header for our window buttons,
    * or null when the embedded buttons are not showing.
    */
+  nativeControlsReserve?: number
   reserve: number | null
 }
 
@@ -95,7 +96,8 @@ export function buildContentCss({
   theme,
   playerReserve,
   compactHeader,
-  fitHeader
+  fitHeader,
+  nativeControlsReserve
 }: ContentCssOptions): string {
   // Always applied. Chrome's default scrollbar is 15px of opaque grey, and because
   // SoundCloud's header is sized to `clientWidth` it stops short by exactly that much —
@@ -145,6 +147,10 @@ export function buildContentCss({
        .header { -webkit-app-region: drag; }
        .header * { -webkit-app-region: no-drag; }`
     )
+  }
+
+  if (reserve !== null && nativeControlsReserve) {
+    rules.push(`.header__inner { padding-left: ${nativeControlsReserve}px !important; }`)
   }
 
   if (reserve !== null && compactHeader) {
