@@ -49,6 +49,22 @@ describe('the content preload', () => {
     }
   })
 
+  it('ignores page lifecycle events the page makes up, and survives the back/forward cache', () => {
+    // Measured: one `dispatchEvent(new PageTransitionEvent('pagehide'))` from any script on
+    // soundcloud.com used to switch every watcher off for the rest of the session. Only a
+    // browser-fired (`isTrusted`) event may tear down or re-report, and entering the
+    // back/forward cache (`persisted`) must not tear down at all.
+    const listenerFor = (type: string): string => {
+      const at = CODE.indexOf(`addEventListener('${type}'`)
+      expect(at, type).toBeGreaterThan(-1)
+      return CODE.slice(at, at + 160)
+    }
+    expect(listenerFor('pagehide')).toMatch(/event\.isTrusted && !event\.persisted/)
+    expect(listenerFor('pageshow')).toMatch(/!event\.isTrusted \|\| !event\.persisted/)
+    // The old binding tore down on the first pagehide of any kind.
+    expect(CODE).not.toContain("addEventListener('pagehide', teardown")
+  })
+
   it('has no part in the right-click menu', () => {
     // The menu is driven entirely from main's `context-menu` event (src/main/context-menu.ts).
     // v0.7.x needed a script inside the page just to learn when to dismiss its menu; v2 needs

@@ -291,6 +291,13 @@ Patterns:
 - Waiting for an element: observe `document.body` (`childList`, `subtree`) and stop as soon as it
   appears. SoundCloud's player bar (`.playControls`) is drawn after DOMContentLoaded and then
   survives in-app navigation (measured).
+- **Page lifecycle.** Watchers are torn down only on a real unload: a `pagehide` that is
+  `isTrusted` and not `persisted`. Never act on a lifecycle event without checking `isTrusted` —
+  the page can dispatch fake ones, and a single fake `pagehide` once switched every watcher off.
+  Electron keeps the back/forward cache off and SoundCloud's pages are `Cache-Control: no-store`
+  (both measured), so Back to another document is always a fresh load where the preload runs
+  again. Each watcher still returns a `ReportAgain`, which the `pageshow` listener in `start()`
+  calls on a genuine restore; a new watcher must return one and be added there.
 
 ---
 

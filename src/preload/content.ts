@@ -104,6 +104,12 @@ function teardown(): void {
 }
 
 /**
+ * Sends a watcher's current reading again, even though it has not changed. Every watcher
+ * returns one, for the rare moment main needs telling twice — see the `pageshow` listener.
+ */
+type ReportAgain = () => void
+
+/**
  * Report SoundCloud's own light/dark setting to main, so our overlays can match it.
  *
  * Read-only and event-driven, per the contract above: it observes the `class` attribute on
@@ -111,7 +117,7 @@ function teardown(): void {
  * the theme in their settings rewrites that class without a reload, which is exactly the
  * mutation this waits for.
  */
-function watchPageTheme(): void {
+function watchPageTheme(): ReportAgain {
   let last: PageTheme | null = null
 
   const report = (): void => {
@@ -128,6 +134,11 @@ function watchPageTheme(): void {
 
   report()
   observe(document.body, { attributes: true, attributeFilter: ['class'] }, report)
+
+  return () => {
+    last = null
+    report()
+  }
 }
 
 /**
@@ -142,8 +153,10 @@ function watchPageTheme(): void {
  * It sends the raw reading and lets main make sense of it with `readNowPlaying`
  * (src/shared/now-playing.ts), so every judgement call is in a pure module with tests.
  */
-function watchPlayer(): void {
+function watchPlayer(): ReportAgain {
   let lastSent = ''
+  /** The bar being watched, once it has been found. */
+  let watched: Element | null = null
 
   const report = (bar: Element): void => {
     const reading = readPlayer(bar)
@@ -157,6 +170,7 @@ function watchPlayer(): void {
   }
 
   const watch = (bar: Element): void => {
+    watched = bar
     report(bar)
     observe(
       bar,
@@ -168,16 +182,20 @@ function watchPlayer(): void {
   const bar = document.querySelector(PLAYER_BAR.bar)
   if (bar) {
     watch(bar)
-    return
+  } else {
+    // Waiting watches the whole page, so it stops the moment the bar turns up.
+    const stopWaiting = observe(document.body, { childList: true, subtree: true }, () => {
+      const found = document.querySelector(PLAYER_BAR.bar)
+      if (!found) return
+      stopWaiting()
+      watch(found)
+    })
   }
 
-  // Waiting watches the whole page, so it stops the moment the bar turns up.
-  const stopWaiting = observe(document.body, { childList: true, subtree: true }, () => {
-    const found = document.querySelector(PLAYER_BAR.bar)
-    if (!found) return
-    stopWaiting()
-    watch(found)
-  })
+  return () => {
+    lastSent = ''
+    if (watched) report(watched)
+  }
 }
 
 /** Read the player bar as it is. A missing element reads as empty — never a throw. */
@@ -204,8 +222,22 @@ function readPlayer(bar: Element): PlayerReading {
 }
 
 function start(): void {
-  watchPageTheme()
-  watchPlayer()
+  const themeAgain = watchPageTheme()
+  const playerAgain = watchPlayer()
+
+  // Back from the back/forward cache. Main forgets what was playing whenever the page is
+  // left, and each watcher only speaks on a change, so both say their current state once
+  // more. Trusted events only, for the reason given at `pagehide` below. This cannot happen
+  // in today's Electron — see there — so it is insurance for an upgrade that changes that.
+  window.addEventListener('pageshow', (event) => {
+    if (!event.isTrusted || !event.persisted) return
+    try {
+      themeAgain()
+      playerAgain()
+    } catch {
+      /* ignore */
+    }
+  })
 
   // Kept for the next in-page feature that needs an event rather than a mutation.
   void listen
@@ -217,4 +249,20 @@ if (document.readyState === 'loading') {
   start()
 }
 
-window.addEventListener('pagehide', teardown, { once: true })
+/*
+ * Stop every watcher only when the page is really going away.
+ *
+ * Two kinds of `pagehide` must not count, and both were measured on 2026-10-27:
+ *
+ *   - One the page makes up. It is an ordinary DOM event, so any script on soundcloud.com can
+ *     dispatch it, and a single fake `pagehide` used to switch off every watcher for the rest
+ *     of the session. Real ones come from the browser and are `isTrusted`.
+ *   - One that means "going into the back/forward cache" (`persisted`). A cached page is
+ *     frozen and runs nothing, so its watchers simply carry on if it is ever brought back.
+ *     Electron keeps that cache switched off, and SoundCloud's pages are `Cache-Control:
+ *     no-store`, which makes them ineligible anyway — so in practice every Back to another
+ *     page is a fresh load, and this file simply runs again.
+ */
+window.addEventListener('pagehide', (event) => {
+  if (event.isTrusted && !event.persisted) teardown()
+})
