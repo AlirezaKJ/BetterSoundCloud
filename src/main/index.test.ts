@@ -58,7 +58,8 @@ function makeShell() {
     webContents: {
       isDestroyed: () => false,
       close: vi.fn(),
-      setZoomFactor: vi.fn()
+      setZoomFactor: vi.fn(),
+      on: vi.fn()
     }
   })
   return {

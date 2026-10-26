@@ -25,15 +25,18 @@
  * here — SoundCloud must not be able to detect us by probing for a global. v0.7.x
  * leaked `issciloaded`, `playpausebtn`, `nextsongbtn`, `maximize`, and more.
  *
- * Phase 1 fills in AudioMonitor against the contract below. Phase 0 establishes it.
+ * What it does today: reports SoundCloud's light/dark setting, and reports what is
+ * playing by watching the player bar. Both are observers; neither writes anything.
  */
 
 import { ipcRenderer } from 'electron'
 import { detectPageTheme } from '@shared/page-theme'
 import type { PageTheme } from '@shared/page-theme'
+import type { PlayerReading } from '@shared/now-playing'
+import { PLAYER_BAR } from './soundcloud-selectors'
 
 /*
- * The one channel this preload sends on, written out rather than imported from `@shared/ipc`.
+ * The channels this preload sends on, written out rather than imported from `@shared/ipc`.
  *
  * Not a style choice. `chrome.ts` imports that module too, and Rollup hoists anything two
  * entries share into `chunks/…cjs` which each entry then `require`s — but a SANDBOXED preload
@@ -42,16 +45,20 @@ import type { PageTheme } from '@shared/page-theme'
  * what happened when this file first started using its import; before that the shared module
  * was tree-shaken away and the problem was invisible.
  *
- * `src/preload/content.test.ts` fails if this string and `CH.pageTheme` ever drift apart.
+ * `src/preload/content.test.ts` fails if these strings and `CH` ever drift apart.
  */
 const PAGE_THEME_CHANNEL = 'page:theme'
+const TRACK_UPDATE_CHANNEL = 'content:track-update'
 
 type Disposer = () => void
 
 const disposers: Disposer[] = []
 
-/** Every listener and observer goes through here so teardown cannot be forgotten. */
-function observe(target: Node, options: MutationObserverInit, cb: MutationCallback): void {
+/**
+ * Every listener and observer goes through here so teardown cannot be forgotten.
+ * Returns a function that stops this one observer early; teardown stops it regardless.
+ */
+function observe(target: Node, options: MutationObserverInit, cb: MutationCallback): Disposer {
   try {
     const observer = new MutationObserver((records, self) => {
       try {
@@ -62,9 +69,11 @@ function observe(target: Node, options: MutationObserverInit, cb: MutationCallba
       }
     })
     observer.observe(target, options)
-    disposers.push(() => observer.disconnect())
+    const stop = (): void => observer.disconnect()
+    disposers.push(stop)
+    return stop
   } catch {
-    /* ignore */
+    return () => {}
   }
 }
 
@@ -121,12 +130,84 @@ function watchPageTheme(): void {
   observe(document.body, { attributes: true, attributeFilter: ['class'] }, report)
 }
 
+/**
+ * Report what is playing, by watching SoundCloud's player bar.
+ *
+ * The bar is drawn by SoundCloud's app some time after this preload starts — measured: it
+ * is not there yet at DOMContentLoaded — so this waits for it with an observer, never a
+ * timer. Once found, the same element stays for the life of the page: measured, it survives
+ * SoundCloud's in-app navigation. So one observer on it sees every track change, play, pause,
+ * like and clock tick.
+ *
+ * It sends the raw reading and lets main make sense of it with `readNowPlaying`
+ * (src/shared/now-playing.ts), so every judgement call is in a pure module with tests.
+ */
+function watchPlayer(): void {
+  let lastSent = ''
+
+  const report = (bar: Element): void => {
+    const reading = readPlayer(bar)
+    // The observer fires for far more than we read — the progress bar's width, the volume
+    // slider, tooltips. Only a change in the reading is worth a message. While a track plays,
+    // that is about once a second, as the clock ticks.
+    const serialized = JSON.stringify(reading)
+    if (serialized === lastSent) return
+    lastSent = serialized
+    ipcRenderer.send(TRACK_UPDATE_CHANNEL, reading)
+  }
+
+  const watch = (bar: Element): void => {
+    report(bar)
+    observe(
+      bar,
+      { subtree: true, childList: true, characterData: true, attributes: true },
+      () => report(bar)
+    )
+  }
+
+  const bar = document.querySelector(PLAYER_BAR.bar)
+  if (bar) {
+    watch(bar)
+    return
+  }
+
+  // Waiting watches the whole page, so it stops the moment the bar turns up.
+  const stopWaiting = observe(document.body, { childList: true, subtree: true }, () => {
+    const found = document.querySelector(PLAYER_BAR.bar)
+    if (!found) return
+    stopWaiting()
+    watch(found)
+  })
+}
+
+/** Read the player bar as it is. A missing element reads as empty — never a throw. */
+function readPlayer(bar: Element): PlayerReading {
+  const text = (selector: string): string =>
+    bar.querySelector(selector)?.textContent?.trim() ?? ''
+  const hasClass = (selector: string, className: string): boolean =>
+    bar.querySelector(selector)?.classList.contains(className) ?? false
+
+  const titleLink = bar.querySelector<HTMLAnchorElement>(PLAYER_BAR.titleLink)
+  const artwork = bar.querySelector<HTMLElement>(PLAYER_BAR.artwork)
+
+  return {
+    title: titleLink?.getAttribute('title') ?? '',
+    artworkLabel: artwork?.getAttribute('aria-label') ?? '',
+    artist: text(PLAYER_BAR.artist),
+    href: titleLink?.href ?? '',
+    artworkStyle: artwork?.style.backgroundImage ?? '',
+    elapsed: text(PLAYER_BAR.elapsed),
+    duration: text(PLAYER_BAR.duration),
+    playing: hasClass(PLAYER_BAR.playButton, PLAYER_BAR.playingClass),
+    liked: hasClass(PLAYER_BAR.likeButton, PLAYER_BAR.likedClass)
+  }
+}
+
 function start(): void {
   watchPageTheme()
+  watchPlayer()
 
-  // Phase 1: observe the play button and the sound badge here, and send
-  // `CH.trackUpdate` with a validated payload. Intentionally empty for now — an empty
-  // observer set is the correct Phase 0 state, not a TODO to paper over.
+  // Kept for the next in-page feature that needs an event rather than a mutation.
   void listen
 }
 

@@ -17,12 +17,12 @@ const CODE = SRC.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
  * Two things about it are easy to break invisibly, so both are pinned here.
  */
 describe('the content preload', () => {
-  it('writes its channel out, and keeps it identical to CH', () => {
+  it('writes its channels out, and keeps them identical to CH', () => {
     // It cannot import `@shared/ipc`: chrome.ts imports it too, and Rollup hoists anything
-    // two entries share into a chunk that a sandboxed preload cannot require. So the string
-    // is duplicated on purpose — and this is what stops the copy drifting.
-    const literal = /const PAGE_THEME_CHANNEL = '([^']+)'/.exec(SRC)?.[1]
-    expect(literal).toBe(CH.pageTheme)
+    // two entries share into a chunk that a sandboxed preload cannot require. So the strings
+    // are duplicated on purpose — and this is what stops the copies drifting.
+    expect(/const PAGE_THEME_CHANNEL = '([^']+)'/.exec(SRC)?.[1]).toBe(CH.pageTheme)
+    expect(/const TRACK_UPDATE_CHANNEL = '([^']+)'/.exec(SRC)?.[1]).toBe(CH.trackUpdate)
   })
 
   it('does not import @shared/ipc, which would re-create the shared chunk', () => {

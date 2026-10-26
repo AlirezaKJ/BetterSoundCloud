@@ -27,6 +27,8 @@ import type { Shell } from './window'
 import type { Settings } from '@shared/settings-schema'
 import * as settings from './settings-store'
 import { listThemes } from './themes'
+import { isSoundCloudUrl, readNowPlaying } from '@shared/now-playing'
+import { setNowPlaying } from './now-playing'
 
 let shell: Shell | null = null
 let quitting = false
@@ -115,8 +117,14 @@ function showMainWindow(): void {
         next.window.hide()
       }
     })
+    // A full page load stops playback, and the new page reports again once its player bar
+    // is drawn. Until then nothing is playing — and if the bar never turns up (a SoundCloud
+    // redesign), that is still the truth rather than the last track hanging around forever.
+    next.content.webContents.on('did-navigate', () => setNowPlaying(null))
+    next.content.webContents.on('render-process-gone', () => setNowPlaying(null))
     next.window.once('closed', () => {
       if (shell === next) shell = null
+      setNowPlaying(null)
       // BaseWindow does not own the lifetime of its WebContentsViews.
       for (const view of [
         next.header,
@@ -234,6 +242,26 @@ function registerIpc(): void {
     if (!shell || e.sender !== shell.content.webContents) return
     if (theme !== 'light' && theme !== 'dark') return
     setPageTheme(shell, theme)
+  })
+
+  /**
+   * What is playing, reported by the content preload whenever SoundCloud's player bar
+   * changes.
+   *
+   * Checked more strictly than any other channel. It must come from the content view, from
+   * its top frame, while that frame is on soundcloud.com — so neither an embedded frame nor
+   * a page the view navigated away to can post a track. v0.7.x's console-message channel had
+   * none of this, and any script on the page could drive it. The payload is then rebuilt
+   * field by field by `readNowPlaying`, never passed on as sent.
+   */
+  const fromSoundCloudPage = (event: Electron.IpcMainEvent): boolean => {
+    if (!shell || event.sender !== shell.content.webContents) return false
+    const frame = event.senderFrame
+    return frame !== null && frame.parent === null && isSoundCloudUrl(frame.url)
+  }
+
+  ipcMain.on(CH.trackUpdate, (e, reading: unknown) => {
+    if (fromSoundCloudPage(e)) setNowPlaying(readNowPlaying(reading))
   })
 
   ipcMain.handle(CH.settingsGetAll, (e) => (fromSettingsUi(e) ? settings.getAll() : null))

@@ -36,7 +36,7 @@ export const CH = {
   contextMenuGoToUrl: 'context-menu:go-to-url',
   contextMenuClose: 'context-menu:close',
 
-  // content preload -> main (Phase 1: AudioMonitor)
+  // content preload -> main. A raw reading of SoundCloud's player bar; see src/shared/now-playing.ts.
   trackUpdate: 'content:track-update'
 } as const
 
