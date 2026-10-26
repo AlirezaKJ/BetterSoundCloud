@@ -2,6 +2,7 @@ import type { Settings, SettingKey } from './settings-schema'
 import type { ThemeSummary } from './themes'
 import type { PageTheme } from './page-theme'
 import type { ContextMenuAction, ContextMenuRequest, GoToUrlResult } from './context-menu'
+import type { NowPlaying } from './now-playing'
 
 /** Every IPC channel name, in one place. Strings are never written inline. */
 export const CH = {
@@ -37,7 +38,11 @@ export const CH = {
   contextMenuClose: 'context-menu:close',
 
   // content preload -> main. A raw reading of SoundCloud's player bar; see src/shared/now-playing.ts.
-  trackUpdate: 'content:track-update'
+  trackUpdate: 'content:track-update',
+
+  // main -> every view of ours on each change, and a one-off read when a view opens.
+  nowPlayingChanged: 'now-playing:changed',
+  nowPlayingGet: 'now-playing:get'
 } as const
 
 export type NavState = {
@@ -90,4 +95,16 @@ export type ChromeApi = {
   goToUrl(text: string): Promise<GoToUrlResult>
   /** Dismissed without choosing anything. */
   closeContextMenu(): void
+
+  /**
+   * What is playing in SoundCloud, or null when nothing is loaded in its player. Read this
+   * once when a view opens, then follow `onNowPlaying` — subscribe first, so no change can
+   * slip between the two.
+   */
+  getNowPlaying(): Promise<NowPlaying | null>
+  /**
+   * Every change: a new track, play or pause, a like, a seek — and the clock, which means
+   * once a second while a track plays.
+   */
+  onNowPlaying(cb: (nowPlaying: NowPlaying | null) => void): () => void
 }

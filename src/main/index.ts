@@ -28,7 +28,8 @@ import type { Settings } from '@shared/settings-schema'
 import * as settings from './settings-store'
 import { listThemes } from './themes'
 import { isSoundCloudUrl, readNowPlaying } from '@shared/now-playing'
-import { setNowPlaying } from './now-playing'
+import type { NowPlaying } from '@shared/now-playing'
+import { getNowPlaying, onNowPlayingChange, setNowPlaying } from './now-playing'
 
 let shell: Shell | null = null
 let quitting = false
@@ -264,6 +265,19 @@ function registerIpc(): void {
     if (fromSoundCloudPage(e)) setNowPlaying(readNowPlaying(reading))
   })
 
+  /**
+   * Any view we draw ourselves may read what is playing — and only those. SoundCloud's own
+   * view is the source of this data, so it has no reason to ask for it back.
+   */
+  const fromOurViews = (event: Electron.IpcMainInvokeEvent): boolean =>
+    shell !== null &&
+    [shell.header, shell.settings, shell.embedded, shell.player, shell.contextMenu].some(
+      (view) => view?.webContents === event.sender
+    )
+
+  ipcMain.handle(CH.nowPlayingGet, (e) => (fromOurViews(e) ? getNowPlaying() : null))
+  onNowPlayingChange(broadcastNowPlaying)
+
   ipcMain.handle(CH.settingsGetAll, (e) => (fromSettingsUi(e) ? settings.getAll() : null))
 
   // The CSS never leaves main — the panel only needs enough to draw a list, and shipping a
@@ -321,6 +335,28 @@ function applyBlocking(): void {
   }
 
   setBlockingEnabled(wanted)
+}
+
+/**
+ * Tell every view we draw about a change in what is playing.
+ *
+ * All of them, whether or not they show it: a view that does not care simply never
+ * subscribes, and keeping one rule means a new view gets it without anyone remembering to
+ * add it here. It is cheap — a few short strings, at most once a second.
+ */
+function broadcastNowPlaying(nowPlaying: NowPlaying | null): void {
+  if (!shell) return
+  for (const view of [
+    shell.header,
+    shell.settings,
+    shell.embedded,
+    shell.player,
+    shell.contextMenu
+  ]) {
+    if (view && !view.webContents.isDestroyed()) {
+      view.webContents.send(CH.nowPlayingChanged, nowPlaying)
+    }
+  }
 }
 
 /** Tell every one of our own renderers about a settings change. */
