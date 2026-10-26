@@ -1,6 +1,7 @@
 import { EventEmitter } from 'node:events'
 import { describe, it, expect, vi } from 'vitest'
 import { CH } from '@shared/ipc'
+import type * as IdentityModule from '@shared/identity'
 
 const mocks = vi.hoisted(() => {
   return {
@@ -20,6 +21,10 @@ vi.mock('electron', async () => {
       setName: vi.fn(),
       setPath: vi.fn(),
       getPath: () => '/tmp',
+      // The values measured on the development machine, so the identity test below
+      // exercises the real language rules.
+      getLocale: () => 'en-US',
+      getPreferredSystemLanguages: () => ['en-AU', 'en-US', 'fa'],
       requestSingleInstanceLock: () => true,
       whenReady: () => Promise.resolve(),
       quit: vi.fn()
@@ -29,7 +34,9 @@ vi.mock('electron', async () => {
     nativeTheme: {}
   }
 })
-vi.mock('@shared/identity', () => ({
+// Only the user agent is faked. The language rules are pure and run for real.
+vi.mock('@shared/identity', async (importOriginal) => ({
+  ...(await importOriginal<typeof IdentityModule>()),
   buildUserAgent: () => 'test',
   leaksAppIdentity: () => false
 }))
@@ -223,5 +230,21 @@ describe('main window lifecycle', () => {
       }
     )
     expect(send).not.toHaveBeenCalled()
+  })
+
+  it('gives every window the same identity, its header built from the page’s languages', () => {
+    // Every window opened by the tests above. The languages come from the electron mock:
+    // locale en-US, system languages en-AU, en-US, fa — the development machine's own.
+    const identities = mocks.createShell.mock.calls.map(([identity]) => identity as unknown)
+    expect(identities.length).toBeGreaterThan(1)
+    for (const identity of identities) {
+      expect(identity).toEqual({
+        userAgent: 'test',
+        languages: ['en-US', 'en-AU', 'fa'],
+        acceptLanguages: 'en-US,en-AU,en,fa'
+      })
+      // Built once, not per window.
+      expect(identity).toBe(identities[0])
+    }
   })
 })

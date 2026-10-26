@@ -1,6 +1,14 @@
 import { join } from 'node:path'
 import { app, components, ipcMain, nativeTheme } from 'electron'
-import { buildUserAgent, leaksAppIdentity } from '@shared/identity'
+import type { WebContentsView } from 'electron'
+import {
+  acceptLanguages,
+  buildUserAgent,
+  leaksAppIdentity,
+  pageLanguages
+} from '@shared/identity'
+import type { Identity } from '@shared/identity'
+import { isDev } from './env'
 import { CH } from '@shared/ipc'
 import {
   createShell,
@@ -65,6 +73,51 @@ if (process.env['ELECTRON_RENDERER_URL']) {
   console.log(`[bsc] user agent ${USER_AGENT}`)
 }
 
+/**
+ * The full browser identity every session gets: the user agent above, plus the languages.
+ *
+ * Built on first use rather than here, because `app.getLocale()` only works after
+ * `whenReady()` — and every caller runs after that. Built once, so every view, and every
+ * window recreated later, tells websites exactly the same thing.
+ */
+let identity: Identity | null = null
+
+function browserIdentity(): Identity {
+  if (!identity) {
+    const languages = pageLanguages(app.getLocale(), app.getPreferredSystemLanguages())
+    identity = { userAgent: USER_AGENT, languages, acceptLanguages: acceptLanguages(languages) }
+    if (isDev) {
+      console.log(
+        `[bsc] languages ${languages.join(',')} -> accept-language ${identity.acceptLanguages}`
+      )
+    }
+  }
+  return identity
+}
+
+/**
+ * Dev only: confirm pages really see the language list the header was built from.
+ *
+ * That list is Electron's, recomputed here by `pageLanguages`. If some platform builds it
+ * differently, the header and `navigator.languages` would quietly disagree again — the very
+ * mismatch this exists to prevent — so say so loudly. Our own header page is asked, never
+ * SoundCloud's, so nothing runs in their page.
+ */
+function checkPageLanguages(view: WebContentsView, expected: string[]): void {
+  view.webContents.once('did-finish-load', () => {
+    view.webContents
+      .executeJavaScript('navigator.languages')
+      .then((seen: unknown) => {
+        if (JSON.stringify(seen) === JSON.stringify(expected)) return
+        console.warn(
+          `[bsc] navigator.languages is ${JSON.stringify(seen)}, but Accept-Language was ` +
+            `built from ${JSON.stringify(expected)} — fix pageLanguages in src/shared/identity.ts`
+        )
+      })
+      .catch(() => undefined)
+  })
+}
+
 // Dev runs from its own profile directory. Without this, a `npm run dev` instance and an
 // installed build share one userData path, so they fight over the single-instance lock:
 // launching the installed app while dev is running makes it exit instantly and silently,
@@ -109,8 +162,9 @@ app.on('window-all-closed', () => {
 /** Recreate a closed window, or raise the existing one, from every entry point. */
 function showMainWindow(): void {
   if (!shell) {
-    const next = createShell(USER_AGENT)
+    const next = createShell(browserIdentity())
     shell = next
+    if (isDev) checkPageLanguages(next.header, browserIdentity().languages)
     next.window.on('close', (event) => {
       if (process.platform === 'darwin' && !quitting) {
         // Keep SoundCloud's renderer (and its audio) alive until the user quits.

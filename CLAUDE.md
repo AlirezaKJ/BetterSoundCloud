@@ -80,15 +80,15 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md
 
 ### Key shared files
 
-| File                        | Owns                                                                                      |
-| --------------------------- | ----------------------------------------------------------------------------------------- |
-| `shared/ipc.ts`             | `CH` (every channel name), `ChromeApi` (the `window.bsc` type), `NavState`, `WindowState` |
-| `shared/settings-schema.ts` | `SETTINGS`, `SECTIONS`, `Settings`, `SettingKey`, `coerce`, `coerceAll`, `defaults`       |
-| `shared/now-playing.ts`     | `PlayerReading`, `NowPlaying`, `readNowPlaying()` and its cleaners                        |
-| `shared/page-theme.ts`      | `PageTheme`, `detectPageTheme()`                                                          |
-| `shared/context-menu.ts`    | `ContextMenuRequest`, `CONTEXT_MENU_ACTIONS`, `cleanUrl`, `shortUrl`, `elide`             |
-| `shared/themes.ts`          | `ThemeSummary`, `parseThemeMetadata()`                                                    |
-| `shared/identity.ts`        | `buildUserAgent()`, `leaksAppIdentity()`                                                  |
+| File                        | Owns                                                                                         |
+| --------------------------- | -------------------------------------------------------------------------------------------- |
+| `shared/ipc.ts`             | `CH` (every channel name), `ChromeApi` (the `window.bsc` type), `NavState`, `WindowState`    |
+| `shared/settings-schema.ts` | `SETTINGS`, `SECTIONS`, `Settings`, `SettingKey`, `coerce`, `coerceAll`, `defaults`          |
+| `shared/now-playing.ts`     | `PlayerReading`, `NowPlaying`, `readNowPlaying()` and its cleaners                           |
+| `shared/page-theme.ts`      | `PageTheme`, `detectPageTheme()`                                                             |
+| `shared/context-menu.ts`    | `ContextMenuRequest`, `CONTEXT_MENU_ACTIONS`, `cleanUrl`, `shortUrl`, `elide`                |
+| `shared/themes.ts`          | `ThemeSummary`, `parseThemeMetadata()`                                                       |
+| `shared/identity.ts`        | `Identity`, `buildUserAgent()`, `leaksAppIdentity()`, `pageLanguages()`, `acceptLanguages()` |
 
 ---
 
@@ -124,7 +124,7 @@ Rules that hold this together:
 
 Every view is created with the same `webPreferences` — copy them, do not loosen them:
 `nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true, devTools: isDev`
-(plus `preload`). Then `hardenSession(view.webContents.session, shell.userAgent)` and
+(plus `preload`). Then `hardenSession(view.webContents.session, shell.identity)` and
 `routeNewWindowsToBrowser(view.webContents)`. Overlays also call
 `view.setBackgroundColor('#00000000')`.
 
@@ -346,6 +346,16 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
   "Electron" or "BetterSoundCloud". No header rewriting, no `navigator` overrides, no `sec-ch-ua`
   changes, no `--disable-blink-features`. The posture is **parity, not evasion**: look exactly like
   the browser we are.
+- **The whole identity is one `Identity` object** (`src/shared/identity.ts`): user agent, the
+  page's language list, and the `Accept-Language` list built from it. `browserIdentity()` in
+  `index.ts` builds it once after `whenReady`; `createShell` stores it as `shell.identity` and
+  every view's session gets it through `hardenSession`.
+- **Languages: the header follows the list, never the reverse.** Electron sets
+  `navigator.languages` itself (app locale, then the OS languages) and no supported API changes
+  it, so `pageLanguages()` recomputes that list and `acceptLanguages()` expands it the way Chrome
+  does (`en-US,en-AU,fa` → `en-US,en-AU,en,fa`; Chromium adds the q-values). Both rules are
+  pinned by tests built from real Chrome measurements. Dev builds warn at startup if
+  `navigator.languages` ever stops matching the list the header was built from.
 - Take a session **by reference off the view you created** (`view.webContents.session`). Never
   `session.defaultSession`, never a partition string.
 - Permissions are default-deny with an allowlist; `mediaKeySystem` (Widevine) must stay on it.
@@ -368,7 +378,7 @@ Dev builds log to the terminal running `npm run dev`. Tags:
 
 | Tag                                                                  | Meaning                                                                                                                                                         |
 | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `[bsc]`                                                              | Chromium version and user agent at startup                                                                                                                      |
+| `[bsc]`                                                              | Chromium version, user agent and language list at startup; a warning if `navigator.languages` and the header disagree                                           |
 | `[net]`                                                              | A failed request: status, method, layer (`stream`/`licence`/`api`/`auth`/`other`), URL, and who answered (`from SoundCloud: server am/2`, `from CloudFront`, …) |
 | `[datadome]`                                                         | `blocked …` — SoundCloud's bot check refused a request; `challenge shown` — a captcha page loaded                                                               |
 | `[page]`                                                             | A console error from SoundCloud's page                                                                                                                          |

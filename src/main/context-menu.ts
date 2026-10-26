@@ -60,7 +60,7 @@ export function attachContextMenu(shell: Shell): void {
     }
   })
 
-  hardenSession(view.webContents.session, shell.userAgent)
+  hardenSession(view.webContents.session, shell.identity)
   routeNewWindowsToBrowser(view.webContents)
   // Transparent: only the menu itself paints. The rest of the view is the click-catcher.
   view.setBackgroundColor('#00000000')

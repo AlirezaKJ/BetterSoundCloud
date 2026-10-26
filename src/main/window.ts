@@ -14,6 +14,7 @@ import {
 } from './content-css'
 import { themeCss, NO_THEME } from './themes'
 import type { PageTheme } from '@shared/page-theme'
+import type { Identity } from '@shared/identity'
 import type { ContextMenuRequest } from '@shared/context-menu'
 import { CH } from '@shared/ipc'
 import type { NavState, WindowState } from '@shared/ipc'
@@ -89,8 +90,11 @@ export type Shell = {
   /** Selected theme id. Held here for the same reason as `fullWidthLayout`: the reload
    *  handler re-injects the stylesheet and needs to know what to put in it. */
   theme: string
-  /** Kept so the settings view can be hardened with the same identity as the others. */
-  userAgent: string
+  /**
+   * The user agent and languages every view's session gets. Kept so views created later —
+   * settings, the overlays, the menu — are hardened with exactly the same identity.
+   */
+  identity: Identity
   /** Guards against two overlapping `applyContentCss` calls clobbering each other. */
   cssGeneration: number
   /** Re-runs the view layout. Assigned in `createShell`; call it after changing a mode. */
@@ -133,7 +137,7 @@ const EMBEDDED_WIDTH = process.platform === 'darwin' ? 50 : 144
 const PLAY_CONTROLS_HEIGHT = 48
 const PLAYER_BUTTONS_WIDTH = 92
 
-export function createShell(userAgent: string): Shell {
+export function createShell(identity: Identity): Shell {
   const state = windowStateKeeper({ defaultWidth: 1366, defaultHeight: 768 })
 
   const window = new BaseWindow({
@@ -179,8 +183,8 @@ export function createShell(userAgent: string): Shell {
 
   // Take the session BY REFERENCE off the view. Never `session.defaultSession`, never a
   // partition string — see the note in session.ts.
-  hardenSession(content.webContents.session, userAgent)
-  hardenSession(header.webContents.session, userAgent)
+  hardenSession(content.webContents.session, identity)
+  hardenSession(header.webContents.session, identity)
   routeNewWindowsToBrowser(content.webContents)
   routeNewWindowsToBrowser(header.webContents)
 
@@ -205,7 +209,7 @@ export function createShell(userAgent: string): Shell {
     cssGeneration: 0,
     fullWidthLayout: false,
     theme: NO_THEME,
-    userAgent,
+    identity,
     layout: () => {}
   }
 
@@ -341,7 +345,7 @@ export function toggleSettings(shell: Shell): void {
     }
   })
 
-  hardenSession(view.webContents.session, shell.userAgent)
+  hardenSession(view.webContents.session, shell.identity)
   routeNewWindowsToBrowser(view.webContents)
 
   // Transparent so the panel can animate itself in over a dimmed SoundCloud rather than
@@ -526,7 +530,7 @@ function setEmbedded(shell: Shell, enabled: boolean): void {
     }
   })
 
-  hardenSession(view.webContents.session, shell.userAgent)
+  hardenSession(view.webContents.session, shell.identity)
   routeNewWindowsToBrowser(view.webContents)
   // Transparent, so SoundCloud's own header shows through behind the glyphs and the two
   // read as a single bar.
@@ -604,7 +608,7 @@ function setPlayerButtons(shell: Shell, enabled: boolean): void {
     }
   })
 
-  hardenSession(view.webContents.session, shell.userAgent)
+  hardenSession(view.webContents.session, shell.identity)
   routeNewWindowsToBrowser(view.webContents)
   // Transparent, so SoundCloud's player bar shows through behind the glyphs.
   view.setBackgroundColor('#00000000')

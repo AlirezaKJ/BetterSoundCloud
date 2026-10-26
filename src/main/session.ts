@@ -1,5 +1,6 @@
 import { shell } from 'electron'
 import type { Session, WebContents } from 'electron'
+import type { Identity } from '@shared/identity'
 
 /**
  * Permissions we grant. Everything else is denied.
@@ -55,9 +56,14 @@ export function isInternalUrl(rawUrl: string): boolean {
  * Note what this function does NOT do: it does not register `onBeforeSendHeaders`, and
  * it does not touch `sec-ch-ua`. The user agent is set once on `app.userAgentFallback`
  * before `whenReady()`. Chromium then emits client hints that agree with it.
+ *
+ * The language list goes in through the same call, as Electron's own setting rather than a
+ * rewritten header: Chromium then generates `Accept-Language` from it, q-values included, on
+ * every request from every context in the session. See `acceptLanguages` in
+ * src/shared/identity.ts for why the list is what it is.
  */
-export function hardenSession(sess: Session, userAgent: string): void {
-  sess.setUserAgent(userAgent)
+export function hardenSession(sess: Session, identity: Identity): void {
+  sess.setUserAgent(identity.userAgent, identity.acceptLanguages)
 
   sess.setPermissionRequestHandler((_wc, permission, callback) => {
     callback(isPermissionAllowed(permission))
