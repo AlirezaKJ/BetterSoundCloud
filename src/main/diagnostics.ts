@@ -15,6 +15,10 @@ import type { WebContentsView } from 'electron'
  * v0.7.x had no way to tell these apart, which is why the same symptom got blamed on
  * four different causes across issues #89, #91, #95 and #105.
  *
+ * Every refusal also says who sent it — SoundCloud's own servers or DataDome's bot check —
+ * because a blocked like or sign-in has a different fix in each case. DataDome's lines are
+ * tagged `[datadome]` so they can be found at a glance. See `whoAnswered`.
+ *
  * Attached only in dev. It logs; it never modifies a request.
  */
 
@@ -41,6 +45,74 @@ function shorten(url: string): string {
   }
 }
 
+/**
+ * Who sent a response, read from its headers alone.
+ *
+ * This is what tells a blocked like or sign-in apart: DataDome's bot check refusing us is a
+ * reputation problem we cannot fix in code, while SoundCloud's own API refusing us is an
+ * account, permission or request problem that we might. The status code is the same 403
+ * either way, so it cannot answer the question on its own.
+ *
+ * Measured on 2026-10-27, logged out, over a full page load:
+ *   - SoundCloud's own servers (soundcloud.com, api-v2, api-auth, secure) answer with
+ *     `server: am/2` and carry no DataDome headers — on success and on refusal alike. A
+ *     plain request to api-v2 without credentials gets a 401 from am/2.
+ *   - DataDome's own server answers with `server: DataDome`; its collector, served under
+ *     dwt.soundcloud.com, does exactly that.
+ *   - The `datadome` cookie is set on .soundcloud.com by its script, not by a response.
+ * So any `x-datadome…` / `x-dd-…` header, a `datadome` cookie being set, or a DataDome
+ * server header on a refusal means DataDome made the decision.
+ *
+ * Headers only, deliberately. Reading response bodies would need the debugger attached to
+ * SoundCloud's page, and that is the kind of difference a bot check can notice — this tool
+ * must not disturb the thing it is measuring.
+ */
+export type Sender = {
+  by: 'datadome' | 'soundcloud' | 'cloudfront' | 'unknown'
+  /** The header that decided it, for the log line. */
+  evidence: string
+}
+
+const SENDER_LABEL: Record<Sender['by'], string> = {
+  datadome: 'from DataDome',
+  soundcloud: 'from SoundCloud',
+  cloudfront: 'from CloudFront, their CDN',
+  unknown: 'sender unknown'
+}
+
+export function whoAnswered(headers: Record<string, string[]> = {}): Sender {
+  const entries = Object.entries(headers).map(
+    ([name, values]) => [name.toLowerCase(), values.join(', ')] as const
+  )
+
+  // DataDome's markers win over everything else. Its decision can travel back through
+  // SoundCloud's own servers, so an am/2 server header does not rule it out.
+  for (const [name, value] of entries) {
+    if (name.startsWith('x-datadome') || name.startsWith('x-dd-')) {
+      return { by: 'datadome', evidence: `${name}: ${value}` }
+    }
+    if (name === 'set-cookie' && /(^|[\s,])datadome=/i.test(value)) {
+      return { by: 'datadome', evidence: 'sets the datadome cookie' }
+    }
+  }
+
+  const server = entries.find(([name]) => name === 'server')?.[1] ?? ''
+  if (/datadome/i.test(server)) return { by: 'datadome', evidence: `server ${server}` }
+  if (/^am\//i.test(server)) return { by: 'soundcloud', evidence: `server ${server}` }
+  if (/cloudfront/i.test(server)) return { by: 'cloudfront', evidence: `server ${server}` }
+  return { by: 'unknown', evidence: server ? `server ${server}` : 'no server header' }
+}
+
+/** DataDome's captcha and device-check pages are served from captcha-delivery.com. */
+export function isDataDomeChallenge(url: string): boolean {
+  try {
+    const { hostname } = new URL(url)
+    return hostname === 'captcha-delivery.com' || hostname.endsWith('.captcha-delivery.com')
+  } catch {
+    return false
+  }
+}
+
 export function attachDiagnostics(view: WebContentsView): void {
   // NOTE: this session is currently shared with the header view — neither view declares a
   // `partition`, so both resolve to `session.defaultSession`. Verified at runtime. So
@@ -56,9 +128,24 @@ export function attachDiagnostics(view: WebContentsView): void {
   const filter = { urls: ['<all_urls>'] }
 
   webRequest.onCompleted(filter, (details) => {
+    // A DataDome challenge page loads with a 200, so it is caught before the status check.
+    if (isDataDomeChallenge(details.url)) {
+      console.warn(`[datadome] challenge shown ${shorten(details.url)}`)
+      return
+    }
     if (details.statusCode < 400) return
+
+    const { statusCode, method } = details
+    const sender = whoAnswered(details.responseHeaders)
+    if (sender.by === 'datadome') {
+      console.warn(
+        `[datadome] blocked ${statusCode} ${method} ${shorten(details.url)} (${sender.evidence})`
+      )
+      return
+    }
     console.warn(
-      `[net] ${details.statusCode} ${classify(details.url).padEnd(7)} ${shorten(details.url)}`
+      `[net] ${statusCode} ${method} ${classify(details.url).padEnd(7)} ${shorten(details.url)} ` +
+        `(${SENDER_LABEL[sender.by]}: ${sender.evidence})`
     )
   })
 
