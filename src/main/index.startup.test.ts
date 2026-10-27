@@ -72,6 +72,16 @@ vi.mock('./blocker', () => ({
 }))
 vi.mock('./settings-store', () => ({ get: () => true }))
 vi.mock('./themes', () => ({ listThemes: () => [] }))
+vi.mock('./plugins', () => ({
+  startPlugins: vi.fn(),
+  listPlugins: () => [],
+  pluginViews: () => [],
+  onPluginsChange: vi.fn(),
+  setPluginEnabled: vi.fn(),
+  setPluginSetting: vi.fn(),
+  runPluginAction: vi.fn(),
+  openPluginsFolder: vi.fn()
+}))
 // The real one would connect to the Discord app on whatever machine runs the tests.
 vi.mock('./presence', () => ({
   setPresenceOptions: vi.fn(),

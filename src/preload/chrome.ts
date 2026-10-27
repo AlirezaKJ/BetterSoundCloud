@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { CH } from '@shared/ipc'
-import type { ChromeApi, NavState, WindowState } from '@shared/ipc'
+import type { ChromeApi, NavState, PluginsResult, WindowState } from '@shared/ipc'
 import type { SettingKey, Settings } from '@shared/settings-schema'
 import type { ThemeSummary } from '@shared/themes'
 import type { PageTheme } from '@shared/page-theme'
@@ -8,6 +8,7 @@ import type { ContextMenuAction, ContextMenuRequest, GoToUrlResult } from '@shar
 import type { NowPlaying } from '@shared/now-playing'
 import type { PageStatus, PageStatusAction } from '@shared/page-status'
 import type { PresenceStatus } from '@shared/presence'
+import type { PluginView } from '@shared/plugins'
 
 /**
  * Preload for OUR OWN chrome (header, settings, the overlays, the right-click menu). This
@@ -65,7 +66,17 @@ const api: ChromeApi = {
   getPresenceStatus: () => ipcRenderer.invoke(CH.presenceStatusGet) as Promise<PresenceStatus>,
   onPresenceStatus: (cb: (status: PresenceStatus) => void) =>
     subscribe(CH.presenceStatusChanged, cb),
-  retryPresence: () => ipcRenderer.send(CH.presenceRetry)
+  retryPresence: () => ipcRenderer.send(CH.presenceRetry),
+
+  listPlugins: () => ipcRenderer.invoke(CH.pluginsList) as Promise<PluginView[]>,
+  onPluginsChanged: (cb: (plugins: PluginView[]) => void) => subscribe(CH.pluginsChanged, cb),
+  setPluginEnabled: (id: string, enabled: boolean) =>
+    ipcRenderer.invoke(CH.pluginSetEnabled, id, enabled) as Promise<PluginsResult>,
+  setPluginSetting: (id: string, key: string, value: boolean | string) =>
+    ipcRenderer.invoke(CH.pluginSetSetting, id, key, value) as Promise<PluginsResult>,
+  pluginAction: (id: string, actionId: string) =>
+    ipcRenderer.send(CH.pluginAction, id, actionId),
+  openPluginsFolder: () => ipcRenderer.send(CH.pluginsOpenFolder)
 }
 
 contextBridge.exposeInMainWorld('bsc', api)

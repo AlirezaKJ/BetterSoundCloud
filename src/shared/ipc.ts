@@ -5,6 +5,7 @@ import type { ContextMenuAction, ContextMenuRequest, GoToUrlResult } from './con
 import type { NowPlaying } from './now-playing'
 import type { PageStatus, PageStatusAction } from './page-status'
 import type { PresenceStatus } from './presence'
+import type { PluginView } from './plugins'
 
 /** Every IPC channel name, in one place. Strings are never written inline. */
 export const CH = {
@@ -53,8 +54,19 @@ export const CH = {
   // settings renderer <-> main. Whether Discord presence is working, and "Try now".
   presenceStatusGet: 'presence:status-get',
   presenceStatusChanged: 'presence:status-changed',
-  presenceRetry: 'presence:retry'
+  presenceRetry: 'presence:retry',
+
+  // settings renderer <-> main. The Plugins section: list, switch on and off, settings, buttons.
+  pluginsList: 'plugins:list',
+  pluginsChanged: 'plugins:changed',
+  pluginSetEnabled: 'plugins:set-enabled',
+  pluginSetSetting: 'plugins:set-setting',
+  pluginAction: 'plugins:action',
+  pluginsOpenFolder: 'plugins:open-folder'
 } as const
+
+/** What a change to a plugin answers: every row as it now is, and why it failed if it did. */
+export type PluginsResult = { plugins: PluginView[]; error: string }
 
 export type NavState = {
   canGoBack: boolean
@@ -137,4 +149,19 @@ export type ChromeApi = {
   onPresenceStatus(cb: (status: PresenceStatus) => void): () => void
   /** Look for Discord now instead of at the next scheduled attempt. */
   retryPresence(): void
+
+  /**
+   * Every plugin, built in and the user's own, as the Plugins section shows them. Looks at the
+   * plugins folder again, so a plugin dropped in appears without a restart. Follow
+   * `onPluginsChanged` for changes a plugin makes itself: its status line, its buttons.
+   */
+  listPlugins(): Promise<PluginView[]>
+  onPluginsChanged(cb: (plugins: PluginView[]) => void): () => void
+  /** On approves the permissions the plugin asks for right now; the panel asks the user first. */
+  setPluginEnabled(id: string, enabled: boolean): Promise<PluginsResult>
+  /** A secret setting is stored encrypted; '' removes it. */
+  setPluginSetting(id: string, key: string, value: boolean | string): Promise<PluginsResult>
+  /** One of the buttons a plugin put on its row. */
+  pluginAction(id: string, actionId: string): void
+  openPluginsFolder(): void
 }

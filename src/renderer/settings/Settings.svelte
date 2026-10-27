@@ -12,6 +12,7 @@
   import type { Section, SettingKey, Settings } from '@shared/settings-schema'
   import type { ThemeSummary } from '@shared/themes'
   import DiscordStatus from './DiscordStatus.svelte'
+  import Plugins from './Plugins.svelte'
 
   /*
    * The entire form is generated from the schema. Adding a setting means adding one
@@ -129,7 +130,10 @@
     </nav>
 
     <main data-bsc-settings-content>
-      {#if !values}
+      {#if active === 'plugins'}
+        <!-- Not schema-driven: plugins are found on disk, so their rows are too. -->
+        <Plugins />
+      {:else if !values}
         <p class="loading">Loading…</p>
       {:else}
         {#each keysIn(active) as key (key)}

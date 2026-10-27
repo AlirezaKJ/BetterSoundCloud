@@ -77,10 +77,14 @@ credentials. v2's stated goal is to carry all of it.
 - Single-source user agent derived from the running Chromium; startup fails if it leaks app identity
 - Off-site links and OAuth routed to the system browser; permission allowlist including `mediaKeySystem`
 - Appearance (System/Light/Dark), zoom, hardware acceleration
+- Discord Rich Presence, with a live line in settings saying whether it is working
+- Plugins, each in a process of its own, with permissions approved by the user; Last.fm
+  scrobbling ships as one, with BetterSoundCloud's own API key. Plugin code inside SoundCloud's
+  page is not available yet
 
-**Not yet built:** Last.fm, themes, plugins, lyrics, downloader, i18n,
-proxy, webhooks, auto-updater. Nine of twelve settings are marked unwired in the schema and
-render disabled rather than lying. Full backlog: [TODO.md](TODO.md).
+**Not yet built:** themes, lyrics, downloader, i18n, proxy, webhooks, auto-updater. Settings
+whose feature is missing render disabled and labelled rather than lying. Full backlog:
+[TODO.md](TODO.md).
 
 **Durable constraints:**
 

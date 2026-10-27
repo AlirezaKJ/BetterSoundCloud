@@ -71,6 +71,16 @@ vi.mock('./blocker', () => ({
 }))
 vi.mock('./settings-store', () => ({ get: () => true }))
 vi.mock('./themes', () => ({ listThemes: () => [] }))
+vi.mock('./plugins', () => ({
+  startPlugins: vi.fn(),
+  listPlugins: () => [],
+  pluginViews: () => [],
+  onPluginsChange: vi.fn(),
+  setPluginEnabled: vi.fn(),
+  setPluginSetting: vi.fn(),
+  runPluginAction: vi.fn(),
+  openPluginsFolder: vi.fn()
+}))
 // The real one would connect to the Discord app on whatever machine runs the tests.
 vi.mock('./presence', () => ({
   setPresenceOptions: vi.fn(),
@@ -273,6 +283,39 @@ describe('main window lifecycle', () => {
     expect(presence.retryPresenceNow).not.toHaveBeenCalled()
     retry({ sender: shell.settings.webContents })
     expect(presence.retryPresenceNow).toHaveBeenCalledOnce()
+  })
+
+  it('lets only the settings panel list, switch and configure plugins', async () => {
+    const { app } = await import('electron')
+    const plugins = await import('./plugins')
+    app.emit('activate')
+    const shell = mocks.createShell.mock.results.at(-1)!.value as ReturnType<typeof makeShell>
+    const handlerFor = (method: 'on' | 'handle', channel: string) => {
+      const registered = method === 'on' ? mocks.ipcOn : mocks.ipcHandle
+      return registered.mock.calls.find(([name]) => name === channel)![1] as (
+        event: unknown,
+        ...args: unknown[]
+      ) => unknown
+    }
+    const fromSettings = { sender: shell.settings.webContents }
+    const fromPage = { sender: shell.content.webContents }
+
+    expect(handlerFor('handle', CH.pluginsList)(fromSettings)).toEqual([])
+    expect(handlerFor('handle', CH.pluginsList)(fromPage)).toBeNull()
+
+    expect(handlerFor('handle', CH.pluginSetEnabled)(fromPage, 'lastfm', true)).toBeNull()
+    expect(handlerFor('handle', CH.pluginSetEnabled)(fromSettings, 'lastfm', 'yes')).toBeNull()
+    expect(plugins.setPluginEnabled).not.toHaveBeenCalled()
+    expect(handlerFor('handle', CH.pluginSetEnabled)(fromSettings, 'lastfm', true)).toEqual({
+      plugins: [],
+      error: ''
+    })
+    expect(plugins.setPluginEnabled).toHaveBeenCalledWith('lastfm', true)
+
+    handlerFor('on', CH.pluginsOpenFolder)(fromPage)
+    handlerFor('on', CH.pluginAction)(fromPage, 'lastfm', 'connect')
+    expect(plugins.openPluginsFolder).not.toHaveBeenCalled()
+    expect(plugins.runPluginAction).not.toHaveBeenCalled()
   })
 
   it('gives every window the same identity, its header built from the page’s languages', () => {

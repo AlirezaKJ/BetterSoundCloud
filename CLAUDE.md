@@ -13,16 +13,16 @@ CLAUDE.md is worse than none, because it gets trusted.
 
 ## 1. Commands
 
-| Command                        | What it does                                                                                             |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------- |
-| `npm run dev`                  | electron-vite dev server, renderer HMR. Main and preload do NOT hot-reload — restart after changing them |
-| `npm run check`                | `tsc` ×3 (node, preload, web) + `svelte-check` + ESLint + Prettier check. Run before calling work done   |
-| `npm test`                     | Vitest, once                                                                                             |
-| `npm run build`                | `check` then `electron-vite build` into `out/`                                                           |
-| `npm run pack`                 | Unpacked app into `release/`                                                                             |
-| `npm run dist:win` etc.        | Installers. Release builds need `STRICT_VMP_SIGNING=true` (see README)                                   |
-| `npm run blocker:build`        | Recompile `resources/engine.bin` + `engine.meta.json`; commit both                                       |
-| `npx prettier --write <files>` | Fix formatting before `check`                                                                            |
+| Command                        | What it does                                                                                                    |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`                  | electron-vite dev server, renderer HMR. Main and preload do NOT hot-reload — restart after changing them        |
+| `npm run check`                | `tsc` ×4 (node, preload, web, plugins) + `svelte-check` + ESLint + Prettier check. Run before calling work done |
+| `npm test`                     | Vitest, once                                                                                                    |
+| `npm run build`                | `check` then `electron-vite build` into `out/`                                                                  |
+| `npm run pack`                 | Unpacked app into `release/`                                                                                    |
+| `npm run dist:win` etc.        | Installers. Release builds need `STRICT_VMP_SIGNING=true` (see README)                                          |
+| `npm run blocker:build`        | Recompile `resources/engine.bin` + `engine.meta.json`; commit both                                              |
+| `npx prettier --write <files>` | Fix formatting before `check`                                                                                   |
 
 - Dev runs from its own profile, `%APPDATA%/BetterSoundCloud (dev)`, set in `src/main/index.ts`.
 - **A stale `npm run dev` holds the single-instance lock.** A second one starts on port 5174 and
@@ -55,9 +55,9 @@ src/preload/    chrome.ts   -> window.bsc for OUR views (contextBridge)
 src/renderer/   Svelte 5. One folder per view, each with index.html + main.ts + Component.svelte.
                 tokens.css (design tokens), lib/ (shared components)
 src/shared/     Pure TypeScript shared by main, preload and renderer. No Electron, no DOM.
-resources/      Shipped at runtime: engine.bin (ad blocker), themes/, icon.png
+resources/      Shipped at runtime: engine.bin (ad blocker), themes/, plugins/, icon.png
 scripts/        Blocker engine build, VMP signing hooks
-docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md
+docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CUSTOM_PLUGINS.md
 ```
 
 ### Key main-process files
@@ -79,6 +79,11 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md
 | `main/diagnostics.ts`              | Dev-only network and page-error log, `whoAnswered()` (SoundCloud vs DataDome)                                                                       |
 | `main/tray.ts`                     | Tray icon and menu (playback items disabled until playback control exists)                                                                          |
 | `main/go-to-url.ts`                | `resolveGoToUrl()` for the menu's "Go to URL" prompt                                                                                                |
+| `main/plugins.ts`                  | The plugin service: finds plugins, records approvals, runs each in its own process, answers its calls (§16)                                         |
+| `main/plugin-host.ts`              | The entry point of a plugin's own utility process: relays messages, makes its https requests                                                        |
+| `main/plugin-sandbox.ts`           | `runPlugin()`: the `vm` context and the `bsc` API. No Electron, so it is tested directly                                                            |
+| `main/secrets.ts`                  | `safeStorage`-encrypted secrets, namespaced; refuses where there is no real encryption                                                              |
+| `main/json-file.ts`                | Crash-safe JSON files in the profile: write to a temp file, then rename                                                                             |
 | `main/env.ts`                      | `isDev`                                                                                                                                             |
 
 ### Key shared files
@@ -94,6 +99,8 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md
 | `shared/page-status.ts`     | `PageStatus`, `describePageStatus()` (every word on that view), `describeLoadFailure()`, `retryDelay()` |
 | `shared/themes.ts`          | `ThemeSummary`, `parseThemeMetadata()`                                                                  |
 | `shared/identity.ts`        | `Identity`, `buildUserAgent()`, `leaksAppIdentity()`, `pageLanguages()`, `acceptLanguages()`            |
+| `shared/plugins.ts`         | `readManifest()`, permissions, `readHostMessage()`, `callAllowed()`, `PluginView`                       |
+| `shared/plugin-api.ts`      | `PluginApi`: the `bsc` object a plugin gets. The contract, for code and for docs                        |
 
 ---
 
@@ -162,26 +169,29 @@ type-only imports are fine.
 `window.bsc` (type `ChromeApi`, implemented in `src/preload/chrome.ts`) exists only in our own
 views:
 
-| Method                                             | Kind        | Main accepts it from (sender check)                                      |
-| -------------------------------------------------- | ----------- | ------------------------------------------------------------------------ |
-| `platform`                                         | value       | —                                                                        |
-| `minimize`, `maximizeToggle`, `close`              | send        | `fromChrome` = header, embedded                                          |
-| `back`, `forward`, `reload`                        | send        | `fromChrome`                                                             |
-| `toggleSettings`, `toggleMenuBar`                  | send        | `fromChrome`                                                             |
-| `closeSettings`                                    | send        | the settings view only                                                   |
-| `getSettings`, `setSetting`, `listThemes`          | invoke      | `fromSettingsUi` = header, embedded, settings                            |
-| `contextMenuAction`, `goToUrl`, `closeContextMenu` | send/invoke | the context-menu view only                                               |
-| `getNowPlaying`                                    | invoke      | `fromOurViews` = header, settings, embedded, player, contextMenu, status |
-| `onNavState`                                       | subscribe   | pushed to header                                                         |
-| `onWindowState`                                    | subscribe   | pushed to header, embedded                                               |
-| `onSettingsChanged`                                | subscribe   | pushed to header, settings (`broadcastSettings`)                         |
-| `onPageTheme`                                      | subscribe   | pushed to embedded, player (and on their load)                           |
-| `onContextMenu`                                    | subscribe   | pushed to the context-menu view                                          |
-| `onNowPlaying`                                     | subscribe   | pushed to all six of our views (`broadcastNowPlaying`)                   |
-| `pageStatusAction`                                 | send        | the status view only; re-checked against `shell.pageStatus`              |
-| `onPageStatus`                                     | subscribe   | pushed to the status view (on its load and on every change)              |
-| `getPresenceStatus`, `retryPresence`               | invoke/send | `fromSettingsUi`                                                         |
-| `onPresenceStatus`                                 | subscribe   | pushed to the settings view while it is open (`broadcastPresenceStatus`) |
+| Method                                                | Kind        | Main accepts it from (sender check)                                      |
+| ----------------------------------------------------- | ----------- | ------------------------------------------------------------------------ |
+| `platform`                                            | value       | —                                                                        |
+| `minimize`, `maximizeToggle`, `close`                 | send        | `fromChrome` = header, embedded                                          |
+| `back`, `forward`, `reload`                           | send        | `fromChrome`                                                             |
+| `toggleSettings`, `toggleMenuBar`                     | send        | `fromChrome`                                                             |
+| `closeSettings`                                       | send        | the settings view only                                                   |
+| `getSettings`, `setSetting`, `listThemes`             | invoke      | `fromSettingsUi` = header, embedded, settings                            |
+| `contextMenuAction`, `goToUrl`, `closeContextMenu`    | send/invoke | the context-menu view only                                               |
+| `getNowPlaying`                                       | invoke      | `fromOurViews` = header, settings, embedded, player, contextMenu, status |
+| `onNavState`                                          | subscribe   | pushed to header                                                         |
+| `onWindowState`                                       | subscribe   | pushed to header, embedded                                               |
+| `onSettingsChanged`                                   | subscribe   | pushed to header, settings (`broadcastSettings`)                         |
+| `onPageTheme`                                         | subscribe   | pushed to embedded, player (and on their load)                           |
+| `onContextMenu`                                       | subscribe   | pushed to the context-menu view                                          |
+| `onNowPlaying`                                        | subscribe   | pushed to all six of our views (`broadcastNowPlaying`)                   |
+| `pageStatusAction`                                    | send        | the status view only; re-checked against `shell.pageStatus`              |
+| `onPageStatus`                                        | subscribe   | pushed to the status view (on its load and on every change)              |
+| `listPlugins`, `setPluginEnabled`, `setPluginSetting` | invoke      | `fromSettingsUi`; the two setters answer `{ plugins, error }`            |
+| `pluginAction`, `openPluginsFolder`                   | send        | `fromSettingsUi`                                                         |
+| `onPluginsChanged`                                    | subscribe   | pushed to the settings view while it is open (`broadcastPlugins`)        |
+| `getPresenceStatus`, `retryPresence`                  | invoke/send | `fromSettingsUi`                                                         |
+| `onPresenceStatus`                                    | subscribe   | pushed to the settings view while it is open (`broadcastPresenceStatus`) |
 
 Every `on…` returns an unsubscribe function. A new view that needs one of the gated methods must
 be added to that sender check, and to the matching broadcast list if it needs pushes.
@@ -370,6 +380,8 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
 - `applies: 'reload' | 'restart'` when the effect is not immediate. Never write timing into `help`
   prose — a test forbids it.
 - `optionsFrom: 'themes'` for choices read from disk.
+- The **Plugins** section is not schema-driven: plugins are found on disk, so `Settings.svelte`
+  renders `Plugins.svelte` for it, fed by `listPlugins` / `onPluginsChanged` (§16).
 - `statusFrom: 'discord'` puts a live line under the control saying whether the feature behind
   it is working right now (`renderer/settings/DiscordStatus.svelte`, words from
   `describePresenceStatus`). Use it wherever a ticked box can be true while the feature cannot
@@ -378,7 +390,8 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
   coerces. Live effects are applied in `applyLiveSettings()` in `index.ts`.
 - Renderers read with `getSettings()` + `onSettingsChanged()` and write with `setSetting()`, which
   returns the authoritative snapshot (values come back clamped).
-- Secrets (Last.fm, tokens) never go in the settings store; they go through `safeStorage`.
+- Secrets (Last.fm, tokens) never go in the settings store; they go through `main/secrets.ts`
+  (`safeStorage`), which refuses rather than store them where there is no real encryption.
 
 ---
 
@@ -427,6 +440,7 @@ Dev builds log to the terminal running `npm run dev`. Tags:
 | `[page]`                                                             | A console error from SoundCloud's page                                                                                                                          |
 | `[now-playing]`                                                      | Track, play/pause and like changes                                                                                                                              |
 | `[discord]`                                                          | Connected, what the card shows, Discord not running (once per outage), and any update Discord refused (all builds)                                              |
+| `[plugin:<id>]`, `[plugins]`                                         | A plugin's own log (warnings in every build), and the service's                                                                                                 |
 | `[widevine]`                                                         | How long the Widevine wait took, or why it failed                                                                                                               |
 | `[page-status]`                                                      | What the status view is saying (`load failed -106 ERR_INTERNET_DISCONNECTED`, `cleared`, …)                                                                     |
 | `[content]`, `[window]`                                              | A failed SoundCloud load; the window shown without its header                                                                                                   |
@@ -465,6 +479,11 @@ context menu have the shortcut; embedded and player do not).
 - Anything that loads `index.ts` must mock `./presence`: the real one connects to the Discord app
   on whatever machine runs the tests. `discord-ipc.test.ts` instead runs a fake Discord on a real
   local pipe, so the bytes on the wire are tested as sent.
+- Plugins are tested three ways: `plugin-sandbox.test.ts` runs small scripts in the real sandbox;
+  `lastfm-plugin.test.ts` runs the shipped Last.fm plugin against a fake Last.fm; `plugins.test.ts`
+  drives the service with real folders and a fake process. Plugin JavaScript is type-checked
+  through `tsconfig.plugins.json`, against `resources/plugins/sandbox.d.ts` — which a test keeps
+  equal to the sandbox's real globals.
 - `content.test.ts` also checks that `out/preload` holds exactly `chrome.cjs` and `content.cjs`
   (no shared chunk) when a build exists — run `npx electron-vite build` after touching preloads.
 - **Renderers in a browser:** open `http://localhost:5173/<entry>/index.html` from the dev server,
@@ -488,6 +507,7 @@ context menu have the shortcut; embedded and player do not).
 | Spoofing UA, client hints, `navigator.webdriver`, `window.chrome` | Creates contradictions a bot check sees              |
 | Globals or `contextBridge` in the content preload                 | Lets the page detect the client                      |
 | Remote code or fonts in our views                                 | CSP forbids it; nothing loads from a CDN at runtime  |
+| Plugin code in SoundCloud's page (the `page` permission)          | Frozen until a clean sign-in baseline (TODO M1)      |
 | `session.defaultSession` or partition strings                     | Silently detaches hardening from the real session    |
 | A second `webRequest` listener for the same event                 | Silently replaces the first                          |
 | Region bypass, captcha solving, rate-limit evasion                | Out of scope: parity, not evasion                    |
@@ -505,3 +525,45 @@ context menu have the shortcut; embedded and player do not).
   only, `::before` instead of DOM edits). User themes go in `<userData>/themes/`; a user theme
   with the same id overrides a shipped one. `docs/CUSTOM_THEMES.md` is referenced from
   `tokens.css` but not written yet.
+
+---
+
+## 16. Plugins
+
+A plugin is a folder — `resources/plugins/<id>/` (shipped) or `<userData>/plugins/<id>/` (the
+user's) — holding a `plugin.json` and a CommonJS-style script. The author's guide is
+`docs/CUSTOM_PLUGINS.md`; the API contract is `src/shared/plugin-api.ts`; the Last.fm plugin
+(`resources/plugins/lastfm/`) is the reference, written only against that API.
+
+```
+plugins.ts (main)  reads plugin.json + the script, checks approvals
+  --utilityProcess.fork--> plugin-host.ts  (one process per plugin)
+                             runPlugin() in plugin-sandbox.ts: vm context + the `bsc` API
+  <--{ type: 'call', method }--   every call is checked in main by callAllowed(granted)
+  --{ type: 'nowPlaying' | 'settings' | 'action' }--> pushed to the plugin
+```
+
+Rules that hold this together:
+
+- **The process is the isolation; the sandbox is not security.** A plugin that crashes or loops
+  cannot freeze the app. But Node's `vm` is no security boundary, and Node's `--permission` flag
+  does nothing in a utility process (measured 2026-10-27) — so permissions bind honest plugins,
+  and the UI and the guide say "only add plugins you trust". Never claim more than that.
+- **Main reads the script and sends its text.** The plugin's process needs no file access, and
+  bundled plugins work from inside `app.asar`.
+- **Every message from a plugin's process is hostile** until `readHostMessage` has shaped it and
+  `callAllowed` has checked it against what the user approved. Network permission is enforced in
+  the sandbox (`bsc.fetch`), everything else in main.
+- **Approval is per version.** Turning a plugin on records the permissions it asked for; if a
+  later version asks for more, it shows "needs approval" and does not start.
+- **A plugin from the user's folder asks before it turns on** (an inline confirmation in its row,
+  listing its permissions). A user plugin may not reuse a built-in's id.
+- **No plugin code runs in SoundCloud's page.** The `page` permission exists so such plugins can
+  be listed honestly ("can't be turned on"), not so they can run. It waits on the Milestone 1
+  baseline, and when it comes it follows §7.
+- **Teardown is guaranteed:** after `deactivate`, the sandbox clears every timer and listener the
+  plugin made. Main ends a plugin that does not stop within 3s, or does not start within 20s.
+- **Secrets** go through `main/secrets.ts`, namespaced `plugin:<id>`, so plugins cannot read each
+  other's. A plugin's `secret` settings live there too and are never sent back to the renderer.
+- Promises and errors made inside the plugin's context are not `instanceof` this realm's — check
+  their shape (`isThenable`, `isErrorLike` in plugin-sandbox.ts) or a rejection goes unreported.

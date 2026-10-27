@@ -32,7 +32,11 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()],
     build: {
       rollupOptions: {
-        input: { index: resolve('src/main/index.ts') }
+        input: {
+          index: resolve('src/main/index.ts'),
+          // Each plugin's own process (src/main/plugins.ts forks it). ESM, like the rest of main.
+          'plugin-host': resolve('src/main/plugin-host.ts')
+        }
       }
     }
   },

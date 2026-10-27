@@ -2,6 +2,7 @@
   import { onMount } from 'svelte'
   import { describePresenceStatus } from '@shared/presence'
   import type { PresenceStatus } from '@shared/presence'
+  import StatusText from './StatusText.svelte'
 
   /*
    * The line under the Discord toggle saying whether presence is actually working.
@@ -43,11 +44,6 @@
     return stop
   })
 
-  /** "Connected. Showing …" — a full stop between the two, unless the lead ends in one. */
-  function joiner(lead: string): string {
-    return /[.…!?]$/.test(lead) ? ' ' : '. '
-  }
-
   function tryNow(): void {
     checking = true
     window.bsc.retryPresence()
@@ -57,15 +53,7 @@
 
 {#if message && status}
   <div class="status" data-bsc-discord-status data-state={status.state} role="status">
-    <p>
-      <strong>{message.lead}</strong>{message.detail
-        ? `${joiner(message.lead)}${message.detail}`
-        : ''}
-    </p>
-    {#if message.problem}
-      <!-- Ink, not red: Danger Red is the close button's alone, and the words do the work. -->
-      <p class="problem">{message.problem}</p>
-    {/if}
+    <StatusText lead={message.lead} detail={message.detail} problem={message.problem} />
     {#if message.canRetry}
       <button type="button" disabled={checking} onclick={tryNow}>Try now</button>
     {/if}
@@ -78,22 +66,6 @@
     font-size: 12px;
     line-height: 1.4;
     color: var(--bsc-text-secondary);
-  }
-
-  p {
-    margin: 0;
-    overflow-wrap: anywhere;
-  }
-
-  /* The state itself, in two or three words, is what a glance should catch. */
-  strong {
-    font-weight: 600;
-    color: var(--bsc-text-primary);
-  }
-
-  .problem {
-    margin-top: 4px;
-    color: var(--bsc-text-primary);
   }
 
   /* The Go to URL prompt's button, so the panel keeps a single button language. */

@@ -54,6 +54,17 @@ import {
   setPresenceOptions
 } from './presence'
 import type { PresenceStatus } from '@shared/presence'
+import {
+  listPlugins,
+  onPluginsChange,
+  openPluginsFolder,
+  pluginViews,
+  runPluginAction,
+  setPluginEnabled,
+  setPluginSetting,
+  startPlugins
+} from './plugins'
+import type { PluginsResult } from '@shared/ipc'
 
 let shell: Shell | null = null
 let quitting = false
@@ -221,6 +232,8 @@ if (!app.requestSingleInstanceLock()) {
       loadBlockerEngine()
       showMainWindow()
       createTray(showMainWindow)
+      // Plugins belong to the app, not the window, and none of them needs SoundCloud's page.
+      startPlugins()
       app.on('activate', showMainWindow)
       app.on('second-instance', showMainWindow)
       // After the window exists, so the wait is spent with something on screen.
@@ -447,6 +460,36 @@ function registerIpc(): void {
   })
   onPresenceStatusChange(broadcastPresenceStatus)
 
+  /*
+   * The Plugins section. The settings UI may list, switch, configure and press, and that is
+   * all: which plugins exist and what they may do is decided in main (src/main/plugins.ts).
+   */
+  ipcMain.handle(CH.pluginsList, (e) => (fromSettingsUi(e) ? listPlugins() : null))
+  ipcMain.handle(
+    CH.pluginSetEnabled,
+    (e, id: unknown, enabled: unknown): PluginsResult | null => {
+      if (!fromSettingsUi(e) || typeof id !== 'string' || typeof enabled !== 'boolean')
+        return null
+      return pluginResult(() => setPluginEnabled(id, enabled))
+    }
+  )
+  ipcMain.handle(
+    CH.pluginSetSetting,
+    (e, id: unknown, key: unknown, value: unknown): PluginsResult | null => {
+      if (!fromSettingsUi(e) || typeof id !== 'string' || typeof key !== 'string') return null
+      return pluginResult(() => setPluginSetting(id, key, value))
+    }
+  )
+  ipcMain.on(CH.pluginAction, (e, id: unknown, actionId: unknown) => {
+    if (fromSettingsUi(e) && typeof id === 'string' && typeof actionId === 'string') {
+      runPluginAction(id, actionId)
+    }
+  })
+  ipcMain.on(CH.pluginsOpenFolder, (e) => {
+    if (fromSettingsUi(e)) openPluginsFolder()
+  })
+  onPluginsChange(broadcastPlugins)
+
   // The CSS never leaves main — the panel only needs enough to draw a list, and shipping a
   // whole stylesheet over IPC for every render would be waste.
   ipcMain.handle(CH.themesList, (e) =>
@@ -524,6 +567,27 @@ function broadcastNowPlaying(nowPlaying: NowPlaying | null): void {
     if (view && !view.webContents.isDestroyed()) {
       view.webContents.send(CH.nowPlayingChanged, nowPlaying)
     }
+  }
+}
+
+/** Run a change to a plugin and answer with every row, plus the reason if it failed. */
+function pluginResult(change: () => void): PluginsResult {
+  try {
+    change()
+    return { plugins: pluginViews(), error: '' }
+  } catch (error) {
+    return {
+      plugins: pluginViews(),
+      error: error instanceof Error ? error.message : String(error)
+    }
+  }
+}
+
+/** Plugin rows change on their own (a status line, a button), so the open panel is told. */
+function broadcastPlugins(): void {
+  const view = shell?.settings
+  if (view && !view.webContents.isDestroyed()) {
+    view.webContents.send(CH.pluginsChanged, pluginViews())
   }
 }
 

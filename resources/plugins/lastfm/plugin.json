@@ -1,0 +1,44 @@
+{
+  "id": "lastfm",
+  "name": "Last.fm",
+  "version": "1.0.0",
+  "author": "BetterSoundCloud",
+  "description": "Scrobbles what you play to your Last.fm profile, and shows it as “Scrobbling now” while it plays.",
+  "homepage": "https://www.last.fm",
+  "main": "index.js",
+  "permissions": [
+    "nowPlaying",
+    "network:ws.audioscrobbler.com",
+    "browser:www.last.fm",
+    "secrets"
+  ],
+  "settings": [
+    {
+      "key": "nowPlaying",
+      "kind": "boolean",
+      "default": true,
+      "label": "Show what you’re playing on Last.fm",
+      "help": "Sends “Scrobbling now” as soon as a track starts, before it has played long enough to count."
+    },
+    {
+      "key": "splitTitles",
+      "kind": "boolean",
+      "default": true,
+      "label": "Read “Artist - Title” track names",
+      "help": "Many tracks are uploaded by a label or a fan, so the uploader isn’t the artist. This splits names like “Daft Punk - One More Time”. It can guess wrong when a title itself contains a dash."
+    },
+    {
+      "key": "apiKey",
+      "kind": "string",
+      "default": "",
+      "label": "Your own API key",
+      "help": "Leave empty to use BetterSoundCloud’s. Only needed if Last.fm stops accepting the built-in one."
+    },
+    {
+      "key": "apiSecret",
+      "kind": "secret",
+      "label": "Your own shared secret",
+      "help": "Goes with your own API key. Stored encrypted on this computer."
+    }
+  ]
+}

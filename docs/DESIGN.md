@@ -421,6 +421,32 @@ running (`statusFrom: 'discord'` in the schema, `src/renderer/settings/DiscordSt
   milliseconds and the press would otherwise look like it did nothing.
 - Switched off, it shows nothing: the unticked box already says so.
 
+### Plugin rows
+
+Settings → Plugins (`src/renderer/settings/Plugins.svelte`), and the model for any list of
+things the user switches on that act on their behalf.
+
+- **One row per plugin**, the settings-row shape: a label column and the checkbox on the right.
+  Down the label column: the name (Body), a Caption meta line ("Built in · 1.0.0 · Author" or
+  "From your plugins folder · …"), the description, then **what it can do** — one permission per
+  line, each after a 6×1px dash in currentcolor, the system's hairline as a list mark instead of
+  a bullet glyph or a circle.
+- **Its status line and buttons** come next, in the status-line pattern above; the plugin writes
+  them itself. With nothing of its own to say, the row says the state: Starting…, Stopped (with
+  why), Paused (needs approval), Can’t be turned on, Can’t load.
+- **Its own settings**, while it is on, sit set in under a 1px Hairline rule on the left, as
+  compact rows of their own — so they read as belonging to that plugin and not to the panel.
+- **A plugin that cannot work is still listed**, label in Ghost Ink, checkbox disabled, with the
+  reason. Hiding it would leave the user wondering where their folder went.
+- **Asking first.** Ticking a plugin from the user's folder does not tick it: a confirmation opens
+  inside that row — Field White behind a Hairline, 6px radius, inset rather than floating — with
+  the permissions again in Ink at 13px, one honest sentence about trust, and **Turn on** / Cancel.
+  Not a dialog on top of the settings dialog: the question belongs to the row. Escape closes it
+  and only it. **Turn on** is the default, at 600 weight, because inside a Field White box the
+  tonal step that marks a default elsewhere disappears.
+- **The footer** holds "Open plugins folder" and the plain statement of what the separate process
+  does and does not protect. The words may not promise more safety than the code provides.
+
 ### Motion
 
 One motion pattern, used only for modality. The settings panel enters with a 180ms

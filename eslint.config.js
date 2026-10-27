@@ -65,7 +65,9 @@ export default ts.config(
   // Plain .js config and build scripts are not part of any tsconfig project, so the
   // type-aware parser must be turned off for them rather than asked to find a project.
   {
-    files: ['**/*.js', '**/*.mjs'],
+    // The plugins' sandbox declaration belongs to tsconfig.plugins.json, not to a project the
+    // linter's type-aware parser knows, so it gets the same treatment.
+    files: ['**/*.js', '**/*.mjs', 'resources/plugins/**/*.d.ts'],
     ...ts.configs.disableTypeChecked,
     languageOptions: {
       globals: { ...globals.node },

@@ -14,7 +14,7 @@ export const SECTIONS = [
   'general',
   'appearance',
   'discord',
-  'lastfm',
+  'plugins',
   'shortcuts',
   'advanced'
 ] as const
@@ -29,7 +29,7 @@ export const SECTION_LABELS: Record<Section, string> = {
   general: 'General',
   appearance: 'Appearance',
   discord: 'Discord',
-  lastfm: 'Last.fm',
+  plugins: 'Plugins',
   shortcuts: 'Shortcuts',
   advanced: 'Advanced'
 }
@@ -206,14 +206,6 @@ export const SETTINGS = {
     label: 'Keep showing presence while paused',
     section: 'discord',
     help: 'When this is off, your Discord status clears as soon as you pause.'
-  },
-
-  'lastfm.enabled': {
-    kind: 'boolean',
-    default: false,
-    label: 'Last.fm scrobbling',
-    section: 'lastfm',
-    wired: false
   },
 
   'shortcuts.mediaKeys': {
