@@ -51,15 +51,27 @@ win:
       arch: [x64]
     - target: portable
       arch: [x64]
-  icon: resources/icon.png
+  # A ready-made .ico (16 to 256px, converted once from resources/icon.png) rather than the PNG:
+  # electron-builder's PNG-to-ICO tool writes the file and then crashes on exit (0xC0000005,
+  # Node 24, electron-builder 26.15.3, measured 2026-10-27), failing every Windows build. If
+  # icon.png changes, regenerate this from it.
+  icon: build-resources/icon.ico
   artifactName: BetterSoundCloud-${version}-win-${arch}.${ext}
 
+# The installer and the portable build are both .exe files, so each needs its own name: with
+# one shared name the portable build, written second, silently replaced the installer, and
+# latest.yml (which describes the installer, for auto-update) then pointed at the wrong file
+# (measured 2026-10-27).
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
   perMachine: false
   createDesktopShortcut: true
   createStartMenuShortcut: true
+  artifactName: BetterSoundCloud-${version}-win-${arch}-setup.${ext}
+
+portable:
+  artifactName: BetterSoundCloud-${version}-win-${arch}-portable.${ext}
 
 mac:
   target:

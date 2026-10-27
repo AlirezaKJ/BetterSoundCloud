@@ -29,7 +29,9 @@
 
   onMount(() => {
     // Subscribe first, then read, so no change can slip between the two.
-    const stop = window.bsc.onPluginsChanged((next) => (plugins = next))
+    const stop = window.bsc.onPluginsChanged((next) => {
+      plugins = next
+    })
     void window.bsc.listPlugins().then((list) => {
       // Null when main refused this view as a sender.
       if (list as PluginView[] | null) plugins = list

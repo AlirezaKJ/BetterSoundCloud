@@ -32,7 +32,9 @@
 
   onMount(() => {
     // Subscribe first, then read, so no change can slip between the two.
-    const stop = window.bsc.onPresenceStatus((next) => (status = next))
+    const stop = window.bsc.onPresenceStatus((next) => {
+      status = next
+    })
     void window.bsc.getPresenceStatus().then((current) => {
       // Null when main refused this view as a sender; there is nothing honest to show then.
       if (!(current as PresenceStatus | null)) return

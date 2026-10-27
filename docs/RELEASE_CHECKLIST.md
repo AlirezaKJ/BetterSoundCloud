@@ -1,0 +1,61 @@
+# Release checklist
+
+Before every tag, not once. The bugs this project exists to fix — tracks that grey out and skip
+(#95, #105), sign-in blocks (#93, #97) — only exist in the packaged, fused and signed artifact, so
+every check here runs against that artifact, never against `npm run dev`.
+
+## 1. Build and sign
+
+Windows, from a shell with your Castlabs EVS login current (`py -m castlabs_evs.account reauth` if
+it has lapsed — signing needs it, and it lapses):
+
+```
+set STRICT_VMP_SIGNING=true
+npm run dist:win
+```
+
+`STRICT_VMP_SIGNING=true` makes the build fail if it cannot sign. Then confirm the signature:
+
+```
+py -m castlabs_evs.vmp verify-pkg release\win-unpacked
+```
+
+It must say the signature is valid for `streaming`. The build writes the installer as
+`…-setup.exe` and the portable build as `…-portable.exe`; `latest.yml` describes the installer.
+
+## 2. The automated smoke check
+
+```
+npm run smoke:packaged
+```
+
+It launches the packed app on a brand-new profile (yours is never touched) and checks, in about a
+minute: the window and SoundCloud load; Widevine installs; the page sees nothing of ours; the user
+agent and its client hints do not name the app; every built-in theme, the Last.fm plugin and Discord
+presence load from inside the archive; themes, the background and Minimal navigation apply; our
+views throw no errors; closing the window quits. Every line must say PASS. It signs nothing in and
+plays nothing.
+
+## 3. By hand
+
+These need a person, real credentials and a real ear. Use a dedicated test account where you can:
+repeated sign-ins are themselves something SoundCloud's bot check notices, so cap the attempts, and
+when one is refused, write down what SoundCloud said rather than retrying.
+
+- [ ] Install the NSIS installer on a machine (or a Windows user) that has never run BetterSoundCloud.
+      On a machine that has, run the portable build with `--user-data-dir=<an empty folder>` instead:
+      v0.7.x and v2 share `%APPDATA%\BetterSoundCloud`, and a fresh profile is the point of the test.
+      The smoke check also runs against the portable build: `npm run smoke:packaged -- <its path>`.
+- [ ] Sign in from the fresh profile. No challenge, no "unusual activity".
+- [ ] Play ten tracks from a large playlist, **including one that greys out and skips on v0.7.1** —
+      the only real test of the VMP signature (`requestMediaKeySystemAccess` succeeds even unsigned).
+- [ ] Like a track and follow a user. Both stick after a reload.
+- [ ] Turn on Last.fm, connect it, and see the track scrobble on last.fm.
+- [ ] Discord shows the track while it plays.
+- [ ] Pick each built-in theme with SoundCloud in its light mode and its dark mode.
+- [ ] The portable build too: it unpacks to a new temporary folder on every launch, so the archive's
+      integrity check and the `.sig` signature files must survive being moved.
+- [ ] Not possible yet: Castlabs' VMP lab page, which would confirm the licence server sees
+      `PLATFORM_SOFTWARE_VERIFIED` (stronger than `verify-pkg`). The app sends every page that is not
+      SoundCloud to the system browser, so it cannot be opened inside the app; it needs a test-only
+      way in first.

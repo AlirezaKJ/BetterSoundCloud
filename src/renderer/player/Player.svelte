@@ -28,7 +28,11 @@
 
   let page = $state<PageTheme>('dark')
 
-  onMount(() => window.bsc.onPageTheme((t) => (page = t)))
+  onMount(() =>
+    window.bsc.onPageTheme((t) => {
+      page = t
+    })
+  )
 </script>
 
 <div class="player" data-bsc-player-controls class:light={page === 'light'}>

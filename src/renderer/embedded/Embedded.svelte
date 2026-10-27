@@ -28,8 +28,12 @@
   let page = $state<PageTheme>('dark')
 
   onMount(() => {
-    const stopWindow = window.bsc.onWindowState((s) => (win = s))
-    const stopTheme = window.bsc.onPageTheme((t) => (page = t))
+    const stopWindow = window.bsc.onWindowState((s) => {
+      win = s
+    })
+    const stopTheme = window.bsc.onPageTheme((t) => {
+      page = t
+    })
     return () => {
       stopWindow()
       stopTheme()

@@ -7,8 +7,12 @@
   let win = $state<WindowState>({ maximized: false, focused: true })
 
   onMount(() => {
-    const offNav = window.bsc.onNavState((s) => (nav = s))
-    const offWin = window.bsc.onWindowState((s) => (win = s))
+    const offNav = window.bsc.onNavState((s) => {
+      nav = s
+    })
+    const offWin = window.bsc.onWindowState((s) => {
+      win = s
+    })
     return () => {
       offNav()
       offWin()

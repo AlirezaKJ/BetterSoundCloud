@@ -54,7 +54,9 @@
     window.addEventListener('keydown', onKey)
 
     void window.bsc.getSettings().then((s) => (values = s))
-    const stopWatching = window.bsc.onSettingsChanged((s) => (values = s))
+    const stopWatching = window.bsc.onSettingsChanged((s) => {
+      values = s
+    })
 
     return () => {
       window.removeEventListener('keydown', onKey)

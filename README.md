@@ -98,6 +98,9 @@ Signing happens at a different point per platform, which is why there are two ho
 (Windows, after). Both call `signPackage()` in `scripts/vmp-sign.js`. Linux needs no VMP
 signature.
 
+Before tagging a release, run `npm run smoke:packaged` against the packed build and work through
+[`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md).
+
 > **`requestMediaKeySystemAccess()` is not a test for this.** It is a local capability
 > probe that never contacts a licence server, so it succeeds on an unsigned build. The only
 > real test is playing a track that is known to fail.

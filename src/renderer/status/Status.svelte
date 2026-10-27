@@ -30,7 +30,9 @@
   let defaultButton = $state<HTMLButtonElement | null>(null)
 
   onMount(() => {
-    const stop = window.bsc.onPageStatus((next) => (status = next))
+    const stop = window.bsc.onPageStatus((next) => {
+      status = next
+    })
 
     // The network coming back is the best moment to retry a failed load, sooner than main's
     // own schedule would. Main ignores it unless a failed load is actually on screen.

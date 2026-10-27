@@ -23,8 +23,12 @@
 
   onMount(() => {
     // Subscribe first, then read, so no change can slip between the two.
-    const stopThemes = window.bsc.onThemesChanged((next) => (themes = next))
-    const stopSettings = window.bsc.onSettingsChanged((s) => (selected = s['appearance.theme']))
+    const stopThemes = window.bsc.onThemesChanged((next) => {
+      themes = next
+    })
+    const stopSettings = window.bsc.onSettingsChanged((s) => {
+      selected = s['appearance.theme']
+    })
     void window.bsc.listThemes().then((list) => {
       if (list as ThemeSummary[] | null) themes = list
     })

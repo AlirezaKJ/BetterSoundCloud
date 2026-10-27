@@ -57,8 +57,12 @@
 
   onMount(() => {
     // Subscribe first, then read, so no change can slip between the two.
-    const stopSettings = window.bsc.onSettingsChanged((next) => (values = next))
-    const stopThemes = window.bsc.onThemesChanged((next) => (themes = next))
+    const stopSettings = window.bsc.onSettingsChanged((next) => {
+      values = next
+    })
+    const stopThemes = window.bsc.onThemesChanged((next) => {
+      themes = next
+    })
     void window.bsc.getSettings().then((next) => {
       if (next as unknown) values = next
     })

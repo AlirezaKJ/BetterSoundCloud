@@ -21,6 +21,7 @@ CLAUDE.md is worse than none, because it gets trusted.
 | `npm run build`                | `check` then `electron-vite build` into `out/`                                                                  |
 | `npm run pack`                 | Unpacked app into `release/`                                                                                    |
 | `npm run dist:win` etc.        | Installers. Release builds need `STRICT_VMP_SIGNING=true` (see README)                                          |
+| `npm run smoke:packaged`       | Launch the packed app on a fresh profile and check it through our views (docs/RELEASE_CHECKLIST.md)             |
 | `npm run blocker:build`        | Recompile `resources/engine.bin` + `engine.meta.json`; commit both                                              |
 | `npx prettier --write <files>` | Fix formatting before `check`                                                                                   |
 
@@ -239,12 +240,20 @@ Each view is `src/renderer/<entry>/{index.html, main.ts, <Name>.svelte}`.
 
     onMount(() => {
       // Subscribe first, then read, so no change can slip between the two.
-      const stop = window.bsc.onNowPlaying((np) => (nowPlaying = np))
+      const stop = window.bsc.onNowPlaying((np) => {
+        nowPlaying = np
+      })
       void window.bsc.getNowPlaying().then((np) => (nowPlaying = np))
       return stop
     })
   </script>
   ```
+
+- **An `on…` callback has a block body and returns nothing.** The preload calls it across the
+  context bridge, which copies the return value back too; `(np) => (nowPlaying = np)` returns the
+  `$state` Proxy, which cannot be copied, and threw "An object could not be cloned" on every push
+  (found in the packaged build, 2026-10-27). A `.then(...)` on an invoke result is not called by
+  the bridge, so it may stay an expression. `src/preload/chrome.test.ts` scans for it.
 
 - Import shared types with `import type` (ESLint enforces it). Shared runtime helpers from
   `@shared/*` are fine in renderers.
@@ -506,6 +515,15 @@ context menu have the shortcut; embedded and player do not).
   define a mock `window.bsc`, then `await import('/<entry>/main.ts?remount=1')` to mount against
   the mock. Note that synthetic Enter does not submit forms there; use `form.requestSubmit()`.
 - **Main-process paths in the real app** are verified from the dev log tags above.
+- **The packaged app** is checked by `npm run smoke:packaged` (`scripts/smoke-packaged.mjs`): it
+  launches `release/win-unpacked` with `--user-data-dir` on a temporary profile — Electron honours
+  that switch, so nobody's real profile is touched — and `--remote-debugging-port`, then drives our
+  views' `window.bsc` and only reads SoundCloud's page. What it cannot check (sign-in, DRM playback)
+  is in `docs/RELEASE_CHECKLIST.md`. Run it before every tag; a dev-only test would not have caught
+  #95/#105, which existed only after packing and signing.
+- **A packed `.asar` under the repo can be locked by Orca** (an Electron app's file system opens
+  archives as folders): `release/win-unpacked` then cannot be rebuilt (EBUSY). Build elsewhere with
+  `npx electron-builder --dir -c.directories.output=<folder outside the repo>`.
 - **Live page behaviour** can be measured with a throwaway Electron script run by
   `node_modules/electron/dist/electron.exe`, outside the repo, using its own `userData` and the
   same user agent rule. SoundCloud now requires sign-in before anything plays, so anything that
@@ -537,6 +555,7 @@ context menu have the shortcut; embedded and player do not).
   do not invent answers), "Explicitly declined" (do not re-propose).
 - `docs/DESIGN.md` — the full design system. `docs/PRODUCT.md` — users, purpose, principles.
 - `README.md` — setup, VMP signing for release builds, platform notes.
+- `docs/RELEASE_CHECKLIST.md` — what to check before every tag, automated and by hand.
 - Themes: `docs/CUSTOM_THEMES.md` is the authors' guide. See §17.
 
 ---
