@@ -85,8 +85,10 @@ credentials. v2's stated goal is to carry all of it.
   a theme can recolour BetterSoundCloud's own windows to match
 - Synced lyrics from LRCLIB in a pane beside the page, following the song line by line, with a
   timing nudge; looked up only while the pane is open
+- A full-screen showcase of what is playing: the artwork, title and progress on a colour taken
+  from the artwork, with the line being sung
 
-**Not yet built:** the full-screen showcase, downloader, i18n, proxy, webhooks, auto-updater. Settings
+**Not yet built:** downloader, i18n, proxy, webhooks, auto-updater. Settings
 whose feature is missing render disabled and labelled rather than lying. Full backlog:
 [TODO.md](TODO.md).
 

@@ -222,6 +222,46 @@ try {
     check('…and closes', !still.some((t) => t.url.includes('/lyrics/index.html')))
   }
 
+  // The showcase: the window goes full screen under it, it says nothing is playing, and closing
+  // it gives the window back at its old size. The screen flashes full screen for a moment.
+  await header.run('window.bsc.openShowcase()')
+  const showcase = await view((url) => url.includes('/showcase/index.html'), 15000)
+  check('the showcase opens', showcase !== null)
+  if (showcase) {
+    await wait(1500)
+    const size = await showcase.run(
+      '[window.innerWidth, window.innerHeight, screen.width, screen.height]'
+    )
+    check(
+      '…full screen',
+      size?.[0] === size?.[2] && size?.[1] === size?.[3],
+      `${size?.[0]}×${size?.[1]} on a ${size?.[2]}×${size?.[3]} screen`
+    )
+    check(
+      '…saying nothing is playing',
+      (await showcase.run(`document.querySelector('h1')?.textContent`)) === 'Nothing is playing'
+    )
+    check(
+      'no uncaught errors in the showcase',
+      showcase.exceptions.length === 0,
+      showcase.exceptions[0]
+    )
+    await showcase.run('window.bsc.closeShowcase()').catch(() => undefined)
+    await wait(1500)
+    const still = await fetch(`http://127.0.0.1:${PORT}/json/list`)
+      .then((response) => response.json())
+      .catch(() => [])
+    const after = await header.run(
+      '[window.innerWidth, window.innerHeight, screen.width, screen.height]'
+    )
+    check(
+      '…and leaves full screen as it closes',
+      !still.some((t) => t.url.includes('/showcase/index.html')) &&
+        (after?.[0] < after?.[2] || after?.[1] < after?.[3]),
+      `window ${after?.[0]}×${after?.[1]}`
+    )
+  }
+
   check(
     'no uncaught errors in the header',
     header.exceptions.length === 0,

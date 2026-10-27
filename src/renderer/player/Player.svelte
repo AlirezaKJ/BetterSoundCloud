@@ -14,8 +14,8 @@
    * nodes into their React-managed player, which is why it broke on their releases.
    *
    * The lyrics button opens and closes the lyrics pane, and is pressed while it is open. The
-   * showcase button is not built yet, so it is drawn disabled and says so — the product's rule
-   * for a control whose feature does not exist ("Say what does not work").
+   * showcase button takes the window full screen with the showcase; it has no pressed state,
+   * because the showcase covers it while open.
    *
    * The glyph colour follows SOUNDCLOUD's light/dark setting, not ours. This overlay is a
    * separate document composited over their bar, so it cannot inherit their colours the way
@@ -59,9 +59,9 @@
 
   <button
     class="btn"
-    disabled
-    title="Full-screen showcase — not implemented yet"
-    aria-label="Full-screen showcase (not implemented yet)"
+    title="Full-screen showcase"
+    aria-label="Full-screen showcase"
+    onclick={() => window.bsc.openShowcase()}
   >
     <!-- Screen with a play triangle, matching v0.7.x's showcase glyph. -->
     <svg viewBox="0 -960 960 960" aria-hidden="true">
@@ -141,17 +141,6 @@
   /* Open: the accent marks the state, as the system's rule says it may. */
   .btn.on {
     color: var(--bsc-accent);
-  }
-
-  /* Not built yet: dimmed, no hover, an ordinary cursor. The tooltip says why. */
-  .btn:disabled {
-    opacity: 0.4;
-    cursor: default;
-  }
-
-  .btn:disabled:hover,
-  .player.light .btn:disabled:hover {
-    background: transparent;
   }
 
   .btn svg {

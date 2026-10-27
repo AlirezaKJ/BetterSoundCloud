@@ -20,7 +20,9 @@ import {
   setContentCover,
   setContentPicture,
   toggleLyrics,
-  closeLyrics
+  closeLyrics,
+  openShowcase,
+  closeShowcase
 } from './window'
 import {
   getLyricsState,
@@ -287,8 +289,10 @@ function showMainWindow(): void {
     if (isDev) checkPageLanguages(next.header, browserIdentity().languages)
     next.window.on('close', (event) => {
       if (process.platform === 'darwin' && !quitting) {
-        // Keep SoundCloud's renderer (and its audio) alive until the user quits.
+        // Keep SoundCloud's renderer (and its audio) alive until the user quits. Leave the
+        // showcase first: a hidden window left full screen keeps its own Space on macOS.
         event.preventDefault()
+        closeShowcase(next)
         next.window.hide()
       }
     })
@@ -309,7 +313,8 @@ function showMainWindow(): void {
         next.player,
         next.contextMenu,
         next.status,
-        next.lyrics
+        next.lyrics,
+        next.showcase
       ]) {
         if (view && !view.webContents.isDestroyed()) view.webContents.close()
       }
@@ -470,7 +475,8 @@ function registerIpc(): void {
       shell.player,
       shell.contextMenu,
       shell.status,
-      shell.lyrics
+      shell.lyrics,
+      shell.showcase
     ].some((view) => view?.webContents === event.sender)
 
   ipcMain.handle(CH.nowPlayingGet, (e) => (fromOurViews(e) ? getNowPlaying() : null))
@@ -572,13 +578,18 @@ function registerIpc(): void {
    */
   const fromLyrics = (event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent): boolean =>
     shell !== null && event.sender === shell.lyrics?.webContents
+  const fromShowcase = (event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent): boolean =>
+    shell !== null && event.sender === shell.showcase?.webContents
   ipcMain.on(CH.lyricsToggle, (e) => {
     if (shell && (fromChrome(e) || e.sender === shell.player?.webContents)) toggleLyrics(shell)
   })
   ipcMain.on(CH.lyricsClose, (e) => {
     if (shell && fromLyrics(e)) closeLyrics(shell)
   })
-  ipcMain.handle(CH.lyricsGet, (e) => (fromLyrics(e) ? getLyricsState() : null))
+  // The showcase shows the same lyrics, so it may read them too; only the pane changes them.
+  ipcMain.handle(CH.lyricsGet, (e) =>
+    fromLyrics(e) || fromShowcase(e) ? getLyricsState() : null
+  )
   ipcMain.on(CH.lyricsRetry, (e) => {
     if (fromLyrics(e)) retryLyrics()
   })
@@ -587,8 +598,18 @@ function registerIpc(): void {
     if (fromLyrics(e) && (seconds === 0.5 || seconds === -0.5)) nudgeLyrics(seconds)
   })
   onLyricsChange((state) => {
-    const view = shell?.lyrics
-    if (view && !view.webContents.isDestroyed()) view.webContents.send(CH.lyricsChanged, state)
+    for (const view of [shell?.lyrics, shell?.showcase]) {
+      if (view && !view.webContents.isDestroyed())
+        view.webContents.send(CH.lyricsChanged, state)
+    }
+  })
+
+  /** The full-screen showcase. Opened from the player-bar button or the header; only it closes. */
+  ipcMain.on(CH.showcaseOpen, (e) => {
+    if (shell && (fromChrome(e) || e.sender === shell.player?.webContents)) openShowcase(shell)
+  })
+  ipcMain.on(CH.showcaseClose, (e) => {
+    if (shell && fromShowcase(e)) closeShowcase(shell)
   })
 
   ipcMain.handle(CH.settingsSet, (e, key: unknown, value: unknown) => {
@@ -649,7 +670,8 @@ function broadcastNowPlaying(nowPlaying: NowPlaying | null): void {
     shell.player,
     shell.contextMenu,
     shell.status,
-    shell.lyrics
+    shell.lyrics,
+    shell.showcase
   ]) {
     if (view && !view.webContents.isDestroyed()) {
       view.webContents.send(CH.nowPlayingChanged, nowPlaying)

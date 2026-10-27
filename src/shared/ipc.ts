@@ -82,7 +82,12 @@ export const CH = {
   lyricsRetry: 'lyrics:retry',
   lyricsNudge: 'lyrics:nudge',
   // main -> the player-bar buttons: whether the pane is open, so the button can say so.
-  lyricsShown: 'lyrics:shown'
+  lyricsShown: 'lyrics:shown',
+
+  // The full-screen showcase. Opened from the player-bar button (and the right-click menu, in
+  // main); only the showcase itself closes it. It reads lyrics through `lyricsGet`/`lyricsChanged`.
+  showcaseOpen: 'showcase:open',
+  showcaseClose: 'showcase:close'
 } as const
 
 /** What a change to a plugin answers: every row as it now is, and why it failed if it did. */
@@ -210,7 +215,7 @@ export type ChromeApi = {
   /** The pane closing itself: its close button, or Escape. */
   closeLyrics(): void
   /**
-   * What the lyrics pane should show. Read once when it opens, then follow `onLyrics`, which
+   * What the lyrics pane (or the showcase) should show. Read once on opening, then follow `onLyrics`, which
    * fires when the track changes, a lookup finishes, or the timing is nudged — never per tick.
    */
   getLyrics(): Promise<LyricsState>
@@ -221,4 +226,9 @@ export type ChromeApi = {
   nudgeLyrics(seconds: number): void
   /** Whether the lyrics pane is open: on the player-bar buttons' load and on every change. */
   onLyricsShown(cb: (shown: boolean) => void): () => void
+
+  /** Take the window full screen with the showcase. From the player-bar button. */
+  openShowcase(): void
+  /** The showcase closing itself: its close button, or Escape. Leaves full screen too. */
+  closeShowcase(): void
 }

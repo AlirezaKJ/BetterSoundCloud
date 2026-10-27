@@ -1,19 +1,15 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { currentLineIndex, playbackPosition } from '@shared/lyrics'
-  import type { ClockAnchor, LyricsState } from '@shared/lyrics'
-  import type { NowPlaying } from '@shared/now-playing'
+  import { lyricClock } from '@shared/lyric-clock'
+  import type { LyricsState } from '@shared/lyrics'
 
   /*
    * The lyrics pane, docked at the right of SoundCloud's page.
    *
    * Main owns everything but the clock: it looks the track up on LRCLIB and sends a
    * `LyricsState` whenever there is something new to show (src/main/lyrics.ts). The pane keeps
-   * time itself, from the now-playing pushes every view gets: SoundCloud's clock only says whole
-   * seconds, so between its ticks the position runs on (`playbackPosition`). Nothing polls. The
-   * pane knows when the next line starts, so it sets one timer for that moment, and plans again
-   * whenever a clock reading, a new track or a nudge arrives — exact to the millisecond, and
-   * idle between lines.
+   * time itself, from the now-playing pushes every view gets, with `lyricClock`: one timer for
+   * when the next line starts, never polling. The full-screen showcase uses the same clock.
    *
    * Every line is text, rendered as text — v0.7.x wrote LRCLIB's answers in with innerHTML.
    */
@@ -26,10 +22,10 @@
   /** Whether the pane scrolls itself to the current line. Scrolling by hand stops it. */
   let following = $state(true)
   let body = $state<HTMLElement | null>(null)
-  let anchor: ClockAnchor = { elapsed: 0, at: 0, playing: false }
   let shownKey = ''
-  /** The one timer: when the next line starts. */
-  let nextLine: ReturnType<typeof setTimeout> | null = null
+  const clock = lyricClock((index) => {
+    current = index
+  })
 
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
 
@@ -47,12 +43,14 @@
       show(next)
     })
     const stopPlaying = window.bsc.onNowPlaying((next) => {
-      noteClock(next)
+      clock.setReading(next)
     })
     void window.bsc.getLyrics().then((next) => {
       if (next as unknown) show(next)
     })
-    void window.bsc.getNowPlaying().then(noteClock)
+    void window.bsc.getNowPlaying().then((next) => {
+      clock.setReading(next)
+    })
 
     const stopScrolling = (): void => {
       following = false
@@ -69,7 +67,7 @@
     return () => {
       stopLyrics()
       stopPlaying()
-      if (nextLine) clearTimeout(nextLine)
+      clock.stop()
       body?.removeEventListener('wheel', stopScrolling)
       body?.removeEventListener('touchmove', stopScrolling)
       window.removeEventListener('keydown', onKey)
@@ -82,38 +80,11 @@
     if (key !== shownKey) {
       // A different track starts at the top, following.
       shownKey = key
-      current = -1
       following = true
       body?.scrollTo({ top: 0 })
     }
-    planLines()
-  }
-
-  /** Re-anchor on a new clock reading. The same second again (a like, say) keeps the anchor. */
-  function noteClock(nowPlaying: NowPlaying | null): void {
-    const elapsed = nowPlaying?.elapsed ?? 0
-    const playing = nowPlaying?.playing ?? false
-    if (elapsed !== anchor.elapsed || playing !== anchor.playing) {
-      anchor = { elapsed, at: performance.now(), playing }
-      planLines()
-    }
-  }
-
-  /**
-   * Light the line being sung now, and set the timer for when the next one starts. While the
-   * clock runs past the last reading, `playbackPosition` caps it, so a timer that lands early
-   * finds the same line and plans again; the next reading replans in any case.
-   */
-  function planLines(): void {
-    if (nextLine) clearTimeout(nextLine)
-    nextLine = null
-    if (lyrics.state !== 'synced') return
-    const position = playbackPosition(anchor, performance.now()) - lyrics.offset
-    const index = currentLineIndex(lyrics.lines, position)
-    if (index !== current) current = index
-    const upcoming = lyrics.lines[index + 1]
-    if (!anchor.playing || !upcoming) return
-    nextLine = setTimeout(planLines, Math.max(0, (upcoming.time - position) * 1000) + 5)
+    if (next.state === 'synced') clock.setLines(next.lines, next.offset)
+    else clock.setLines(null, 0)
   }
 
   // Keep the current line at reading height while following.

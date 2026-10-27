@@ -52,7 +52,9 @@ vi.mock('./window', () => ({
   setContentCover: vi.fn(),
   setContentPicture: vi.fn(),
   toggleLyrics: vi.fn(),
-  closeLyrics: vi.fn()
+  closeLyrics: vi.fn(),
+  openShowcase: vi.fn(),
+  closeShowcase: vi.fn()
 }))
 vi.mock('./lyrics', () => ({
   getLyricsState: () => ({ state: 'idle' }),
@@ -457,6 +459,53 @@ describe('main window lifecycle', () => {
     expect(lyrics.nudgeLyrics).not.toHaveBeenCalled()
     handlerFor('on', CH.lyricsNudge)(fromLyrics, -0.5)
     expect(lyrics.nudgeLyrics).toHaveBeenCalledWith(-0.5)
+  })
+
+  it('opens the showcase from our own buttons only, and lets only the showcase close it', async () => {
+    const { app } = await import('electron')
+    const window = await import('./window')
+    const lyrics = await import('./lyrics')
+    app.emit('activate')
+    const shell = mocks.createShell.mock.results.at(-1)!.value as ReturnType<typeof makeShell>
+    const handlerFor = (method: 'on' | 'handle', channel: string) => {
+      const registered = method === 'on' ? mocks.ipcOn : mocks.ipcHandle
+      return registered.mock.calls.find(([name]) => name === channel)![1] as (
+        event: unknown,
+        ...args: unknown[]
+      ) => unknown
+    }
+    const fromPage = { sender: shell.content.webContents }
+    const fromPlayer = { sender: shell.player.webContents }
+    // Mocks are not reset between tests here, and the lyrics test above nudges.
+    for (const fn of [lyrics.nudgeLyrics, lyrics.retryLyrics, window.openShowcase]) {
+      vi.mocked(fn).mockClear()
+    }
+    vi.mocked(window.closeShowcase).mockClear()
+    const showcaseView = { webContents: { ...shell.status.webContents } }
+    Object.assign(shell, { showcase: showcaseView })
+    const fromShowcase = { sender: showcaseView.webContents }
+
+    // SoundCloud's page can neither take the window full screen nor end the showcase.
+    handlerFor('on', CH.showcaseOpen)(fromPage)
+    handlerFor('on', CH.showcaseClose)(fromPage)
+    expect(window.openShowcase).not.toHaveBeenCalled()
+    expect(window.closeShowcase).not.toHaveBeenCalled()
+
+    handlerFor('on', CH.showcaseOpen)(fromPlayer)
+    expect(window.openShowcase).toHaveBeenCalledOnce()
+    // The player bar cannot close it (it is underneath); the showcase can.
+    handlerFor('on', CH.showcaseClose)(fromPlayer)
+    expect(window.closeShowcase).not.toHaveBeenCalled()
+    handlerFor('on', CH.showcaseClose)(fromShowcase)
+    expect(window.closeShowcase).toHaveBeenCalledOnce()
+
+    // It reads the lyrics and what is playing, but cannot nudge or retry: those are the pane's.
+    expect(handlerFor('handle', CH.lyricsGet)(fromShowcase)).toEqual({ state: 'idle' })
+    expect(handlerFor('handle', CH.nowPlayingGet)(fromShowcase)).not.toBeUndefined()
+    handlerFor('on', CH.lyricsNudge)(fromShowcase, 0.5)
+    handlerFor('on', CH.lyricsRetry)(fromShowcase)
+    expect(lyrics.nudgeLyrics).not.toHaveBeenCalled()
+    expect(lyrics.retryLyrics).not.toHaveBeenCalled()
   })
 
   it('gives every window the same identity, its header built from the page’s languages', () => {

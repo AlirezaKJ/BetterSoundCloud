@@ -61,10 +61,12 @@ vi.mock('electron', async () => {
     WebContentsView
   }
 })
+const closeShowcase = vi.hoisted(() => vi.fn())
 vi.mock('./window', () => ({
   START_URL: 'https://soundcloud.com/discover',
   rendererUrl: (entry: string) => `file:///${entry}/index.html`,
-  enableDevToolsShortcut: vi.fn()
+  enableDevToolsShortcut: vi.fn(),
+  closeShowcase
 }))
 vi.mock('./env', () => ({ isDev: false }))
 
@@ -256,6 +258,17 @@ describe('a hang', () => {
     failLoad(shell, -106, 'ERR_INTERNET_DISCONNECTED')
     shell.content.webContents.emit('unresponsive')
     expect(shell.pageStatus).toMatchObject({ kind: 'load-failed' })
+  })
+
+  it('ends the full-screen showcase when SoundCloud’s page is gone, but not for a hang', () => {
+    const shell = makeShell()
+    closeShowcase.mockClear()
+    // A hang is a dialog over a page that is still there: the music may well still play.
+    shell.content.webContents.emit('unresponsive')
+    expect(closeShowcase).not.toHaveBeenCalled()
+    press(shell, 'wait')
+    failLoad(shell, -106, 'ERR_INTERNET_DISCONNECTED')
+    expect(closeShowcase).toHaveBeenCalledWith(shell)
   })
 
   it('is dismissed by Wait', () => {

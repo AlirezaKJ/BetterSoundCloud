@@ -1,11 +1,11 @@
 import { join } from 'node:path'
 import { app, net, WebContentsView } from 'electron'
 import { CH } from '@shared/ipc'
-import { describeLoadFailure, retryDelay } from '@shared/page-status'
+import { describeLoadFailure, hidesPage, retryDelay } from '@shared/page-status'
 import type { PageStatus, PageStatusAction } from '@shared/page-status'
 import { hardenSession, isInternalUrl, routeNewWindowsToBrowser } from './session'
 import { isDev } from './env'
-import { enableDevToolsShortcut, rendererUrl, START_URL } from './window'
+import { closeShowcase, enableDevToolsShortcut, rendererUrl, START_URL } from './window'
 import type { Shell } from './window'
 import { themeChromeView } from './chrome-theme'
 
@@ -59,6 +59,9 @@ export function showPageStatus(shell: Shell, status: PageStatus): void {
   if (isDev) console.log(`[page-status] ${summarise(status)}`)
 
   shell.pageStatus = status
+  // The showcase covers everything; a status saying SoundCloud's page is gone must be seen, and
+  // a crash or failed load has stopped the music anyway.
+  if (hidesPage(status)) closeShowcase(shell)
   if (shell.status) sendStatus(shell)
   else createStatusView(shell)
   shell.layout()

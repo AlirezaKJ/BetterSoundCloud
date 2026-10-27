@@ -60,6 +60,8 @@ Everything before the first marker styles SoundCloud's page. A line that is exac
 | `header`, `settings`, `menu`, `status`, `lyrics` | One of those only                                                                                        |
 | `all`                                            | Everywhere                                                                                               |
 
+The full-screen showcase is not themed: its colours come from the playing track's artwork.
+
 A marker inside a rule, or after code on the same line, is an ordinary comment. A section for a
 target that does not exist is dropped. Sections can repeat; each is appended to its target.
 

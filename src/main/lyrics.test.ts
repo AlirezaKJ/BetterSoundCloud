@@ -147,7 +147,7 @@ describe('the lyrics service', () => {
 
   it('looks the track up when the pane opens, and shows timed lyrics', async () => {
     lyrics.noticeNowPlaying(track('get-lucky'))
-    lyrics.setLyricsOpen(true)
+    lyrics.setLyricsWanted('pane', true)
     expect(lyrics.getLyricsState().state).toBe('loading')
     await vi.runAllTimersAsync()
     const state = lyrics.getLyricsState()
@@ -156,7 +156,7 @@ describe('the lyrics service', () => {
   })
 
   it('waits for a skipped-through track to settle, and asks only for the one that stays', async () => {
-    lyrics.setLyricsOpen(true)
+    lyrics.setLyricsWanted('pane', true)
     for (const title of ['one', 'two', 'three']) {
       lyrics.noticeNowPlaying(track(title))
       await vi.advanceTimersByTimeAsync(100)
@@ -166,7 +166,7 @@ describe('the lyrics service', () => {
   })
 
   it('does not ask again for a track it already looked up', async () => {
-    lyrics.setLyricsOpen(true)
+    lyrics.setLyricsWanted('pane', true)
     lyrics.noticeNowPlaying(track('a'))
     await vi.runAllTimersAsync()
     lyrics.noticeNowPlaying(track('b'))
@@ -177,7 +177,7 @@ describe('the lyrics service', () => {
   })
 
   it('ignores the clock ticking: only a different track starts a lookup', async () => {
-    lyrics.setLyricsOpen(true)
+    lyrics.setLyricsWanted('pane', true)
     lyrics.noticeNowPlaying(track('a'))
     await vi.runAllTimersAsync()
     for (let second = 1; second < 10; second++) {
@@ -189,7 +189,7 @@ describe('the lyrics service', () => {
 
   it('says it could not reach LRCLIB, and tries again when asked', async () => {
     vi.stubGlobal('fetch', fakeLrclib(() => 'offline').fetcher)
-    lyrics.setLyricsOpen(true)
+    lyrics.setLyricsWanted('pane', true)
     lyrics.noticeNowPlaying(track('a'))
     await vi.runAllTimersAsync()
     expect(lyrics.getLyricsState().state).toBe('error')
@@ -200,7 +200,7 @@ describe('the lyrics service', () => {
   })
 
   it('moves the lyrics by half a second at a time, and remembers it for the track', async () => {
-    lyrics.setLyricsOpen(true)
+    lyrics.setLyricsWanted('pane', true)
     lyrics.noticeNowPlaying(track('a'))
     await vi.runAllTimersAsync()
     lyrics.nudgeLyrics(0.5)
@@ -209,14 +209,29 @@ describe('the lyrics service', () => {
     const nudged = lyrics.getLyricsState()
     expect(nudged.state === 'synced' && nudged.offset).toBe(0.5)
     // Closed and opened again on the same track, the nudge is still there.
-    lyrics.setLyricsOpen(false)
-    lyrics.setLyricsOpen(true)
+    lyrics.setLyricsWanted('pane', false)
+    lyrics.setLyricsWanted('pane', true)
     const again = lyrics.getLyricsState()
     expect(again.state === 'synced' && again.offset).toBe(0.5)
   })
 
+  it('keeps looking tracks up while either the pane or the showcase is open', async () => {
+    lyrics.setLyricsWanted('pane', true)
+    lyrics.setLyricsWanted('showcase', true)
+    lyrics.setLyricsWanted('pane', false)
+    lyrics.noticeNowPlaying(track('a'))
+    await vi.runAllTimersAsync()
+    expect(lrclib.requests).toHaveLength(1)
+    expect(lyrics.getLyricsState().state).toBe('synced')
+    // Both closed: the next track is not looked up.
+    lyrics.setLyricsWanted('showcase', false)
+    lyrics.noticeNowPlaying(track('b'))
+    await vi.runAllTimersAsync()
+    expect(lrclib.requests).toHaveLength(1)
+  })
+
   it('shows nothing playing when nothing is', () => {
-    lyrics.setLyricsOpen(true)
+    lyrics.setLyricsWanted('pane', true)
     expect(lyrics.getLyricsState().state).toBe('idle')
     expect(states).toContain('idle')
   })

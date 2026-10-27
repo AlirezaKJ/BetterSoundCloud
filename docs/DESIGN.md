@@ -94,7 +94,8 @@ canvas, and the frame's job is to hold the picture without competing with it.
 
 This produces a system that is almost aggressively restrained. There is no display type, no
 hero, no imagery, no gradient, and no decorative colour anywhere. Controls are transparent
-until you hover them. The largest text in the product is 15px. The accent appears only where
+until you hover them. The largest text in the product is 15px, outside two named exceptions
+for content read at a distance: lyric lines, and the full-screen showcase. The accent appears only where
 something is focused, selected, or on. A user should be able to look at this app all day and
 never notice the chrome — and then find every control exactly where they left it the moment
 they reach for one.
@@ -195,6 +196,15 @@ line-height 1.4**, in the lyrics pane only. Lyrics are not chrome; they are the 
 pane, read from arm's length while the listener's attention is elsewhere. Everything around them —
 the pane's title, its captions, its buttons — keeps the 15px ceiling. The exception does not
 transfer: no other surface may use it.
+
+**The Showcase Exception** (approved 2026-10-28). The full-screen showcase is read from across a
+room, so its **title block and lyric lines** go past the ceiling, sized from the screen (the smaller
+of `vw` and `vh`, so wide and tall screens keep one proportion): the track title
+`clamp(28px, min(3.2vw, 5.6vh), 64px)` at 600, line-height 1.06, −0.02em; the uploader beneath it,
+part of the same block, `clamp(16px, min(1.3vw, 2.3vh), 26px)` in Muted Ink; lyric lines
+`clamp(22px, min(2.2vw, 3.9vh), 44px)` at 600, line-height 1.22. Everything else there — the clock,
+the hint, the credit, the close button — keeps the 15px ceiling. Like the Lyrics Exception, it does
+not transfer.
 
 **The System Stack Rule.** No webfonts, ever. The chrome inherits the OS UI font so it belongs
 to the window; the CSP on every renderer blocks remote font loads regardless.
@@ -427,8 +437,41 @@ below. 360px wide, never more than two fifths of the window.
 - **Reduced motion**: no smooth scroll, no colour transition, no wait line.
 
 The player-bar lyrics button is pressed while the pane is open, and turns the accent — the one
-state that button has. The full-screen showcase button beside it is not built: drawn at 40%
-opacity, no hover, its tooltip saying so.
+state that button has. The showcase button beside it has no pressed state: the showcase covers it
+while open.
+
+### Showcase
+
+The playing track as a record sleeve, over the whole screen (`src/renderer/showcase`): the
+artwork as a square print on the left; its title, uploader and progress beside it like liner notes,
+capitals level with the sleeve's top edge; the line being sung below them, resting on the sleeve's
+bottom edge. On a tall screen the sleeve sits above the notes, at their width.
+
+- **One flat colour behind it, taken from the artwork**: the hue that holds the most colour,
+  deepened until Ink reads at 7:1 (AAA, for across a room). No blur, no gradient, no glow — the
+  anti-reference stands; this is a colour, not the artwork smeared. The colour changes with the
+  track over 900ms, so it is felt rather than seen. Before the artwork arrives, and for a sleeve
+  with hardly any colour, it is dark Shell Grey or the sleeve's own grey. Its inks are computed
+  for that colour and checked: Ink 7:1, Muted Ink 4.5:1; the showcase is always deep, in either
+  mode, and follows no theme.
+- **The sleeve**: square corners (a print has none), flat, with a hairline of Ink at 12% so a dark
+  sleeve keeps its edge; empty while it loads or when there is none, at Ink 5%. A new artwork fades
+  in over 320ms.
+- **Progress** is a 2px rule, Ink over a faint track, with no knob — nothing here can seek. It
+  glides through each second rather than stepping. The clock beside it is 15px tabular figures,
+  elapsed in Ink and the length in Muted Ink; "Paused" in Muted Ink before it while paused.
+- **Lyrics**: every line at the same 600 weight, so nothing re-wraps as the song moves; the current
+  line is Ink, the ones to come Muted Ink, fading out below. The authored moment of the surface is
+  the line change: the column moves up over 560ms ease-out (expo-like) as the sung line fades away.
+  A pause between lines is a 2px rest that doubles in length while current — never a glyph. Only
+  timed lyrics show; untimed or missing lyrics leave the space empty, and the pane is where to read
+  them.
+- **The only controls are at the corners**: "Press Esc to leave" and the settings close button at
+  the top right, the "Lyrics from LRCLIB" credit at the bottom left. They fade (240ms) 2.5s after
+  the pointer stops, with the cursor, and return on any movement or key; keyboard focus keeps them.
+- **Nothing playing**: the empty sleeve, "Nothing is playing" at the title size in Muted Ink, and
+  one line saying what to do.
+- **Reduced motion**: no colour change, line movement, fade or glide; everything jumps.
 
 ### Signature Component: the pending setting
 
@@ -571,7 +614,8 @@ as a stuck bar. The words carry the meaning on their own.
   rather than a tool and destroy legibility in a 32px strip. Confirmed anti-reference.
 - **Don't** introduce a webfont. The CSP blocks remote loads, and the OS stack is the point.
 - **Don't** add a third radius, a second shadow, or a second accent without retiring one first.
-- **Don't** exceed 15px type in BetterSoundCloud's own UI.
+- **Don't** exceed 15px type in BetterSoundCloud's own UI, outside the Lyrics and Showcase
+  Exceptions.
 - **Don't** grow the chrome past 32px. New affordances go into settings or an overlay.
 - **Don't** style SoundCloud's page from a component stylesheet. Page-level appearance is
   CSS-only through `insertCSS`, and no node may be added to their document.

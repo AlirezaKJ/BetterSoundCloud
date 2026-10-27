@@ -59,6 +59,7 @@ export const CONTEXT_MENU_ACTIONS = [
   'copy-page-link',
   'copy-clean-page-link',
   'lyrics',
+  'showcase',
   'settings',
   'sign-out',
   'inspect'

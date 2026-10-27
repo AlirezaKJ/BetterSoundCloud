@@ -53,7 +53,9 @@ vi.mock('./window', () => ({
   setContentCover: vi.fn(),
   setContentPicture: vi.fn(),
   toggleLyrics: vi.fn(),
-  closeLyrics: vi.fn()
+  closeLyrics: vi.fn(),
+  openShowcase: vi.fn(),
+  closeShowcase: vi.fn()
 }))
 vi.mock('./lyrics', () => ({
   getLyricsState: () => ({ state: 'idle' }),

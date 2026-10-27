@@ -50,7 +50,8 @@
     'sign-out': 'M9 21H5V3h4M16 17l5-5-5-5M21 12H9',
     lyrics:
       'M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zM6 11a6 6 0 0 0 12 0M12 17v4M9 21h6',
-    code: 'M8 7 3 12l5 5M16 7l5 5-5 5M14 4l-4 16'
+    code: 'M8 7 3 12l5 5M16 7l5 5-5 5M14 4l-4 16',
+    'full-screen': 'M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5'
   }
 
   type IconName = keyof typeof ICONS
@@ -165,6 +166,7 @@
 
     groups.push([
       { action: 'lyrics', label: r.lyricsOpen ? 'Hide lyrics' : 'Show lyrics', icon: 'lyrics' },
+      { action: 'showcase', label: 'Full-screen showcase', icon: 'full-screen' },
       { action: 'settings', label: 'Settings', icon: 'settings' }
     ])
     groups.push([{ action: 'sign-out', label: 'Sign out', icon: 'sign-out' }])

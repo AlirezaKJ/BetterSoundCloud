@@ -96,7 +96,10 @@ const api: ChromeApi = {
   onLyrics: (cb: (state: LyricsState) => void) => subscribe(CH.lyricsChanged, cb),
   retryLyrics: () => ipcRenderer.send(CH.lyricsRetry),
   nudgeLyrics: (seconds: number) => ipcRenderer.send(CH.lyricsNudge, seconds),
-  onLyricsShown: (cb: (shown: boolean) => void) => subscribe(CH.lyricsShown, cb)
+  onLyricsShown: (cb: (shown: boolean) => void) => subscribe(CH.lyricsShown, cb),
+
+  openShowcase: () => ipcRenderer.send(CH.showcaseOpen),
+  closeShowcase: () => ipcRenderer.send(CH.showcaseClose)
 }
 
 contextBridge.exposeInMainWorld('bsc', api)

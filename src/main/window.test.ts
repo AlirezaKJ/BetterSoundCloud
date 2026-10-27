@@ -37,6 +37,18 @@ describe('layout() owns every view position', () => {
     expect(body).toContain('shell.lyrics.setVisible(!pageHidden)')
   })
 
+  it('stretches the showcase over the whole window, our own bar included', () => {
+    // The window goes full screen as the showcase opens, so its size changes after the view is
+    // made: only layout() hears that resize.
+    expect(layoutBody()).toContain('shell.showcase.setBounds({ x: 0, y: 0, width, height })')
+  })
+
+  it('never brings full screen back on the next launch', () => {
+    // Full screen belongs to the showcase alone. electron-window-state restores it by default,
+    // so quitting with the showcase open relaunched the app full screen with no showcase.
+    expect(SRC).toMatch(/windowStateKeeper\(\{[^}]*fullScreen: false[^}]*\}\)/)
+  })
+
   it('keeps the right-click menu view over the content area', () => {
     // The menu view is created after the shell (context-menu.ts) and never positions itself;
     // if layout() forgot it, a menu opened after a resize would be drawn against stale bounds

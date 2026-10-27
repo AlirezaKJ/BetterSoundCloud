@@ -7,8 +7,8 @@ import type { NowPlaying } from '@shared/now-playing'
  * Synced lyrics, from LRCLIB (https://lrclib.net), a free and open lyrics database.
  *
  * Main asks, so the lyrics pane never touches the network itself: v0.7.x ran `https.get` from a
- * renderer with full Node access. It only asks while the pane is open, which is what makes
- * looking a track up something the listener chose — LRCLIB learns the title, artist and length
+ * renderer with full Node access. It only asks while the pane or the full-screen showcase is
+ * open, which is what makes looking a track up something the listener chose — LRCLIB learns the title, artist and length
  * of a track only when they asked for its lyrics. Answers are kept for the session, keyed by
  * track, so a track heard twice is looked up once, and a lookup waits until a track has been
  * playing for a moment, so skipping through a playlist does not fire a request per skip.
@@ -112,7 +112,11 @@ export async function lookUpLyrics(
 
 type Cached = Lookup
 
-let open = false
+/** The two views that show lyrics. */
+export type LyricsViewer = 'pane' | 'showcase'
+
+/** Who has lyrics on screen. LRCLIB is only asked while someone does. */
+const wantedBy = new Set<LyricsViewer>()
 let playing: NowPlaying | null = null
 let state: LyricsState = { state: 'idle' }
 let settleTimer: ReturnType<typeof setTimeout> | null = null
@@ -146,14 +150,17 @@ export function onLyricsChange(listener: (state: LyricsState) => void): () => vo
 }
 
 /**
- * The pane opened or closed. Opening looks up whatever is playing; closing stops any lookup
- * from being started, and one in flight finishes into the cache without being shown.
+ * The pane or the showcase opened or closed. The first to open looks up whatever is playing;
+ * once the last has closed, no lookup is started, and one in flight finishes into the cache
+ * without being shown.
  */
-export function setLyricsOpen(isOpen: boolean): void {
-  if (isOpen === open) return
-  open = isOpen
-  if (open) show(playing, 0)
-  else cancelSettle()
+export function setLyricsWanted(viewer: LyricsViewer, wanted: boolean): void {
+  const before = wantedBy.size > 0
+  if (wanted) wantedBy.add(viewer)
+  else wantedBy.delete(viewer)
+  const now = wantedBy.size > 0
+  if (now && !before) show(playing, 0)
+  if (!now && before) cancelSettle()
 }
 
 /**
@@ -164,7 +171,7 @@ export function noticeNowPlaying(nowPlaying: NowPlaying | null): void {
   const before = playing ? trackOf(playing).key : ''
   playing = nowPlaying
   const after = nowPlaying ? trackOf(nowPlaying).key : ''
-  if (before !== after && open) show(nowPlaying, SETTLE_MS)
+  if (before !== after && wantedBy.size > 0) show(nowPlaying, SETTLE_MS)
 }
 
 /** Look the current track up again, after a failure. */
@@ -232,8 +239,8 @@ async function fetchFor(
       : 'none'
     console.log(`[lyrics] ${what} | ${nowPlaying.artist} — ${nowPlaying.title}`)
   }
-  // A newer track, or the pane closed and opened on another: this answer is no longer wanted.
-  if (ticket === generation && open) setState(stateFor(track, found))
+  // A newer track, or every view closed and one opened on another: no longer wanted.
+  if (ticket === generation && wantedBy.size > 0) setState(stateFor(track, found))
 }
 
 function remember(key: string, found: Cached): void {
@@ -258,7 +265,7 @@ function stateFor(track: LyricsTrack, found: Cached): LyricsState {
 /** For tests: forget everything. */
 export function resetLyricsForTests(): void {
   cancelSettle()
-  open = false
+  wantedBy.clear()
   playing = null
   state = { state: 'idle' }
   generation = 0

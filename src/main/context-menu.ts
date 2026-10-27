@@ -7,7 +7,13 @@ import type { ContextMenuAction, ContextMenuRequest, GoToUrlResult } from '@shar
 import { hardenSession, routeNewWindowsToBrowser, openInBrowser } from './session'
 import { isDev } from './env'
 import { resolveGoToUrl } from './go-to-url'
-import { enableDevToolsShortcut, rendererUrl, toggleLyrics, toggleSettings } from './window'
+import {
+  enableDevToolsShortcut,
+  openShowcase,
+  rendererUrl,
+  toggleLyrics,
+  toggleSettings
+} from './window'
 import type { Shell } from './window'
 import { themeChromeView } from './chrome-theme'
 
@@ -210,6 +216,9 @@ export function runContextMenuAction(
       break
     case 'lyrics':
       toggleLyrics(shell)
+      break
+    case 'showcase':
+      openShowcase(shell)
       break
     case 'settings':
       toggleSettings(shell)

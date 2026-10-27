@@ -17,7 +17,7 @@ import {
 import type { BackgroundOptions } from './content-css'
 import { findTheme, minimalNavigationCss, NO_THEME, soundCloudPaletteCss } from './themes'
 import { themeChromeView } from './chrome-theme'
-import { setLyricsOpen } from './lyrics'
+import { setLyricsWanted } from './lyrics'
 import { contentCssOf, coverCss } from '@shared/themes'
 import { overlayTheme } from '@shared/page-theme'
 import type { PageTheme } from '@shared/page-theme'
@@ -91,6 +91,13 @@ export type Shell = {
    * Exists only while open (`toggleLyrics`); what it shows comes from main/lyrics.ts.
    */
   lyrics: WebContentsView | null
+  /**
+   * The full-screen showcase: the playing track's artwork, title, progress and lyrics over the
+   * whole screen. Exists only while open (`openShowcase`), and covers every other view.
+   */
+  showcase: WebContentsView | null
+  /** Whether opening the showcase took the window full screen, so closing it gives that back. */
+  showcaseLeavesFullScreen: boolean
   /** What that view is saying. Null while SoundCloud's page is showing normally. */
   pageStatus: PageStatus | null
   /**
@@ -191,7 +198,10 @@ const PLAY_CONTROLS_HEIGHT = 48
 const PLAYER_BUTTONS_WIDTH = 92
 
 export function createShell(identity: Identity): Shell {
-  const state = windowStateKeeper({ defaultWidth: 1366, defaultHeight: 768 })
+  // `fullScreen: false`: full screen is only ever the showcase's, which is gone on the next
+  // launch. Left at the library's default, quitting with the showcase open relaunched the app
+  // full screen with nothing in it but SoundCloud.
+  const state = windowStateKeeper({ defaultWidth: 1366, defaultHeight: 768, fullScreen: false })
 
   const window = new BaseWindow({
     x: state.x,
@@ -256,6 +266,8 @@ export function createShell(identity: Identity): Shell {
     contextMenuRequest: null,
     status: null,
     lyrics: null,
+    showcase: null,
+    showcaseLeavesFullScreen: false,
     pageStatus: null,
     pageTheme: 'dark',
     themeMode: null,
@@ -353,6 +365,8 @@ export function createShell(identity: Identity): Shell {
       shell.lyrics.setVisible(!pageHidden)
       fitLyricsPane(shell, strip)
     }
+    // The showcase covers everything, our own bar included.
+    if (shell.showcase) shell.showcase.setBounds({ x: 0, y: 0, width, height })
 
     // Only when it actually flips — crossing the width is rare, and re-injecting on every
     // resize tick would rebuild the whole stylesheet dozens of times during a drag.
@@ -862,7 +876,7 @@ function openLyrics(shell: Shell): void {
   view.webContents.once('did-finish-load', () => {
     if (!view.webContents.isDestroyed()) view.webContents.focus()
   })
-  setLyricsOpen(true)
+  setLyricsWanted('pane', true)
   sendLyricsShown(shell)
 }
 
@@ -874,7 +888,7 @@ export function closeLyrics(shell: Shell): void {
   // Destroyed rather than hidden, like settings: opened now and then, and a renderer held for
   // the rest of the session is the wrong trade. Its state lives in main.
   view.webContents.close()
-  setLyricsOpen(false)
+  setLyricsWanted('pane', false)
   sendLyricsShown(shell)
   // Back to SoundCloud, so the keyboard works there again without a click.
   if (!shell.content.webContents.isDestroyed()) shell.content.webContents.focus()
@@ -896,6 +910,69 @@ function fitLyricsPane(shell: Shell, strip: number): void {
     width: paneWidth,
     height: Math.max(0, height - top - bottom)
   })
+}
+
+/*
+ * ── The full-screen showcase ───────────────────────────────────────────────────────────────
+ *
+ * The playing track as a record sleeve: its artwork, title, progress and the line being sung,
+ * on one flat colour taken from the artwork (DESIGN.md "Showcase"). It covers the whole window,
+ * which goes full screen with it, so it is the one thing on the display. SoundCloud's page keeps
+ * playing underneath; nothing about it changes.
+ */
+
+export function openShowcase(shell: Shell): void {
+  if (shell.showcase) {
+    shell.showcase.webContents.focus()
+    return
+  }
+  const view = new WebContentsView({
+    webPreferences: {
+      preload: join(import.meta.dirname, '../preload/chrome.cjs'),
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+      webSecurity: true,
+      devTools: isDev
+    }
+  })
+  hardenSession(view.webContents.session, shell.identity)
+  routeNewWindowsToBrowser(view.webContents)
+  // Dark Shell Grey, the showcase's colour before it knows the artwork's.
+  view.setBackgroundColor('#121212')
+
+  shell.showcase = view
+  // Added last, so it is on top of every other view.
+  shell.window.contentView.addChildView(view)
+  // Only leave full screen on close if this is what entered it.
+  shell.showcaseLeavesFullScreen = !shell.window.isFullScreen()
+  if (shell.showcaseLeavesFullScreen) shell.window.setFullScreen(true)
+  shell.layout()
+
+  if (isDev) enableDevToolsShortcut(view)
+  void view.webContents.loadURL(rendererUrl('showcase'))
+  // Focused, so Escape leaves straight away.
+  view.webContents.once('did-finish-load', () => {
+    if (!view.webContents.isDestroyed()) view.webContents.focus()
+  })
+  setLyricsWanted('showcase', true)
+}
+
+export function closeShowcase(shell: Shell): void {
+  const view = shell.showcase
+  if (!view) return
+  shell.showcase = null
+  shell.window.contentView.removeChildView(view)
+  // Destroyed rather than hidden, like the pane: its state lives in main.
+  view.webContents.close()
+  setLyricsWanted('showcase', false)
+  if (shell.showcaseLeavesFullScreen && shell.window.isFullScreen()) {
+    shell.window.setFullScreen(false)
+  }
+  shell.showcaseLeavesFullScreen = false
+  shell.layout()
+  // Back to SoundCloud, so the keyboard works there again without a click.
+  if (!shell.content.webContents.isDestroyed()) shell.content.webContents.focus()
 }
 
 /** Tell the player-bar buttons whether the pane is open, so the lyrics button shows it. */
@@ -1003,6 +1080,11 @@ function wireStateEvents(shell: Shell): void {
 
   window.on('maximize', sendWindow)
   window.on('unmaximize', sendWindow)
+  // Full screen is the showcase's, so leaving it any other way (macOS's green button, say)
+  // leaves the showcase too, rather than stranding it in a window.
+  window.on('leave-full-screen', () => {
+    if (shell.showcase) closeShowcase(shell)
+  })
   window.on('focus', sendWindow)
   window.on('blur', sendWindow)
 
@@ -1032,7 +1114,15 @@ export function enableDevToolsShortcut(...views: WebContentsView[]): void {
 }
 
 export function rendererUrl(
-  entry: 'header' | 'settings' | 'embedded' | 'player' | 'context-menu' | 'status' | 'lyrics'
+  entry:
+    | 'header'
+    | 'settings'
+    | 'embedded'
+    | 'player'
+    | 'context-menu'
+    | 'status'
+    | 'lyrics'
+    | 'showcase'
 ): string {
   const devServer = process.env['ELECTRON_RENDERER_URL']
   return devServer
