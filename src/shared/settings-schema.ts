@@ -188,14 +188,16 @@ export const SETTINGS = {
     default: true,
     label: 'Discord Rich Presence',
     section: 'discord',
-    wired: false
+    help:
+      'Shows the track you’re playing on your Discord profile. Needs the Discord desktop app ' +
+      'running on this computer.'
   },
   'discord.showWhenPaused': {
     kind: 'boolean',
     default: false,
     label: 'Keep showing presence while paused',
     section: 'discord',
-    wired: false
+    help: 'When this is off, your Discord status clears as soon as you pause.'
   },
 
   'lastfm.enabled': {

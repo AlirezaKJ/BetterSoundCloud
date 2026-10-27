@@ -72,6 +72,8 @@ vi.mock('./blocker', () => ({
 }))
 vi.mock('./settings-store', () => ({ get: () => true }))
 vi.mock('./themes', () => ({ listThemes: () => [] }))
+// The real one would connect to the Discord app on whatever machine runs the tests.
+vi.mock('./presence', () => ({ setPresenceOptions: vi.fn() }))
 
 type FakeShell = {
   window: EventEmitter

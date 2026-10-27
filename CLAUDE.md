@@ -68,6 +68,8 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md
 | `main/window.ts`                   | `Shell` type, `createShell()`, `layout()`, every overlay view, `applyContentCss()`, `rendererUrl()`, `enableDevToolsShortcut()`                     |
 | `main/context-menu.ts`             | The right-click menu view and every menu action                                                                                                     |
 | `main/page-status.ts`              | The page-status view: failed loads (and their retries), crashes, hangs, slow starts, and its buttons                                                |
+| `main/presence.ts`                 | Discord Rich Presence: follows now-playing and the `discord.*` settings, spaces updates, reconnects                                                 |
+| `main/discord-ipc.ts`              | Our own small client for the Discord app's local pipe (no Electron, tested against a real pipe)                                                     |
 | `main/now-playing.ts`              | The one copy of "what is playing": `getNowPlaying`, `setNowPlaying`, `onNowPlayingChange`                                                           |
 | `main/session.ts`                  | `hardenSession`, permission allowlist, `routeNewWindowsToBrowser`, `isInternalUrl`, `openInBrowser`                                                 |
 | `main/settings-store.ts`           | electron-store wrapper: `get`, `getAll`, `set`, `reset`. Lazy — built on first use                                                                  |
@@ -88,6 +90,7 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md
 | `shared/now-playing.ts`     | `PlayerReading`, `NowPlaying`, `readNowPlaying()` and its cleaners                                      |
 | `shared/page-theme.ts`      | `PageTheme`, `detectPageTheme()`                                                                        |
 | `shared/context-menu.ts`    | `ContextMenuRequest`, `CONTEXT_MENU_ACTIONS`, `cleanUrl`, `shortUrl`, `elide`                           |
+| `shared/presence.ts`        | `Activity`, `buildActivity()` (the Discord card), `sameActivity()`, `PRESENCE_LOGO`                     |
 | `shared/page-status.ts`     | `PageStatus`, `describePageStatus()` (every word on that view), `describeLoadFailure()`, `retryDelay()` |
 | `shared/themes.ts`          | `ThemeSummary`, `parseThemeMetadata()`                                                                  |
 | `shared/identity.ts`        | `Identity`, `buildUserAgent()`, `leaksAppIdentity()`, `pageLanguages()`, `acceptLanguages()`            |
@@ -337,6 +340,14 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
 - It resets to `null` on a full page load (`did-navigate`), a renderer crash, and window close.
 - Main-side features (tray, Discord, Last.fm) subscribe with `onNowPlayingChange` and read with
   `getNowPlaying`. They never talk to the page themselves.
+- **Discord presence** (`main/presence.ts`) is the first of them. It uses BetterSoundCloud's own
+  Discord application, `1054636117284106270` — the one v0.7.x used, so its name and art assets
+  carry over (the corner badge is the asset `bw-icon-bordered-white`). It sends only real changes
+  (`sameActivity` ignores clock ticks), at most one update per 4s because Discord accepts about
+  five per 20s, and retries a closed or missing Discord after 5s, 15s, 30s, then every minute. It
+  talks only to the Discord app on the same computer, never the network. Every field of the card
+  was checked against the real Discord on 2026-10-27; Discord rejects a whole update when one
+  field is out of range, so `buildActivity` keeps each text field to 2–128 characters.
 - Dev log: `[now-playing] playing | Artist — Title | 1:05 / 3:33 | liked | artwork | <url>`, one
   line per change except clock ticks. An empty field there points at a stale selector.
 - **Playback control (play/pause/skip from outside the page) does not exist yet** and is an open
@@ -409,6 +420,7 @@ Dev builds log to the terminal running `npm run dev`. Tags:
 | `[datadome]`                                                         | `blocked …` — SoundCloud's bot check refused a request; `challenge shown` — a captcha page loaded                                                               |
 | `[page]`                                                             | A console error from SoundCloud's page                                                                                                                          |
 | `[now-playing]`                                                      | Track, play/pause and like changes                                                                                                                              |
+| `[discord]`                                                          | Connected, what the card shows, Discord not running (once per outage), and any update Discord refused (all builds)                                              |
 | `[widevine]`                                                         | How long the Widevine wait took, or why it failed                                                                                                               |
 | `[page-status]`                                                      | What the status view is saying (`load failed -106 ERR_INTERNET_DISCONNECTED`, `cleared`, …)                                                                     |
 | `[content]`, `[window]`                                              | A failed SoundCloud load; the window shown without its header                                                                                                   |
@@ -444,6 +456,9 @@ context menu have the shortcut; embedded and player do not).
   - pin structure with source-scanning tests (`content.test.ts`, `window.test.ts`);
   - or mock `electron` and the main modules, as `index.test.ts` does for startup, the window
     lifecycle and the now-playing IPC path.
+- Anything that loads `index.ts` must mock `./presence`: the real one connects to the Discord app
+  on whatever machine runs the tests. `discord-ipc.test.ts` instead runs a fake Discord on a real
+  local pipe, so the bytes on the wire are tested as sent.
 - `content.test.ts` also checks that `out/preload` holds exactly `chrome.cjs` and `content.cjs`
   (no shared chunk) when a build exists — run `npx electron-vite build` after touching preloads.
 - **Renderers in a browser:** open `http://localhost:5173/<entry>/index.html` from the dev server,

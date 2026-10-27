@@ -78,7 +78,7 @@ credentials. v2's stated goal is to carry all of it.
 - Off-site links and OAuth routed to the system browser; permission allowlist including `mediaKeySystem`
 - Appearance (System/Light/Dark), zoom, hardware acceleration
 
-**Not yet built:** tray, Discord RPC, Last.fm, themes, plugins, lyrics, downloader, i18n,
+**Not yet built:** Last.fm, themes, plugins, lyrics, downloader, i18n,
 proxy, webhooks, auto-updater. Nine of twelve settings are marked unwired in the schema and
 render disabled rather than lying. Full backlog: [TODO.md](TODO.md).
 
@@ -97,7 +97,7 @@ AI or ML features of any kind; `sendInputEvent` to forge trusted input; `sec-ch-
 the `cookies.json` session-import workaround.
 
 **Open decisions** (undecided, not to be invented): Windows code-signing and macOS notarization
-funding; Discord client ID reuse vs. new; whether to ship a default Last.fm API key; telemetry
+funding; whether to ship a default Last.fm API key; telemetry
 (currently none); whether v0.7.x settings are migrated or reset.
 
 ## Brand Commitments

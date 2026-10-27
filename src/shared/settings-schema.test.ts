@@ -60,7 +60,9 @@ describe('schema integrity', () => {
       'appearance.hideMenuBar',
       'appearance.playerButtons',
       'appearance.theme',
-      'appearance.zoomFactor'
+      'appearance.zoomFactor',
+      'discord.enabled',
+      'discord.showWhenPaused'
     ])
   })
 

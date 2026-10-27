@@ -47,6 +47,7 @@ import { listThemes } from './themes'
 import { isSoundCloudUrl, readNowPlaying } from '@shared/now-playing'
 import type { NowPlaying } from '@shared/now-playing'
 import { getNowPlaying, onNowPlayingChange, setNowPlaying } from './now-playing'
+import { setPresenceOptions } from './presence'
 
 let shell: Shell | null = null
 let quitting = false
@@ -534,6 +535,13 @@ function broadcastSettings(next: Settings): void {
  * the content view reports `prefers-color-scheme: dark` the moment this is set to dark.
  */
 function applyLiveSettings(): void {
+  // Discord presence belongs to the app rather than to a window, so it is applied before the
+  // window check below.
+  setPresenceOptions({
+    enabled: settings.get('discord.enabled'),
+    showWhenPaused: settings.get('discord.showWhenPaused')
+  })
+
   if (!shell) return
   shell.content.webContents.setZoomFactor(settings.get('appearance.zoomFactor') / 100)
   nativeTheme.themeSource = settings.get('appearance.colorScheme')
