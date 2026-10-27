@@ -9,8 +9,8 @@ every check here runs against that artifact, never against `npm run dev`.
 Set `version` in `package.json`, commit, then push a matching tag:
 
 ```
-git tag v2.0.0-alpha.0
-git push origin v2.0.0-alpha.0
+git tag v0.8.0
+git push origin v0.8.0
 ```
 
 `.github/workflows/release.yml` builds Windows and Linux and drafts the release. In the run's log,

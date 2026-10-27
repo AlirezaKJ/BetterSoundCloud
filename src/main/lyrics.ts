@@ -1,3 +1,4 @@
+import { version } from '../../package.json'
 import { isDev } from './env'
 import { bestMatch, lyricsFromRecord, lyricsQueries, readLrclibRecord } from '@shared/lyrics'
 import type { LrclibRecord, LyricsQuery, LyricsState, LyricsTrack } from '@shared/lyrics'
@@ -20,9 +21,10 @@ import type { NowPlaying } from '@shared/now-playing'
 const API = 'https://lrclib.net/api'
 /**
  * LRCLIB asks every client to say who it is. This is the only request the app makes that names
- * itself: SoundCloud only ever sees the browser's own user agent (CLAUDE.md §10).
+ * itself: SoundCloud only ever sees the browser's own user agent (CLAUDE.md §10). The version is
+ * read from package.json at build time; it was once typed here by hand and fell out of date.
  */
-const USER_AGENT = 'BetterSoundCloud/2.0 (https://github.com/AlirezaKJ/BetterSoundCloud)'
+const USER_AGENT = `BetterSoundCloud/${version} (https://github.com/AlirezaKJ/BetterSoundCloud)`
 const TIMEOUT_MS = 10_000
 /** How long a track must stay current before it is looked up. */
 const SETTLE_MS = 400

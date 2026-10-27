@@ -731,7 +731,7 @@ Rules that hold this together:
   is looked up once it has been current for 400ms (skipping through a playlist costs nothing),
   answers are cached for the session by track (200 tracks), and one track never costs more than
   four requests.
-- **This is the one request that names the app**: `User-Agent: BetterSoundCloud/2.0 (…)`, as
+- **This is the one request that names the app**: `User-Agent: BetterSoundCloud/<version> (…)`, as
   LRCLIB asks of every client. SoundCloud only ever sees the browser's own user agent (§10). Node's
   `fetch` in main, never a renderer, never SoundCloud's session.
 - **The judgement is pure and tested** (`src/shared/lyrics.ts`): `lyricsQueries` turns an uploader's

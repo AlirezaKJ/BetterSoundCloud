@@ -103,12 +103,12 @@ signature.
 
 ### Releases are built by GitHub Actions
 
-Pushing a tag `v<version>` (it must match `package.json`, e.g. `v2.0.0-alpha.0`) runs
+Pushing a tag `v<version>` (it must match `package.json`, e.g. `v0.8.0`) runs
 [`.github/workflows/release.yml`](.github/workflows/release.yml). It runs the checks, builds the
 Windows installer and portable build (VMP-signed, with `STRICT_VMP_SIGNING=true`) and the Linux
 AppImage, `.deb` and `.rpm`, confirms Electron's fuses are set (`scripts/verify-fuses.mjs`), and
 puts every file plus `SHA256SUMS.txt` in a **draft** release. Nothing is public until you publish
-the draft. Versions with a suffix (`-alpha.0`) are marked as pre-releases. macOS is not built
+the draft. Versions with a suffix (`0.9.0-beta.1`) are marked as pre-releases. macOS is not built
 until notarization is funded.
 
 It needs two repository secrets, your Castlabs EVS login: `EVS_ACCOUNT_NAME` and `EVS_PASSWD`
