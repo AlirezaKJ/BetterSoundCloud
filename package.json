@@ -2,7 +2,10 @@
   "name": "bettersoundcloud",
   "version": "2.0.0-alpha.0",
   "description": "BetterSoundCloud — a desktop client for SoundCloud",
-  "author": "AlirezaKJ",
+  "author": {
+    "name": "AlirezaKJ",
+    "email": "akarimijafari@gmail.com"
+  },
   "license": "MIT",
   "repository": "https://github.com/AlirezaKJ/BetterSoundCloud",
   "type": "module",

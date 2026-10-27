@@ -12,6 +12,9 @@ plugins, synced lyrics.
 - Node.js >= 22.12
 - Python with [`castlabs-evs`](https://pypi.org/project/castlabs-evs/) — only for producing
   signed release builds, not for development
+- For the Linux `.deb` and `.rpm` (not the AppImage): the packaging tool electron-builder
+  downloads needs `libcrypt.so.1`, and the `.rpm` needs `rpmbuild`. On Arch that is
+  `pacman -S libxcrypt-compat rpm-tools`; on Debian and Ubuntu, `apt install rpm`
 
 ## Getting started
 
