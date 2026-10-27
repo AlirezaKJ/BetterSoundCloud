@@ -3,6 +3,7 @@ import type { ThemeSummary } from './themes'
 import type { PageTheme } from './page-theme'
 import type { ContextMenuAction, ContextMenuRequest, GoToUrlResult } from './context-menu'
 import type { NowPlaying } from './now-playing'
+import type { PageStatus, PageStatusAction } from './page-status'
 
 /** Every IPC channel name, in one place. Strings are never written inline. */
 export const CH = {
@@ -42,7 +43,11 @@ export const CH = {
 
   // main -> every view of ours on each change, and a one-off read when a view opens.
   nowPlayingChanged: 'now-playing:changed',
-  nowPlayingGet: 'now-playing:get'
+  nowPlayingGet: 'now-playing:get',
+
+  // main -> the page-status view (src/renderer/status), then its buttons -> main.
+  pageStatusChanged: 'page-status:changed',
+  pageStatusAction: 'page-status:action'
 } as const
 
 export type NavState = {
@@ -107,4 +112,13 @@ export type ChromeApi = {
    * once a second while a track plays.
    */
   onNowPlaying(cb: (nowPlaying: NowPlaying | null) => void): () => void
+
+  /**
+   * What the page-status view should say while SoundCloud's page cannot be shown: starting
+   * up, a failed load, a crash, a hang. Sent when that view loads and on every change, which
+   * is rare — a handful of times per failure.
+   */
+  onPageStatus(cb: (status: PageStatus) => void): () => void
+  /** One of that view's buttons. Main checks it against the current status before acting. */
+  pageStatusAction(action: PageStatusAction): void
 }

@@ -6,6 +6,7 @@ import type { ThemeSummary } from '@shared/themes'
 import type { PageTheme } from '@shared/page-theme'
 import type { ContextMenuAction, ContextMenuRequest, GoToUrlResult } from '@shared/context-menu'
 import type { NowPlaying } from '@shared/now-playing'
+import type { PageStatus, PageStatusAction } from '@shared/page-status'
 
 /**
  * Preload for OUR OWN chrome (header, settings, the overlays, the right-click menu). This
@@ -55,7 +56,10 @@ const api: ChromeApi = {
 
   getNowPlaying: () => ipcRenderer.invoke(CH.nowPlayingGet) as Promise<NowPlaying | null>,
   onNowPlaying: (cb: (nowPlaying: NowPlaying | null) => void) =>
-    subscribe(CH.nowPlayingChanged, cb)
+    subscribe(CH.nowPlayingChanged, cb),
+
+  onPageStatus: (cb: (status: PageStatus) => void) => subscribe(CH.pageStatusChanged, cb),
+  pageStatusAction: (action: PageStatusAction) => ipcRenderer.send(CH.pageStatusAction, action)
 }
 
 contextBridge.exposeInMainWorld('bsc', api)

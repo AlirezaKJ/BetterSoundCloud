@@ -6,6 +6,7 @@ import type * as IdentityModule from '@shared/identity'
 const mocks = vi.hoisted(() => {
   return {
     createShell: vi.fn(),
+    loadSoundCloud: vi.fn(),
     createTray: vi.fn(),
     attachContextMenu: vi.fn(),
     setContentAppearance: vi.fn(),
@@ -31,6 +32,7 @@ vi.mock('electron', async () => {
     }),
     components: { whenReady: () => Promise.resolve() },
     ipcMain: { on: mocks.ipcOn, handle: mocks.ipcHandle },
+    dialog: { showErrorBox: vi.fn() },
     nativeTheme: {}
   }
 })
@@ -42,12 +44,19 @@ vi.mock('@shared/identity', async (importOriginal) => ({
 }))
 vi.mock('./window', () => ({
   createShell: mocks.createShell,
+  loadSoundCloud: mocks.loadSoundCloud,
   toggleSettings: vi.fn(),
   closeSettings: vi.fn(),
   setContentAppearance: mocks.setContentAppearance,
   setPageTheme: vi.fn()
 }))
 vi.mock('./tray', () => ({ createTray: mocks.createTray }))
+vi.mock('./page-status', () => ({
+  attachPageStatus: vi.fn(),
+  noticeSlowStart: vi.fn(),
+  runPageStatusAction: vi.fn(),
+  showPageStatus: vi.fn()
+}))
 vi.mock('./context-menu', () => ({
   attachContextMenu: mocks.attachContextMenu,
   hideContextMenu: vi.fn(),
@@ -87,7 +96,9 @@ function makeShell() {
     settings: view(),
     embedded: view(),
     player: view(),
-    contextMenu: view()
+    contextMenu: view(),
+    status: view(),
+    pageStatus: null
   }
 }
 
@@ -114,7 +125,8 @@ describe('main window lifecycle', () => {
         'settings',
         'embedded',
         'player',
-        'contextMenu'
+        'contextMenu',
+        'status'
       ] as const) {
         expect(previous[key].webContents.close).toHaveBeenCalledOnce()
       }
@@ -166,7 +178,8 @@ describe('main window lifecycle', () => {
       shell.settings,
       shell.embedded,
       shell.player,
-      shell.contextMenu
+      shell.contextMenu,
+      shell.status
     ]
 
     const handlerFor = (method: 'on' | 'handle', channel: string) => {

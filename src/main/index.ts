@@ -1,5 +1,5 @@
 import { join } from 'node:path'
-import { app, components, ipcMain, nativeTheme } from 'electron'
+import { app, components, dialog, ipcMain, nativeTheme } from 'electron'
 import type { WebContentsView } from 'electron'
 import {
   acceptLanguages,
@@ -12,11 +12,20 @@ import { isDev } from './env'
 import { CH } from '@shared/ipc'
 import {
   createShell,
+  loadSoundCloud,
   toggleSettings,
   closeSettings,
   setContentAppearance,
   setPageTheme
 } from './window'
+import {
+  attachPageStatus,
+  noticeSlowStart,
+  runPageStatusAction,
+  showPageStatus
+} from './page-status'
+import { describeComponentsError, isPageStatusAction } from '@shared/page-status'
+import type { PageStatus } from '@shared/page-status'
 import { createTray } from './tray'
 import {
   attachContextMenu,
@@ -131,14 +140,73 @@ if (!settings.get('advanced.hardwareAcceleration')) {
   app.disableHardwareAcceleration()
 }
 
+/**
+ * Widevine, the DRM module SoundCloud's protected tracks need. Castlabs' Electron downloads it
+ * on first launch, and it must be registered before SoundCloud's page makes any EME call.
+ *
+ * The gate is on SoundCloud's page, NOT on the window. Startup used to wait for it before
+ * creating any window at all, so a first launch showed nothing until the download finished,
+ * and an offline one quit with no message (#96). Measured 2026-10-27 on fresh profiles:
+ *
+ *   - online, the install takes about 2s; with Widevine already installed it resolves ~100ms
+ *     after startup;
+ *   - offline, `whenReady()` rejects after about 4s ("Update check error"), and every later
+ *     call returns that same rejection even once the network is back — so a retry has to be a
+ *     fresh launch;
+ *   - a view created BEFORE it resolves still gets Widevine once it navigates. That is what
+ *     makes it safe to build the window first and hold back only the page.
+ *
+ * Without Widevine, SoundCloud is never loaded. Its protected tracks would grey out and skip,
+ * which is indistinguishable from the bug v2 exists to fix.
+ */
+type Widevine =
+  { state: 'pending'; slow: boolean } | { state: 'ready' } | { state: 'failed'; detail: string }
+
+let widevine: Widevine = { state: 'pending', slow: false }
+
+/** After this, the "setting up" status admits it is taking longer than it should. */
+const WIDEVINE_SLOW_MS = 20_000
+
+function waitForWidevine(): void {
+  const started = Date.now()
+
+  const slow = setTimeout(() => {
+    if (widevine.state !== 'pending') return
+    widevine = { state: 'pending', slow: true }
+    if (shell?.pageStatus?.kind === 'setting-up') showPageStatus(shell, startingStatus())
+  }, WIDEVINE_SLOW_MS)
+
+  components.whenReady().then(
+    () => {
+      clearTimeout(slow)
+      widevine = { state: 'ready' }
+      if (isDev) console.log(`[widevine] ready after ${Date.now() - started}ms`)
+      if (!shell) return
+      if (shell.pageStatus?.kind === 'setting-up') showPageStatus(shell, { kind: 'loading' })
+      loadSoundCloud(shell)
+    },
+    (error: unknown) => {
+      clearTimeout(slow)
+      const detail = describeComponentsError(error)
+      widevine = { state: 'failed', detail }
+      console.error(`[widevine] install failed after ${Date.now() - started}ms: ${detail}`)
+      if (shell) showPageStatus(shell, { kind: 'setup-failed', detail })
+    }
+  )
+}
+
+/** What is holding up SoundCloud's first page right now. */
+function startingStatus(): PageStatus {
+  if (widevine.state === 'pending') return { kind: 'setting-up', slow: widevine.slow }
+  if (widevine.state === 'failed') return { kind: 'setup-failed', detail: widevine.detail }
+  return { kind: 'loading' }
+}
+
 if (!app.requestSingleInstanceLock()) {
   app.quit()
 } else {
   app
     .whenReady()
-    // Castlabs' Widevine CDM must be registered before any window opens, or EME calls
-    // reject. `components` exists only on the Castlabs build of Electron.
-    .then(() => components.whenReady())
     .then(() => {
       registerIpc()
       // Synchronous, and before any view exists, so blocking is either fully on or
@@ -148,9 +216,18 @@ if (!app.requestSingleInstanceLock()) {
       createTray(showMainWindow)
       app.on('activate', showMainWindow)
       app.on('second-instance', showMainWindow)
+      // After the window exists, so the wait is spent with something on screen.
+      waitForWidevine()
     })
     .catch((error: unknown) => {
       console.error('[main] startup failed:', error)
+      // The last resort, for a failure before there is any window to say it in. A native box
+      // needs no renderer, so it works when nothing else does.
+      dialog.showErrorBox(
+        'BetterSoundCloud couldn’t start',
+        `${error instanceof Error ? error.message : String(error)}\n\n` +
+          'Please report this at github.com/AlirezaKJ/BetterSoundCloud/issues.'
+      )
       app.quit()
     })
 }
@@ -187,13 +264,21 @@ function showMainWindow(): void {
         next.settings,
         next.embedded,
         next.player,
-        next.contextMenu
+        next.contextMenu,
+        next.status
       ]) {
         if (view && !view.webContents.isDestroyed()) view.webContents.close()
       }
     })
     attachContextMenu(next)
+    attachPageStatus(next)
     applyLiveSettings()
+
+    // SoundCloud only once Widevine is ready (see `waitForWidevine`). A window opened after
+    // that — macOS reopening from the Dock — loads straight away.
+    if (widevine.state === 'ready') loadSoundCloud(next)
+    else if (widevine.state === 'failed') showPageStatus(next, startingStatus())
+    noticeSlowStart(next, startingStatus)
     return
   }
 
@@ -320,14 +405,28 @@ function registerIpc(): void {
   })
 
   /**
+   * A button on the page-status view. Only that view may press them — Restart and Quit act on
+   * the whole app — and page-status.ts re-checks each against what is actually on screen.
+   */
+  ipcMain.on(CH.pageStatusAction, (e, action: unknown) => {
+    if (!shell || e.sender !== shell.status?.webContents || !isPageStatusAction(action)) return
+    runPageStatusAction(shell, action)
+  })
+
+  /**
    * Any view we draw ourselves may read what is playing — and only those. SoundCloud's own
    * view is the source of this data, so it has no reason to ask for it back.
    */
   const fromOurViews = (event: Electron.IpcMainInvokeEvent): boolean =>
     shell !== null &&
-    [shell.header, shell.settings, shell.embedded, shell.player, shell.contextMenu].some(
-      (view) => view?.webContents === event.sender
-    )
+    [
+      shell.header,
+      shell.settings,
+      shell.embedded,
+      shell.player,
+      shell.contextMenu,
+      shell.status
+    ].some((view) => view?.webContents === event.sender)
 
   ipcMain.handle(CH.nowPlayingGet, (e) => (fromOurViews(e) ? getNowPlaying() : null))
   onNowPlayingChange(broadcastNowPlaying)
@@ -405,7 +504,8 @@ function broadcastNowPlaying(nowPlaying: NowPlaying | null): void {
     shell.settings,
     shell.embedded,
     shell.player,
-    shell.contextMenu
+    shell.contextMenu,
+    shell.status
   ]) {
     if (view && !view.webContents.isDestroyed()) {
       view.webContents.send(CH.nowPlayingChanged, nowPlaying)

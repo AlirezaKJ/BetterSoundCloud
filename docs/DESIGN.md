@@ -225,8 +225,10 @@ Surfaces do not float. Separation is done with 1px hairline borders and a single
 between the shell and field colours — nothing in the chrome or the panel body carries a shadow.
 
 A shadow appears in exactly one circumstance: something has floated above the application and
-taken over input. Today that is the settings panel, the right-click menu and the Go to URL
-prompt; tomorrow it is any dialog or overlay. For a dialog, two things arrive together — a
+taken over input. Today that is the settings panel, the right-click menu, the Go to URL
+prompt and the "not responding" dialog; tomorrow it is any dialog or overlay. The page-status
+surface is deliberately not on that list: when it stands in for SoundCloud's page it IS the
+page, so it is flat. For a dialog, two things arrive together — a
 scrim dimming everything behind, and a two-layer shadow under the floating surface. A
 transient popup — the context menu — gets the shadow alone: it takes input, but any click
 dismisses it, and dimming the page for something that brief would read as noise.
@@ -349,6 +351,31 @@ The Go to URL prompt, and the model for any small dialog that asks for one thing
   written in Ink, not red, and say what to try; the field's text is reselected so the next
   attempt overwrites it.
 
+### Page status
+
+What the app says while SoundCloud's page cannot be shown: Widevine setting up, the first page
+loading, a failed load, a crash, Widevine failing, a hang. It lives in its own view over the
+content area (`src/renderer/status`); every word comes from `describePageStatus` in
+`src/shared/page-status.ts`, so the wording is tested rather than scattered through markup.
+
+- **It only appears when there is something to say.** A launch whose first page arrives within a
+  second shows nothing extra; that is every normal launch.
+- **Standing in for the page** (every status but a hang): an opaque Shell Grey surface, flat, no
+  shadow and no scrim — nothing is floating, there is simply no page behind it. One left-aligned
+  column, `min(440px, 100%)`, sitting a little above centre. Our own 32px bar comes back while it
+  shows, so the window can always be moved and closed.
+- **Over the page** (a hang only): the Prompt's dialog — 460px card at `top: 96px`, scrim, the
+  Overlay shadow, the 180ms fly. The frozen page stays visible behind it, because it may recover.
+- **Content, top to bottom:** a Title, one Body paragraph in Muted Ink, an optional Caption
+  detail line (the Chromium error code or the Widevine reason, selectable so it can be pasted
+  into a bug report), the wait line when something is in progress, then the buttons.
+- **Buttons:** the Prompt's "Go" button, 6px radius, Hairline border, 13px. The first one is the
+  default and sits one tonal step forward on Field White; it holds focus, so Enter does the
+  expected thing. Emphasis comes from the neutrals, never the accent. A button whose action is in
+  progress says so in its label ("Trying again…") and goes to Ghost Ink.
+- **Voice:** name the problem, then the way forward, in plain words. No exclamation marks, no
+  "Oops". Promise an automatic retry only where one happens — a test pins that.
+
 ### Scrollbars
 
 One treatment across both surfaces — our own panels and the SoundCloud view.
@@ -383,6 +410,13 @@ rather than substituting a different animation.
 
 Everything else is instant. Hover states have no transition; the wash appears on the frame it is
 needed.
+
+**The one exception is the wait line** on the page-status surface: a 120×2px Hairline track with
+a Muted Ink segment crossing it every 1.4s, shown only while something is in progress. A message
+that does not change for twenty seconds reads as frozen, and this is the cheapest honest proof
+that it is not. It is square-ended (no third radius), never the accent (waiting is not a state),
+and under `prefers-reduced-motion` it is removed rather than frozen, since a still segment reads
+as a stuck bar. The words carry the meaning on their own.
 
 ## Do's and Don'ts
 

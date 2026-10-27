@@ -62,33 +62,35 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md
 
 ### Key main-process files
 
-| File                               | Owns                                                                                                                             |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `main/index.ts`                    | Startup order, single-instance lock, `registerIpc()` (every IPC handler and its sender check), `applyLiveSettings()`, broadcasts |
-| `main/window.ts`                   | `Shell` type, `createShell()`, `layout()`, every overlay view, `applyContentCss()`, `rendererUrl()`, `enableDevToolsShortcut()`  |
-| `main/context-menu.ts`             | The right-click menu view and every menu action                                                                                  |
-| `main/now-playing.ts`              | The one copy of "what is playing": `getNowPlaying`, `setNowPlaying`, `onNowPlayingChange`                                        |
-| `main/session.ts`                  | `hardenSession`, permission allowlist, `routeNewWindowsToBrowser`, `isInternalUrl`, `openInBrowser`                              |
-| `main/settings-store.ts`           | electron-store wrapper: `get`, `getAll`, `set`, `reset`. Lazy — built on first use                                               |
-| `main/content-css.ts`              | `buildContentCss()`: the one stylesheet injected into SoundCloud's page (pure, tested)                                           |
-| `main/themes.ts`                   | `listThemes()`, `themeCss()`; reads `resources/themes/` and `<userData>/themes/`                                                 |
-| `main/blocker.ts` + `net-rules.ts` | Ad/tracker blocking and the never-filter allowlist                                                                               |
-| `main/diagnostics.ts`              | Dev-only network and page-error log, `whoAnswered()` (SoundCloud vs DataDome)                                                    |
-| `main/tray.ts`                     | Tray icon and menu (playback items disabled until playback control exists)                                                       |
-| `main/go-to-url.ts`                | `resolveGoToUrl()` for the menu's "Go to URL" prompt                                                                             |
-| `main/env.ts`                      | `isDev`                                                                                                                          |
+| File                               | Owns                                                                                                                                                |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `main/index.ts`                    | Startup order, the Widevine wait, single-instance lock, `registerIpc()` (every IPC handler and its sender check), `applyLiveSettings()`, broadcasts |
+| `main/window.ts`                   | `Shell` type, `createShell()`, `layout()`, every overlay view, `applyContentCss()`, `rendererUrl()`, `enableDevToolsShortcut()`                     |
+| `main/context-menu.ts`             | The right-click menu view and every menu action                                                                                                     |
+| `main/page-status.ts`              | The page-status view: failed loads (and their retries), crashes, hangs, slow starts, and its buttons                                                |
+| `main/now-playing.ts`              | The one copy of "what is playing": `getNowPlaying`, `setNowPlaying`, `onNowPlayingChange`                                                           |
+| `main/session.ts`                  | `hardenSession`, permission allowlist, `routeNewWindowsToBrowser`, `isInternalUrl`, `openInBrowser`                                                 |
+| `main/settings-store.ts`           | electron-store wrapper: `get`, `getAll`, `set`, `reset`. Lazy — built on first use                                                                  |
+| `main/content-css.ts`              | `buildContentCss()`: the one stylesheet injected into SoundCloud's page (pure, tested)                                                              |
+| `main/themes.ts`                   | `listThemes()`, `themeCss()`; reads `resources/themes/` and `<userData>/themes/`                                                                    |
+| `main/blocker.ts` + `net-rules.ts` | Ad/tracker blocking and the never-filter allowlist                                                                                                  |
+| `main/diagnostics.ts`              | Dev-only network and page-error log, `whoAnswered()` (SoundCloud vs DataDome)                                                                       |
+| `main/tray.ts`                     | Tray icon and menu (playback items disabled until playback control exists)                                                                          |
+| `main/go-to-url.ts`                | `resolveGoToUrl()` for the menu's "Go to URL" prompt                                                                                                |
+| `main/env.ts`                      | `isDev`                                                                                                                                             |
 
 ### Key shared files
 
-| File                        | Owns                                                                                         |
-| --------------------------- | -------------------------------------------------------------------------------------------- |
-| `shared/ipc.ts`             | `CH` (every channel name), `ChromeApi` (the `window.bsc` type), `NavState`, `WindowState`    |
-| `shared/settings-schema.ts` | `SETTINGS`, `SECTIONS`, `Settings`, `SettingKey`, `coerce`, `coerceAll`, `defaults`          |
-| `shared/now-playing.ts`     | `PlayerReading`, `NowPlaying`, `readNowPlaying()` and its cleaners                           |
-| `shared/page-theme.ts`      | `PageTheme`, `detectPageTheme()`                                                             |
-| `shared/context-menu.ts`    | `ContextMenuRequest`, `CONTEXT_MENU_ACTIONS`, `cleanUrl`, `shortUrl`, `elide`                |
-| `shared/themes.ts`          | `ThemeSummary`, `parseThemeMetadata()`                                                       |
-| `shared/identity.ts`        | `Identity`, `buildUserAgent()`, `leaksAppIdentity()`, `pageLanguages()`, `acceptLanguages()` |
+| File                        | Owns                                                                                                    |
+| --------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `shared/ipc.ts`             | `CH` (every channel name), `ChromeApi` (the `window.bsc` type), `NavState`, `WindowState`               |
+| `shared/settings-schema.ts` | `SETTINGS`, `SECTIONS`, `Settings`, `SettingKey`, `coerce`, `coerceAll`, `defaults`                     |
+| `shared/now-playing.ts`     | `PlayerReading`, `NowPlaying`, `readNowPlaying()` and its cleaners                                      |
+| `shared/page-theme.ts`      | `PageTheme`, `detectPageTheme()`                                                                        |
+| `shared/context-menu.ts`    | `ContextMenuRequest`, `CONTEXT_MENU_ACTIONS`, `cleanUrl`, `shortUrl`, `elide`                           |
+| `shared/page-status.ts`     | `PageStatus`, `describePageStatus()` (every word on that view), `describeLoadFailure()`, `retryDelay()` |
+| `shared/themes.ts`          | `ThemeSummary`, `parseThemeMetadata()`                                                                  |
+| `shared/identity.ts`        | `Identity`, `buildUserAgent()`, `leaksAppIdentity()`, `pageLanguages()`, `acceptLanguages()`            |
 
 ---
 
@@ -98,14 +100,15 @@ There is no BrowserWindow. `createShell()` builds a frameless `BaseWindow` and s
 `WebContentsView`s in it. Our UI is never injected into SoundCloud's page; it is drawn in separate
 views composited above it. Everything is held on the `Shell` object (`src/main/window.ts`).
 
-| `Shell` field | Renderer entry          | Preload       | Lifetime                                                                                         |
-| ------------- | ----------------------- | ------------- | ------------------------------------------------------------------------------------------------ |
-| `header`      | `renderer/header`       | `chrome.cjs`  | Always. Hidden (`setVisible(false)`) while SoundCloud owns the top                               |
-| `content`     | soundcloud.com          | `content.cjs` | Always. Starts at `https://soundcloud.com/discover`                                              |
-| `settings`    | `renderer/settings`     | `chrome.cjs`  | Created on open, destroyed on close (`toggleSettings`/`closeSettings`)                           |
-| `embedded`    | `renderer/embedded`     | `chrome.cjs`  | Exists while `appearance.hideMenuBar` is on; window buttons over SoundCloud's header             |
-| `player`      | `renderer/player`       | `chrome.cjs`  | Exists while `appearance.playerButtons` is on; buttons at the right end of SoundCloud's play bar |
-| `contextMenu` | `renderer/context-menu` | `chrome.cjs`  | Created once (`attachContextMenu`), hidden between uses                                          |
+| `Shell` field | Renderer entry          | Preload       | Lifetime                                                                                                 |
+| ------------- | ----------------------- | ------------- | -------------------------------------------------------------------------------------------------------- |
+| `header`      | `renderer/header`       | `chrome.cjs`  | Always. Hidden (`setVisible(false)`) while SoundCloud owns the top                                       |
+| `content`     | soundcloud.com          | `content.cjs` | Always. Loads `https://soundcloud.com/discover` once Widevine is ready (`loadSoundCloud`)                |
+| `settings`    | `renderer/settings`     | `chrome.cjs`  | Created on open, destroyed on close (`toggleSettings`/`closeSettings`)                                   |
+| `embedded`    | `renderer/embedded`     | `chrome.cjs`  | Exists while `appearance.hideMenuBar` is on; window buttons over SoundCloud's header                     |
+| `player`      | `renderer/player`       | `chrome.cjs`  | Exists while `appearance.playerButtons` is on; buttons at the right end of SoundCloud's play bar         |
+| `contextMenu` | `renderer/context-menu` | `chrome.cjs`  | Created once (`attachContextMenu`), hidden between uses                                                  |
+| `status`      | `renderer/status`       | `chrome.cjs`  | Exists while `pageStatus` is set: SoundCloud's page cannot be shown (`showPageStatus`/`clearPageStatus`) |
 
 Rules that hold this together:
 
@@ -118,9 +121,23 @@ Rules that hold this together:
   window pixels. Measured constants: `HEADER_HEIGHT` 32, SoundCloud header 46 CSS px, play bar
   48 CSS px, `EMBEDDED_WIDTH` 144 (50 on macOS), `PLAYER_BUTTONS_WIDTH` 92, `MIN_EMBED_WIDTH` 800
   (= window `minWidth`), `COMPACT_HEADER_WIDTH` 1100, `FIT_HEADER_WIDTH` 1000.
+- **While a page status hides SoundCloud's page, our own bar comes back** and the `embedded` and
+  `player` overlays hide: there is no SoundCloud header or play bar under them. `layout()` derives
+  this from `hidesPage(shell.pageStatus)`. A hang is the exception — it is a dialog over a page
+  that is still there, like settings.
 - `BaseWindow` does not own its views: the `closed` handler in `index.ts` closes each view's
   `webContents` explicitly. A new view goes in that list.
 - On macOS, closing hides the window to keep playback alive; Quit really quits.
+
+**Startup order** (`index.ts`): IPC, the ad-block engine, then the window — and only then the wait
+for Widevine (`components.whenReady()`). `createShell` does not load SoundCloud; `loadSoundCloud`
+runs once Widevine is ready, because a page making EME calls before that gets no Widevine and its
+protected tracks skip. A view created before Widevine is ready does get it once it navigates
+(measured), which is what makes this order safe. If Widevine fails, SoundCloud is never loaded and
+the page status says why, with Restart — after one failure every later `whenReady()` returns the
+same rejection, so only a relaunch retries it. The window shows when the header paints, or after
+3s, a header load failure or a header crash, whichever is first (`showWhenChromeIsReady`): it must
+never stay invisible. A failure before any window exists gets `dialog.showErrorBox`.
 
 Every view is created with the same `webPreferences` — copy them, do not loosen them:
 `nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true, devTools: isDev`
@@ -142,22 +159,24 @@ type-only imports are fine.
 `window.bsc` (type `ChromeApi`, implemented in `src/preload/chrome.ts`) exists only in our own
 views:
 
-| Method                                             | Kind        | Main accepts it from (sender check)                              |
-| -------------------------------------------------- | ----------- | ---------------------------------------------------------------- |
-| `platform`                                         | value       | —                                                                |
-| `minimize`, `maximizeToggle`, `close`              | send        | `fromChrome` = header, embedded                                  |
-| `back`, `forward`, `reload`                        | send        | `fromChrome`                                                     |
-| `toggleSettings`, `toggleMenuBar`                  | send        | `fromChrome`                                                     |
-| `closeSettings`                                    | send        | the settings view only                                           |
-| `getSettings`, `setSetting`, `listThemes`          | invoke      | `fromSettingsUi` = header, embedded, settings                    |
-| `contextMenuAction`, `goToUrl`, `closeContextMenu` | send/invoke | the context-menu view only                                       |
-| `getNowPlaying`                                    | invoke      | `fromOurViews` = header, settings, embedded, player, contextMenu |
-| `onNavState`                                       | subscribe   | pushed to header                                                 |
-| `onWindowState`                                    | subscribe   | pushed to header, embedded                                       |
-| `onSettingsChanged`                                | subscribe   | pushed to header, settings (`broadcastSettings`)                 |
-| `onPageTheme`                                      | subscribe   | pushed to embedded, player (and on their load)                   |
-| `onContextMenu`                                    | subscribe   | pushed to the context-menu view                                  |
-| `onNowPlaying`                                     | subscribe   | pushed to all five of our views (`broadcastNowPlaying`)          |
+| Method                                             | Kind        | Main accepts it from (sender check)                                      |
+| -------------------------------------------------- | ----------- | ------------------------------------------------------------------------ |
+| `platform`                                         | value       | —                                                                        |
+| `minimize`, `maximizeToggle`, `close`              | send        | `fromChrome` = header, embedded                                          |
+| `back`, `forward`, `reload`                        | send        | `fromChrome`                                                             |
+| `toggleSettings`, `toggleMenuBar`                  | send        | `fromChrome`                                                             |
+| `closeSettings`                                    | send        | the settings view only                                                   |
+| `getSettings`, `setSetting`, `listThemes`          | invoke      | `fromSettingsUi` = header, embedded, settings                            |
+| `contextMenuAction`, `goToUrl`, `closeContextMenu` | send/invoke | the context-menu view only                                               |
+| `getNowPlaying`                                    | invoke      | `fromOurViews` = header, settings, embedded, player, contextMenu, status |
+| `onNavState`                                       | subscribe   | pushed to header                                                         |
+| `onWindowState`                                    | subscribe   | pushed to header, embedded                                               |
+| `onSettingsChanged`                                | subscribe   | pushed to header, settings (`broadcastSettings`)                         |
+| `onPageTheme`                                      | subscribe   | pushed to embedded, player (and on their load)                           |
+| `onContextMenu`                                    | subscribe   | pushed to the context-menu view                                          |
+| `onNowPlaying`                                     | subscribe   | pushed to all six of our views (`broadcastNowPlaying`)                   |
+| `pageStatusAction`                                 | send        | the status view only; re-checked against `shell.pageStatus`              |
+| `onPageStatus`                                     | subscribe   | pushed to the status view (on its load and on every change)              |
 
 Every `on…` returns an unsubscribe function. A new view that needs one of the gated methods must
 be added to that sender check, and to the matching broadcast list if it needs pushes.
@@ -390,6 +409,9 @@ Dev builds log to the terminal running `npm run dev`. Tags:
 | `[datadome]`                                                         | `blocked …` — SoundCloud's bot check refused a request; `challenge shown` — a captcha page loaded                                                               |
 | `[page]`                                                             | A console error from SoundCloud's page                                                                                                                          |
 | `[now-playing]`                                                      | Track, play/pause and like changes                                                                                                                              |
+| `[widevine]`                                                         | How long the Widevine wait took, or why it failed                                                                                                               |
+| `[page-status]`                                                      | What the status view is saying (`load failed -106 ERR_INTERNET_DISCONNECTED`, `cleared`, …)                                                                     |
+| `[content]`, `[window]`                                              | A failed SoundCloud load; the window shown without its header                                                                                                   |
 | `[theme]`, `[player]`, `[context-menu]`, `[blocker]`, `[ad-request]` | Their features                                                                                                                                                  |
 
 F12 or Ctrl/Cmd+Shift+I opens DevTools for the focused view (header, content, settings and

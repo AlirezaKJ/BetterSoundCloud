@@ -14,6 +14,8 @@ import {
 } from './content-css'
 import { themeCss, NO_THEME } from './themes'
 import type { PageTheme } from '@shared/page-theme'
+import { hidesPage } from '@shared/page-status'
+import type { PageStatus } from '@shared/page-status'
 import type { Identity } from '@shared/identity'
 import type { ContextMenuRequest } from '@shared/context-menu'
 import { CH } from '@shared/ipc'
@@ -21,7 +23,14 @@ import type { NavState, WindowState } from '@shared/ipc'
 
 export const HEADER_HEIGHT = 32
 
-const START_URL = 'https://soundcloud.com/discover'
+export const START_URL = 'https://soundcloud.com/discover'
+
+/**
+ * How long to wait for our own chrome before showing the window anyway. A normal launch paints
+ * the header well inside this; a broken one is shown before the user decides nothing happened
+ * and launches again — which the single-instance lock turns into a silent no-op.
+ */
+const SHOW_TIMEOUT_MS = 3_000
 
 /**
  * Our chrome is a separate view stacked above SoundCloud, never injected into it.
@@ -65,6 +74,13 @@ export type Shell = {
   contextMenu: WebContentsView | null
   /** The right-click the menu is open for, so main can act on it. Null while hidden. */
   contextMenuRequest: ContextMenuRequest | null
+  /**
+   * Our page-status view over the content area: what is going on while SoundCloud's page
+   * cannot be shown. Exists only while it has something to say. See page-status.ts.
+   */
+  status: WebContentsView | null
+  /** What that view is saying. Null while SoundCloud's page is showing normally. */
+  pageStatus: PageStatus | null
   /**
    * SoundCloud's own light/dark setting, as last reported by the content preload. Held so an
    * overlay created after the page loaded can be told straight away rather than sitting in
@@ -200,6 +216,8 @@ export function createShell(identity: Identity): Shell {
     player: null,
     contextMenu: null,
     contextMenuRequest: null,
+    status: null,
+    pageStatus: null,
     pageTheme: 'dark',
     embeddedShowing: false,
     compactHeader: false,
@@ -226,8 +244,13 @@ export function createShell(identity: Identity): Shell {
     // `hideMenuBar` is the user's setting; `embeddedShows` is whether it can be honoured. Below
     // MIN_EMBED_WIDTH it cannot, so the setting stays on and the effect falls back to our own
     // bar, which carries the same buttons. Nothing is destroyed on the way through.
+    //
+    // A page status that covers SoundCloud's page counts as "no room" too. Their header is not
+    // on screen then, so buttons drawn over it would float over our message instead, with no
+    // drag region behind them. Our own bar takes over until the page is back.
     const cssWidth = pageCssWidth(shell)
-    const embeddedShows = shell.hideMenuBar && cssWidth >= MIN_EMBED_WIDTH
+    const pageHidden = shell.pageStatus !== null && hidesPage(shell.pageStatus)
+    const embeddedShows = shell.hideMenuBar && cssWidth >= MIN_EMBED_WIDTH && !pageHidden
     const compactHeader = embeddedShows && cssWidth < COMPACT_HEADER_WIDTH
     const fitHeader = embeddedShows && cssWidth < FIT_HEADER_WIDTH
     const strip = embeddedShows ? 0 : HEADER_HEIGHT
@@ -260,6 +283,8 @@ export function createShell(identity: Identity): Shell {
     if (shell.settings) fitBelowHeader(window, shell.settings, strip)
     // The menu view is attached after the shell is built, so it too can be absent here.
     if (shell.contextMenu) fitBelowHeader(window, shell.contextMenu, strip)
+    // The page-status view covers exactly what SoundCloud's page does.
+    if (shell.status) fitBelowHeader(window, shell.status, strip)
     if (shell.embedded) {
       shell.embedded.setVisible(embeddedShows)
       fitOverSoundCloudHeader(shell, embeddedShows)
@@ -270,7 +295,11 @@ export function createShell(identity: Identity): Shell {
     // controls with a transparent view. Zoom was worse — `applyContentCss` recomputes the
     // reservation from the new zoom factor while nothing recomputed the overlay's height, so
     // the two disagreed by construction.
-    if (shell.player) fitOverPlayControls(shell)
+    if (shell.player) {
+      // Hidden while the page is, for the same reason as the header overlay above.
+      shell.player.setVisible(!pageHidden)
+      fitOverPlayControls(shell)
+    }
 
     // Only when it actually flips — crossing the width is rare, and re-injecting on every
     // resize tick would rebuild the whole stylesheet dozens of times during a drag.
@@ -292,7 +321,9 @@ export function createShell(identity: Identity): Shell {
   window.on('resize', layout)
 
   void header.webContents.loadURL(rendererUrl('header'))
-  void content.webContents.loadURL(START_URL)
+  // SoundCloud is NOT loaded here. Its page may only load once Widevine is registered, which on
+  // a first launch can take a while, and the window should not wait for that — index.ts calls
+  // `loadSoundCloud` when it is ready.
 
   wireStateEvents(shell)
 
@@ -305,9 +336,7 @@ export function createShell(identity: Identity): Shell {
     attachDiagnostics(content)
   }
 
-  // BaseWindow has no `ready-to-show` — that is a BrowserWindow event. Show once our
-  // own chrome has painted, so the user never sees an unpainted frame.
-  header.webContents.once('did-finish-load', () => window.show())
+  showWhenChromeIsReady(window, header)
 
   // electron-window-state is typed against BrowserWindow, but it only calls getBounds,
   // isMaximized, isFullScreen and on(), all of which BaseWindow has. The cast is safe;
@@ -315,6 +344,46 @@ export function createShell(identity: Identity): Shell {
   state.manage(window as unknown as BrowserWindow)
 
   return shell
+}
+
+/** Start SoundCloud in the content view. Only once Widevine is ready — see index.ts. */
+export function loadSoundCloud(shell: Shell): void {
+  // The promise rejects when the load fails; page-status.ts handles that from `did-fail-load`.
+  shell.content.webContents.loadURL(START_URL).catch(() => undefined)
+}
+
+/**
+ * Show the window once our header has painted, so nobody sees an unpainted frame — but never
+ * wait on it forever.
+ *
+ * BaseWindow has no `ready-to-show` (that is a BrowserWindow event), so this used to be a bare
+ * `once('did-finish-load', show)`, the only call to `window.show()` in the app. When the header
+ * never finished — a file missing from a broken install, an asar integrity failure, a renderer
+ * crash before first paint — the process ran on invisibly, holding the single-instance lock,
+ * and only Task Manager could end it. A window with a blank strip is a bug report; an invisible
+ * one is "the app does nothing".
+ */
+function showWhenChromeIsReady(window: BaseWindow, header: WebContentsView): void {
+  let shown = false
+  const show = (problem: string): void => {
+    if (shown) return
+    shown = true
+    clearTimeout(timer)
+    if (problem) console.error(`[window] showing without our header: ${problem}`)
+    if (!window.isDestroyed()) window.show()
+  }
+
+  const timer = setTimeout(
+    () => show(`it had not loaded after ${SHOW_TIMEOUT_MS}ms`),
+    SHOW_TIMEOUT_MS
+  )
+  header.webContents.once('did-finish-load', () => show(''))
+  header.webContents.once('did-fail-load', (_event, code, error) =>
+    show(`it failed to load (${code} ${error})`)
+  )
+  header.webContents.once('render-process-gone', (_event, details) =>
+    show(`its renderer ended (${details.reason})`)
+  )
 }
 
 /**
@@ -698,12 +767,7 @@ function wireStateEvents(shell: Shell): void {
   window.on('focus', sendWindow)
   window.on('blur', sendWindow)
 
-  // v0.7.x had no did-fail-load handler anywhere, so a failed load left users staring at
-  // a blank window (#50) with no way to tell what happened.
-  content.webContents.on('did-fail-load', (_e, code, description, url, isMainFrame) => {
-    if (!isMainFrame || code === -3 /* ERR_ABORTED, fires on normal navigation */) return
-    console.error(`[content] load failed ${code} ${description} — ${url}`)
-  })
+  // A failed load, a crash and a hang are page-status.ts's: it tells the user, not the console.
 }
 
 /**
@@ -729,7 +793,7 @@ export function enableDevToolsShortcut(...views: WebContentsView[]): void {
 }
 
 export function rendererUrl(
-  entry: 'header' | 'settings' | 'embedded' | 'player' | 'context-menu'
+  entry: 'header' | 'settings' | 'embedded' | 'player' | 'context-menu' | 'status'
 ): string {
   const devServer = process.env['ELECTRON_RENDERER_URL']
   return devServer

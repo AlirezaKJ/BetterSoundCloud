@@ -45,10 +45,50 @@ describe('layout() owns every view position', () => {
     expect(outsideLayout).not.toMatch(/hideMenuBar \? 0 : HEADER_HEIGHT/)
   })
 
+  it('keeps the page-status view over the content area, with our own bar back above it', () => {
+    // The status view is created by page-status.ts and never positions itself. While it hides
+    // SoundCloud's page, the buttons drawn over SoundCloud's header have no header under them,
+    // so `embeddedShows` must turn off and our bar come back.
+    const body = layoutBody()
+    expect(body).toMatch(/fitBelowHeader\(window, shell\.status, strip\)/)
+    expect(body).toMatch(/const embeddedShows = [^\n]*!pageHidden/)
+  })
+
   it('takes the window minimum from the shared constant', () => {
     // MIN_EMBED_WIDTH's doc comment asserts the two are equal; a bare literal here would let
     // them drift, and the failure mode is the overlay fallback firing at an unmeasured width.
     expect(SRC).toContain('minWidth: MIN_EMBED_WIDTH')
     expect(SRC).not.toMatch(/minWidth: \d+/)
+  })
+})
+
+/** The body of a top-level function in window.ts, up to the next one. */
+function functionBody(name: string): string {
+  const start = SRC.indexOf(`function ${name}(`)
+  expect(start, name).toBeGreaterThan(-1)
+  const end = SRC.indexOf('\n}\n', start)
+  return SRC.slice(start, end)
+}
+
+describe('startup never leaves an invisible window', () => {
+  it('shows the window even when the header fails, crashes or never loads', () => {
+    // `once('did-finish-load', () => window.show())` used to be the only show() in the app.
+    // A header that never finished meant a process that ran forever with no window, holding
+    // the single-instance lock, so relaunching did nothing either.
+    const body = functionBody('showWhenChromeIsReady')
+    for (const event of ['did-finish-load', 'did-fail-load', 'render-process-gone']) {
+      expect(body).toContain(`'${event}'`)
+    }
+    expect(body).toMatch(/setTimeout\(/)
+    expect(body).toContain('window.show()')
+    expect(functionBody('createShell')).toContain('showWhenChromeIsReady(window, header)')
+  })
+
+  it('does not load SoundCloud while building the window', () => {
+    // Its page may only load once Widevine is registered; index.ts calls loadSoundCloud then.
+    // Loading it here again would bring back either the wait before any window (#96) or
+    // protected tracks that silently skip.
+    expect(functionBody('createShell')).not.toMatch(/content\.webContents\.loadURL/)
+    expect(functionBody('loadSoundCloud')).toContain('loadURL(START_URL)')
   })
 })
