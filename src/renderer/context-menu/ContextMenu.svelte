@@ -48,6 +48,8 @@
     settings:
       'M15.1 12a3.1 3.1 0 1 1-6.2 0 3.1 3.1 0 0 1 6.2 0zM19.1 14.4a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.56 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.56-1.1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.56 1.03z',
     'sign-out': 'M9 21H5V3h4M16 17l5-5-5-5M21 12H9',
+    lyrics:
+      'M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zM6 11a6 6 0 0 0 12 0M12 17v4M9 21h6',
     code: 'M8 7 3 12l5 5M16 7l5 5-5 5M14 4l-4 16'
   }
 
@@ -161,7 +163,10 @@
     page.push({ action: 'go-to', label: 'Go to URL…', icon: 'go' })
     groups.push(page)
 
-    groups.push([{ action: 'settings', label: 'Settings', icon: 'settings' }])
+    groups.push([
+      { action: 'lyrics', label: r.lyricsOpen ? 'Hide lyrics' : 'Show lyrics', icon: 'lyrics' },
+      { action: 'settings', label: 'Settings', icon: 'settings' }
+    ])
     groups.push([{ action: 'sign-out', label: 'Sign out', icon: 'sign-out' }])
     if (r.canInspect)
       groups.push([{ action: 'inspect', label: 'Inspect element', icon: 'code' }])

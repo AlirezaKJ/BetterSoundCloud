@@ -83,8 +83,10 @@ credentials. v2's stated goal is to carry all of it.
   page is not available yet
 - Themes: five built in (ported from v0.7.x), plus any `.css` file in the user's themes folder, live-reloaded on save;
   a theme can recolour BetterSoundCloud's own windows to match
+- Synced lyrics from LRCLIB in a pane beside the page, following the song line by line, with a
+  timing nudge; looked up only while the pane is open
 
-**Not yet built:** lyrics, downloader, i18n, proxy, webhooks, auto-updater. Settings
+**Not yet built:** the full-screen showcase, downloader, i18n, proxy, webhooks, auto-updater. Settings
 whose feature is missing render disabled and labelled rather than lying. Full backlog:
 [TODO.md](TODO.md).
 

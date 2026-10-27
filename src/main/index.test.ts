@@ -50,7 +50,16 @@ vi.mock('./window', () => ({
   setContentAppearance: mocks.setContentAppearance,
   setPageTheme: vi.fn(),
   setContentCover: vi.fn(),
-  setContentPicture: vi.fn()
+  setContentPicture: vi.fn(),
+  toggleLyrics: vi.fn(),
+  closeLyrics: vi.fn()
+}))
+vi.mock('./lyrics', () => ({
+  getLyricsState: () => ({ state: 'idle' }),
+  noticeNowPlaying: vi.fn(),
+  nudgeLyrics: vi.fn(),
+  onLyricsChange: vi.fn(),
+  retryLyrics: vi.fn()
 }))
 vi.mock('./background', () => ({
   choosePicture: vi.fn(),
@@ -404,6 +413,50 @@ describe('main window lifecycle', () => {
     })
     // The handler ignores anything the view sends: the dialog is the only way a file is picked.
     expect(background.choosePicture).toHaveBeenCalledWith(shell.window)
+  })
+
+  it('takes lyrics commands only from the views they belong to, and only ±0.5s nudges', async () => {
+    const { app } = await import('electron')
+    const window = await import('./window')
+    const lyrics = await import('./lyrics')
+    app.emit('activate')
+    const shell = mocks.createShell.mock.results.at(-1)!.value as ReturnType<typeof makeShell>
+    const handlerFor = (method: 'on' | 'handle', channel: string) => {
+      const registered = method === 'on' ? mocks.ipcOn : mocks.ipcHandle
+      return registered.mock.calls.find(([name]) => name === channel)![1] as (
+        event: unknown,
+        ...args: unknown[]
+      ) => unknown
+    }
+    const fromPage = { sender: shell.content.webContents }
+    const fromPlayer = { sender: shell.player.webContents }
+    const lyricsView = { webContents: { ...shell.status.webContents } }
+    Object.assign(shell, { lyrics: lyricsView })
+    const fromLyrics = { sender: lyricsView.webContents }
+
+    // SoundCloud's page can neither open the pane nor read or steer it.
+    handlerFor('on', CH.lyricsToggle)(fromPage)
+    handlerFor('on', CH.lyricsClose)(fromPage)
+    handlerFor('on', CH.lyricsNudge)(fromPage, 0.5)
+    expect(handlerFor('handle', CH.lyricsGet)(fromPage)).toBeNull()
+    expect(window.toggleLyrics).not.toHaveBeenCalled()
+    expect(window.closeLyrics).not.toHaveBeenCalled()
+    expect(lyrics.nudgeLyrics).not.toHaveBeenCalled()
+
+    // The player-bar button toggles it; the pane closes, reads and nudges itself.
+    handlerFor('on', CH.lyricsToggle)(fromPlayer)
+    expect(window.toggleLyrics).toHaveBeenCalledOnce()
+    handlerFor('on', CH.lyricsClose)(fromLyrics)
+    expect(window.closeLyrics).toHaveBeenCalledOnce()
+    expect(handlerFor('handle', CH.lyricsGet)(fromLyrics)).toEqual({ state: 'idle' })
+
+    // Half a second either way is all the pane offers; anything else is refused.
+    for (const bad of [5, -30, '0.5', Number.NaN, { seconds: 0.5 }]) {
+      handlerFor('on', CH.lyricsNudge)(fromLyrics, bad)
+    }
+    expect(lyrics.nudgeLyrics).not.toHaveBeenCalled()
+    handlerFor('on', CH.lyricsNudge)(fromLyrics, -0.5)
+    expect(lyrics.nudgeLyrics).toHaveBeenCalledWith(-0.5)
   })
 
   it('gives every window the same identity, its header built from the page’s languages', () => {

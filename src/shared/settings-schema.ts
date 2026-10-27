@@ -163,19 +163,18 @@ export const SETTINGS = {
       'SoundCloud centres its top menu and bottom player at 1240px. This stretches those ' +
       'two bars to the window width. Page content keeps its own layout.'
   },
-  // Off by default, and it must stay off until the buttons do something. They are drawn
-  // disabled and say "not implemented yet" on hover, so turning it on shows the layout
-  // without pretending the features exist. Independent of `hideMenuBar`: that setting owns
-  // the header overlay because that overlay carries the only way back, which has nothing to
-  // do with the player.
+  // On by default since the lyrics button works (2026-10-28). The full-screen button is not
+  // built yet and is drawn disabled, saying so. Independent of `hideMenuBar`: that setting owns
+  // the header overlay because that overlay carries the only way back, which has nothing to do
+  // with the player.
   'appearance.playerButtons': {
     kind: 'boolean',
-    default: false,
+    default: true,
     label: 'Show extra buttons in the player bar',
     section: 'appearance',
     help:
-      'Adds a lyrics and a full-screen button to the right of SoundCloud’s play ' +
-      'controls. Neither does anything yet — they are placeholders for the layout.'
+      'Adds a lyrics button to the right of SoundCloud’s play controls, and a full-screen ' +
+      'button that is not built yet. Lyrics are also in the right-click menu.'
   },
 
   // Not a theme: it goes on top of whichever theme is selected, so it can be combined with any

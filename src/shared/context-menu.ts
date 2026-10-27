@@ -33,6 +33,8 @@ export type ContextMenuRequest = {
   canGoForward: boolean
   /** Dev builds only: offer "Inspect element". */
   canInspect: boolean
+  /** Whether the lyrics pane is open, so the item can say "Hide lyrics" instead. */
+  lyricsOpen: boolean
 }
 
 /**
@@ -56,6 +58,7 @@ export const CONTEXT_MENU_ACTIONS = [
   'reload',
   'copy-page-link',
   'copy-clean-page-link',
+  'lyrics',
   'settings',
   'sign-out',
   'inspect'

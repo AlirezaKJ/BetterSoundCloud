@@ -17,6 +17,7 @@ import {
 import type { BackgroundOptions } from './content-css'
 import { findTheme, minimalNavigationCss, NO_THEME, soundCloudPaletteCss } from './themes'
 import { themeChromeView } from './chrome-theme'
+import { setLyricsOpen } from './lyrics'
 import { contentCssOf, coverCss } from '@shared/themes'
 import { overlayTheme } from '@shared/page-theme'
 import type { PageTheme } from '@shared/page-theme'
@@ -85,6 +86,11 @@ export type Shell = {
    * cannot be shown. Exists only while it has something to say. See page-status.ts.
    */
   status: WebContentsView | null
+  /**
+   * The lyrics pane, docked at the right of SoundCloud's page between its header and play bar.
+   * Exists only while open (`toggleLyrics`); what it shows comes from main/lyrics.ts.
+   */
+  lyrics: WebContentsView | null
   /** What that view is saying. Null while SoundCloud's page is showing normally. */
   pageStatus: PageStatus | null
   /**
@@ -249,6 +255,7 @@ export function createShell(identity: Identity): Shell {
     contextMenu: null,
     contextMenuRequest: null,
     status: null,
+    lyrics: null,
     pageStatus: null,
     pageTheme: 'dark',
     themeMode: null,
@@ -340,6 +347,11 @@ export function createShell(identity: Identity): Shell {
       // Hidden while the page is, for the same reason as the header overlay above.
       shell.player.setVisible(!pageHidden)
       fitOverPlayControls(shell)
+    }
+    // The lyrics pane sits on SoundCloud's page, so it goes with the page too.
+    if (shell.lyrics) {
+      shell.lyrics.setVisible(!pageHidden)
+      fitLyricsPane(shell, strip)
     }
 
     // Only when it actually flips — crossing the width is rare, and re-injecting on every
@@ -798,8 +810,100 @@ function setPlayerButtons(shell: Shell, enabled: boolean): void {
   shell.window.contentView.addChildView(view)
   fitOverPlayControls(shell)
   sendPageThemeOnLoad(shell, view)
+  view.webContents.once('did-finish-load', () => sendLyricsShown(shell))
 
   void view.webContents.loadURL(rendererUrl('player'))
+}
+
+/*
+ * ── The lyrics pane ────────────────────────────────────────────────────────────────────────
+ *
+ * Docked at the right of SoundCloud's page, from under its header to above its play bar, so the
+ * page stays usable beside it and the player stays reachable below. Opaque and flat: it does not
+ * float or take over input, so it has no shadow and no scrim (DESIGN.md "Lyrics pane").
+ */
+
+/** The pane's width in window pixels: a column of lines, not a page. */
+export const LYRICS_WIDTH = 360
+
+export function toggleLyrics(shell: Shell): void {
+  if (shell.lyrics) closeLyrics(shell)
+  else openLyrics(shell)
+}
+
+function openLyrics(shell: Shell): void {
+  const view = new WebContentsView({
+    webPreferences: {
+      preload: join(import.meta.dirname, '../preload/chrome.cjs'),
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+      webSecurity: true,
+      devTools: isDev
+    }
+  })
+  hardenSession(view.webContents.session, shell.identity)
+  routeNewWindowsToBrowser(view.webContents)
+  // The pane's own colour while its page loads, so it does not flash white in the dark.
+  view.setBackgroundColor(nativeTheme.shouldUseDarkColors ? '#121212' : '#f2f2f2')
+
+  shell.lyrics = view
+  const views = shell.window.contentView
+  views.addChildView(view)
+  // Adding a view puts it on top; the settings panel and the right-click menu must stay above
+  // the pane, and adding a view that is already there only moves it to the top.
+  for (const above of [shell.settings, shell.contextMenu]) if (above) views.addChildView(above)
+  themeChromeView(view, 'lyrics')
+  shell.layout()
+
+  if (isDev) enableDevToolsShortcut(view)
+  void view.webContents.loadURL(rendererUrl('lyrics'))
+  // Focused, so Escape closes it straight away, as it does the settings panel.
+  view.webContents.once('did-finish-load', () => {
+    if (!view.webContents.isDestroyed()) view.webContents.focus()
+  })
+  setLyricsOpen(true)
+  sendLyricsShown(shell)
+}
+
+export function closeLyrics(shell: Shell): void {
+  const view = shell.lyrics
+  if (!view) return
+  shell.lyrics = null
+  shell.window.contentView.removeChildView(view)
+  // Destroyed rather than hidden, like settings: opened now and then, and a renderer held for
+  // the rest of the session is the wrong trade. Its state lives in main.
+  view.webContents.close()
+  setLyricsOpen(false)
+  sendLyricsShown(shell)
+  // Back to SoundCloud, so the keyboard works there again without a click.
+  if (!shell.content.webContents.isDestroyed()) shell.content.webContents.focus()
+}
+
+/** Under SoundCloud's header, above its play bar, at the right edge. Both bars follow the zoom. */
+function fitLyricsPane(shell: Shell, strip: number): void {
+  const view = shell.lyrics
+  if (!view) return
+  const { width, height } = shell.window.getContentBounds()
+  const zoom = shell.content.webContents.getZoomFactor()
+  const top = strip + Math.round(SC_HEADER_HEIGHT * zoom)
+  const bottom = Math.round(PLAY_CONTROLS_HEIGHT * zoom)
+  // Never more than two fifths of a narrow window, so SoundCloud keeps the larger share.
+  const paneWidth = Math.round(Math.min(LYRICS_WIDTH, width * 0.4))
+  view.setBounds({
+    x: width - paneWidth,
+    y: top,
+    width: paneWidth,
+    height: Math.max(0, height - top - bottom)
+  })
+}
+
+/** Tell the player-bar buttons whether the pane is open, so the lyrics button shows it. */
+function sendLyricsShown(shell: Shell): void {
+  const view = shell.player
+  if (view && !view.webContents.isDestroyed()) {
+    view.webContents.send(CH.lyricsShown, shell.lyrics !== null)
+  }
 }
 
 /**
@@ -928,7 +1032,7 @@ export function enableDevToolsShortcut(...views: WebContentsView[]): void {
 }
 
 export function rendererUrl(
-  entry: 'header' | 'settings' | 'embedded' | 'player' | 'context-menu' | 'status'
+  entry: 'header' | 'settings' | 'embedded' | 'player' | 'context-menu' | 'status' | 'lyrics'
 ): string {
   const devServer = process.env['ELECTRON_RENDERER_URL']
   return devServer

@@ -29,6 +29,14 @@ describe('layout() owns every view position', () => {
     expect(body).toContain('fitOverPlayControls')
   })
 
+  it('positions the lyrics pane, and hides it with the page', () => {
+    // The pane sits between SoundCloud's header and play bar, whose heights follow the zoom, so a
+    // resize or a zoom change must move it — from layout(), like every other view.
+    const body = layoutBody()
+    expect(body).toContain('fitLyricsPane(shell, strip)')
+    expect(body).toContain('shell.lyrics.setVisible(!pageHidden)')
+  })
+
   it('keeps the right-click menu view over the content area', () => {
     // The menu view is created after the shell (context-menu.ts) and never positions itself;
     // if layout() forgot it, a menu opened after a resize would be drawn against stale bounds

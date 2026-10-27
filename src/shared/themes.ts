@@ -125,12 +125,13 @@ export const THEME_TARGETS = [
   'settings',
   'menu',
   'status',
+  'lyrics',
   'all'
 ] as const
 export type ThemeTarget = (typeof THEME_TARGETS)[number]
 
 /** Our own views a theme can reach, and the per-view target that also applies to each. */
-export type ChromeView = 'header' | 'settings' | 'menu' | 'status'
+export type ChromeView = 'header' | 'settings' | 'menu' | 'status' | 'lyrics'
 
 export type ThemeSections = Record<ThemeTarget, string>
 
@@ -145,6 +146,7 @@ export function splitThemeTargets(css: string): ThemeSections {
     settings: '',
     menu: '',
     status: '',
+    lyrics: '',
     all: ''
   }
   let target: ThemeTarget | null = 'content'

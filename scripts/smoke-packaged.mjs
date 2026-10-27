@@ -196,6 +196,32 @@ try {
     )) === '0px'
   )
 
+  // The lyrics pane: it opens beside the page, between SoundCloud's header and play bar, says
+  // nothing is playing (nothing plays signed out), and closes. Nothing is looked up on LRCLIB.
+  await header.run('window.bsc.toggleLyrics()')
+  const lyrics = await view((url) => url.includes('/lyrics/index.html'), 15000)
+  check('the lyrics pane opens', lyrics !== null)
+  if (lyrics) {
+    await wait(500)
+    const size = await lyrics.run('[window.innerWidth, window.innerHeight]')
+    check('…as a 360px column beside the page', size?.[0] === 360, `${size?.[0]}×${size?.[1]}`)
+    check(
+      '…saying nothing is playing',
+      (await lyrics.run('window.bsc.getLyrics().then((s) => s.state)')) === 'idle'
+    )
+    check(
+      'no uncaught errors in the lyrics pane',
+      lyrics.exceptions.length === 0,
+      lyrics.exceptions[0]
+    )
+    await lyrics.run('window.bsc.closeLyrics()').catch(() => undefined)
+    await wait(800)
+    const still = await fetch(`http://127.0.0.1:${PORT}/json/list`)
+      .then((response) => response.json())
+      .catch(() => [])
+    check('…and closes', !still.some((t) => t.url.includes('/lyrics/index.html')))
+  }
+
   check(
     'no uncaught errors in the header',
     header.exceptions.length === 0,

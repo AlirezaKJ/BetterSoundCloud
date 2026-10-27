@@ -6,6 +6,7 @@ import type { NowPlaying } from './now-playing'
 import type { PageStatus, PageStatusAction } from './page-status'
 import type { PresenceStatus } from './presence'
 import type { PluginView } from './plugins'
+import type { LyricsState } from './lyrics'
 
 /** Every IPC channel name, in one place. Strings are never written inline. */
 export const CH = {
@@ -70,7 +71,18 @@ export const CH = {
   pluginSetEnabled: 'plugins:set-enabled',
   pluginSetSetting: 'plugins:set-setting',
   pluginAction: 'plugins:action',
-  pluginsOpenFolder: 'plugins:open-folder'
+  pluginsOpenFolder: 'plugins:open-folder',
+
+  // The lyrics pane. Toggled from the player-bar button (and the right-click menu, in main);
+  // main pushes what to show, the pane closes itself, retries and nudges the timing.
+  lyricsToggle: 'lyrics:toggle',
+  lyricsClose: 'lyrics:close',
+  lyricsGet: 'lyrics:get',
+  lyricsChanged: 'lyrics:changed',
+  lyricsRetry: 'lyrics:retry',
+  lyricsNudge: 'lyrics:nudge',
+  // main -> the player-bar buttons: whether the pane is open, so the button can say so.
+  lyricsShown: 'lyrics:shown'
 } as const
 
 /** What a change to a plugin answers: every row as it now is, and why it failed if it did. */
@@ -192,4 +204,21 @@ export type ChromeApi = {
   /** One of the buttons a plugin put on its row. */
   pluginAction(id: string, actionId: string): void
   openPluginsFolder(): void
+
+  /** Open the lyrics pane, or close it if it is open. From the player-bar button. */
+  toggleLyrics(): void
+  /** The pane closing itself: its close button, or Escape. */
+  closeLyrics(): void
+  /**
+   * What the lyrics pane should show. Read once when it opens, then follow `onLyrics`, which
+   * fires when the track changes, a lookup finishes, or the timing is nudged — never per tick.
+   */
+  getLyrics(): Promise<LyricsState>
+  onLyrics(cb: (state: LyricsState) => void): () => void
+  /** Look the current track up again, after LRCLIB could not be reached. */
+  retryLyrics(): void
+  /** Move the current track's timed lyrics by ±0.5 seconds; positive is later. */
+  nudgeLyrics(seconds: number): void
+  /** Whether the lyrics pane is open: on the player-bar buttons' load and on every change. */
+  onLyricsShown(cb: (shown: boolean) => void): () => void
 }

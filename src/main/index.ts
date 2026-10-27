@@ -18,8 +18,17 @@ import {
   setContentAppearance,
   setPageTheme,
   setContentCover,
-  setContentPicture
+  setContentPicture,
+  toggleLyrics,
+  closeLyrics
 } from './window'
+import {
+  getLyricsState,
+  noticeNowPlaying,
+  nudgeLyrics,
+  onLyricsChange,
+  retryLyrics
+} from './lyrics'
 import { choosePicture, pictureDataUri, pictureThumbnail } from './background'
 import { setChromeTheme } from './chrome-theme'
 import type { BackgroundOptions } from './content-css'
@@ -299,7 +308,8 @@ function showMainWindow(): void {
         next.embedded,
         next.player,
         next.contextMenu,
-        next.status
+        next.status,
+        next.lyrics
       ]) {
         if (view && !view.webContents.isDestroyed()) view.webContents.close()
       }
@@ -459,7 +469,8 @@ function registerIpc(): void {
       shell.embedded,
       shell.player,
       shell.contextMenu,
-      shell.status
+      shell.status,
+      shell.lyrics
     ].some((view) => view?.webContents === event.sender)
 
   ipcMain.handle(CH.nowPlayingGet, (e) => (fromOurViews(e) ? getNowPlaying() : null))
@@ -551,6 +562,33 @@ function registerIpc(): void {
   // `--bsc-cover` for themes: the artwork of what is playing, once per track.
   onNowPlayingChange((nowPlaying) => {
     if (shell) setContentCover(shell, nowPlaying?.artwork ?? '')
+    // The lyrics service only acts on a different track; the pane follows the clock itself.
+    noticeNowPlaying(nowPlaying)
+  })
+
+  /**
+   * The lyrics pane. Toggled from the player-bar button or the header (the right-click menu
+   * toggles it in main); everything else comes from the pane itself, and is checked as such.
+   */
+  const fromLyrics = (event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent): boolean =>
+    shell !== null && event.sender === shell.lyrics?.webContents
+  ipcMain.on(CH.lyricsToggle, (e) => {
+    if (shell && (fromChrome(e) || e.sender === shell.player?.webContents)) toggleLyrics(shell)
+  })
+  ipcMain.on(CH.lyricsClose, (e) => {
+    if (shell && fromLyrics(e)) closeLyrics(shell)
+  })
+  ipcMain.handle(CH.lyricsGet, (e) => (fromLyrics(e) ? getLyricsState() : null))
+  ipcMain.on(CH.lyricsRetry, (e) => {
+    if (fromLyrics(e)) retryLyrics()
+  })
+  ipcMain.on(CH.lyricsNudge, (e, seconds: unknown) => {
+    // Half a second either way is all the pane offers, so nothing else is accepted.
+    if (fromLyrics(e) && (seconds === 0.5 || seconds === -0.5)) nudgeLyrics(seconds)
+  })
+  onLyricsChange((state) => {
+    const view = shell?.lyrics
+    if (view && !view.webContents.isDestroyed()) view.webContents.send(CH.lyricsChanged, state)
   })
 
   ipcMain.handle(CH.settingsSet, (e, key: unknown, value: unknown) => {
@@ -610,7 +648,8 @@ function broadcastNowPlaying(nowPlaying: NowPlaying | null): void {
     shell.embedded,
     shell.player,
     shell.contextMenu,
-    shell.status
+    shell.status,
+    shell.lyrics
   ]) {
     if (view && !view.webContents.isDestroyed()) {
       view.webContents.send(CH.nowPlayingChanged, nowPlaying)

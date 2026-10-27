@@ -190,6 +190,12 @@ personality the frame should not have and a runtime network load the renderer's 
 has no headlines because the frame has nothing to announce. If a surface seems to need display
 type, it probably belongs to SoundCloud's view, not ours.
 
+**The Lyrics Exception** (approved 2026-10-28). One tier sits above the ceiling: **lyric lines, 20px,
+line-height 1.4**, in the lyrics pane only. Lyrics are not chrome; they are the content of that
+pane, read from arm's length while the listener's attention is elsewhere. Everything around them —
+the pane's title, its captions, its buttons — keeps the 15px ceiling. The exception does not
+transfer: no other surface may use it.
+
 **The System Stack Rule.** No webfonts, ever. The chrome inherits the OS UI font so it belongs
 to the window; the CSP on every renderer blocks remote font loads regardless.
 
@@ -389,6 +395,40 @@ One treatment across both surfaces — our own panels and the SoundCloud view.
 - **Hover and active:** the accent. This is the one place the accent appears outside focus
   and selection, and it still obeys the Borrowed Accent Rule — grabbing a scrollbar is a
   state, not decoration.
+
+### Lyrics pane
+
+Synced lyrics, docked at the right of SoundCloud's page (`src/renderer/lyrics`), from under its
+header to above its play bar, so SoundCloud stays usable beside it and its player stays reachable
+below. 360px wide, never more than two fifths of the window.
+
+- **Flat, because it does not take over input**: Shell Grey, one 1px Hairline down its left edge,
+  no shadow, no scrim. It is a pane, not a dialog.
+- **Header**: the track's title (Title, 15px 600, ellipsized), the uploader in Caption beneath, and
+  the settings panel's close button (Danger Red on hover).
+- **Lines**: the Lyrics Exception's 20px. Every line is Muted Ink; the line being sung is Ink at 600. Weight and ink carry it — no accent, no bar, no glow, no scale. Colour changes over 160ms
+  ease-out; nothing else moves but the scroll. The current line rests a third of the way down,
+  reached with a smooth scroll. A pause between lines is a 24px Hairline rest that widens to 48px
+  while current — never a glyph. Lines fade out under the header and footer (a 20px / 28px mask)
+  rather than being cut.
+- **Scrolling by hand** stops the following and shows "Back to the current line", the Prompt's
+  button, bottom right of the lines; a new track resumes following.
+- **Footer**: for timed lyrics, a "Timing" row — two chrome buttons (chevrons, "Earlier" /
+  "Later", half a second each) around the offset in Caption tabular figures ("On time", "−1.0 s");
+  then the credit, one Caption line: "From LRCLIB · “Track” by Artist", whose tooltip says what is
+  sent to lrclib.net and when.
+- **Every other state is words, left-aligned at the top**: Body for what happened, Caption for what
+  it means — "Looking up lyrics…" (with the page-status wait line), "Instrumental.", "No lyrics
+  found." (saying what was searched), "Couldn’t reach LRCLIB." (with "Try again"), "Nothing is
+  playing." Untimed lyrics are shown in Ink, under one Caption line saying they will not follow the
+  song.
+- **Keyboard**: focused on open, so Escape closes it; the lines are a focusable region so they can
+  be scrolled by keyboard; arrow keys and paging stop the following like the wheel does.
+- **Reduced motion**: no smooth scroll, no colour transition, no wait line.
+
+The player-bar lyrics button is pressed while the pane is open, and turns the accent — the one
+state that button has. The full-screen showcase button beside it is not built: drawn at 40%
+opacity, no hover, its tooltip saying so.
 
 ### Signature Component: the pending setting
 

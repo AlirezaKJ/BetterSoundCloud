@@ -53,12 +53,12 @@ comes back with the next theme. Leave the line out if your theme looks right on 
 Everything before the first marker styles SoundCloud's page. A line that is exactly
 `/* @target <name> */` starts a section:
 
-| Target                                 | Styles                                                                                  |
-| -------------------------------------- | --------------------------------------------------------------------------------------- |
-| `content`                              | SoundCloud's page (the default)                                                         |
-| `chrome`                               | All of our own windows: the 32px bar, settings, the right-click menu, the status screen |
-| `header`, `settings`, `menu`, `status` | One of those only                                                                       |
-| `all`                                  | Everywhere                                                                              |
+| Target                                           | Styles                                                                                                   |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| `content`                                        | SoundCloud's page (the default)                                                                          |
+| `chrome`                                         | All of our own windows: the 32px bar, settings, the right-click menu, the status screen, the lyrics pane |
+| `header`, `settings`, `menu`, `status`, `lyrics` | One of those only                                                                                        |
+| `all`                                            | Everywhere                                                                                               |
 
 A marker inside a rule, or after code on the same line, is an ordinary comment. A section for a
 target that does not exist is dropped. Sections can repeat; each is appended to its target.

@@ -9,6 +9,7 @@ import type { NowPlaying } from '@shared/now-playing'
 import type { PageStatus, PageStatusAction } from '@shared/page-status'
 import type { PresenceStatus } from '@shared/presence'
 import type { PluginView } from '@shared/plugins'
+import type { LyricsState } from '@shared/lyrics'
 
 /**
  * Preload for OUR OWN chrome (header, settings, the overlays, the right-click menu). This
@@ -87,7 +88,15 @@ const api: ChromeApi = {
     ipcRenderer.invoke(CH.pluginSetSetting, id, key, value) as Promise<PluginsResult>,
   pluginAction: (id: string, actionId: string) =>
     ipcRenderer.send(CH.pluginAction, id, actionId),
-  openPluginsFolder: () => ipcRenderer.send(CH.pluginsOpenFolder)
+  openPluginsFolder: () => ipcRenderer.send(CH.pluginsOpenFolder),
+
+  toggleLyrics: () => ipcRenderer.send(CH.lyricsToggle),
+  closeLyrics: () => ipcRenderer.send(CH.lyricsClose),
+  getLyrics: () => ipcRenderer.invoke(CH.lyricsGet) as Promise<LyricsState>,
+  onLyrics: (cb: (state: LyricsState) => void) => subscribe(CH.lyricsChanged, cb),
+  retryLyrics: () => ipcRenderer.send(CH.lyricsRetry),
+  nudgeLyrics: (seconds: number) => ipcRenderer.send(CH.lyricsNudge, seconds),
+  onLyricsShown: (cb: (shown: boolean) => void) => subscribe(CH.lyricsShown, cb)
 }
 
 contextBridge.exposeInMainWorld('bsc', api)

@@ -51,7 +51,16 @@ vi.mock('./window', () => ({
   setContentAppearance: vi.fn(),
   setPageTheme: vi.fn(),
   setContentCover: vi.fn(),
-  setContentPicture: vi.fn()
+  setContentPicture: vi.fn(),
+  toggleLyrics: vi.fn(),
+  closeLyrics: vi.fn()
+}))
+vi.mock('./lyrics', () => ({
+  getLyricsState: () => ({ state: 'idle' }),
+  noticeNowPlaying: vi.fn(),
+  nudgeLyrics: vi.fn(),
+  onLyricsChange: vi.fn(),
+  retryLyrics: vi.fn()
 }))
 vi.mock('./background', () => ({
   choosePicture: vi.fn(),

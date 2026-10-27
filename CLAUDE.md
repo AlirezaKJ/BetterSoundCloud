@@ -71,6 +71,7 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CU
 | `main/context-menu.ts`             | The right-click menu view and every menu action                                                                                                                    |
 | `main/page-status.ts`              | The page-status view: failed loads (and their retries), crashes, hangs, slow starts, and its buttons                                                               |
 | `main/presence.ts`                 | Discord Rich Presence: follows now-playing and the `discord.*` settings, spaces updates, reconnects; `getPresenceStatus` for settings                              |
+| `main/lyrics.ts`                   | Synced lyrics from LRCLIB: looks up only while the pane is open, settles on a track first, caches for the session (§18)                                            |
 | `main/discord-ipc.ts`              | Our own small client for the Discord app's local pipe (no Electron, tested against a real pipe)                                                                    |
 | `main/now-playing.ts`              | The one copy of "what is playing": `getNowPlaying`, `setNowPlaying`, `onNowPlayingChange`                                                                          |
 | `main/session.ts`                  | `hardenSession`, permission allowlist, `routeNewWindowsToBrowser`, `isInternalUrl`, `openInBrowser`                                                                |
@@ -100,6 +101,7 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CU
 | `shared/page-theme.ts`      | `PageTheme`, `detectPageTheme()`, `overlayTheme()` (a theme's `@mode` beats SoundCloud's setting)               |
 | `shared/context-menu.ts`    | `ContextMenuRequest`, `CONTEXT_MENU_ACTIONS`, `cleanUrl`, `shortUrl`, `elide`                                   |
 | `shared/presence.ts`        | `Activity`, `buildActivity()` (the Discord card), `sameActivity()`, `PRESENCE_LOGO`                             |
+| `shared/lyrics.ts`          | `LyricsState`, `parseLrc()`, `currentLineIndex()`, `playbackPosition()`, `lyricsQueries()`, `bestMatch()`       |
 | `shared/page-status.ts`     | `PageStatus`, `describePageStatus()` (every word on that view), `describeLoadFailure()`, `retryDelay()`         |
 | `shared/themes.ts`          | `ThemeSummary`, `parseThemeMetadata()`, `splitThemeTargets()`, `chromeCssFor()`, `contentCssOf()`, `coverCss()` |
 | `shared/identity.ts`        | `Identity`, `buildUserAgent()`, `leaksAppIdentity()`, `pageLanguages()`, `acceptLanguages()`                    |
@@ -114,15 +116,16 @@ There is no BrowserWindow. `createShell()` builds a frameless `BaseWindow` and s
 `WebContentsView`s in it. Our UI is never injected into SoundCloud's page; it is drawn in separate
 views composited above it. Everything is held on the `Shell` object (`src/main/window.ts`).
 
-| `Shell` field | Renderer entry          | Preload       | Lifetime                                                                                                 |
-| ------------- | ----------------------- | ------------- | -------------------------------------------------------------------------------------------------------- |
-| `header`      | `renderer/header`       | `chrome.cjs`  | Always. Hidden (`setVisible(false)`) while SoundCloud owns the top                                       |
-| `content`     | soundcloud.com          | `content.cjs` | Always. Loads `https://soundcloud.com/discover` once Widevine is ready (`loadSoundCloud`)                |
-| `settings`    | `renderer/settings`     | `chrome.cjs`  | Created on open, destroyed on close (`toggleSettings`/`closeSettings`)                                   |
-| `embedded`    | `renderer/embedded`     | `chrome.cjs`  | Exists while `appearance.hideMenuBar` is on; window buttons over SoundCloud's header                     |
-| `player`      | `renderer/player`       | `chrome.cjs`  | Exists while `appearance.playerButtons` is on; buttons at the right end of SoundCloud's play bar         |
-| `contextMenu` | `renderer/context-menu` | `chrome.cjs`  | Created once (`attachContextMenu`), hidden between uses                                                  |
-| `status`      | `renderer/status`       | `chrome.cjs`  | Exists while `pageStatus` is set: SoundCloud's page cannot be shown (`showPageStatus`/`clearPageStatus`) |
+| `Shell` field | Renderer entry          | Preload       | Lifetime                                                                                                                    |
+| ------------- | ----------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `header`      | `renderer/header`       | `chrome.cjs`  | Always. Hidden (`setVisible(false)`) while SoundCloud owns the top                                                          |
+| `content`     | soundcloud.com          | `content.cjs` | Always. Loads `https://soundcloud.com/discover` once Widevine is ready (`loadSoundCloud`)                                   |
+| `settings`    | `renderer/settings`     | `chrome.cjs`  | Created on open, destroyed on close (`toggleSettings`/`closeSettings`)                                                      |
+| `embedded`    | `renderer/embedded`     | `chrome.cjs`  | Exists while `appearance.hideMenuBar` is on; window buttons over SoundCloud's header                                        |
+| `player`      | `renderer/player`       | `chrome.cjs`  | Exists while `appearance.playerButtons` is on; buttons at the right end of SoundCloud's play bar                            |
+| `contextMenu` | `renderer/context-menu` | `chrome.cjs`  | Created once (`attachContextMenu`), hidden between uses                                                                     |
+| `status`      | `renderer/status`       | `chrome.cjs`  | Exists while `pageStatus` is set: SoundCloud's page cannot be shown (`showPageStatus`/`clearPageStatus`)                    |
+| `lyrics`      | `renderer/lyrics`       | `chrome.cjs`  | Exists while the lyrics pane is open (`toggleLyrics`/`closeLyrics`); docked right, between SoundCloud's header and play bar |
 
 Rules that hold this together:
 
@@ -173,32 +176,36 @@ type-only imports are fine.
 `window.bsc` (type `ChromeApi`, implemented in `src/preload/chrome.ts`) exists only in our own
 views:
 
-| Method                                                | Kind        | Main accepts it from (sender check)                                      |
-| ----------------------------------------------------- | ----------- | ------------------------------------------------------------------------ |
-| `platform`                                            | value       | —                                                                        |
-| `minimize`, `maximizeToggle`, `close`                 | send        | `fromChrome` = header, embedded                                          |
-| `back`, `forward`, `reload`                           | send        | `fromChrome`                                                             |
-| `toggleSettings`, `toggleMenuBar`                     | send        | `fromChrome`                                                             |
-| `closeSettings`                                       | send        | the settings view only                                                   |
-| `getSettings`, `setSetting`, `listThemes`             | invoke      | `fromSettingsUi` = header, embedded, settings                            |
-| `copyTheme`, `openThemesFolder`, `openThemeFile`      | invoke/send | `fromSettingsUi`; none takes a path                                      |
-| `getBackgroundPicture`, `chooseBackgroundPicture`     | invoke      | `fromSettingsUi`; main shows the dialog, so no path ever crosses IPC     |
-| `onThemesChanged`                                     | subscribe   | pushed to the settings view when the themes folder changes               |
-| `contextMenuAction`, `goToUrl`, `closeContextMenu`    | send/invoke | the context-menu view only                                               |
-| `getNowPlaying`                                       | invoke      | `fromOurViews` = header, settings, embedded, player, contextMenu, status |
-| `onNavState`                                          | subscribe   | pushed to header                                                         |
-| `onWindowState`                                       | subscribe   | pushed to header, embedded                                               |
-| `onSettingsChanged`                                   | subscribe   | pushed to header, settings (`broadcastSettings`)                         |
-| `onPageTheme`                                         | subscribe   | pushed to embedded, player (and on their load)                           |
-| `onContextMenu`                                       | subscribe   | pushed to the context-menu view                                          |
-| `onNowPlaying`                                        | subscribe   | pushed to all six of our views (`broadcastNowPlaying`)                   |
-| `pageStatusAction`                                    | send        | the status view only; re-checked against `shell.pageStatus`              |
-| `onPageStatus`                                        | subscribe   | pushed to the status view (on its load and on every change)              |
-| `listPlugins`, `setPluginEnabled`, `setPluginSetting` | invoke      | `fromSettingsUi`; the two setters answer `{ plugins, error }`            |
-| `pluginAction`, `openPluginsFolder`                   | send        | `fromSettingsUi`                                                         |
-| `onPluginsChanged`                                    | subscribe   | pushed to the settings view while it is open (`broadcastPlugins`)        |
-| `getPresenceStatus`, `retryPresence`                  | invoke/send | `fromSettingsUi`                                                         |
-| `onPresenceStatus`                                    | subscribe   | pushed to the settings view while it is open (`broadcastPresenceStatus`) |
+| Method                                                   | Kind        | Main accepts it from (sender check)                                              |
+| -------------------------------------------------------- | ----------- | -------------------------------------------------------------------------------- |
+| `platform`                                               | value       | —                                                                                |
+| `minimize`, `maximizeToggle`, `close`                    | send        | `fromChrome` = header, embedded                                                  |
+| `back`, `forward`, `reload`                              | send        | `fromChrome`                                                                     |
+| `toggleSettings`, `toggleMenuBar`                        | send        | `fromChrome`                                                                     |
+| `closeSettings`                                          | send        | the settings view only                                                           |
+| `getSettings`, `setSetting`, `listThemes`                | invoke      | `fromSettingsUi` = header, embedded, settings                                    |
+| `copyTheme`, `openThemesFolder`, `openThemeFile`         | invoke/send | `fromSettingsUi`; none takes a path                                              |
+| `getBackgroundPicture`, `chooseBackgroundPicture`        | invoke      | `fromSettingsUi`; main shows the dialog, so no path ever crosses IPC             |
+| `onThemesChanged`                                        | subscribe   | pushed to the settings view when the themes folder changes                       |
+| `contextMenuAction`, `goToUrl`, `closeContextMenu`       | send/invoke | the context-menu view only                                                       |
+| `getNowPlaying`                                          | invoke      | `fromOurViews` = header, settings, embedded, player, contextMenu, status, lyrics |
+| `onNavState`                                             | subscribe   | pushed to header                                                                 |
+| `onWindowState`                                          | subscribe   | pushed to header, embedded                                                       |
+| `onSettingsChanged`                                      | subscribe   | pushed to header, settings (`broadcastSettings`)                                 |
+| `onPageTheme`                                            | subscribe   | pushed to embedded, player (and on their load)                                   |
+| `onContextMenu`                                          | subscribe   | pushed to the context-menu view                                                  |
+| `onNowPlaying`                                           | subscribe   | pushed to all seven of our views (`broadcastNowPlaying`)                         |
+| `toggleLyrics`                                           | send        | `fromChrome`, or the player-bar view                                             |
+| `closeLyrics`, `getLyrics`, `retryLyrics`, `nudgeLyrics` | send/invoke | the lyrics view only; a nudge must be exactly ±0.5                               |
+| `onLyrics`                                               | subscribe   | pushed to the lyrics view (`onLyricsChange`)                                     |
+| `onLyricsShown`                                          | subscribe   | pushed to the player view: whether the pane is open                              |
+| `pageStatusAction`                                       | send        | the status view only; re-checked against `shell.pageStatus`                      |
+| `onPageStatus`                                           | subscribe   | pushed to the status view (on its load and on every change)                      |
+| `listPlugins`, `setPluginEnabled`, `setPluginSetting`    | invoke      | `fromSettingsUi`; the two setters answer `{ plugins, error }`                    |
+| `pluginAction`, `openPluginsFolder`                      | send        | `fromSettingsUi`                                                                 |
+| `onPluginsChanged`                                       | subscribe   | pushed to the settings view while it is open (`broadcastPlugins`)                |
+| `getPresenceStatus`, `retryPresence`                     | invoke/send | `fromSettingsUi`                                                                 |
+| `onPresenceStatus`                                       | subscribe   | pushed to the settings view while it is open (`broadcastPresenceStatus`)         |
 
 Every `on…` returns an unsubscribe function. A new view that needs one of the gated methods must
 be added to that sender check, and to the matching broadcast list if it needs pushes.
@@ -368,8 +375,8 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
 - It updates about once a second while a track plays (the clock ticks). Seeks show up as jumps in
   `elapsed`; there is no separate seek event.
 - It resets to `null` on a full page load (`did-navigate`), a renderer crash, and window close.
-- Main-side features (tray, Discord, Last.fm) subscribe with `onNowPlayingChange` and read with
-  `getNowPlaying`. They never talk to the page themselves.
+- Main-side features (tray, Discord, Last.fm, lyrics) subscribe with `onNowPlayingChange` and read
+  with `getNowPlaying`. They never talk to the page themselves.
 - **Discord presence** (`main/presence.ts`) is the first of them. It uses BetterSoundCloud's own
   Discord application, `1054636117284106270` — the one v0.7.x used, so its name and art assets
   carry over (the corner badge is the asset `bw-icon-bordered-white`). It sends only real changes
@@ -457,19 +464,19 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
 
 Dev builds log to the terminal running `npm run dev`. Tags:
 
-| Tag                                                                                  | Meaning                                                                                                                                                         |
-| ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `[bsc]`                                                                              | Chromium version, user agent and language list at startup; a warning if `navigator.languages` and the header disagree                                           |
-| `[net]`                                                                              | A failed request: status, method, layer (`stream`/`licence`/`api`/`auth`/`other`), URL, and who answered (`from SoundCloud: server am/2`, `from CloudFront`, …) |
-| `[datadome]`                                                                         | `blocked …` — SoundCloud's bot check refused a request; `challenge shown` — a captcha page loaded                                                               |
-| `[page]`                                                                             | A console error from SoundCloud's page                                                                                                                          |
-| `[now-playing]`                                                                      | Track, play/pause and like changes                                                                                                                              |
-| `[discord]`                                                                          | Connected, what the card shows, Discord not running (once per outage), and any update Discord refused (all builds)                                              |
-| `[plugin:<id>]`, `[plugins]`                                                         | A plugin's own log (warnings in every build), and the service's                                                                                                 |
-| `[widevine]`                                                                         | How long the Widevine wait took, or why it failed                                                                                                               |
-| `[page-status]`                                                                      | What the status view is saying (`load failed -106 ERR_INTERNET_DISCONNECTED`, `cleared`, …)                                                                     |
-| `[content]`, `[window]`                                                              | A failed SoundCloud load; the window shown without its header                                                                                                   |
-| `[theme]`, `[background]`, `[player]`, `[context-menu]`, `[blocker]`, `[ad-request]` | Their features                                                                                                                                                  |
+| Tag                                                                                              | Meaning                                                                                                                                                         |
+| ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `[bsc]`                                                                                          | Chromium version, user agent and language list at startup; a warning if `navigator.languages` and the header disagree                                           |
+| `[net]`                                                                                          | A failed request: status, method, layer (`stream`/`licence`/`api`/`auth`/`other`), URL, and who answered (`from SoundCloud: server am/2`, `from CloudFront`, …) |
+| `[datadome]`                                                                                     | `blocked …` — SoundCloud's bot check refused a request; `challenge shown` — a captcha page loaded                                                               |
+| `[page]`                                                                                         | A console error from SoundCloud's page                                                                                                                          |
+| `[now-playing]`                                                                                  | Track, play/pause and like changes                                                                                                                              |
+| `[discord]`                                                                                      | Connected, what the card shows, Discord not running (once per outage), and any update Discord refused (all builds)                                              |
+| `[plugin:<id>]`, `[plugins]`                                                                     | A plugin's own log (warnings in every build), and the service's                                                                                                 |
+| `[widevine]`                                                                                     | How long the Widevine wait took, or why it failed                                                                                                               |
+| `[page-status]`                                                                                  | What the status view is saying (`load failed -106 ERR_INTERNET_DISCONNECTED`, `cleared`, …)                                                                     |
+| `[content]`, `[window]`                                                                          | A failed SoundCloud load; the window shown without its header                                                                                                   |
+| `[theme]`, `[background]`, `[lyrics]`, `[player]`, `[context-menu]`, `[blocker]`, `[ad-request]` | Their features                                                                                                                                                  |
 
 F12 or Ctrl/Cmd+Shift+I opens DevTools for the focused view (header, content, settings and
 context menu have the shortcut; embedded and player do not).
@@ -627,7 +634,7 @@ Rules that hold this together:
   row). Changing it, or saving any file in the user's themes folder, re-applies everywhere at once:
   `watchUserThemes` (a 150ms trailing debounce) calls `applyLiveSettings`, which re-reads from disk.
 - **Our own views get a theme through `themeChromeView(view, kind)`** — the header, settings, the
-  right-click menu and the status view call it when they are created. A new view of ours that follows
+  right-click menu, the status view and the lyrics pane call it when they are created. A new view of ours that follows
   the app's colours calls it too. The overlays over SoundCloud's bars do not: they follow
   SoundCloud's light/dark setting, or the theme's `@mode` (§6, "Two colour sources").
 - **Bundled themes load nothing from the network but SoundCloud's own CDN**; the project's old
@@ -687,3 +694,43 @@ Rules that hold this together:
   v0.7.x's look, measured side by side.
 - Never edit a theme into SoundCloud's DOM, and never target Svelte's `svelte-…` classes in our
   views — `data-bsc-*` attributes and the `--bsc-*` tokens are the public API.
+
+---
+
+## 18. Lyrics
+
+```
+now-playing --> main/lyrics.ts (noticeNowPlaying: a different track only)
+                  only while the pane is open: settle 400ms, then LRCLIB /get, then /search
+                  --CH.lyricsChanged (LyricsState)--> renderer/lyrics (the pane)
+now-playing --CH.nowPlayingChanged (once a second)--> the pane keeps time itself
+```
+
+Rules that hold this together:
+
+- **LRCLIB is asked only while the pane is open.** Opening it is the listener's choice to send the
+  track's title, artist and length to lrclib.net; the pane's credit line says so on hover. A track
+  is looked up once it has been current for 400ms (skipping through a playlist costs nothing),
+  answers are cached for the session by track (200 tracks), and one track never costs more than
+  four requests.
+- **This is the one request that names the app**: `User-Agent: BetterSoundCloud/2.0 (…)`, as
+  LRCLIB asks of every client. SoundCloud only ever sees the browser's own user agent (§10). Node's
+  `fetch` in main, never a renderer, never SoundCloud's session.
+- **The judgement is pure and tested** (`src/shared/lyrics.ts`): `lyricsQueries` turns an uploader's
+  "Artist - Title (Official Video) [Free DL]" into the likely names, real artist first; `bestMatch`
+  takes timed lyrics only when LRCLIB's recording is within 5s of SoundCloud's length (words alone
+  within 30s), since another edit's timing puts every line in the wrong place; `parseLrc` keeps
+  centiseconds; every query goes through `URLSearchParams`; every answer through `readLrclibRecord`.
+  LRCLIB answers an unknown track with 404 or 503 (measured): both mean "search next".
+- **The pane keeps time without polling.** SoundCloud's clock is whole seconds; `playbackPosition`
+  runs on from the last reading (capped 1.25s past it, so a stalled clock makes the lyrics wait),
+  and the pane sets one `setTimeout` for when the next line starts, re-planned on every reading,
+  track and nudge. `setInterval` is banned everywhere by ESLint, our views included.
+- **Lines are text.** The pane never renders LRCLIB's words as markup (v0.7.x used `innerHTML +=`).
+- **The timing nudge** (±0.5s per press, ±30s at most) is kept in main per track for the session,
+  and IPC accepts exactly ±0.5.
+- **Opening it**: the player-bar lyrics button (pressed while open; `appearance.playerButtons` is on
+  by default for new profiles), "Show lyrics" in the right-click menu, Escape or ✕ to close. The
+  full-screen showcase button next to it is not built and is drawn disabled, saying so.
+- Clicking a line to seek would need playback control, which is an open decision (TODO, Milestone
+  7), so lines are not clickable.

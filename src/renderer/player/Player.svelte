@@ -13,12 +13,9 @@
    * v0.7.x did the opposite — `playControls__elements.appendChild(...)` of four hand-built
    * nodes into their React-managed player, which is why it broke on their releases.
    *
-   * NEITHER BUTTON DOES ANYTHING YET. They are styled as live — same white as SoundCloud's
-   * own player icons, same hover wash, pointer cursor — because they have to be judged
-   * against that row, and a dimmed placeholder cannot be. The caveat stays discoverable in
-   * the tooltip, and `appearance.playerButtons` is off by default, so nobody meets a dead
-   * control without opting in. Wiring is: lyrics -> the lyrics page, showcase -> the
-   * full-screen now-playing view.
+   * The lyrics button opens and closes the lyrics pane, and is pressed while it is open. The
+   * showcase button is not built yet, so it is drawn disabled and says so — the product's rule
+   * for a control whose feature does not exist ("Say what does not work").
    *
    * The glyph colour follows SOUNDCLOUD's light/dark setting, not ours. This overlay is a
    * separate document composited over their bar, so it cannot inherit their colours the way
@@ -27,19 +24,30 @@
    */
 
   let page = $state<PageTheme>('dark')
+  let lyricsShown = $state(false)
 
-  onMount(() =>
-    window.bsc.onPageTheme((t) => {
+  onMount(() => {
+    const stopTheme = window.bsc.onPageTheme((t) => {
       page = t
     })
-  )
+    const stopLyrics = window.bsc.onLyricsShown((shown) => {
+      lyricsShown = shown
+    })
+    return () => {
+      stopTheme()
+      stopLyrics()
+    }
+  })
 </script>
 
 <div class="player" data-bsc-player-controls class:light={page === 'light'}>
   <button
     class="btn"
-    title="Lyrics — not implemented yet"
-    aria-label="Lyrics (not implemented yet)"
+    class:on={lyricsShown}
+    title={lyricsShown ? 'Hide lyrics' : 'Show lyrics'}
+    aria-label="Lyrics"
+    aria-pressed={lyricsShown}
+    onclick={() => window.bsc.toggleLyrics()}
   >
     <!-- Microphone, matching the glyph v0.7.x used for the lyrics page. -->
     <svg viewBox="0 -960 960 960" aria-hidden="true">
@@ -51,6 +59,7 @@
 
   <button
     class="btn"
+    disabled
     title="Full-screen showcase — not implemented yet"
     aria-label="Full-screen showcase (not implemented yet)"
   >
@@ -127,6 +136,22 @@
   .btn:focus-visible {
     outline: 2px solid var(--bsc-accent);
     outline-offset: -2px;
+  }
+
+  /* Open: the accent marks the state, as the system's rule says it may. */
+  .btn.on {
+    color: var(--bsc-accent);
+  }
+
+  /* Not built yet: dimmed, no hover, an ordinary cursor. The tooltip says why. */
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  .btn:disabled:hover,
+  .player.light .btn:disabled:hover {
+    background: transparent;
   }
 
   .btn svg {
