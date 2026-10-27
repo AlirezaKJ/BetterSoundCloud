@@ -1,13 +1,13 @@
-/**
- * @name Minimal navigation
- * @author BetterSoundCloud
- * @version 1.0.0
- * @description Replaces SoundCloud's header labels with icons and hides the upsells, so the
- *              bar carries the same links in about half the width.
- * @license MIT
- */
-
 /*
+ * Minimal navigation: SoundCloud's header labels become icons and the upsells beside them are
+ * hidden, so the header carries the same links in about half the width.
+ *
+ * Not a theme. It is the `appearance.minimalNavigation` switch at the top of Settings → Themes,
+ * and goes into SoundCloud's page right after whichever theme is selected (`buildContentCss`), so
+ * it works with all of them. It used to be a theme of its own, which meant choosing between it
+ * and every other look; settings that still name it as the theme are moved onto the switch
+ * (`upgradeValues`, settings version 2).
+ *
  * Ported from v0.7.x's SCI.js, but by a different mechanism.
  *
  * That version did `navItem.innerHTML = '<svg .../>'` — it rewrote SoundCloud's DOM. v2 must
@@ -85,8 +85,6 @@
   -webkit-mask-image: var(--bsc-icon-library);
   mask-image: var(--bsc-icon-library);
 }
-
-
 
 /* Everything on the right that is not an account control. The two upsells are advertising for
    a paid tier; Artist Studio and Upload are pages you visit deliberately rather than things

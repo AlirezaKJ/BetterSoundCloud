@@ -1,5 +1,12 @@
 import Store from 'electron-store'
-import { coerce, coerceAll, defaults, isSettingKey } from '@shared/settings-schema'
+import {
+  SETTINGS_VERSION,
+  coerce,
+  coerceAll,
+  defaults,
+  isSettingKey,
+  upgradeValues
+} from '@shared/settings-schema'
 import type { SettingKey, Settings } from '@shared/settings-schema'
 
 /**
@@ -21,7 +28,7 @@ type Persisted = {
   values: Partial<Record<string, unknown>>
 }
 
-const SCHEMA_VERSION = 1
+const SCHEMA_VERSION = SETTINGS_VERSION
 
 /**
  * Constructed on first use, never at import.
@@ -86,7 +93,7 @@ function migrate(raw: Persisted): Persisted {
   // different naming scheme). Until then, start clean rather than guess.
   const migrated: Persisted = {
     schemaVersion: SCHEMA_VERSION,
-    values: version === 0 ? {} : (raw.values ?? {})
+    values: version === 0 ? {} : upgradeValues(version, raw.values ?? {})
   }
   db().store = migrated
   return migrated

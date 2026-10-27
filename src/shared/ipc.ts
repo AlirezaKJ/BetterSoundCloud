@@ -27,6 +27,11 @@ export const CH = {
   // settings renderer <-> main
   settingsGetAll: 'settings:get-all',
   themesList: 'themes:list',
+  // The Themes section: the list changes when a file in the themes folder does.
+  themesChanged: 'themes:changed',
+  themeCopy: 'themes:copy',
+  themesOpenFolder: 'themes:open-folder',
+  themeOpenFile: 'themes:open-file',
 
   // content preload -> main, then main -> our overlays. SoundCloud's own light/dark choice.
   pageTheme: 'page:theme',
@@ -98,8 +103,18 @@ export type ChromeApi = {
   setSetting(key: SettingKey, value: unknown): Promise<Settings>
   onSettingsChanged(cb: (settings: Settings) => void): () => void
 
-  /** Themes found on disk, for a control whose choices are not known at compile time. */
+  /** Themes found on disk, built-in first, read fresh each time. */
   listThemes(): Promise<ThemeSummary[]>
+  /**
+   * The themes again, whenever a file in the user's themes folder changes — a save, a new theme,
+   * a deleted one. The selected theme re-applies itself at the same moment.
+   */
+  onThemesChanged(cb: (themes: ThemeSummary[]) => void): () => void
+  /** Copy a built-in theme into the themes folder to edit it. Answers why, if it could not. */
+  copyTheme(id: string): Promise<{ error: string }>
+  openThemesFolder(): void
+  /** Open one of the user's own theme files in their editor. Built-in themes cannot be opened. */
+  openThemeFile(id: string): void
 
   /**
    * SoundCloud's own light/dark setting, so an overlay drawn on top of their page can match

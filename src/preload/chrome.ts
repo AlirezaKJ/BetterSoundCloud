@@ -44,6 +44,10 @@ const api: ChromeApi = {
 
   /** Themes available on disk right now, for the theme picker. Read-only. */
   listThemes: () => ipcRenderer.invoke(CH.themesList) as Promise<ThemeSummary[]>,
+  onThemesChanged: (cb: (themes: ThemeSummary[]) => void) => subscribe(CH.themesChanged, cb),
+  copyTheme: (id: string) => ipcRenderer.invoke(CH.themeCopy, id) as Promise<{ error: string }>,
+  openThemesFolder: () => ipcRenderer.send(CH.themesOpenFolder),
+  openThemeFile: (id: string) => ipcRenderer.send(CH.themeOpenFile, id),
 
   onPageTheme: (cb: (theme: PageTheme) => void) => subscribe(CH.pageThemeChanged, cb),
   onSettingsChanged: (cb: (settings: Settings) => void) => subscribe(CH.settingsChanged, cb),

@@ -406,7 +406,7 @@ Nothing publishes today. The updater, the signing decisions and the Linux verifi
       `source: parity: v0.7.x` · `evidence: src/main/settings-store.ts:57-62 (no caller); git show fb3bfdd:plugins/updateCheck.js:127 (changelog claim only); #50, #55, #74` · `effort: S`
 
 - [ ] **Fix the stale references in shipped files**
-      Four dangling pointers, each in a file a contributor or theme author will read: `ci.yml:44` names `scripts/sign-vmp.js` (the file is `vmp-sign.js`); `tokens.css:6` points theme authors at `docs/CUSTOM_THEMES.md`, which does not exist; `README.md:104` claims `resources/` is seeded into userData on first launch, and no seeding code exists; `README.md:41` calls `npm run check` "tsc (both projects)" when it runs three. Also delete the 13 lines of commented-out placeholder in `FUNDING.yml`, and correct the roadmap note that still names `com.akj.bsc` when the shipped appId is `com.alirezakj.bettersoundcloud`.
+      Four dangling pointers, each in a file a contributor or theme author will read: `ci.yml:44` names `scripts/sign-vmp.js` (the file is `vmp-sign.js`); ~~`tokens.css:6` points theme authors at `docs/CUSTOM_THEMES.md`, which does not exist; `README.md:104` claims `resources/` is seeded into userData on first launch~~ (both fixed 2026-10-27); `README.md:41` calls `npm run check` "tsc (both projects)" when it runs three. Also delete the 13 lines of commented-out placeholder in `FUNDING.yml`, and correct the roadmap note that still names `com.akj.bsc` when the shipped appId is `com.alirezakj.bettersoundcloud`.
       `source: infrastructure` · `evidence: .github/workflows/ci.yml:44; src/renderer/tokens.css:6; README.md:41, :104; .github/FUNDING.yml; electron-builder.yml:1` · `effort: S`
 
 ---
@@ -530,9 +530,13 @@ Everything in Phases 3, 5 and 6 depends on this. It is also the first code to go
 
 ## Milestone 10 — Phase 4: themes and plugins
 
-- [ ] **Build ThemeService: folder watcher, metadata, hot-reload, `@target` routing**
-      User themes in `<userData>/themes/*.css`, scanned on boot, hot-reloaded via `fs.watch`, with a `/* @target all|content|header|settings */` splitter routing one theme file's CSS to the three views — that idea is genuinely good and should be lifted. Feed it into chrome theming via the colour extractor. **The headline bug not to copy:** they interpolate theme CSS into a JS template literal with no escaping, so a theme containing a backtick breaks and one containing `${...}` executes — their _plugin_ path escapes correctly, their theme path does not. In v2 theme CSS reaches the page through `webContents.insertCSS()` and **never** through a string-built script. **Second bug:** their `fs.watch` debounce is `Promise.resolve().then(...)`, a microtask that coalesces nothing across ticks, so one editor save fires the reload two or three times — use a real trailing timer.
-      `source: parity: soundcloud-rpc` · `evidence: ref src/services/themeService.ts:1-263, :129; ref src/main.ts:1140-1159, :1254/:1289/:1311; roadmap Phase 4; decision #12` · `effort: L`
+- [x] **Build ThemeService: folder watcher, metadata, hot-reload, `@target` routing** — DONE 2026-10-27
+
+  `src/main/themes.ts`: built-in themes read in place from `resources/themes/`, the user's from `<userData>/themes/` (a file with a built-in's id replaces it), `fs.watch` on the user folder with a real 150ms trailing timer, ids restricted to `[\w.-]+`. `/* @target content|chrome|header|settings|menu|status|all */` sections are split once by `splitThemeTargets` (`src/shared/themes.ts`, tested). Page CSS goes through `insertCSS` only — never a string-built script — and now sits **before** the overlay reservations in `buildContentCss`, so a theme cannot slide SoundCloud's controls under our buttons. Chrome CSS reaches the header, settings, menu and status views through `src/main/chrome-theme.ts` (insert the new sheet, then remove the old). `--bsc-cover` carries the playing track's artwork. CLAUDE.md §17, `docs/CUSTOM_THEMES.md`.
+
+  **Original scope:**
+  User themes in `<userData>/themes/*.css`, scanned on boot, hot-reloaded via `fs.watch`, with a `/* @target all|content|header|settings */` splitter routing one theme file's CSS to the three views — that idea is genuinely good and should be lifted. Feed it into chrome theming via the colour extractor. **The headline bug not to copy:** they interpolate theme CSS into a JS template literal with no escaping, so a theme containing a backtick breaks and one containing `${...}` executes — their _plugin_ path escapes correctly, their theme path does not. In v2 theme CSS reaches the page through `webContents.insertCSS()` and **never** through a string-built script. **Second bug:** their `fs.watch` debounce is `Promise.resolve().then(...)`, a microtask that coalesces nothing across ticks, so one editor save fires the reload two or three times — use a real trailing timer.
+  `source: parity: soundcloud-rpc` · `evidence: ref src/services/themeService.ts:1-263, :129; ref src/main.ts:1140-1159, :1254/:1289/:1311; roadmap Phase 4; decision #12` · `effort: L`
 
 - [x] **Port the theme/plugin metadata header parser** — PLUGINS: REPLACED BY plugin.json 2026-10-27
 
@@ -542,21 +546,37 @@ Everything in Phases 3, 5 and 6 depends on this. It is also the first code to go
   45 lines reading a leading `/** @name … @author … @version … @description … @license … @homepage */` block out of a `.css` or `.js` file into a typed record with defaults. Both services depend on it, and it is what makes the plugin list show anything other than filenames. No known bugs. One addition for v2: make the **capability tier** a metadata field (`@tier 2`) so the settings UI can render the "opt-in, warned" badge the contract requires.
   `source: parity: soundcloud-rpc` · `evidence: ref src/utils/metadataParser.ts:1-47; Tech Stack §4 tier table` · `effort: S`
 
-- [ ] **Port the theme colour extractor to drive chrome theming**
-      Reads CSS custom properties out of the active theme into a six-field palette so a user theme colours our chrome and not just the SoundCloud page, plus `hexToRgba`, `extractRgb`, `getLuminance` (proper sRGB linearization) and `isLightColor`. Map the output onto the existing `tokens.css` variables rather than inventing a second palette. **Bug not to copy:** they set `colors.primary` and `colors.text` from the same `--primary-color`, so on any theme defining that variable, text and primary are identical — which is how you get invisible text. Fix the fallback chain.
-      `source: parity: soundcloud-rpc` · `evidence: ref src/utils/colorExtractor.ts:73, :105, :1-205; src/renderer/tokens.css` · `effort: S`
+- [x] **Port the theme colour extractor to drive chrome theming** — REPLACED BY `@target chrome` 2026-10-27
 
-- [ ] **Implement first-launch seeding plus a "reinstall bundled themes" button, and settle asar vs extraResources**
-      Copy `resources/themes` and `resources/plugins` into userData **on first launch only** — never on update, or a user's edits to a bundled theme are destroyed by every release; the mitigation is that pairing, with an explicit reinstall button for people who want the originals back. **The decision that must be made first:** `files: resources/**/*` places them _inside_ `app.asar`, which a one-time copy can read, but the "open themes folder" button and `fs.watch` both need `extraResources` and `process.resourcesPath`. Verified: the packaged asar contains 945 entries and zero under `resources/`, because both folders hold only `.gitkeep` — the glob has never been observed to match anything. Gotcha for Linux: seed and look up theme files with **exact case** (v0.7.x loaded `themes/glassmorphism.css` when the file on disk was `Glassmorphism.css` — invisible on Windows, ENOENT on ext4).
-      `source: proposal` · `evidence: electron-builder.yml:9-12; resources/themes/.gitkeep; roadmap Phase 4 and §6 risk table` · `effort: M`
+  Not ported. Guessing a palette out of a page theme's custom properties is what produced their invisible-text bug; in v2 a theme states our colours outright in a `/* @target chrome */ :root { --bsc-* }` block, which maps 1:1 onto `tokens.css`. Every shipped theme has one, and `themes.test.ts` holds it to tokens only and to the contrast floor (primary 7:1, secondary 4.5:1, accent 3:1 on `--bsc-bg-primary`). A user theme without one leaves our windows on the default palette.
 
-- [ ] **Recover the v0.7.x theme CSS from git into `resources/themes/`**
-      Four selectable user themes (`Glassmorphism.css`, `darkCloud.css`, `nocturnal.css`, `postMorphic.css`) recoverable with `git show fb3bfdd:themes/<file>`. Two files there are **not** user themes: `SCI.css` (styling for the injected header buttons, always applied) and `hover.css` (844 lines, completely orphaned — no reference to it exists anywhere at fb3bfdd). Normalise every filename to lowercase during recovery. Downgraded from P0 to P3: this is six files into a folder no code reads, against a SoundCloud DOM that has moved, with no ThemeService to load them — cheap is not the same as urgent.
-      `source: parity: v0.7.x` · `evidence: git show fb3bfdd:themes/*.css; resources/themes/.gitkeep; #47, #94` · `effort: S`
+  **Original scope:**
+  Reads CSS custom properties out of the active theme into a six-field palette so a user theme colours our chrome and not just the SoundCloud page, plus `hexToRgba`, `extractRgb`, `getLuminance` (proper sRGB linearization) and `isLightColor`. Map the output onto the existing `tokens.css` variables rather than inventing a second palette. **Bug not to copy:** they set `colors.primary` and `colors.text` from the same `--primary-color`, so on any theme defining that variable, text and primary are identical — which is how you get invisible text. Fix the fallback chain.
+  `source: parity: soundcloud-rpc` · `evidence: ref src/utils/colorExtractor.ts:73, :105, :1-205; src/renderer/tokens.css` · `effort: S`
 
-- [ ] **Rewrite the bundled themes against the v2 theming contract**
-      The five v0.7.x themes (vanilla, glassmorphism, darkcloud, nocturnal, postmorphic) plus `hover` — #47 asks for Hover back specifically — and `gruvbox` from soundcloud-rpc. They must be rewritten against `tokens.css` custom properties and `data-bsc-*` attributes, because the old ones targeted SoundCloud's own class names and BSC's injected SCI markup, neither of which exists now. Phase 4's exit criterion is that they look identical to v0.7.1, which is the real work here, not the file copy. #94 ("more themes") then becomes a documentation task — users author their own.
-      `source: parity: v0.7.x` · `evidence: roadmap Phase 4 exit criterion; src/renderer/tokens.css:14-30; #47, #94` · `effort: M`
+- [x] **Implement first-launch seeding plus a "reinstall bundled themes" button, and settle asar vs extraResources** — NOT NEEDED 2026-10-27
+
+  No seeding. Built-in themes are read where they ship (inside `app.asar`; Electron's `fs` reads it, and nothing ever writes or watches there). **Make an editable copy** in Settings copies one into the user folder, where it replaces the built-in; deleting the copy brings the original back, which is the "reinstall" button. Updates can never overwrite a user's edits because they live in a different folder. Exact-case file names are enforced by `themes.test.ts`. Same mechanism as bundled plugins. **Not yet verified in a packaged build.**
+
+  **Original scope:**
+  Copy `resources/themes` and `resources/plugins` into userData **on first launch only** — never on update, or a user's edits to a bundled theme are destroyed by every release; the mitigation is that pairing, with an explicit reinstall button for people who want the originals back. **The decision that must be made first:** `files: resources/**/*` places them _inside_ `app.asar`, which a one-time copy can read, but the "open themes folder" button and `fs.watch` both need `extraResources` and `process.resourcesPath`. Verified: the packaged asar contains 945 entries and zero under `resources/`, because both folders hold only `.gitkeep` — the glob has never been observed to match anything. Gotcha for Linux: seed and look up theme files with **exact case** (v0.7.x loaded `themes/glassmorphism.css` when the file on disk was `Glassmorphism.css` — invisible on Windows, ENOENT on ext4).
+  `source: proposal` · `evidence: electron-builder.yml:9-12; resources/themes/.gitkeep; roadmap Phase 4 and §6 risk table` · `effort: M`
+
+- [x] **Recover the v0.7.x theme CSS from git into `resources/themes/`** — DONE 2026-10-27
+
+  `resources/themes/{glassmorphism,darkcloud,nocturnal,postmorphic,hover}.css`, lowercase. `SCI.css` is not migrated: it only styled v0.7.x's injected buttons.
+
+  **Original scope:**
+  Four selectable user themes (`Glassmorphism.css`, `darkCloud.css`, `nocturnal.css`, `postMorphic.css`) recoverable with `git show fb3bfdd:themes/<file>`. Two files there are **not** user themes: `SCI.css` (styling for the injected header buttons, always applied) and `hover.css` (844 lines, completely orphaned — no reference to it exists anywhere at fb3bfdd). Normalise every filename to lowercase during recovery. Downgraded from P0 to P3: this is six files into a folder no code reads, against a SoundCloud DOM that has moved, with no ThemeService to load them — cheap is not the same as urgent.
+  `source: parity: v0.7.x` · `evidence: git show fb3bfdd:themes/*.css; resources/themes/.gitkeep; #47, #94` · `effort: S`
+
+- [x] **Rewrite the bundled themes against the v2 theming contract** — DONE 2026-10-27, EXCEPT GRUVBOX
+
+  Five ports, each with a header (`@preview` swatches), a `chrome` token block, and comments where v2 differs. Dropped: every rule for v0.7.x's injected markup; images on dead hosts (abload.de, puu.sh); Nocturnal's and Hover's 60px header (v2's window buttons are measured against SoundCloud's 46px). The project's hot-linked icons from the `before0.6` branch are embedded as `data:` URIs; Glassmorphism's wallpaper (4.2MB, unknown licence) became `var(--bsc-cover)`. Checked live in the signed-in dev app, which turned up and fixed: icon inversion (v0.7.x predates SoundCloud's dark mode) now applies only under `body.theme-light`, which had made Hover's and Nocturnal's play button all but vanish; liked/followed was invisible in Dark Cloud, Hover, Nocturnal and PostMorphic because they recolour every `.sc-button`, so each now colours `.sc-button-selected`; the old PNG logo doubled behind SoundCloud's SVG one. Gruvbox is not added. Glassmorphism is credited "reoireopit w/ novembercry", as v0.7.x's theme list did (decided by the maintainer 2026-10-27; the commit was signed wasd). Minimal navigation stopped being a theme the same day: it is the `appearance.minimalNavigation` switch above the theme list, layered on any theme. Many selectors are older than today's SoundCloud and are harmless no-ops; side-by-side parity with v0.7.1 is not checked.
+
+  **Original scope:**
+  The five v0.7.x themes (vanilla, glassmorphism, darkcloud, nocturnal, postmorphic) plus `hover` — #47 asks for Hover back specifically — and `gruvbox` from soundcloud-rpc. They must be rewritten against `tokens.css` custom properties and `data-bsc-*` attributes, because the old ones targeted SoundCloud's own class names and BSC's injected SCI markup, neither of which exists now. Phase 4's exit criterion is that they look identical to v0.7.1, which is the real work here, not the file copy. #94 ("more themes") then becomes a documentation task — users author their own.
+  `source: parity: v0.7.x` · `evidence: roadmap Phase 4 exit criterion; src/renderer/tokens.css:14-30; #47, #94` · `effort: M`
 
 - [x] **Build PluginService with a sandboxed VM and a stated injection guarantee** — DONE 2026-10-27 FOR MAIN-SIDE PLUGINS; IN-PAGE CODE DEFERRED
 
@@ -575,7 +595,7 @@ Everything in Phases 3, 5 and 6 depends on this. It is also the first code to go
   `source: proposal` · `evidence: Tech Stack §4 tier table ("opt-in, warned in UI"); roadmap Phase 4` · `effort: S`
 
 - [ ] **Port the bundled plugins, excluding shuffle-fix**
-      `ctxMenu`, `custombg`, `sci-integrated-header` and `example-plugin`, each rewritten against §4. Two specific rewrites: **custombg** becomes a theme rather than injected DOM — it prepended a div into SoundCloud's `#app`, mutated `.l-content` inline styles, and ran a 100ms timer reading an undeclared global that only existed because infoticker happened to define it in the same context; the v2 form is one `insertCSS` establishing a `::before` on an existing container plus a `--bsc-cover` custom property updated once per track, with no injected nodes and no interval. **sci-integrated-header** is the opt-in reproduction of the old look and is Tier 2 by construction. **shuffle-fix is not bundled** — it reaches into SoundCloud's webpack runtime via `window.webpackJsonp.push`, walks the module cache, rewrites `proto.setLimit`, and drives 50-item paginated bulk loads against the user's authenticated session.
+      `ctxMenu`, `custombg`, `sci-integrated-header` and `example-plugin`, each rewritten against §4. Two specific rewrites: **custombg** becomes a theme rather than injected DOM (done 2026-10-27: `--bsc-cover` exists and Glassmorphism uses it) — it prepended a div into SoundCloud's `#app`, mutated `.l-content` inline styles, and ran a 100ms timer reading an undeclared global that only existed because infoticker happened to define it in the same context; the v2 form is one `insertCSS` establishing a `::before` on an existing container plus a `--bsc-cover` custom property updated once per track, with no injected nodes and no interval. **sci-integrated-header** is the opt-in reproduction of the old look and is Tier 2 by construction. **shuffle-fix is not bundled** — it reaches into SoundCloud's webpack runtime via `window.webpackJsonp.push`, walks the module cache, rewrites `proto.setLimit`, and drives 50-item paginated bulk loads against the user's authenticated session.
       `source: parity: v0.7.x` · `evidence: git show fb3bfdd:plugins/custombg.js, :plugins/SCI.js; Tech Stack §4 escape-hatch paragraph` · `effort: M`
 
 - [ ] **Decide the fate of SCI, and rehome the four buttons it owned**
@@ -584,6 +604,10 @@ Everything in Phases 3, 5 and 6 depends on this. It is also the first code to go
 
 - [x] **Build the themes and plugins settings UI** — PLUGINS HALF DONE 2026-10-27; THEMES LATER
 
+  Settings → Themes (`src/renderer/settings/Themes.svelte`): a radio group with "None" first, each theme with its origin, version, author, description and swatches; the chosen one offers **Make an editable copy** or **Open file**; **Open themes folder** in the footer. Its own data channel (`listThemes`, `onThemesChanged`), not a schema row, so the runtime-populated enum kind is no longer needed for it.
+
+  **Original scope:**
+
   Settings → Plugins (`src/renderer/settings/Plugins.svelte`): every plugin with its source, permissions, live status line and buttons (written by the plugin), its own settings, and "Open plugins folder". It is the "second data channel" the original scope foresaw — `listPlugins` and `onPluginsChanged`, not the schema. The theme half is deferred by the maintainer.
 
   **Original scope:**
@@ -591,6 +615,10 @@ Everything in Phases 3, 5 and 6 depends on this. It is also the first code to go
   `source: parity: soundcloud-rpc` · `evidence: roadmap Phase 4; src/shared/settings-schema.ts:79-85` · `effort: M`
 
 - [x] **Port the path-allowlisted open-folder IPC handler** — PLUGINS FOLDER DONE 2026-10-27
+
+  `openThemesFolder` takes no path; `openThemeFile` takes an id, resolves it inside the user folder only, and refuses built-ins and anything that is not a known theme.
+
+  **Original scope:**
 
   Safer than an allowlist: `openPluginsFolder` takes no path at all, so the renderer cannot name one. The themes folder button will follow the same shape.
 

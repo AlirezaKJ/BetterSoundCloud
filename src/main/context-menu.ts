@@ -9,6 +9,7 @@ import { isDev } from './env'
 import { resolveGoToUrl } from './go-to-url'
 import { enableDevToolsShortcut, rendererUrl, toggleSettings } from './window'
 import type { Shell } from './window'
+import { themeChromeView } from './chrome-theme'
 
 /**
  * The right-click menu over SoundCloud's page.
@@ -68,6 +69,7 @@ export function attachContextMenu(shell: Shell): void {
 
   shell.contextMenu = view
   shell.window.contentView.addChildView(view)
+  themeChromeView(view, 'menu')
   // `layout()` owns where every view sits; it positions this one now that it exists.
   shell.layout()
 

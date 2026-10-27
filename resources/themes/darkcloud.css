@@ -1,0 +1,432 @@
+/**
+ * @name Dark Cloud
+ * @author BetterSoundCloud
+ * @version 2.0.0
+ * @description A near-black SoundCloud with light grey text, and rounded white icons on the
+ *              play bar and track buttons that turn orange when switched on.
+ * @preview #121212 #1a1a1a #e0e0e0 #ff5500
+ * @license MIT
+ */
+
+/*
+ * Ported from v0.7.x's darkCloud.css. What changed, and why:
+ *
+ * - v0.7.x hot-linked its icons from the project's GitHub repo, so they were fetched at
+ *   runtime and the buttons drew blank offline. v2 themes load nothing remote, so the same
+ *   PNGs are inlined below as data URIs, byte for byte.
+ * - The rules for v0.7.x's own injected buttons are gone, because v2 injects no markup into
+ *   SoundCloud's page. The `@target chrome` block at the end recolours our own bar instead.
+ *
+ * Everything else is the v0.7.x theme as it was.
+ */
+
+* {
+  border-color: #333 !important;
+}
+
+html,
+body {
+  background: #121212 !important;
+  color: #e0e0e0 !important;
+}
+
+#app {
+  background-color: #121212 !important;
+  color: #e0e0e0 !important;
+}
+
+#app > .l-container,
+#app > header,
+#app > .playControls > section,
+#app > .playControls > section > .playControls__wrapper > .playControls__bg {
+  background: #1a1a1a !important;
+}
+
+#app > header {
+  border-bottom: solid 1px #333 !important;
+}
+
+#app > .playControls > section,
+#app > .playControls > section > .playControls__wrapper > .playControls__bg {
+  border-top-color: #333 !important;
+}
+
+.header__logo {
+  background: #1a1a1a !important;
+}
+
+.headerSearch__input {
+  background: #2a2a2a !important;
+  color: #e0e0e0 !important;
+  border: solid #555 1px !important;
+}
+
+/* Play bar icons. v0.7.x fetched these PNGs from GitHub at runtime; v2 inlines them. */
+.playControls__elements > .playControls__play {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAQAAABKfvVzAAAAYklEQVQ4y+3SsQ1AABRF0a9RSDCHGRjIFmIJiX3MQMkIWgVXYQG35vUn+Xn/RfyJoCB3YGWnJXkPnkxUDsBBT2oAwELjAFyMlAYAbGQOrAacDOakmdrU2plaxeP0NOz4vpAbhKmoJpKQ0QEAAAAASUVORK5CYII=") !important;
+}
+
+.playControls__elements > .playing {
+  /* Pause Icon */
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAQAAABKfvVzAAAAMElEQVQ4y2NgGOngv8f/x0DogYuPqeHRfxB4hIuPqQEKcPFHNQwbDSQnDVIT30gBAGjZ16FR0lKkAAAAAElFTkSuQmCC") !important;
+}
+
+.playControls__elements > .skipControl__previous {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAQAAABKfvVzAAAAXUlEQVQ4y2NgGAUkgv9H/h/BEGPEpwEI0ETs/t/7f4lIDf9Z/7f//wMS+89MhIb/Gv/P/IcBwhr+Z/3/+v8/0Rr+d/9HBVTXQLKTyPA0GcGKFHEXSUsaTKNZhnQAAPnjoz94jX5wAAAAAElFTkSuQmCC") !important;
+}
+
+.playControls__elements > .skipControl__next {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAQAAABKfvVzAAAAWUlEQVQ4y2NgGAUkg/+MGCJH/h/Brfz8//v/7dHEgAC3BhD487/jPyspGkDg7H8N0jT8///1fyZpGkCgm1QNvaQ5KZs0T2sS7+m//zuJD1ZSI47kpDEKcAAATq6bNsNf5IAAAAAASUVORK5CYII=") !important;
+}
+
+.playControls__elements .playControls__shuffle .shuffleControl::before {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAQAAABKfvVzAAAAnklEQVQ4y92SsQ2DMBBFvQO2y8AkKdgKiX1QigxjcItYgD7pXgoji/gwThUp+eXpPVl3/kr9UajpsWJ6J2SVQgf4VKFhCYYUKpxUsPiMoBQ6VTbcsxwKqRJxS8OQW13jeNDu8dK1NNeIT5jPTvw1nLa8QcDHDX/iT9/Z4/HIE4YLtyL+psxH1TB4wKHFv2S61Ev8vHw1HZWYDtl6/3BedLPjeyB/DFYAAAAASUVORK5CYII=") !important;
+}
+
+.playControls__elements .playControls__shuffle .shuffleControl::after {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAARpJREFUSEvdlDFuwkAQRd8Aaaho6EC5AJfAR0gDQuIUQCSkdEhBiU8QKQdIkyuEhiNwBDpugBItshVbNobd2bVocOvZ/3b+zh/hxp/cWJ87BJgZjzSY0uJD1hxsFpo53whPhZq9xPSLZyoWmTlLhFdgR4vIBvm/zBboZaISl22vApZ0+eUHGLggplybMpyApOjs4MVOKjXQSTpRAVyQSxfgSJsGbxIztr5B8WdJSIjknY2mOzUg7+SPQYh4+ibaJPvePJ8qDSBUXNXBNXHzzJAmO1cYrRZZxU2aFWcYrwJsttQeU43nwUHTiGeDEbQqzIIXYKXxN2zZJetamPDAp2tCzIIvYOS1rjW58KlRJ9lH1GsXhQp7rYo6kBPi/JsZ6kjO9wAAAABJRU5ErkJggg==") !important;
+}
+
+.playControls__elements .playControls__repeat .repeatControl.m-none {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAQAAABKfvVzAAAAZklEQVQ4EdXBwQnAIBAAwW0nkO4CeQk2Z1uyuXz1EPwlM3yBB3vsVnb4qsxsrtyMXLsYGUj4KswMJOwWMgYSnuRsNv7BZiPnScJAxmInYWBmMZAwMPJyiZG3K42Z1cAOq509HnzAA+LXxD8lfvNoAAAAAElFTkSuQmCC") !important;
+}
+
+.playControls__elements .playControls__repeat .repeatControl::before {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAM9JREFUSEvVldENwjAMRM/jILEBTIRaBoBvGAAQE5UNkBjHKCiVIDjGDu5H+x372b47lTDxRxP3RwiAN1jQFQ9p2BhABwZhT2ccS0gcIHUWICKAOwwAVk36FJAagJuaC1uoALrYTMBJA+eJXgUugEfkcSIzYIslnXA32zSLnDZYN2uRC0Nsqg0xD4B20uoGrAhXnkQzhZyDHjswDmYX5RxI778AnJu7c1DJzQfgvXmLPX9u8CfgJuUm5ETuHIybWEV2A1KB9hv06DOPJGsbPQEqA1UZp8KahQAAAABJRU5ErkJggg==") !important;
+}
+
+.playControls__elements .playControls__repeat .repeatControl::after {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAAAXNSR0IArs4c6QAAA79JREFUeF7t3T9rFEEcxvHvmKgYtDOmsrCxECvBwtYXoFWwE4wiEhODWFlIIvgCDIYgiuJb8FWIXSqxU7DyT6uFqCMXLvG83O3uzP5mZzf3XBl2Znafz/zZ2WwuDn2yJuCytq7GEUDmTiAAAWROIHPzGgECyJxA5uY1AgSQOYGh5v0Sq26Dh02dlUbAXgAPrDWFIIDRAL2fNoIggPEAjSAIoBggOYIAygGSIgigGkAyBAFUB0iCIIAwAHMEAYQDmCIIIA7ADEEA8QAmCOYAfoneVn6SPrV2zAKw6SrRCAKwAYiejgRgBxCFIAAB2CaQsbaodUAjwEYsKvxe0wKoDxAdfhYAt2GPXj/DfzUE7mNqhS+AEXIBALXDF0A8gEn4AogDMAtfAOEApuF3HsAvcpIDPALO9bPc4hf33FO+xC7MBWuAefidBvB3OIvnJZ7zA2Fv8YdLbpNPxgBJwu8kgO/tXW5zEcdz4NRQ0CkAkoXfOQA/zxRzXAEeA7Mjerk1QNLwOwXglzmMZwVYBWbGTDGWAMnD7wyAX+AYM9tvLC8BBwvmdyuARsLvBIBfYY7frAPzwIGB8L8DH4EzA8+0LAC6/Xp62VY+5FlQf8G9imNzaNr5jOMuntPAA2Bq9za05l1Q7N1TbLnGn4aGAPQuyi9yFMc6jmv9nv4euMFx3vKN+/01QQA7PcByBOzWeYsTTLOA4wieV26DD36NaQGEb+UJHQHjhrYAYic9o3ICMAoythoBxCZnVE4ARkHGViOA2OSMygnAKMjYagQQm5xROQEYBRlbjQBikzMqlwogxU6+6JLNnwUZ5VtajQBKI0p7gADS5ltauwBKI9p7QOx38fhlZvG8Bi5ENPsGx2X3hK9Vyu7bNaAXfv8rYILXHQFU6ToFx+yE3zsk5nG0AGoADIYfDXCTGQ5xffv3vz7g9Xa3/Sez7/jJC/eMH1UuY19NQcPhxwJUCc7qmH0DMCp8AeztJsELYpWeNi58ATQAUBS+ABIDlIUvgIQAVcIXQCKAquELIAFASPgCMAYIDb/KHVTbj4nZyRddU/Rt6CSGn2IERwFMavitAJjk8AXQggWiFWvAJI+CVgD0OuKkIrQGYFIRWgUQg2B9AS1YFmqdQtRt6HCLIdORAP5PzwQgZCQIIBFAVQQBJASogiCAxABlCAJoAKAIQQANAYxDEECDAKMQBNAwwDCCADIADCIIIBPADkJT/6W01vOBBgub7YQbPOd91ZQAMnMKQACZE8jcvEaAADInkLl5jQABZE4gc/N/AeRgAn+Ms3SdAAAAAElFTkSuQmCC") !important;
+  background-size: contain;
+}
+
+.playControls__elements .playbackTimeline * {
+  color: #e0e0e0 !important;
+}
+
+/* Volume icons, inlined for the same reason as the play bar icons above. */
+.volume[data-level="0"] .volume__button {
+  background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAQAAABKfvVzAAAA+0lEQVQ4y83TPUoDURAA4LEQBBEEiTdQsBEFFVEQCyGQCwiClcRrbGMT9AJWHiE2HsCfG6yVN7CQrIgYq88iu/kzyabMVI/hfTxm3kzErIZt11b/ZauOx4EbvA4TX3i2NgpUpD3izGlEhAstZI5KiJrPbraJlvVS0s3Oe8CTudHkvb8WTUsRlmU4Gbz6oj+KWtruIyJc4W4QDEeqEqGmbSfCId4mgx65jLCC7zJQkIUIi8jKX8hJhC2kk4pG3uTOK7t+3I4ekaS43/2XDqk6GDdVSQEGyaTJTdDOzxt+pyHn+fDVZf0dK9+SDzzal6IxDdjrLJCKhs2Z3f4/57xXqFeXkjYAAAAASUVORK5CYII=") no-repeat 0 !important;
+}
+
+.volume[data-level="1"] .volume__button,
+.volume[data-level="2"] .volume__button,
+.volume[data-level="3"] .volume__button,
+.volume[data-level="4"] .volume__button,
+.volume[data-level="5"] .volume__button {
+  background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAQAAABKfvVzAAAAX0lEQVQ4jWNgGAUI8D/pfwQpyhv/////g3jlDf/BgETlEA3/1//nxaXwyH80ABb9/38DLg0YAC5qQqqGXJprMKaOp+Ea61E0rMMZrJhaCCpE00J80gBrif0fTpKG4QwAMHm/SWOaySYAAAAASUVORK5CYII=") no-repeat 0 !important;
+}
+
+.volume[data-level="6"] .volume__button,
+.volume[data-level="7"] .volume__button,
+.volume[data-level="8"] .volume__button,
+.volume[data-level="9"] .volume__button,
+.volume[data-level="10"] .volume__button {
+  background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAQAAABKfvVzAAAAsElEQVQ4y2NgGFrgv8d/e9I0fP7////h/6qEFSb9jwDTKf/fA7V8+G+LX3kjUNEPKFv0/3og7/1/ddzKG/6DAZzP+n8r2GGMeJVDNABN5wWSAkBH/f/vgqrwyH80ABb9/38DmG4BsuajaviPQ8P//yZA2hpI3yJWQy6QFgbSX2mmwRi7k0j1NFxjPYqGdTiDFVMLkREH10J80gAri/0fDqZTiUp8ZCRvuAY3EjPQwAAA9HUsfxIc6rQAAAAASUVORK5CYII=") no-repeat 0 !important;
+}
+
+.playbackSoundBadge .playbackSoundBadge__titleContextContainer .playbackSoundBadge__lightLink:hover {
+  color: #fff !important;
+}
+
+.playbackSoundBadge .playbackSoundBadge__titleContextContainer .playbackSoundBadge__titleLink {
+  color: #b3b3b3 !important;
+}
+
+.playbackSoundBadge .playbackSoundBadge__titleContextContainer .playbackSoundBadge__titleLink:hover {
+  color: #fff !important;
+}
+
+.sc-link-dark {
+  color: #e0e0e0 !important;
+}
+
+.sc-truncate {
+  color: #b3b3b3;
+}
+
+.tileGallery__sliderButton {
+  background: #2a2a2a !important;
+  border-color: #555 !important;
+}
+
+.tileGallery__sliderButton::after {
+  border-color: #e0e0e0 !important;
+}
+
+.g-tabs-link {
+  color: #e0e0e0 !important;
+}
+
+.g-tabs-link.active {
+  color: #f50 !important;
+}
+
+.sc-input {
+  border-color: #555 !important;
+  background-color: #2a2a2a !important;
+  color: #e0e0e0 !important;
+}
+
+.sc-button {
+  border-color: #555 !important;
+  background-color: #2a2a2a !important;
+  color: #e0e0e0 !important;
+}
+
+/* SoundCloud shows a switched-on button (liked, followed, reposted) by its `color`, which the
+   rule above overrides for every button, so liked and not liked looked the same. This puts the
+   theme's orange back on the selected ones (measured 2026-10-27 on the play bar's heart). */
+.sc-button.sc-button-selected,
+.sc-button.sc-button-selected:hover,
+.sc-button.sc-button-selected:focus {
+  color: #f50 !important;
+}
+
+/* Follow, like and queue icons, inlined (v0.7.x fetched them from GitHub). */
+.userBadge__actions .sc-button-follow::before {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAQAAABKfvVzAAAAg0lEQVQ4y92QsRGAIAxFGcRJnMQdHIRN2IKOFaylwc4R9Fl5B0eI3mmjr0zyLsk35mfQ4VhYcHT3xldO1hsKjhyXdQJBElIhpKwDvCIIJxGKWrh8WhXasTZOUvKTBHosnpmNjRmPpW/GysCExMQgLRzRGGshqkKshV0VdjEDjefC5zkA3yhreMEZ9GgAAAAASUVORK5CYII=") !important;
+}
+
+.userBadge__actions .sc-button-selected::before {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAQAAABKfvVzAAAAs0lEQVQ4y2NgGIbgv8z/Zf+fAeGy/zLEKX/7HwbeEqEFaC4yWEZYw1MUDU9poIFkJ5HqaZKDFY9BLKQpT/v//X8aprDy/5z/m/7f+P/pfw+KeOr/v////Q9EVWz2/yDcu3v+MyLJJAOV//+fi6o88P8vpOCMAYqE/X/yPxhIJ4GV56M75j5K+EcBRWKA9O//08DKCzFdjwq2g8UaobxibKGADhrAovX/v/wvIi04GYdAFgYAFsj8VTOh080AAAAASUVORK5CYII=") !important;
+}
+
+.playbackSoundBadge__actions .playbackSoundBadge__like::before {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAQAAABKfvVzAAAAvElEQVQ4EdXBvS6DYRgA0OciKmKTDmVGTEQk0tpdghsx+rmBzjpzOxpLK2oQWz9pa+nB8ObrR3/ekXPiD7PhQlfPg2tb8UXDja6eR22bUaWlUPpw7sy7UqEVJXVDVVNTVUP1SLTlaEeiL0c/EhM5JpF4lmMQiVs5OpE4kOMwSu6sch+z1Aws86IWVXYUFinsxm9OjMwz1oz5NI38NHYaizkyNKtwHMvZ8yp5sx+raej59mQ78lhz6cp6/A+fcAYMJpiybjYAAAAASUVORK5CYII=") !important;
+}
+
+/* v0.7.x knew a liked track only by its "Unlike" tooltip. SoundCloud marks the button with
+   `sc-button-selected` (measured for like, CLAUDE.md "now playing"), so both are matched. */
+.playbackSoundBadge__actions .playbackSoundBadge__like[title="Unlike"]::before,
+.playbackSoundBadge__actions .playbackSoundBadge__like.sc-button-selected::before {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAW1JREFUSEvVlT9Lw2AQh5+Lgwqujjr5BaS7ioMggiAO+gEExbYufg1dbCoKDo46iCCI4OC/XfwCTnbs0iGgGexJkiYmadKaNi1463t5n/d397uLMOCQAd/P8AFaZhLYR1kDxoFPhGu+OZNj3h3FussMI2xFcpRHlAM/x69MRIGWWUK5AiYSSmcDRaABnKfkWAjrUuG+DeC+yuAt5cMsrbJoMusrCRRokROE7Sw3peYqp1Jlxzn/BZT4AKZyAUBNTKbjgC9gNCeALSZjQ1dwAWzkpOBSTDajCorMITznAlDmpcpLBOAOUIk8VASvbwc4U6y89uGmGkJBKtQTJ9lVsUeBJk89DJyFwYIcuQ8MInHZtVbGTQbb2gir4RWRqsA/yABJvbytB3EHqees2w7lslBWfMckObDr/6DVkztw13g46hgsx2seh3QFuI33Nu1DyF01mizGd39PCkI98X5EXhyGrdhpOP+koJ/p/v+AH/g2bBnLDUi6AAAAAElFTkSuQmCC") !important;
+}
+
+.playbackSoundBadge__actions .playbackSoundBadge__follow::before {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAQAAABKfvVzAAAAg0lEQVQ4y92QsRGAIAxFGcRJnMQdHIRN2IKOFaylwc4R9Fl5B0eI3mmjr0zyLsk35mfQ4VhYcHT3xldO1hsKjhyXdQJBElIhpKwDvCIIJxGKWrh8WhXasTZOUvKTBHosnpmNjRmPpW/GysCExMQgLRzRGGshqkKshV0VdjEDjefC5zkA3yhreMEZ9GgAAAAASUVORK5CYII=") !important;
+}
+
+.playbackSoundBadge__actions .playbackSoundBadge__follow[title="Unfollow"]::before,
+.playbackSoundBadge__actions .playbackSoundBadge__follow.sc-button-selected::before {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAS5JREFUSEvtlDEvREEUhb+bqPUrIhKlXq2hkKho6Gi9h220+yQqldjZFhUNv0DjT6g1Qq8WV+a92Q1j5s0WO4mEaWfmfOecuRkh85LM+vwBgJbMopwCy67OB4Qj6fM8Tr2tFTnxR2DaE3tDWBwH0g4ouAa2Ik5vxLCdSpECvACdiMirGGZ+PSBzRc0E5Xtk22/WMU09YGhfK6ak4n24N9GvQgt2gDPgUAyXFhIFaMkCH6wjrKHMIXRQrmTAQdB5I37h9jbFcBcEaMkSygmw4gndi2E1Ka50ZVCnqNe3BFqwAdxGut+1sd2ZPlBal66Wxrkn/hOwxxPCfARQx/YEzxH2Y+KhBNoyOaOKtKACeqOzAeexitoA9s6xmFocB+mi9L527huc6JiG0v8Dkr/JJ/HAbhmS9/jZAAAAAElFTkSuQmCC") !important;
+}
+
+.playbackSoundBadge__actions .playbackSoundBadge__showQueue svg {
+  display: none;
+}
+
+.playbackSoundBadge__actions .playbackSoundBadge__showQueue {
+  border-color: #555 !important;
+  background-color: #2a2a2a !important;
+  color: #e0e0e0 !important;
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAQAAABKfvVzAAAASUlEQVQ4y2NgGAUkgP9H/mMDR6inYdQPZPgB7JT/Jf9VSNPw//+P/03/OYm3FQLu/zclTcOd/0bEa/j2v+4/O/FOKvqvOBwzGgCEg6DqMLn3sAAAAABJRU5ErkJggg==") !important;
+}
+
+.playControls__queue .queue,
+.playControls__queue .queue__scrollableInner,
+.playControls__queue .queue__itemWrapper,
+.playControls__queue .queueItemView {
+  background: #2a2a2a !important;
+}
+
+/* Track action icons, inlined (v0.7.x fetched them from GitHub). */
+.sc-button-group .sc-button-like::before {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAQAAABKfvVzAAAAvElEQVQ4EdXBvS6DYRgA0OciKmKTDmVGTEQk0tpdghsx+rmBzjpzOxpLK2oQWz9pa+nB8ObrR3/ekXPiD7PhQlfPg2tb8UXDja6eR22bUaWlUPpw7sy7UqEVJXVDVVNTVUP1SLTlaEeiL0c/EhM5JpF4lmMQiVs5OpE4kOMwSu6sch+z1Aws86IWVXYUFinsxm9OjMwz1oz5NI38NHYaizkyNKtwHMvZ8yp5sx+raej59mQ78lhz6cp6/A+fcAYMJpiybjYAAAAASUVORK5CYII=") !important;
+}
+
+.sc-button-group .sc-button-like[title="Unlike"]::before,
+.sc-button-group .sc-button-like.sc-button-selected::before {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAW1JREFUSEvVlT9Lw2AQh5+Lgwqujjr5BaS7ioMggiAO+gEExbYufg1dbCoKDo46iCCI4OC/XfwCTnbs0iGgGexJkiYmadKaNi1463t5n/d397uLMOCQAd/P8AFaZhLYR1kDxoFPhGu+OZNj3h3FussMI2xFcpRHlAM/x69MRIGWWUK5AiYSSmcDRaABnKfkWAjrUuG+DeC+yuAt5cMsrbJoMusrCRRokROE7Sw3peYqp1Jlxzn/BZT4AKZyAUBNTKbjgC9gNCeALSZjQ1dwAWzkpOBSTDajCorMITznAlDmpcpLBOAOUIk8VASvbwc4U6y89uGmGkJBKtQTJ9lVsUeBJk89DJyFwYIcuQ8MInHZtVbGTQbb2gir4RWRqsA/yABJvbytB3EHqees2w7lslBWfMckObDr/6DVkztw13g46hgsx2seh3QFuI33Nu1DyF01mizGd39PCkI98X5EXhyGrdhpOP+koJ/p/v+AH/g2bBnLDUi6AAAAAElFTkSuQmCC") !important;
+}
+
+.sc-button-group .sc-button-more::before {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAQAAABKfvVzAAAAKElEQVQ4y2NgGKbgv8f/x0DoQbyGR/9B4BENNZDqpNFQGhxgNJToDgDiB1Rh9jp8GgAAAABJRU5ErkJggg==") !important;
+  background-size: cover !important;
+}
+
+.moreActions__group button::before {
+  border-color: #555 !important;
+  background-color: #2a2a2a !important;
+}
+
+.commentForm__wrapper {
+  border: none !important;
+  background: #1a1a1a !important;
+}
+
+.commentForm__wrapper .commentForm__inputWrapper input {
+  border-color: #555;
+  background: #2a2a2a;
+  color: #e0e0e0 !important;
+}
+
+.sound__soundActions {
+  background: #1a1a1a !important;
+}
+
+.sc-tagContent {
+  color: #e0e0e0 !important;
+}
+
+.listenEngagement {
+  border: none !important;
+}
+
+.paging-eof:before {
+  background: none !important;
+}
+
+.sc-classic .trackItem.active,
+.sc-classic .trackItem.hover {
+  background: #333 !important;
+}
+
+.sc-classic .trackItem.active .trackItem__additional,
+.sc-classic .trackItem.hover .trackItem__additional {
+  background: #333 !important;
+}
+
+/* More action icons, inlined (v0.7.x fetched them from GitHub). */
+.sc-ministats-sounds::before {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAQAAAD9CzEMAAAAgElEQVRYw+2UsQ3AIBAD2YP5fzSo2MGpkJIoLiyZJvKVLrgC+1sLIQigozAxUehnnl/YrAMKFO6UXzAeguEXvIggAqfAtHAmsC2cClwLpwLXwqnA9flGwXcrbALWCp+AtMInIK3wCcSHIojglwI2NDHXT4WY68dOzOVzrechhM0FSYgi3ddJDZIAAAAASUVORK5CYII=") !important;
+}
+
+.sc-button-repost::before {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAQAAAD9CzEMAAABtElEQVRYCe3BPU4icRzH4W8gYRqmMDZjTyw9BobQy1LtFtjs3mCaSTgCy3gQLkCsuIIvnROa3caMFFh9NvpjFjTKf16YzufRl4NjwHfViTUQqT6YSHUhE6kebEU6FFp0iZlzzxO7IlVHQEzKZ4aqAo8xK/a5UHkELNgvVHmckbD1QEyfDm22QpVHQEJmyYimNsiEKg+PBZkZvnZgQlXBmMyEht5gDYSqghNWmBkNvcOAoT7AMUfKhyvMEl858ZNn1ozkRotHzKVy4w8vUjy5cI5JaCo3bjFduRBjpiqAKWYiF+aYngqgj7mWCzeYUxXAKeZOLqQYXwXQxqRyIcW0VQA+JpULd5iOCuAUcyMXrjE9FUAPM5cLE8xvFcAUE8uFLuZWudEkwZzLBY+UF3+VG5eYR1pyY8SaZ34pJ3yWmCvlwxHH+gBDBnqHBjPMihNVQQis9QYNJmTGqoKQV9qBz4zMAk/lEbKhDZqMWJJJCFQeIVttOvSJeWAr4UzlEbLfgkDlccE+K8Z4qoIhn0mJCVQdEbueuGdOTJeWDoWI/1QPIjZUFyJeqT5EwFp14gff9OXQ/gGPhRgD3MEeUAAAAABJRU5ErkJggg==") !important;
+}
+
+.sc-button-share::before {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAQAAAD9CzEMAAABcUlEQVRYw+2VsWrCYBSFr4Nx0lWos76BFqHobOk72M6ik4W+gvgMRsgzSPsGMSkOrtKlk+0ggjo56NdBGv7YWArefyh4tiz3S84990Tkon8vHDqM2bBhTAdHe3yBKaamFHTfPj7+gND7Ctokqa0HCBIBgR5gnQhY6wGWVgGUWViziDwuO7CyZNJ0WXFK58aUBrNo2J4hE8VDo8jI9JqKCA4tfIWqIEuPbTR8TpOUXhxTNJlHw7f0yGq0o08LR4RK7GJHFDXbccKQffQ0o6Hfjt9a0SVtpx1hh0veXjsuKNttx6Xt+lUEWLfI+pJ/j+nj2TH9w6HdanzFcVVcExrIZ0qiLVLc82GUXZ+cPiRH36jrTx4U6zqClHgxzHqlKiLCDQMCAlxqGpA73oxfpscwFgqPjEYMnk7cPICnY9YVnhHfuOpaG6nynggY6C3dTwSEeoDQNmBg26K61SWLiOBZimkEyBwhNA7tB6SGq1gVF6nrC9+Xx3MxBWS7AAAAAElFTkSuQmCC") !important;
+}
+
+.sc-button-copylink::before {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAQAAAD9CzEMAAAAiklEQVRYw+3XMQqAMBBEUe/hhbxoLhbRyjt8GwsxII7souhMveTBkmK265yXh57CzJXMFHr9+QUli0hQUFM0YJKBSQO2RM8aOBkaGBkZ8oAKQM0DDkMGDBgwYMDAR4Do4tUA0dWxAaLLb7vH4Pp+q51lNbm/Auq/3/XYrJOp5h59KiD9+zsrch7JCgXNr+3C1Y08AAAAAElFTkSuQmCC") !important;
+}
+
+.sc-button-queue::before {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAQAAABKfvVzAAAASUlEQVQ4y2NgGAUkgP9H/mMDR6inYdQPZPgB7JT/Jf9VSNPw//+P/03/OYm3FQLu/zclTcOd/0bEa/j2v+4/O/FOKvqvOBwzGgCEg6DqMLn3sAAAAABJRU5ErkJggg==") !important;
+}
+
+.soundActions .sc-button-group:nth-child(2) a {
+  color: #e0e0e0 !important;
+}
+
+.compactTrackList__list li div {
+  background: #121212 !important;
+}
+
+.compactTrackList__list li div span {
+  color: #b3b3b3 !important;
+}
+
+.compactTrackList__list li .active {
+  background: #121212 !important;
+}
+
+.compactTrackList__list li .active span {
+  color: #e0e0e0 !important;
+}
+
+.compactTrackList__list li div:hover {
+  background: #121212 !important;
+}
+
+.compactTrackList__list li div:hover span {
+  color: #e0e0e0 !important;
+}
+
+.dropbar__content {
+  background: #2a2a2a !important;
+}
+
+.dropbar__content .userDropbar__title {
+  color: #e0e0e0 !important;
+}
+
+/* Profile and menu icons, inlined (v0.7.x fetched them from GitHub). */
+.sc-button-startstation::before {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAQAAAD9CzEMAAABTElEQVRYw+2WoUsDYRiHVwSFG4JJuA2TLk6LO0yCZclmNqw4sPhHaBS2osUgcgtabEt2MYhgsu7YGdzSkB2CPBaH3t0nwu73IcM99bjnOe5773hzuX8Mi9TYtCXf4oo3ALbV6gUOeOKLQ6Xc45wh3wkpadQOdR6Ic0eNOYV8lRMGMfWAU9YU6ll2uU089z17OAp5iWP6MfUrZ6wr1DPscJN47kf2mVfIlzjiOaYecsGGZlKWueadrIT4uCb9Cj1U9AwJLlHipwMv0kA3HRjRpjD2KRZojzQ/B4qZBqX4ayDzLE5cgCoBAVV7gQ4AHXuBxH1/H1AxDWQMRDTwcHDwaBCpAwHl2JUygTIQxfWfiUgXaBqnvakLVIyBii6QNwbyExSw/oqsH7L1MbX+oVn7VXRtL16+NNBKB1zh8ts3boe4+ISC9b01/vI5xQYfmXH4e+ciAycAAAAASUVORK5CYII=") !important;
+}
+
+.sc-button-message::before {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAQAAAD9CzEMAAABKklEQVRYw+2WMY7CMBBFR0rLBVYJHIASDsJJgCtwA46AtkgLl6CDA1AiJGiWKiUJvC02WBHGsZGTAta/czz5b+IZRyMSFBRUETEpJ3x1IiV+Zv/FD03p/ATBN00q1QH7RgFHHXBpFIAZsGPMgvxlx5wFY3Z2QF9EhAGbl+w3DERE6JsB95x75TpiQuZknjEhKt/q2QFruupZwtJqvyRR8V3WdgBkTO8ZiTDiYDQ/MFJxEdPqF9cBALYM1U6HOYVmXjCno2KGbG1dlNcaPBa9LKo5AR1QOB+B0xG6AQBWlSImrLS180UratqwkrGpqD6AhzN3u4g64Grpd1V0Q1d5A/6KPmNWcy+8AV5/0/cH3ALg8wG8PeDY9uCVtj06xpxbHX5bH9+Dgv6xfgGH5h8gciqZ5QAAAABJRU5ErkJggg==") !important;
+}
+
+.sc-button-addtoset::before {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAQAAAD9CzEMAAAAbklEQVRYw+2VwQ3AMAgDMx77j2AGcT955dECKkqq+v7RScaBMYQQ4iBodEZxWl4AZsCBgu6IxHf/AY0eGnq1pvMd+gSTvoiigvLsJHhNcDvktfeVZfhQUyTrjA2C7ohUUwk2CqIHpyyInkwhfswFEA0KTnkWDysAAAAASUVORK5CYII=") !important;
+}
+
+.sc-button-report::before {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAQAAAD9CzEMAAABcUlEQVRYCe3BMUhUcQDH8Z8XihaKodTyHrkITgriFCK12NIWgbjJRdjm4iZBuLm4iSBukYSby7UliJOItDQ0pOggKmjB4WGcflV4wr33/vd/d+/9bbrPRw0N/xej7PGbl7ofPOEPt07p0n1giTsLco9BLrlTpl+usUGl73KLMaLeyB0esk/ULq1yhU+YzMgNnnGOSRFPLvCVaj4rO0ao7ornyoYcO9hskVMWvCfJhNKjk2OSHNKutJgnrICHR4GwOaVDH/8I83UDn7ALepUG34hQgKg11Y/XxChA3CvVhxZ+EaMAcT9pVj2YxkABTKZUO57yFxNfN/AxOaNbtWIZswIeHgXMFlUbhrgkjTIDSkYTm6S1rmSMk8Vb2fGIA7LYo002zGKhADYfVR09nGOhADZFfFXDKlYKYPdFZrwggQLYXTGsOB7wA1e2ySmKSVzKK4zHnODSER2qxCSu5VWJD7j2TpVoY5USrpRYoVUNDY5cAy0bVeNzL0E4AAAAAElFTkSuQmCC") !important;
+}
+
+.visualSound__wrapper {
+  background: #1a1a1a !important;
+}
+
+.soundBadge__additional {
+  background: rgba(255, 255, 255, 0) !important;
+}
+
+/* v0.7.x had a "CSS For SCI Elements" block here, giving icons to the theme, plugin, lyric
+   and showcase buttons it injected into the play bar. v2 injects no buttons into
+   SoundCloud's page, so there is nothing for those rules to match and they are gone. */
+
+.addToPlaylistItem__content {
+  background-color: #121212 !important;
+}
+
+/* Kept exactly as v0.7.x wrote it. `sc-clearfix` and `sc-pt-3x` have no leading dot, so they
+   read as element names and this rule has never matched anything; `.g-modal-section` below
+   is what colours the modal. Fixing the dots would change the look, so it is left alone. */
+.g-modal-section sc-clearfix sc-pt-3x {
+  background-color: #2a2a2a !important;
+}
+
+/* v0.7.x set hover and background colours here for the window controls and back/forward
+   buttons it injected into SoundCloud's header. In v2 those buttons are our own views, not
+   part of SoundCloud's page; the `@target chrome` block at the end colours them instead. */
+
+.commentItem__usernameLink {
+  color: white !important;
+}
+
+.g-modal-section {
+  background-color: #222 !important;
+}
+
+.tabs__tabs {
+  background-color: #222 !important;
+}
+
+.commentForm__input {
+  background-color: #222 !important;
+}
+
+.commentItem__body {
+  color: white !important;
+}
+
+.commentItem__controls {
+  color: white !important;
+}
+
+.commentItem__replyButton {
+  color: white !important;
+}
+
+/* New in v2: BetterSoundCloud's own bar, settings panel and menus in the theme's colours.
+   The bar takes #1a1a1a, the colour this theme gives SoundCloud's header, so the two read as
+   one strip; inputs take the theme's #2a2a2a; secondary text its #b3b3b3. */
+/* @target chrome */
+:root {
+  --bsc-bg-primary: #1a1a1a;
+  --bsc-bg-secondary: #2a2a2a;
+  --bsc-bg-hover: rgb(255 255 255 / 10%);
+  --bsc-text-primary: #e0e0e0;
+  --bsc-text-secondary: #b3b3b3;
+  --bsc-text-disabled: #5c5c5c;
+  --bsc-border: #333;
+  --bsc-accent: #f50;
+}

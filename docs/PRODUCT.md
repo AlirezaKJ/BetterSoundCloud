@@ -81,8 +81,10 @@ credentials. v2's stated goal is to carry all of it.
 - Plugins, each in a process of its own, with permissions approved by the user; Last.fm
   scrobbling ships as one, with BetterSoundCloud's own API key. Plugin code inside SoundCloud's
   page is not available yet
+- Themes: five built in (ported from v0.7.x), plus any `.css` file in the user's themes folder, live-reloaded on save;
+  a theme can recolour BetterSoundCloud's own windows to match
 
-**Not yet built:** themes, lyrics, downloader, i18n, proxy, webhooks, auto-updater. Settings
+**Not yet built:** lyrics, downloader, i18n, proxy, webhooks, auto-updater. Settings
 whose feature is missing render disabled and labelled rather than lying. Full backlog:
 [TODO.md](TODO.md).
 

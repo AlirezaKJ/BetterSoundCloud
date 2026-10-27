@@ -14,6 +14,14 @@ export interface ThemeSummary {
   readonly description: string
   /** Shipped with the app, as opposed to one the user dropped in their themes folder. */
   readonly builtIn: boolean
+  /**
+   * A few hex colours that sum the theme up, from its `@preview` line, for swatches in the
+   * panel. Empty when the theme declares none — the panel then shows no swatches rather than
+   * guessing colours out of the stylesheet.
+   */
+  readonly preview: readonly string[]
+  /** A built-in theme the user has copied into their own folder, which now takes its place. */
+  readonly overridesBuiltIn: boolean
 }
 
 /**
@@ -27,7 +35,7 @@ export interface ThemeSummary {
 export function parseThemeMetadata(
   css: string,
   fallbackName: string
-): Omit<ThemeSummary, 'id' | 'builtIn'> {
+): Omit<ThemeSummary, 'id' | 'builtIn' | 'overridesBuiltIn'> {
   const header = /\/\*\*([\s\S]*?)\*\//.exec(css)?.[1] ?? ''
 
   // `@name Minimal navigation` up to the next `@tag` or the end of the block. The `m` flag
@@ -46,6 +54,97 @@ export function parseThemeMetadata(
     name: tag('name') || fallbackName,
     author: tag('author') || 'Unknown',
     version: tag('version') || '0.0.0',
-    description: tag('description') || ''
+    description: tag('description') || '',
+    preview: (tag('preview') ?? '')
+      .split(/\s+/)
+      .filter((colour) => /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(colour))
+      .slice(0, 5)
   }
+}
+
+/*
+ * ── Where a theme's CSS goes ──────────────────────────────────────────────────────────────
+ *
+ * One file can style SoundCloud's page and BetterSoundCloud's own windows. A line that is
+ * exactly `/* @target <name> *\/` starts a section for that target; everything before the first
+ * marker is for SoundCloud's page, so every theme written before targets existed still works.
+ * Lifted from soundcloud-rpc, whose idea this was.
+ */
+
+/**
+ * `content` is SoundCloud's page. `chrome` is every view of ours that follows the app's own
+ * colours — the 32px bar, the settings panel, the right-click menu, the status screen — and the
+ * per-view names narrow that down. `all` goes everywhere.
+ *
+ * The overlays drawn on SoundCloud's own bars are not chrome: they follow SoundCloud's light or
+ * dark setting so they match the bar under them, and a theme reaches them through `content`'s
+ * colours, not through ours.
+ */
+export const THEME_TARGETS = [
+  'content',
+  'chrome',
+  'header',
+  'settings',
+  'menu',
+  'status',
+  'all'
+] as const
+export type ThemeTarget = (typeof THEME_TARGETS)[number]
+
+/** Our own views a theme can reach, and the per-view target that also applies to each. */
+export type ChromeView = 'header' | 'settings' | 'menu' | 'status'
+
+export type ThemeSections = Record<ThemeTarget, string>
+
+const MARKER = /^[ \t]*\/\*[ \t]*@target[ \t]+([a-z]+)[ \t]*\*\/[ \t]*$/gm
+
+/** Split a theme into its sections. An unknown target's CSS is dropped, not misapplied. */
+export function splitThemeTargets(css: string): ThemeSections {
+  const sections: ThemeSections = {
+    content: '',
+    chrome: '',
+    header: '',
+    settings: '',
+    menu: '',
+    status: '',
+    all: ''
+  }
+  let target: ThemeTarget | null = 'content'
+  let from = 0
+  for (const match of css.matchAll(MARKER)) {
+    if (target) sections[target] += css.slice(from, match.index)
+    const name = match[1] ?? ''
+    target = THEME_TARGETS.some((t) => t === name) ? (name as ThemeTarget) : null
+    from = match.index + match[0].length
+  }
+  if (target) sections[target] += css.slice(from)
+  for (const key of THEME_TARGETS) sections[key] = sections[key].trim()
+  return sections
+}
+
+/** The CSS one of our views gets from a theme: `all`, then `chrome`, then its own section. */
+export function chromeCssFor(sections: ThemeSections, view: ChromeView): string {
+  return [sections.all, sections.chrome, sections[view]].filter(Boolean).join('\n')
+}
+
+/** The CSS SoundCloud's page gets from a theme: `all`, then `content`. */
+export function contentCssOf(sections: ThemeSections): string {
+  return [sections.all, sections.content].filter(Boolean).join('\n')
+}
+
+/**
+ * The stylesheet that gives themes `--bsc-cover`: the playing track's artwork, or `none`.
+ *
+ * `html:root` rather than `:root` on purpose. This sheet and the page's main stylesheet are
+ * inserted separately and at different times, so their order is not fixed; the main sheet sets
+ * the `none` default on `:root`, and the extra specificity is what makes the real cover win
+ * whichever was inserted last.
+ *
+ * The URL is checked here even though it comes from `readNowPlaying`, because it is about to be
+ * written into CSS: only an https URL on SoundCloud's image host, made of characters that cannot
+ * close the `url("…")` it sits in, gets through.
+ */
+export function coverCss(artwork: string): string {
+  const safe = /^https:\/\/i\d*\.sndcdn\.com\/[A-Za-z0-9._~/-]+$/.test(artwork)
+  return `html:root { --bsc-cover: ${safe ? `url("${artwork}")` : 'none'}; }`
 }

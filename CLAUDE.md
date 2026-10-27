@@ -74,7 +74,8 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CU
 | `main/session.ts`                  | `hardenSession`, permission allowlist, `routeNewWindowsToBrowser`, `isInternalUrl`, `openInBrowser`                                                 |
 | `main/settings-store.ts`           | electron-store wrapper: `get`, `getAll`, `set`, `reset`. Lazy — built on first use                                                                  |
 | `main/content-css.ts`              | `buildContentCss()`: the one stylesheet injected into SoundCloud's page (pure, tested)                                                              |
-| `main/themes.ts`                   | `listThemes()`, `themeCss()`; reads `resources/themes/` and `<userData>/themes/`                                                                    |
+| `main/themes.ts`                   | `listThemes()`, `findTheme()`, hot reload (`watchUserThemes`), editable copies; reads `resources/themes/` and `<userData>/themes/` (§17)            |
+| `main/chrome-theme.ts`             | A theme's `chrome` sections into our own views: `themeChromeView()`, `setChromeTheme()`                                                             |
 | `main/blocker.ts` + `net-rules.ts` | Ad/tracker blocking and the never-filter allowlist                                                                                                  |
 | `main/diagnostics.ts`              | Dev-only network and page-error log, `whoAnswered()` (SoundCloud vs DataDome)                                                                       |
 | `main/tray.ts`                     | Tray icon and menu (playback items disabled until playback control exists)                                                                          |
@@ -88,19 +89,19 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CU
 
 ### Key shared files
 
-| File                        | Owns                                                                                                    |
-| --------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `shared/ipc.ts`             | `CH` (every channel name), `ChromeApi` (the `window.bsc` type), `NavState`, `WindowState`               |
-| `shared/settings-schema.ts` | `SETTINGS`, `SECTIONS`, `Settings`, `SettingKey`, `coerce`, `coerceAll`, `defaults`                     |
-| `shared/now-playing.ts`     | `PlayerReading`, `NowPlaying`, `readNowPlaying()` and its cleaners                                      |
-| `shared/page-theme.ts`      | `PageTheme`, `detectPageTheme()`                                                                        |
-| `shared/context-menu.ts`    | `ContextMenuRequest`, `CONTEXT_MENU_ACTIONS`, `cleanUrl`, `shortUrl`, `elide`                           |
-| `shared/presence.ts`        | `Activity`, `buildActivity()` (the Discord card), `sameActivity()`, `PRESENCE_LOGO`                     |
-| `shared/page-status.ts`     | `PageStatus`, `describePageStatus()` (every word on that view), `describeLoadFailure()`, `retryDelay()` |
-| `shared/themes.ts`          | `ThemeSummary`, `parseThemeMetadata()`                                                                  |
-| `shared/identity.ts`        | `Identity`, `buildUserAgent()`, `leaksAppIdentity()`, `pageLanguages()`, `acceptLanguages()`            |
-| `shared/plugins.ts`         | `readManifest()`, permissions, `readHostMessage()`, `callAllowed()`, `PluginView`                       |
-| `shared/plugin-api.ts`      | `PluginApi`: the `bsc` object a plugin gets. The contract, for code and for docs                        |
+| File                        | Owns                                                                                                            |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `shared/ipc.ts`             | `CH` (every channel name), `ChromeApi` (the `window.bsc` type), `NavState`, `WindowState`                       |
+| `shared/settings-schema.ts` | `SETTINGS`, `SECTIONS`, `Settings`, `SettingKey`, `coerce`, `coerceAll`, `defaults`                             |
+| `shared/now-playing.ts`     | `PlayerReading`, `NowPlaying`, `readNowPlaying()` and its cleaners                                              |
+| `shared/page-theme.ts`      | `PageTheme`, `detectPageTheme()`                                                                                |
+| `shared/context-menu.ts`    | `ContextMenuRequest`, `CONTEXT_MENU_ACTIONS`, `cleanUrl`, `shortUrl`, `elide`                                   |
+| `shared/presence.ts`        | `Activity`, `buildActivity()` (the Discord card), `sameActivity()`, `PRESENCE_LOGO`                             |
+| `shared/page-status.ts`     | `PageStatus`, `describePageStatus()` (every word on that view), `describeLoadFailure()`, `retryDelay()`         |
+| `shared/themes.ts`          | `ThemeSummary`, `parseThemeMetadata()`, `splitThemeTargets()`, `chromeCssFor()`, `contentCssOf()`, `coverCss()` |
+| `shared/identity.ts`        | `Identity`, `buildUserAgent()`, `leaksAppIdentity()`, `pageLanguages()`, `acceptLanguages()`                    |
+| `shared/plugins.ts`         | `readManifest()`, permissions, `readHostMessage()`, `callAllowed()`, `PluginView`                               |
+| `shared/plugin-api.ts`      | `PluginApi`: the `bsc` object a plugin gets. The contract, for code and for docs                                |
 
 ---
 
@@ -177,6 +178,8 @@ views:
 | `toggleSettings`, `toggleMenuBar`                     | send        | `fromChrome`                                                             |
 | `closeSettings`                                       | send        | the settings view only                                                   |
 | `getSettings`, `setSetting`, `listThemes`             | invoke      | `fromSettingsUi` = header, embedded, settings                            |
+| `copyTheme`, `openThemesFolder`, `openThemeFile`      | invoke/send | `fromSettingsUi`; none takes a path                                      |
+| `onThemesChanged`                                     | subscribe   | pushed to the settings view when the themes folder changes               |
 | `contextMenuAction`, `goToUrl`, `closeContextMenu`    | send/invoke | the context-menu view only                                               |
 | `getNowPlaying`                                       | invoke      | `fromOurViews` = header, settings, embedded, player, contextMenu, status |
 | `onNavState`                                          | subscribe   | pushed to header                                                         |
@@ -308,8 +311,10 @@ already shipped once:
 3. **Expose nothing to the page.** No `contextBridge`, no globals — the page must not be able to
    detect us. Results go to main over `ipcRenderer.send`, never `console.log`.
 4. **Cosmetic changes are CSS only**, injected by main with `webContents.insertCSS()`
-   (`applyContentCss` → `buildContentCss`, re-applied on every load; the selected theme is appended
-   last).
+   (`applyContentCss` → `buildContentCss`, re-applied on every load). The selected theme goes
+   after the overridable basics and **before** the overlay reservations and layout settings, so
+   no theme can slide SoundCloud's controls under our transparent buttons. Swap a stylesheet by
+   inserting the new one before removing the old, or the page flashes unstyled.
 5. **No synthetic input on SoundCloud's controls** — no `.click()`, no `dispatchEvent`, no
    `sendInputEvent`. Implicated in the like/follow blocks.
 
@@ -379,7 +384,12 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
   in `settings-schema.test.ts`.
 - `applies: 'reload' | 'restart'` when the effect is not immediate. Never write timing into `help`
   prose — a test forbids it.
-- `optionsFrom: 'themes'` for choices read from disk.
+- The **Themes** section is half schema-driven: `Settings.svelte` draws its schema rows (the
+  `appearance.minimalNavigation` switch) with the same `settingRow` snippet as every other section,
+  then `Themes.svelte` draws the theme list. `appearance.theme` is the list, so it has no row.
+- **Stored values carry a version** (`SETTINGS_VERSION`). When a setting's meaning changes, bump
+  it and add one step to `upgradeValues` in `settings-schema.ts` (pure, tested); the store runs
+  it once on load and saves the result.
 - The **Plugins** section is not schema-driven: plugins are found on disk, so `Settings.svelte`
   renders `Plugins.svelte` for it, fed by `listPlugins` / `onPluginsChanged` (§16).
 - `statusFrom: 'discord'` puts a live line under the control saying whether the feature behind
@@ -521,10 +531,7 @@ context menu have the shortcut; embedded and player do not).
   do not invent answers), "Explicitly declined" (do not re-propose).
 - `docs/DESIGN.md` — the full design system. `docs/PRODUCT.md` — users, purpose, principles.
 - `README.md` — setup, VMP signing for release builds, platform notes.
-- Themes: `resources/themes/minimal-nav.css` is the reference theme (metadata header, restyle
-  only, `::before` instead of DOM edits). User themes go in `<userData>/themes/`; a user theme
-  with the same id overrides a shipped one. `docs/CUSTOM_THEMES.md` is referenced from
-  `tokens.css` but not written yet.
+- Themes: `docs/CUSTOM_THEMES.md` is the authors' guide. See §17.
 
 ---
 
@@ -567,3 +574,55 @@ Rules that hold this together:
   other's. A plugin's `secret` settings live there too and are never sent back to the renderer.
 - Promises and errors made inside the plugin's context are not `instanceof` this realm's — check
   their shape (`isThenable`, `isErrorLike` in plugin-sandbox.ts) or a rejection goes unreported.
+
+---
+
+## 17. Themes
+
+A theme is one `.css` file in `resources/themes/` (shipped) or `<userData>/themes/` (the user's,
+where a file with a built-in's name replaces it). CSS only, so it can never run code. The authors'
+guide is `docs/CUSTOM_THEMES.md`.
+
+```
+theme file --splitThemeTargets--> sections: content | chrome | header | settings | menu | status | all
+  content + all  --> buildContentCss() into SoundCloud's page (after the basics, before the layout rules)
+  chrome + <view> + all --> chrome-theme.ts into each of our views that called themeChromeView()
+--bsc-cover  --> a separate tiny sheet on SoundCloud's page (coverCss), replaced once per track
+```
+
+Rules that hold this together:
+
+- **Minimal navigation is a switch, not a theme** (`appearance.minimalNavigation`, CSS in
+  `resources/minimal-nav.css`, read by `minimalNavigationCss()`). `buildContentCss` puts it right
+  after the theme and before the layout rules, so it layers on any theme. It was a theme until
+  settings version 2; `upgradeValues` moves a stored `minimal-nav` theme onto the switch.
+- **One setting, `appearance.theme`, in its own Settings section** (`Themes.svelte`, not a schema
+  row). Changing it, or saving any file in the user's themes folder, re-applies everywhere at once:
+  `watchUserThemes` (a 150ms trailing debounce) calls `applyLiveSettings`, which re-reads from disk.
+- **Our own views get a theme through `themeChromeView(view, kind)`** — the header, settings, the
+  right-click menu and the status view call it when they are created. A new view of ours that follows
+  the app's colours calls it too. The overlays over SoundCloud's bars do not: they follow
+  SoundCloud's light/dark setting (§6, "Two colour sources").
+- **Bundled themes load nothing from the network but SoundCloud's own CDN**; the project's old
+  hot-linked icons are embedded as `data:` URIs. Our renderers' CSP blocks remote loads in chrome
+  regardless. `themes.test.ts` holds every shipped theme to this, to a lowercase file name, to no
+  v0.7.x-markup selectors, and to a `chrome` block that sets `--bsc-*` tokens and nothing else.
+- **`tokens.css` declares its defaults on `:where(:root)`**, never `:root`. `insertCSS` puts a sheet
+  BEFORE the document's own in Chromium's cascade, so at equal specificity our defaults beat every
+  theme (measured: no theme could recolour our windows). `themes.test.ts` pins it.
+- **Never forget a stylesheet key on `did-finish-load`.** A sheet inserted while the page was still
+  loading belongs to the document that load event reports; dropping its key left the startup theme
+  stuck on the page under every later one (measured). Re-apply and let the old key be removed —
+  removing a key the document no longer has is a no-op.
+- **SoundCloud has a light and a dark mode** (`theme-light` / `theme-dark` on `<body>`). v0.7.x
+  themes predate the dark one and invert icons; in the ports that only happens under
+  `body.theme-light` (pinned). A theme that sets `color` on `.sc-button` must give
+  `.sc-button.sc-button-selected` one too, or liked and not liked look the same.
+- **A theme must not change SoundCloud's header height** (46 CSS px): the embedded window buttons
+  and the page below are measured against it. The v0.7.x Nocturnal and Hover themes made it 60px;
+  v2's ports do not.
+- **`--bsc-cover`**: `url("<500×500 artwork>")` or `none`. The page sheet sets the `none` default on
+  `:root`; the cover sheet uses `html:root` so it wins whichever was inserted last. `coverCss` only
+  lets an https `i*.sndcdn.com` URL of safe characters through, since it is written into CSS.
+- Never edit a theme into SoundCloud's DOM, and never target Svelte's `svelte-…` classes in our
+  views — `data-bsc-*` attributes and the `--bsc-*` tokens are the public API.

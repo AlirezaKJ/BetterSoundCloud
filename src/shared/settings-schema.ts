@@ -13,6 +13,7 @@
 export const SECTIONS = [
   'general',
   'appearance',
+  'themes',
   'discord',
   'plugins',
   'shortcuts',
@@ -28,6 +29,7 @@ export type Section = (typeof SECTIONS)[number]
 export const SECTION_LABELS: Record<Section, string> = {
   general: 'General',
   appearance: 'Appearance',
+  themes: 'Themes',
   discord: 'Discord',
   plugins: 'Plugins',
   shortcuts: 'Shortcuts',
@@ -64,13 +66,6 @@ type Base = {
    * forbids hand-typed "requires a restart" help strings.
    */
   readonly applies?: 'reload' | 'restart'
-  /**
-   * Where a control's choices come from, when they are not known at compile time.
-   *
-   * `themes` is filled from the themes folders at render time. A static `options` list
-   * cannot work here: the whole point of a theme folder is that the user adds files to it.
-   */
-  readonly optionsFrom?: 'themes'
   /**
    * A live line under the control saying whether the feature behind it is actually working,
    * when that can change without the setting changing. `discord`: whether the Discord app is
@@ -176,6 +171,19 @@ export const SETTINGS = {
       'controls. Neither does anything yet — they are placeholders for the layout.'
   },
 
+  // Not a theme: it goes on top of whichever theme is selected, so it can be combined with any
+  // of them. It was a theme until 2026-10-27; `upgradeValues` moves old choices onto it.
+  'appearance.minimalNavigation': {
+    kind: 'boolean',
+    default: false,
+    label: 'Minimal navigation',
+    section: 'themes',
+    help:
+      'Shows Home, Feed and Library in SoundCloud’s header as icons and hides the upsells ' +
+      'beside them, so the header carries the same links in about half the width. Works with ' +
+      'every theme.'
+  },
+
   // `string`, not `enum`, on purpose: `coerce` validates an enum against a fixed list, and a
   // theme id is a filename the user invents. Validation happens where it can be true — the
   // theme loader falls back to no theme when the selected file is gone.
@@ -183,8 +191,9 @@ export const SETTINGS = {
     kind: 'string',
     default: 'vanilla',
     label: 'Theme',
-    section: 'appearance',
-    optionsFrom: 'themes',
+    // Its own section, drawn by Themes.svelte rather than as a schema row: a theme is a
+    // choice among files on disk, each with a description and swatches, not one dropdown.
+    section: 'themes',
     help:
       'Restyles SoundCloud’s page. Drop a .css file in the themes folder in your ' +
       'BetterSoundCloud data directory to add your own.'
@@ -349,6 +358,30 @@ export function coerceAll(input: Partial<Record<string, unknown>>): Settings {
   const out = {} as Record<string, unknown>
   for (const key of SETTING_KEYS) out[key] = coerce(key, input[key])
   return out as Settings
+}
+
+/** The version `upgradeValues` brings stored settings up to. */
+export const SETTINGS_VERSION = 2
+
+/**
+ * Carry stored values forward from an older settings version, one step per version, oldest
+ * first. Pure, so every step is tested; the store calls it once, then saves the result with
+ * the new version so it never runs twice.
+ *
+ * 1 -> 2 (2026-10-27): Minimal navigation stopped being a theme and became a switch that works
+ * with any theme. Someone who had chosen it as their theme gets no theme plus the switch on,
+ * which is exactly the page they had.
+ */
+export function upgradeValues(
+  from: number,
+  values: Partial<Record<string, unknown>>
+): Partial<Record<string, unknown>> {
+  const next = { ...values }
+  if (from < 2 && next['appearance.theme'] === 'minimal-nav') {
+    next['appearance.theme'] = 'vanilla'
+    next['appearance.minimalNavigation'] = true
+  }
+  return next
 }
 
 export function isSettingKey(value: unknown): value is SettingKey {

@@ -9,9 +9,15 @@
  * Svelte scopes CSS in the ordinary document rather than a shadow root, so a user
  * theme's `[data-bsc-header] { background: ... }` still matches. That property is the
  * reason Svelte was chosen over Lit.
+ *
+ * The defaults are declared on `:where(:root)`, which has no specificity, so a theme's plain
+ * `:root { --bsc-accent: … }` always wins. It has to be that way round: a theme reaches our views
+ * through `insertCSS`, and Chromium puts inserted sheets BEFORE the document's own in the cascade,
+ * so at equal specificity these defaults would win and every theme would be ignored (measured,
+ * 2026-10-27: Hover's green accent never showed until this changed).
  */
 
-:root {
+:where(:root) {
   --bsc-bg-primary: #f2f2f2;
   --bsc-bg-secondary: #ffffff;
   --bsc-bg-hover: rgb(0 0 0 / 8%);
@@ -30,7 +36,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :where(:root) {
     --bsc-bg-primary: #121212;
     --bsc-bg-secondary: #1c1c1c;
     --bsc-bg-hover: rgb(255 255 255 / 10%);

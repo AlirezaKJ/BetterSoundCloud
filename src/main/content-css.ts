@@ -60,11 +60,18 @@ export const MIN_EMBED_WIDTH = 800
 
 export interface ContentCssOptions {
   /**
-   * The selected theme's CSS, or empty for none. Appended last so a theme can override the
-   * rules above it — a theme author who wants a different scrollbar should be able to have
-   * one without us curating an exception for it.
+   * The selected theme's CSS for SoundCloud's page, or empty for none. Placed after the rules a
+   * theme may restyle (the scrollbar) and BEFORE the rules it must not break: the space reserved
+   * for our overlays, and the user's own layout settings. A theme that set `.header__inner`'s
+   * padding used to win here and slide SoundCloud's controls under our transparent buttons —
+   * visible, but dead to clicks.
    */
   theme?: string
+  /**
+   * The Minimal navigation CSS when that switch is on, else empty. Right after the theme, so it
+   * applies on top of any of them, and before the layout rules for the same reason as a theme.
+   */
+  minimalNavigation?: string
   /**
    * CSS pixels to reserve at the right-hand end of the play controls for our own buttons,
    * or null when they are switched off.
@@ -94,6 +101,7 @@ export function buildContentCss({
   fullWidth,
   reserve,
   theme,
+  minimalNavigation,
   playerReserve,
   compactHeader,
   fitHeader,
@@ -114,8 +122,17 @@ export function buildContentCss({
      ::-webkit-scrollbar-corner { background: transparent; }
      ::-webkit-scrollbar-thumb { background: rgb(128 128 128 / 40%); border-radius: 4px; }
      ::-webkit-scrollbar-thumb:hover,
-     ::-webkit-scrollbar-thumb:active { background: #f50; }`
+     ::-webkit-scrollbar-thumb:active { background: #f50; }`,
+    // Themes may use `--bsc-cover` (the playing track's artwork). Its real value lives in a
+    // separate, more specific sheet that changes once per track; this is the default for
+    // when nothing is playing. See `coverCss` in src/shared/themes.ts.
+    ':root { --bsc-cover: none; }'
   ]
+
+  // A theme restyles everything above; everything below keeps SoundCloud's controls clickable
+  // and the user's own settings in force, so it comes after the theme and wins.
+  if (theme) rules.push(theme)
+  if (minimalNavigation) rules.push(minimalNavigation)
 
   if (fullWidth) {
     // `min-width`, never `width`. SoundCloud's `.l-container` is 1240px and steps down to
@@ -189,10 +206,6 @@ export function buildContentCss({
     // loss, where the header was `nowrap` and wrapped its contents onto the page instead.
     rules.push(`.playControls__wrapper { padding-right: ${playerReserve}px !important; }`)
   }
-
-  // Last, so a theme can override everything above it. A theme author who wants a different
-  // scrollbar should get one without us curating an exception for it.
-  if (theme) rules.push(theme)
 
   return rules.join('\n')
 }

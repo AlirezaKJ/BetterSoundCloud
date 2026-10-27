@@ -48,7 +48,8 @@ vi.mock('./window', () => ({
   toggleSettings: vi.fn(),
   closeSettings: vi.fn(),
   setContentAppearance: mocks.setContentAppearance,
-  setPageTheme: vi.fn()
+  setPageTheme: vi.fn(),
+  setContentCover: vi.fn()
 }))
 vi.mock('./tray', () => ({ createTray: mocks.createTray }))
 vi.mock('./page-status', () => ({
@@ -70,7 +71,14 @@ vi.mock('./blocker', () => ({
   setAudioAdBlocking: vi.fn()
 }))
 vi.mock('./settings-store', () => ({ get: () => true }))
-vi.mock('./themes', () => ({ listThemes: () => [] }))
+vi.mock('./themes', () => ({
+  listThemes: () => [],
+  findTheme: () => null,
+  copyThemeToUserFolder: vi.fn(),
+  openThemesFolder: vi.fn(),
+  openThemeFile: vi.fn(),
+  watchUserThemes: vi.fn()
+}))
 vi.mock('./plugins', () => ({
   startPlugins: vi.fn(),
   listPlugins: () => [],
@@ -316,6 +324,50 @@ describe('main window lifecycle', () => {
     handlerFor('on', CH.pluginAction)(fromPage, 'lastfm', 'connect')
     expect(plugins.openPluginsFolder).not.toHaveBeenCalled()
     expect(plugins.runPluginAction).not.toHaveBeenCalled()
+  })
+
+  it('lets only our settings UI list, copy and open themes, and never with a path', async () => {
+    const { app } = await import('electron')
+    const themes = await import('./themes')
+    app.emit('activate')
+    const shell = mocks.createShell.mock.results.at(-1)!.value as ReturnType<typeof makeShell>
+    const handlerFor = (method: 'on' | 'handle', channel: string) => {
+      const registered = method === 'on' ? mocks.ipcOn : mocks.ipcHandle
+      return registered.mock.calls.find(([name]) => name === channel)![1] as (
+        event: unknown,
+        ...args: unknown[]
+      ) => unknown
+    }
+    const fromSettings = { sender: shell.settings.webContents }
+    const fromPage = { sender: shell.content.webContents }
+
+    expect(handlerFor('handle', CH.themesList)(fromSettings)).toEqual([])
+    expect(handlerFor('handle', CH.themesList)(fromPage)).toBeNull()
+
+    expect(handlerFor('handle', CH.themeCopy)(fromPage, 'darkcloud')).toEqual({
+      error: 'Not allowed.'
+    })
+    expect(handlerFor('handle', CH.themeCopy)(fromSettings, { id: 'darkcloud' })).toEqual({
+      error: 'Not allowed.'
+    })
+    handlerFor('on', CH.themesOpenFolder)(fromPage)
+    handlerFor('on', CH.themeOpenFile)(fromPage, 'darkcloud')
+    handlerFor('on', CH.themeOpenFile)(fromSettings, ['darkcloud'])
+    expect(themes.copyThemeToUserFolder).not.toHaveBeenCalled()
+    expect(themes.openThemesFolder).not.toHaveBeenCalled()
+    expect(themes.openThemeFile).not.toHaveBeenCalled()
+
+    // The service's refusal reaches the panel as words, not as a rejected promise.
+    vi.mocked(themes.copyThemeToUserFolder).mockImplementationOnce(() => {
+      throw new Error('“Dark Cloud” is already one of yours.')
+    })
+    expect(handlerFor('handle', CH.themeCopy)(fromSettings, 'darkcloud')).toEqual({
+      error: '“Dark Cloud” is already one of yours.'
+    })
+    handlerFor('on', CH.themesOpenFolder)(fromSettings)
+    handlerFor('on', CH.themeOpenFile)(fromSettings, 'darkcloud')
+    expect(themes.openThemesFolder).toHaveBeenCalledOnce()
+    expect(themes.openThemeFile).toHaveBeenCalledWith('darkcloud')
   })
 
   it('gives every window the same identity, its header built from the page’s languages', () => {

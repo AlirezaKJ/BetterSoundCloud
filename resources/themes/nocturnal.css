@@ -1,0 +1,418 @@
+/**
+ * @name Nocturnal
+ * @author BetterSoundCloud
+ * @version 2.0.0
+ * @description Deep navy-black surfaces with soft grey text, dusty blue links and sage green
+ *              for active tabs and the volume slider. Icons and the waveform are dimmed to
+ *              grey, and artwork spins on hover.
+ * @preview #14151f #1d1e2a #888888 #74857c
+ * @license MIT
+ */
+
+/*
+ * Ported from v0.7.x. The look is unchanged; what went is everything that styled markup v0.7.x
+ * injected into SoundCloud's page itself, because v2 injects none, plus one dead image link.
+ * Each changed block below says what it did before.
+ */
+
+:root {
+  --main-bg: #1d1e2a !important;
+  --dark-bg: #1a1b26 !important;
+  --darker-bg: #14151f !important;
+  --main-text: #888 !important; /* grey */
+  --secondary-text: #8a7b70 !important; /* yellow */
+  --third-text: #74857c !important; /* green */
+  --fourth-text: #556b82 !important; /* blue */
+}
+
+/*
+ * v0.7.x had a "CSS For SCI Elements" section here: icons for its own theme, plugin, lyrics and
+ * showcase buttons in the play bar, and colours for its window and previous/next buttons in the
+ * header. Those buttons were markup v0.7.x added to SoundCloud's page. v2 adds none — its buttons
+ * are separate views drawn above the page — so the rules had nothing left to match and are gone.
+ * The chrome block at the end of this file recolours v2's own buttons instead.
+ */
+
+body,
+.trackItem:hover,
+.trackItem.hover:not(.m-disabled) .trackItem__additional,
+.trackItem.active:not(.m-disabled) .trackItem__additional,
+.sc-toggle,
+.sc-toggle-handle,
+.commentForm__input,
+.dropbar__content,
+.trackItem.hover,
+.trackItem.active,
+.g-type-shrinkwrap-inline,
+.searchOptions__navigationItem.active,
+.searchOptions__navigationItem.active::after,
+.linkMenu {
+  background: var(--main-bg) !important;
+}
+
+.sc-button,
+.sc-toggle::before,
+.compactTrackListItem.clickToPlay.active,
+.compactTrackListItem.clickToPlay:hover,
+.compactTrackListItem.clickToPlay:focus,
+.compactTrackListItem.clickToPlay.active .compactTrackListItem__additional,
+.compactTrackListItem.clickToPlay:hover .compactTrackListItem__additional,
+.compactTrackListItem.clickToPlay:focus .compactTrackListItem__additional,
+.compactTrackList__moreLink:hover,
+.compactTrackList__moreLink:focus,
+.header__navMenu > li > a.selected,
+.header > li > a:focus,
+.playControls__inner,
+.volume.expanded .volume__sliderWrapper,
+select,
+.g-dark-bg,
+.profileMenu__link,
+.userNav__button.selected,
+.playControls__controls,
+.playControls__bg,
+li.notifications__item:hover,
+.uploadMain__chooserContainer,
+.audibleEditForm__form,
+.g-tabs,
+input,
+textarea,
+.tagInput__wrapper,
+select,
+.linkMenu__item:hover,
+.moreActions,
+.editTrackItem__additional {
+  background: var(--dark-bg) !important;
+}
+
+header,
+.l-container.l-content,
+.g-dark textarea,
+.g-dark select,
+.g-dark input[type="text"],
+.g-dark input[type="password"],
+.sound__soundActions,
+.commentForm,
+.readMoreBadge__countWrapper,
+.playbackTimeline__progressBackground,
+.volume__sliderWrapper,
+.commentForm__wrapper,
+.fullListenHero__foreground,
+.sc-label.sc-label-private,
+.visualSound.listenContext .visualSound__wrapper,
+.g-dark-list,
+.notifications__viewAll,
+.g-dark,
+.uploadMain__foot,
+.soundBadge__additional,
+.l-fixed-top-one-column > .l-top,
+.searchTitle,
+.commentFormDisabled,
+.modal.modalWhiteout,
+.volume__sliderBackground,
+.editTrackItem:hover {
+  background: var(--darker-bg) !important;
+}
+
+.g-dark a:hover,
+.g-dark a:focus {
+  background-color: var(--main-bg) !important;
+}
+
+.playbackTimeline__progressBar,
+.volume__sliderProgress,
+.volume__sliderHandle {
+  background: var(--third-text) !important;
+}
+
+body,
+input,
+textarea,
+select,
+.sc-button,
+.sc-button:hover,
+.sc-button:focus,
+.sc-button-focus,
+.sc-tag,
+.sc-tag:visited,
+.sc-buylink,
+.compactTrackListItem__number,
+.compactTrackListItem__trackTitle,
+.commentForm__input,
+.g-tabs-link,
+select,
+.g-dark textarea,
+.g-dark select,
+.g-dark input[type="text"],
+.g-dark input[type="password"],
+.g-dark input[type="search"],
+.g-type-shrinkwrap-large-primary,
+.fullListenHero__uploadTime {
+  color: var(--main-text) !important;
+}
+
+.playbackSoundBadge__title,
+.playbackSoundBadge__title:visited,
+.g-link-user,
+a {
+  color: var(--fourth-text) !important;
+}
+
+a.sc-link-dark,
+.g-tabs-link.active,
+.playbackTimeline__timePassed,
+.playbackTimeline__duration {
+  color: var(--third-text) !important;
+}
+
+/* remove shit */
+
+.l-listen-wrapper .l-about-rows,
+.sc-button,
+.listenEngagement,
+.sc-border-light-bottom,
+.sc-border-light-top,
+.sc-tag,
+.sc-tag:visited,
+.sc-toggle,
+.sc-border-light-right,
+.g-tabs,
+.g-tabs-link.active,
+.sc-border-light,
+.commentForm,
+.commentForm__input,
+.collection.m-overview .collection__section:not(:last-child),
+.audibleBadgePlaceholder::before,
+.header__navMenu > li > a,
+.playControls__inner,
+.volume.expanded .volume__sliderWrapper,
+.ownActivity.large .ownActivity__user,
+.g-form-section-head,
+select,
+.image__whiteOutline .image__full,
+.commentForm__wrapper,
+.notifications__viewAll,
+.playControls__inner,
+.playControls__bg,
+.searchTitle__text,
+.searchPremiumContentFooter,
+.sc-snippet-badge-grey,
+.searchOptions__navigationItem.active::after,
+.g-modal-title-h1,
+input,
+textarea,
+.tagInput__wrapper,
+select,
+.moreActions__group,
+.moreActions__button {
+  border: none !important;
+}
+
+.listenEngagement {
+  box-shadow: none !important;
+}
+
+.g-nav-item.active > .g-nav-link {
+  text-shadow: none !important;
+}
+
+.soundBadge.playlist .soundBadge__avatarLink,
+.truncatedUserDescription.m-overflow.m-collapsed .truncatedUserDescription__wrapper::after,
+.modal__modal,
+.soundBadge.playlist .soundBadge__artwork {
+  background: transparent !important;
+}
+
+/* SoundCloud shows a switched-on button (liked, followed, reposted) by its `color`, which this
+   theme sets for every button, so liked and not liked looked the same (measured 2026-10-27 on the
+   play bar's heart). Selected buttons get the theme's sage green, its colour for "active". */
+.sc-button.sc-button-selected,
+.sc-button.sc-button-selected:hover,
+.sc-button.sc-button-selected:focus {
+  color: var(--third-text) !important;
+}
+
+/* Hidden: SoundCloud's promo and footer furniture, and the Go+ upsell link. */
+.header__link.header__goUpsell,
+.dashbox__wrapper,
+.l-footer,
+.mobileAppsButtons.m-sidebar,
+.mobileApps .sidebarHeader__title,
+.paging-eof,
+.dashbox__box,
+.truncatedAudioInfo.m-overflow.m-collapsed .truncatedAudioInfo__wrapper::after {
+  display: none !important;
+}
+
+.g-modal-title-h1 {
+  text-align: center !important;
+}
+
+.sc-border-light-bottom,
+.commentForm__input {
+  padding: 5px !important;
+}
+
+.userBadge__actions {
+  padding: 15px !important;
+}
+
+.fullListenHero__artwork,
+.g-avatar-badge-avatar > div:nth-child(1) > span,
+.image:not(.m-omitRoundedBorder) .image__rounded,
+.image__full,
+.image {
+  -webkit-transition: -webkit-transform 0.8s ease-in-out !important;
+  transition: transform 0.9s ease-in-out !important;
+}
+
+.fullListenHero__artwork:hover,
+.g-avatar-badge-avatar > div:nth-child(1) > span:hover,
+.image:not(.m-omitRoundedBorder) .image__rounded:hover,
+.image__full,
+.image:hover {
+  transform: rotate(360deg) !important;
+  -webkit-transform: rotate(360deg) !important;
+  opacity: 0.8 !important;
+}
+
+/* header */
+
+/* v0.7.x painted SoundCloud's old cloud PNG here. SoundCloud now draws its logo as an SVG inside
+   this link, so the PNG showed through behind it as a second, offset logo. The colour stays. */
+.header__logoLink {
+  background-color: var(--dark-bg) !important;
+}
+
+/*
+ * v0.7.x also carried a commented-out background image here, hosted on puu.sh. That host is
+ * dead, so the image never drew even then; the line is removed. The colour is unchanged.
+ *
+ * v0.7.x also made SoundCloud's header 60px tall and nudged its contents by 6-7px to centre them
+ * in the extra height. v2 drops those sizes and offsets and keeps every colour: its window
+ * buttons are measured against SoundCloud's own 46px header, and the page below is laid out for
+ * 46px, so a taller header misplaced the buttons and covered the top 14px of the page.
+ */
+.header {
+  background-color: var(--dark-bg) !important;
+}
+
+.headerSearch__submit {
+  display: none !important;
+}
+
+.header__mainMenu-collection,
+.header__navMenu > li > a.selected,
+.header > li > a:focus {
+  background-color: var(--dark-bg) !important;
+}
+
+.uploadButton {
+  background-color: var(--dark-bg) !important;
+}
+
+.userNav,
+.header__navMenu > li > a.header__moreButton {
+  background-color: var(--dark-bg) !important;
+  opacity: 1 !important;
+}
+
+.header__navMenu > li > a.selected,
+.header > li > a:focus,
+.headerSearch__input,
+.g-dark input[type="search"] {
+  background-color: var(--main-bg) !important;
+}
+
+/* songs */
+
+.sc-tag,
+.sc-tag:visited {
+  background-color: var(--main-bg) !important;
+  border-radius: 0px !important;
+  padding: 10px !important;
+}
+
+.sceneLayer,
+.playbackTimeline {
+  filter: grayscale(500%) !important;
+}
+
+.waveformCommentsNode {
+  filter: hue-rotate(0deg) !important;
+}
+
+/* fix black icons */
+
+/*
+ * v0.7.x inverted SoundCloud's icons here because SoundCloud only had a light mode, with dark
+ * icons. Its dark mode draws them light already, and inverting those made them dark on a dark
+ * bar (the play button all but vanished, measured 2026-10-27). So these rules now apply only
+ * while SoundCloud itself is light, which it marks with `theme-light` on <body>.
+ */
+body.theme-light .sc-button-medium.sc-button-startstation::before,
+body.theme-light .sc-button-medium.sc-button-message::before,
+body.theme-light .sc-button-medium.sc-button-more::before,
+body.theme-light .playControls__control,
+body.theme-light .playControl,
+body.theme-light button.skipControl,
+body.theme-light svg:not(:root),
+body.theme-light .volume__button,
+body.theme-light .sc-button-small::before,
+body.theme-light .sc-button-medium.sc-button-share::before,
+body.theme-light .sc-button-medium.sc-button-edit::before {
+  filter: invert(100) !important;
+  opacity: 0.5 !important;
+}
+
+.sc-button-pause,
+.sc-button-play {
+  /*     filter: invert(100) !important; */
+  background: transparent !important;
+  opacity: 1 !important;
+}
+
+/* SoundCloud's play-bar button now carries `sc-button-play` too, so the rule above made its disc
+   transparent and left a dark triangle on the dark bar, all but invisible (measured 2026-10-27).
+   The disc comes back in the theme's text grey. */
+.playControls .playControls__play {
+  background-color: var(--main-text) !important;
+}
+
+.commentPopover__username,
+a.commentPopover__username:hover,
+a.commentPopover__username:visited {
+  opacity: 0 !important;
+}
+
+/* replace icons */
+
+.sc-button-medium.sc-button-like::before,
+.sc-button-medium.sc-button-share::before,
+.sc-button-medium.sc-button-edit::before,
+.sc-button-medium.sc-button-delete::before {
+  opacity: 0.7 !important;
+}
+
+.sc-button-group-medium {
+  padding: 0px !important;
+}
+
+/*
+ * New in v2: our own bar, settings panel, menu and status screen, in the same palette. Literal
+ * colours, because the palette variables above live on SoundCloud's page and do not reach our
+ * views. Background is --dark-bg, the colour of SoundCloud's header and play bar under this
+ * theme; inputs step up to --main-bg. --main-text (#888) is too dim to be body text here
+ * (4.8:1 against the bar), so it is the secondary text and the primary is a lighter grey. The
+ * accent is --third-text, the sage green this theme already uses for active tabs.
+ */
+/* @target chrome */
+:root {
+  --bsc-bg-primary: #1a1b26;
+  --bsc-bg-secondary: #1d1e2a;
+  --bsc-bg-hover: rgb(255 255 255 / 10%);
+  --bsc-text-primary: #bbbbbb;
+  --bsc-text-secondary: #888888;
+  --bsc-text-disabled: #5c5c5c;
+  --bsc-border: rgb(255 255 255 / 14%);
+  --bsc-accent: #74857c;
+}

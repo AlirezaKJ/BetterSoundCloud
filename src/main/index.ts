@@ -16,8 +16,12 @@ import {
   toggleSettings,
   closeSettings,
   setContentAppearance,
-  setPageTheme
+  setPageTheme,
+  setContentCover
 } from './window'
+import { setChromeTheme } from './chrome-theme'
+import { chromeCssFor } from '@shared/themes'
+import type { ThemeSummary } from '@shared/themes'
 import {
   attachPageStatus,
   noticeSlowStart,
@@ -43,7 +47,14 @@ import {
 import type { Shell } from './window'
 import type { Settings } from '@shared/settings-schema'
 import * as settings from './settings-store'
-import { listThemes } from './themes'
+import {
+  copyThemeToUserFolder,
+  findTheme,
+  listThemes,
+  openThemeFile,
+  openThemesFolder,
+  watchUserThemes
+} from './themes'
 import { isSoundCloudUrl, readNowPlaying } from '@shared/now-playing'
 import type { NowPlaying } from '@shared/now-playing'
 import { getNowPlaying, onNowPlayingChange, setNowPlaying } from './now-playing'
@@ -492,18 +503,37 @@ function registerIpc(): void {
 
   // The CSS never leaves main — the panel only needs enough to draw a list, and shipping a
   // whole stylesheet over IPC for every render would be waste.
-  ipcMain.handle(CH.themesList, (e) =>
-    fromSettingsUi(e)
-      ? listThemes().map(({ id, name, author, version, description, builtIn }) => ({
-          id,
-          name,
-          author,
-          version,
-          description,
-          builtIn
-        }))
-      : null
-  )
+  ipcMain.handle(CH.themesList, (e) => (fromSettingsUi(e) ? themeSummaries() : null))
+  ipcMain.handle(CH.themeCopy, (e, id: unknown) => {
+    if (!fromSettingsUi(e) || typeof id !== 'string') return { error: 'Not allowed.' }
+    try {
+      copyThemeToUserFolder(id)
+      return { error: '' }
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : String(error) }
+    }
+  })
+  ipcMain.on(CH.themesOpenFolder, (e) => {
+    if (fromSettingsUi(e)) openThemesFolder()
+  })
+  ipcMain.on(CH.themeOpenFile, (e, id: unknown) => {
+    if (fromSettingsUi(e) && typeof id === 'string') openThemeFile(id)
+  })
+
+  // A theme file saved, added or deleted: the selected theme re-applies everywhere, and an open
+  // panel redraws its list. This is what makes writing a theme feel live.
+  watchUserThemes(() => {
+    applyLiveSettings()
+    const view = shell?.settings
+    if (view && !view.webContents.isDestroyed()) {
+      view.webContents.send(CH.themesChanged, themeSummaries())
+    }
+  })
+
+  // `--bsc-cover` for themes: the artwork of what is playing, once per track.
+  onNowPlayingChange((nowPlaying) => {
+    if (shell) setContentCover(shell, nowPlaying?.artwork ?? '')
+  })
 
   ipcMain.handle(CH.settingsSet, (e, key: unknown, value: unknown) => {
     if (!fromSettingsUi(e)) return null
@@ -619,6 +649,31 @@ function broadcastSettings(next: Settings): void {
  * `prefers-color-scheme` for every web contents in the app, measured — a page loaded in
  * the content view reports `prefers-color-scheme: dark` the moment this is set to dark.
  */
+/**
+ * The CSS never leaves main — the panel only needs enough to draw a list, and shipping whole
+ * stylesheets over IPC for every render would be waste.
+ */
+function themeSummaries(): ThemeSummary[] {
+  return listThemes().map(
+    ({ id, name, author, version, description, builtIn, preview, overridesBuiltIn }) => ({
+      id,
+      name,
+      author,
+      version,
+      description,
+      builtIn,
+      preview,
+      overridesBuiltIn
+    })
+  )
+}
+
+/** The selected theme's `chrome` sections, into every view of ours that takes them. */
+function applyChromeTheme(): void {
+  const theme = findTheme(settings.get('appearance.theme'))
+  setChromeTheme((kind) => (theme ? chromeCssFor(theme.sections, kind) : ''))
+}
+
 function applyLiveSettings(): void {
   // Discord presence belongs to the app rather than to a window, so it is applied before the
   // window check below.
@@ -626,6 +681,8 @@ function applyLiveSettings(): void {
     enabled: settings.get('discord.enabled'),
     showWhenPaused: settings.get('discord.showWhenPaused')
   })
+
+  applyChromeTheme()
 
   if (!shell) return
   shell.content.webContents.setZoomFactor(settings.get('appearance.zoomFactor') / 100)
@@ -637,6 +694,7 @@ function applyLiveSettings(): void {
     hideMenuBar: settings.get('appearance.hideMenuBar'),
     fullWidth: settings.get('appearance.fullWidthLayout'),
     theme: settings.get('appearance.theme'),
+    minimalNavigation: settings.get('appearance.minimalNavigation'),
     playerButtons: settings.get('appearance.playerButtons')
   })
 }

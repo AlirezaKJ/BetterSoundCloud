@@ -12,7 +12,9 @@ import {
   FIT_HEADER_WIDTH,
   MIN_EMBED_WIDTH
 } from './content-css'
-import { themeCss, NO_THEME } from './themes'
+import { findTheme, minimalNavigationCss, NO_THEME } from './themes'
+import { themeChromeView } from './chrome-theme'
+import { contentCssOf, coverCss } from '@shared/themes'
 import type { PageTheme } from '@shared/page-theme'
 import { hidesPage } from '@shared/page-status'
 import type { PageStatus } from '@shared/page-status'
@@ -106,6 +108,8 @@ export type Shell = {
   /** Selected theme id. Held here for the same reason as `fullWidthLayout`: the reload
    *  handler re-injects the stylesheet and needs to know what to put in it. */
   theme: string
+  /** Whether the Minimal navigation switch is on. Held for the reload handler, like `theme`. */
+  minimalNavigation: boolean
   /**
    * The user agent and languages every view's session gets. Kept so views created later —
    * settings, the overlays, the menu — are hardened with exactly the same identity.
@@ -113,6 +117,14 @@ export type Shell = {
   identity: Identity
   /** Guards against two overlapping `applyContentCss` calls clobbering each other. */
   cssGeneration: number
+  /**
+   * The playing track's artwork, for themes' `--bsc-cover`, and the handle of the small
+   * stylesheet that carries it. Kept apart from the main page stylesheet so a new track
+   * replaces three lines, not the whole theme.
+   */
+  cover: string
+  coverKey: string | null
+  coverGeneration: number
   /** Re-runs the view layout. Assigned in `createShell`; call it after changing a mode. */
   layout: () => void
 }
@@ -206,6 +218,7 @@ export function createShell(identity: Identity): Shell {
 
   window.contentView.addChildView(content)
   window.contentView.addChildView(header)
+  themeChromeView(header, 'header')
 
   const shell: Shell = {
     window,
@@ -225,8 +238,12 @@ export function createShell(identity: Identity): Shell {
     hideMenuBar: false,
     reservationKey: null,
     cssGeneration: 0,
+    cover: '',
+    coverKey: null,
+    coverGeneration: 0,
     fullWidthLayout: false,
     theme: NO_THEME,
+    minimalNavigation: false,
     identity,
     layout: () => {}
   }
@@ -424,6 +441,7 @@ export function toggleSettings(shell: Shell): void {
 
   shell.settings = view
   shell.window.contentView.addChildView(view)
+  themeChromeView(view, 'settings')
   // `embeddedShowing`, not `hideMenuBar`: those differ in exactly the fallback case, where the
   // setting is on but the window is too narrow to honour it. Re-deriving it here would place
   // the panel at y=0 over our own bar — including the window buttons — until the next resize.
@@ -511,12 +529,12 @@ async function applyContentCss(shell: Shell, fullWidth: boolean, theme: string):
   // that crosses the width threshold triggers another. Both await, so without this the older
   // call could insert its stylesheet after the newer one and win.
   const generation = ++shell.cssGeneration
+  if (webContents.isDestroyed()) return
 
+  // The new stylesheet goes in BEFORE the old one comes out. Removing first left a frame with
+  // no stylesheet at all, so every theme switch, theme save and narrow-window step flashed
+  // SoundCloud's own look.
   const previous = shell.reservationKey
-  shell.reservationKey = null
-  if (previous) await webContents.removeInsertedCSS(previous).catch(() => undefined)
-
-  if (webContents.isDestroyed() || generation !== shell.cssGeneration) return
 
   // Reserved space is measured in window pixels, but the rule lands inside a page that
   // may be zoomed, so convert before writing it.
@@ -535,7 +553,8 @@ async function applyContentCss(shell: Shell, fullWidth: boolean, theme: string):
         fullWidth,
         reserve,
         nativeControlsReserve: process.platform === 'darwin' ? Math.ceil(80 / zoom) : 0,
-        theme: themeCss(theme),
+        theme: themeContentCss(theme),
+        minimalNavigation: shell.minimalNavigation ? minimalNavigationCss() : '',
         playerReserve,
         compactHeader,
         fitHeader
@@ -549,6 +568,37 @@ async function applyContentCss(shell: Shell, fullWidth: boolean, theme: string):
     return
   }
   shell.reservationKey = key
+  if (previous) await webContents.removeInsertedCSS(previous).catch(() => undefined)
+}
+
+/** A theme's CSS for SoundCloud's page: its `all` and `content` sections, read fresh from disk. */
+function themeContentCss(id: string): string {
+  const theme = id === NO_THEME ? null : findTheme(id)
+  return theme ? contentCssOf(theme.sections) : ''
+}
+
+/**
+ * Tell themes what is playing: `--bsc-cover` becomes the track's artwork. Called when the
+ * artwork changes, which is once per track, not once per clock tick.
+ */
+export function setContentCover(shell: Shell, artwork: string): void {
+  if (artwork === shell.cover) return
+  shell.cover = artwork
+  void applyCover(shell)
+}
+
+async function applyCover(shell: Shell): Promise<void> {
+  const { webContents } = shell.content
+  const generation = ++shell.coverGeneration
+  if (webContents.isDestroyed()) return
+  const previous = shell.coverKey
+  const key = await webContents.insertCSS(coverCss(shell.cover)).catch(() => null)
+  if (generation !== shell.coverGeneration) {
+    if (key) void webContents.removeInsertedCSS(key).catch(() => undefined)
+    return
+  }
+  shell.coverKey = key
+  if (previous) await webContents.removeInsertedCSS(previous).catch(() => undefined)
 }
 
 /**
@@ -561,10 +611,17 @@ async function applyContentCss(shell: Shell, fullWidth: boolean, theme: string):
  */
 export function setContentAppearance(
   shell: Shell,
-  options: { hideMenuBar: boolean; fullWidth: boolean; theme: string; playerButtons: boolean }
+  options: {
+    hideMenuBar: boolean
+    fullWidth: boolean
+    theme: string
+    minimalNavigation: boolean
+    playerButtons: boolean
+  }
 ): void {
   shell.fullWidthLayout = options.fullWidth
   shell.theme = options.theme
+  shell.minimalNavigation = options.minimalNavigation
   shell.hideMenuBar = options.hideMenuBar
 
   // The embedded bar exists exactly while our own bar is hidden — it carries the only
@@ -750,10 +807,14 @@ function wireStateEvents(shell: Shell): void {
     }
   }
 
-  content.webContents.on(
-    'did-finish-load',
-    () => void applyContentCss(shell, shell.fullWidthLayout, shell.theme)
-  )
+  content.webContents.on('did-finish-load', () => {
+    // Re-apply both sheets to the new document. The saved keys are NOT cleared first: a sheet
+    // inserted while the page was still loading already belongs to this document, and clearing
+    // its key orphaned it for good — the startup theme then stayed on the page under every theme
+    // chosen after it (measured, 2026-10-27). Removing a key the document no longer has is a no-op.
+    void applyContentCss(shell, shell.fullWidthLayout, shell.theme)
+    void applyCover(shell)
+  })
 
   content.webContents.on('did-navigate', sendNav)
   content.webContents.on('did-navigate-in-page', sendNav)

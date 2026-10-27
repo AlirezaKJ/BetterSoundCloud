@@ -180,4 +180,35 @@ describe('buildContentCss', () => {
       })
     ).not.toContain('.header__fanUpsell')
   })
+
+  it('puts a theme before the reservations, so no theme can slide controls under our buttons', () => {
+    // A theme used to be appended last, so one that set the header's padding beat our
+    // reservation and left SoundCloud's controls visible under a transparent view, dead to clicks.
+    const theme = '.header__inner { padding-right: 0 !important; } .themed { color: red }'
+    const css = buildContentCss({ fullWidth: true, reserve: 144, playerReserve: 92, theme })
+    const themeAt = css.indexOf(theme)
+    expect(themeAt).toBeGreaterThan(css.indexOf('::-webkit-scrollbar'))
+    expect(themeAt).toBeLessThan(css.indexOf('padding-right: 144px'))
+    expect(themeAt).toBeLessThan(css.indexOf('padding-right: 92px'))
+    expect(themeAt).toBeLessThan(css.indexOf('min-width: 100%'))
+  })
+
+  it('gives themes a --bsc-cover default for when nothing is playing', () => {
+    expect(buildContentCss({ fullWidth: false, reserve: null })).toContain(
+      ':root { --bsc-cover: none; }'
+    )
+  })
+
+  it('puts Minimal navigation on top of the theme, and still under the reservations', () => {
+    const css = buildContentCss({
+      fullWidth: true,
+      reserve: 144,
+      theme: '.themed { color: red }',
+      minimalNavigation: '.nav-icons { font-size: 0 }'
+    })
+    const navAt = css.indexOf('.nav-icons')
+    expect(navAt).toBeGreaterThan(css.indexOf('.themed'))
+    expect(navAt).toBeLessThan(css.indexOf('padding-right: 144px'))
+    expect(navAt).toBeLessThan(css.indexOf('min-width: 100%'))
+  })
 })

@@ -447,6 +447,35 @@ things the user switches on that act on their behalf.
 - **The footer** holds "Open plugins folder" and the plain statement of what the separate process
   does and does not protect. The words may not promise more safety than the code provides.
 
+### Theme rows
+
+Settings → Themes (`src/renderer/settings/Themes.svelte`). A single choice among files, so it is a
+radio group, and the arrow keys move through it.
+
+- **The section's switches come first**, as ordinary settings rows drawn by `Settings.svelte`
+  (`appearance.minimalNavigation`, which works with any theme). A switch that is part of no theme
+  sits above the list, and a Label-size heading, "Theme", in the secondary ink names the list
+  under it (it is also the radio group's accessible name), so the switch never reads as one of the
+  choices.
+- **"None" heads the list**, always: no theme on top of SoundCloud's own look. It is a choice, not
+  an absence.
+- **One row per theme**, the settings-row shape with the radio on the right: the name (Body; 600
+  when chosen — weight carries selection, the accent stays on the radio), a Caption meta line
+  ("Built in · 2.0.0 · Author", "Yours", "Yours — your copy of a built-in theme"), the
+  description, then **swatches**: up to five 14px square chips of the theme's `@preview` colours,
+  each behind a 1px Hairline so a near-white or near-black chip still shows. Square because neither
+  of the system's two radii suits a 14px chip, and a third would be a new concept.
+- **The chosen row carries its one action**, so the list stays quiet: "Make an editable copy" for a
+  built-in theme, "Open file" for one of yours, each with a Caption line saying that saved changes
+  show at once.
+- **A missing theme says so** in Ink below the list, rather than silently falling back.
+- **The footer** holds "Open themes folder" and one honest sentence: themes are CSS and cannot run
+  code, but a picture loaded from the internet on SoundCloud's page tells that site you use it.
+
+A theme may recolour our windows through the `--bsc-*` tokens. That is the point of the token API,
+and it is also how a theme can break the one thing the accent is for: a theme's accent must still
+show the focus ring. The authors' guide says so; the shipped themes meet 3:1.
+
 ### Motion
 
 One motion pattern, used only for modality. The settings panel enters with a 180ms

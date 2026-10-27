@@ -10,9 +10,9 @@
     APPLIES_NOTES
   } from '@shared/settings-schema'
   import type { Section, SettingKey, Settings } from '@shared/settings-schema'
-  import type { ThemeSummary } from '@shared/themes'
   import DiscordStatus from './DiscordStatus.svelte'
   import Plugins from './Plugins.svelte'
+  import Themes from './Themes.svelte'
 
   /*
    * The entire form is generated from the schema. Adding a setting means adding one
@@ -34,7 +34,6 @@
 
   let open = $state(false)
   let values = $state<Settings | null>(null)
-  let themes = $state<ThemeSummary[]>([])
   let active = $state<Section>('general')
 
   const keysIn = (section: Section): SettingKey[] =>
@@ -51,9 +50,6 @@
     window.addEventListener('keydown', onKey)
 
     void window.bsc.getSettings().then((s) => (values = s))
-    // Read once when the panel opens. A theme author saves a file and reopens settings to
-    // see it, which is simpler than a file watcher and good enough until themes are plural.
-    void window.bsc.listThemes().then((t) => (themes = t))
     const stopWatching = window.bsc.onSettingsChanged((s) => (values = s))
 
     return () => {
@@ -87,6 +83,83 @@
     values = await window.bsc.setSetting(key, value)
   }
 </script>
+
+<!-- One setting's row, shared by the schema-driven sections and the Themes section. -->
+{#snippet settingRow(key: SettingKey)}
+  {#if values}
+    {@const def = SETTINGS[key]}
+    <!-- `as const` narrows each entry to its literal shape, so entries that are
+         wired have no `wired` property at all — hence the `in` guard. -->
+    {@const pending = 'wired' in def && def.wired === false}
+    <div class="row" class:pending>
+      <div class="label">
+        <label for={key}>{def.label}</label>
+        {#if 'help' in def && def.help}<p class="help">{def.help}</p>{/if}
+        <!--
+          Honesty about what does not exist yet. The schema is written ahead of the
+          features, so without this the panel would offer controls that silently do
+          nothing — and every one would become a bug report.
+        -->
+        {#if pending}<p class="pending-note">Not implemented yet</p>{/if}
+        <!--
+          Timing, for the few settings whose effect is not immediate. A caption rather
+          than a second badge: DESIGN.md reserves the Overline treatment for the
+          "not implemented yet" badge alone.
+        -->
+        {#if 'applies' in def && def.applies}
+          <p class="help">{APPLIES_NOTES[def.applies]}</p>
+        {/if}
+        <!--
+          Whether the feature behind the control is working right now, for the settings
+          whose answer can change on its own — Discord being opened or closed, say.
+        -->
+        {#if 'statusFrom' in def && def.statusFrom === 'discord'}<DiscordStatus />{/if}
+      </div>
+
+      <div class="control">
+        {#if def.kind === 'boolean'}
+          <input
+            id={key}
+            type="checkbox"
+            disabled={pending}
+            checked={values[key] as boolean}
+            onchange={(e) => update(key, e.currentTarget.checked)}
+          />
+        {:else if def.kind === 'number'}
+          <input
+            id={key}
+            type="number"
+            disabled={pending}
+            min={def.min}
+            max={def.max}
+            step={def.step ?? 1}
+            value={values[key] as number}
+            onchange={(e) => update(key, e.currentTarget.valueAsNumber)}
+          />
+        {:else if def.kind === 'enum'}
+          <select
+            id={key}
+            disabled={pending}
+            value={values[key] as string}
+            onchange={(e) => update(key, e.currentTarget.value)}
+          >
+            {#each def.options as option (option)}
+              <option value={option}>{option}</option>
+            {/each}
+          </select>
+        {:else}
+          <input
+            id={key}
+            type="text"
+            disabled={pending}
+            value={values[key] as string}
+            onchange={(e) => update(key, e.currentTarget.value)}
+          />
+        {/if}
+      </div>
+    </div>
+  {/if}
+{/snippet}
 
 {#if open}
   <!--
@@ -133,100 +206,21 @@
       {#if active === 'plugins'}
         <!-- Not schema-driven: plugins are found on disk, so their rows are too. -->
         <Plugins />
+      {:else if active === 'themes'}
+        <!-- The section's switches, such as Minimal navigation, which work with any theme;
+             then the themes themselves. Those are files, each with its own description and
+             swatches, so `appearance.theme` is drawn by Themes.svelte, not as a row here. -->
+        {#if values}
+          {#each keysIn('themes').filter((k) => k !== 'appearance.theme') as key (key)}
+            {@render settingRow(key)}
+          {/each}
+        {/if}
+        <Themes />
       {:else if !values}
         <p class="loading">Loading…</p>
       {:else}
         {#each keysIn(active) as key (key)}
-          {@const def = SETTINGS[key]}
-          <!-- `as const` narrows each entry to its literal shape, so entries that are
-               wired have no `wired` property at all — hence the `in` guard. -->
-          {@const pending = 'wired' in def && def.wired === false}
-          <div class="row" class:pending>
-            <div class="label">
-              <label for={key}>{def.label}</label>
-              {#if 'help' in def && def.help}<p class="help">{def.help}</p>{/if}
-              <!--
-                Honesty about what does not exist yet. The schema is written ahead of the
-                features, so without this the panel would offer controls that silently do
-                nothing — and every one would become a bug report.
-              -->
-              {#if pending}<p class="pending-note">Not implemented yet</p>{/if}
-              <!--
-                Timing, for the few settings whose effect is not immediate. A caption rather
-                than a second badge: DESIGN.md reserves the Overline treatment for the
-                "not implemented yet" badge alone.
-              -->
-              {#if 'applies' in def && def.applies}
-                <p class="help">{APPLIES_NOTES[def.applies]}</p>
-              {/if}
-              <!--
-                Whether the feature behind the control is working right now, for the settings
-                whose answer can change on its own — Discord being opened or closed, say.
-              -->
-              {#if 'statusFrom' in def && def.statusFrom === 'discord'}<DiscordStatus />{/if}
-            </div>
-
-            <div class="control">
-              {#if def.kind === 'boolean'}
-                <input
-                  id={key}
-                  type="checkbox"
-                  disabled={pending}
-                  checked={values[key] as boolean}
-                  onchange={(e) => update(key, e.currentTarget.checked)}
-                />
-              {:else if def.kind === 'number'}
-                <input
-                  id={key}
-                  type="number"
-                  disabled={pending}
-                  min={def.min}
-                  max={def.max}
-                  step={def.step ?? 1}
-                  value={values[key] as number}
-                  onchange={(e) => update(key, e.currentTarget.valueAsNumber)}
-                />
-              {:else if def.kind === 'enum'}
-                <select
-                  id={key}
-                  disabled={pending}
-                  value={values[key] as string}
-                  onchange={(e) => update(key, e.currentTarget.value)}
-                >
-                  {#each def.options as option (option)}
-                    <option value={option}>{option}</option>
-                  {/each}
-                </select>
-              {:else if 'optionsFrom' in def && def.optionsFrom === 'themes'}
-                <!--
-                  The one control whose choices are not in the schema. The point of a themes
-                  folder is that the user adds files to it, so the list is read from disk.
-                  `vanilla` is listed first and is never a file, so nothing can shadow it.
-                -->
-                <select
-                  id={key}
-                  disabled={pending}
-                  value={values[key] as string}
-                  onchange={(e) => update(key, e.currentTarget.value)}
-                >
-                  <option value="vanilla">None (SoundCloud as-is)</option>
-                  {#each themes as theme (theme.id)}
-                    <option value={theme.id}
-                      >{theme.name}{theme.builtIn ? '' : ' (yours)'}</option
-                    >
-                  {/each}
-                </select>
-              {:else}
-                <input
-                  id={key}
-                  type="text"
-                  disabled={pending}
-                  value={values[key] as string}
-                  onchange={(e) => update(key, e.currentTarget.value)}
-                />
-              {/if}
-            </div>
-          </div>
+          {@render settingRow(key)}
         {/each}
       {/if}
     </main>

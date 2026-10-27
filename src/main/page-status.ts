@@ -7,6 +7,7 @@ import { hardenSession, isInternalUrl, routeNewWindowsToBrowser } from './sessio
 import { isDev } from './env'
 import { enableDevToolsShortcut, rendererUrl, START_URL } from './window'
 import type { Shell } from './window'
+import { themeChromeView } from './chrome-theme'
 
 /**
  * The page-status surface: a view of our own over the content area that says what is going
@@ -251,6 +252,7 @@ function createStatusView(shell: Shell): void {
 
   shell.status = view
   shell.window.contentView.addChildView(view)
+  themeChromeView(view, 'status')
   // A panel the user opened stays above what we put up underneath it. Re-adding a child view
   // moves it to the top.
   if (shell.settings) shell.window.contentView.addChildView(shell.settings)

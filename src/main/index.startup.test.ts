@@ -49,7 +49,8 @@ vi.mock('./window', () => ({
   toggleSettings: vi.fn(),
   closeSettings: vi.fn(),
   setContentAppearance: vi.fn(),
-  setPageTheme: vi.fn()
+  setPageTheme: vi.fn(),
+  setContentCover: vi.fn()
 }))
 vi.mock('./page-status', () => ({
   attachPageStatus: vi.fn(),
@@ -71,7 +72,14 @@ vi.mock('./blocker', () => ({
   setAudioAdBlocking: vi.fn()
 }))
 vi.mock('./settings-store', () => ({ get: () => true }))
-vi.mock('./themes', () => ({ listThemes: () => [] }))
+vi.mock('./themes', () => ({
+  listThemes: () => [],
+  findTheme: () => null,
+  copyThemeToUserFolder: vi.fn(),
+  openThemesFolder: vi.fn(),
+  openThemeFile: vi.fn(),
+  watchUserThemes: vi.fn()
+}))
 vi.mock('./plugins', () => ({
   startPlugins: vi.fn(),
   listPlugins: () => [],

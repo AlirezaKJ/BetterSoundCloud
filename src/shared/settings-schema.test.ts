@@ -7,6 +7,7 @@ import {
   coerceAll,
   defaults,
   isSettingKey,
+  upgradeValues,
   APPLIES_NOTES
 } from './settings-schema'
 
@@ -58,6 +59,7 @@ describe('schema integrity', () => {
       'appearance.colorScheme',
       'appearance.fullWidthLayout',
       'appearance.hideMenuBar',
+      'appearance.minimalNavigation',
       'appearance.playerButtons',
       'appearance.theme',
       'appearance.zoomFactor',
@@ -166,5 +168,27 @@ describe('applies', () => {
         expect(APPLIES_NOTES[def.applies]).toBeTruthy()
       }
     }
+  })
+})
+
+describe('upgradeValues', () => {
+  it('moves Minimal navigation from the theme list onto its own switch', () => {
+    // It was a theme until settings version 2. The page must look exactly as it did.
+    expect(
+      upgradeValues(1, { 'appearance.theme': 'minimal-nav', 'appearance.zoomFactor': 90 })
+    ).toEqual({
+      'appearance.theme': 'vanilla',
+      'appearance.minimalNavigation': true,
+      'appearance.zoomFactor': 90
+    })
+  })
+
+  it('leaves every other theme, and already-upgraded settings, alone', () => {
+    expect(upgradeValues(1, { 'appearance.theme': 'darkcloud' })).toEqual({
+      'appearance.theme': 'darkcloud'
+    })
+    expect(upgradeValues(2, { 'appearance.theme': 'minimal-nav' })).toEqual({
+      'appearance.theme': 'minimal-nav'
+    })
   })
 })
