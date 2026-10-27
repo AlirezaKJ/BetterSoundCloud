@@ -1,9 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import {
+  backgroundCss,
   buildContentCss,
   COMPACT_HEADER_WIDTH,
   FIT_HEADER_WIDTH,
-  MIN_EMBED_WIDTH
+  MIN_EMBED_WIDTH,
+  pictureCss
 } from './content-css'
 
 describe('buildContentCss', () => {
@@ -224,5 +226,83 @@ describe('buildContentCss', () => {
     expect(paletteAt).toBeGreaterThan(css.indexOf('::-webkit-scrollbar'))
     expect(paletteAt).toBeLessThan(css.indexOf('.themed'))
     expect(paletteAt).toBeLessThan(css.indexOf('padding-right: 144px'))
+  })
+})
+
+describe('the background', () => {
+  const artwork = backgroundCss({ source: 'artwork', blur: 24, strength: 25 })
+
+  it('goes after the theme and Minimal navigation, and still under the reservations', () => {
+    // After the theme because it must beat a theme's own `body::before` and page colours.
+    const css = buildContentCss({
+      fullWidth: true,
+      reserve: 144,
+      theme: 'body::before { content: "theme" }',
+      minimalNavigation: '.nav-icons { font-size: 0 }',
+      background: artwork
+    })
+    const at = css.indexOf('isolation: isolate')
+    expect(at).toBeGreaterThan(css.indexOf('content: "theme"'))
+    expect(at).toBeGreaterThan(css.indexOf('.nav-icons'))
+    expect(at).toBeLessThan(css.indexOf('padding-right: 144px'))
+  })
+
+  it('draws one pseudo-element of their <body>, never a node of its own', () => {
+    // v0.7.x prepended a <div> into #app. The stacking context is what puts the layer above the
+    // page colour and below everything else, without repositioning anything of SoundCloud's.
+    expect(artwork).toContain('html body { isolation: isolate !important; }')
+    expect(artwork).toMatch(/html body::before \{[^}]*z-index: -1 !important/)
+    expect(artwork).toMatch(/pointer-events: none !important/)
+    expect(artwork).not.toMatch(/position:\s*relative/)
+  })
+
+  it('shows the artwork or the picture, as the setting says', () => {
+    expect(artwork).toContain('var(--bsc-cover, none)')
+    const picture = backgroundCss({ source: 'picture', blur: 24, strength: 25 })
+    expect(picture).toContain('var(--bsc-picture, none)')
+    expect(picture).not.toContain('--bsc-cover')
+  })
+
+  it('blurs, fades, and reaches far enough past the edges to hide the blur’s fade', () => {
+    expect(artwork).toContain('filter: blur(24px) !important')
+    expect(artwork).toContain('opacity: 0.25 !important')
+    expect(artwork).toContain('inset: -48px !important')
+    const sharp = backgroundCss({ source: 'artwork', blur: 0, strength: 100 })
+    expect(sharp).toContain('filter: none !important')
+    expect(sharp).toContain('opacity: 1 !important')
+  })
+
+  it('clamps whatever numbers it is given', () => {
+    const wild = backgroundCss({ source: 'artwork', blur: 9999, strength: -5 })
+    expect(wild).toContain('blur(40px)')
+    expect(wild).toContain('opacity: 0 !important')
+  })
+
+  it('makes the page and the content column see-through, so it shows with any theme', () => {
+    // Measured: Dark Cloud, Hover, Nocturnal and PostMorphic paint these solid and hid it.
+    for (const selector of ['html body #app,', 'html body #app > .l-container,']) {
+      expect(artwork).toContain(selector)
+    }
+    expect(artwork).toContain('.l-container.l-content { background: transparent !important; }')
+  })
+})
+
+describe('pictureCss', () => {
+  it('puts a base64 JPEG into --bsc-picture', () => {
+    expect(pictureCss('data:image/jpeg;base64,/9j/4AAQSkZJRg==')).toBe(
+      'html:root { --bsc-picture: url("data:image/jpeg;base64,/9j/4AAQSkZJRg=="); }'
+    )
+  })
+
+  it('writes `none` for anything that is not one, or could break out of the CSS', () => {
+    for (const bad of [
+      '',
+      'data:image/png;base64,iVBORw0KGgo=',
+      'data:image/jpeg;base64,abc"); } body { display: none',
+      'https://example.com/a.jpg',
+      'data:image/jpeg;base64,abc def'
+    ]) {
+      expect(pictureCss(bad), bad).toBe('html:root { --bsc-picture: none; }')
+    }
   })
 })

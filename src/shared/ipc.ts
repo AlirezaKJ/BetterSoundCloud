@@ -32,6 +32,9 @@ export const CH = {
   themeCopy: 'themes:copy',
   themesOpenFolder: 'themes:open-folder',
   themeOpenFile: 'themes:open-file',
+  // The Background setting's own picture: its preview, and choosing one (main shows the dialog).
+  backgroundPicture: 'background:picture',
+  backgroundChoosePicture: 'background:choose-picture',
 
   // content preload -> main, then main -> our overlays. SoundCloud's own light/dark choice.
   pageTheme: 'page:theme',
@@ -115,6 +118,16 @@ export type ChromeApi = {
   openThemesFolder(): void
   /** Open one of the user's own theme files in their editor. Built-in themes cannot be opened. */
   openThemeFile(id: string): void
+
+  /** A small preview of the chosen background picture, as a `data:` URI, or null if none. */
+  getBackgroundPicture(): Promise<string | null>
+  /**
+   * Show the system's open dialog and make the picture chosen the background: the Background
+   * setting switches to it, and every view hears the new settings as usual. Answers the new
+   * preview (null when the dialog was cancelled) and why it failed, or '' when it did not. Takes
+   * no path: main does all the file handling.
+   */
+  chooseBackgroundPicture(): Promise<{ thumbnail: string | null; error: string }>
 
   /**
    * SoundCloud's own light/dark setting, so an overlay drawn on top of their page can match

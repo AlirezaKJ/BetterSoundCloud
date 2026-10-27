@@ -270,6 +270,15 @@ describe.each(SHIPPED)('the shipped theme %s', (file) => {
     }
   })
 
+  it('leaves the layer behind the page to the Background setting', () => {
+    // `body::before` is the Background's (backgroundCss). Glassmorphism used to draw its own
+    // backdrop there, so there were two competing backgrounds; a theme that needs one says
+    // `@background required` instead.
+    expect(rules).not.toMatch(/body::before/)
+    if (file === 'glassmorphism.css')
+      expect(parseThemeMetadata(css, file).needsBackground).toBe(true)
+  })
+
   it('says it was made for SoundCloud’s dark mode', () => {
     // Every built-in theme is a dark one. `@mode dark` is what keeps it whole while SoundCloud
     // is set to light: the app puts SoundCloud's dark colours back underneath it.

@@ -73,6 +73,13 @@ type Base = {
    * that silently does nothing — the line is how the panel says so.
    */
   readonly statusFrom?: 'discord'
+  /**
+   * Drawn by its own component in the settings panel instead of as an ordinary row, because a
+   * plain control would not do: `themes` is the theme list (Themes.svelte), `background` the
+   * background picker with its preview (Background.svelte). The value is still stored, coerced
+   * and defaulted from this schema like every other setting.
+   */
+  readonly drawnBy?: 'themes' | 'background'
 }
 
 export type SettingDef =
@@ -184,6 +191,44 @@ export const SETTINGS = {
       'every theme.'
   },
 
+  // v0.7.x's "Custom Background" (its custombg plugin), done without touching SoundCloud's page:
+  // one CSS layer under the page, drawn by `backgroundCss` in content-css.ts. `artwork` is the
+  // track that is playing, `picture` one the user chose (stored by main/background.ts).
+  'appearance.background': {
+    kind: 'enum',
+    default: 'none',
+    options: ['none', 'artwork', 'picture'],
+    label: 'Background',
+    section: 'themes',
+    drawnBy: 'background',
+    help:
+      'A picture behind SoundCloud’s page, blurred and faded into the page colour. It shows ' +
+      'through everywhere except the header, the player and your theme’s own panels.'
+  },
+  'appearance.backgroundBlur': {
+    kind: 'number',
+    default: 24,
+    min: 0,
+    max: 40,
+    step: 1,
+    label: 'Blur',
+    section: 'themes',
+    drawnBy: 'background'
+  },
+  // 25% by default, measured: at 40% a light picture washed out the grey secondary text of the
+  // darker themes (Nocturnal, PostMorphic) on SoundCloud's discover page.
+  'appearance.backgroundStrength': {
+    kind: 'number',
+    default: 25,
+    min: 5,
+    max: 100,
+    step: 5,
+    label: 'Strength',
+    section: 'themes',
+    drawnBy: 'background',
+    help: 'How much of the picture shows: a faint tint at 5%, full colour at 100%.'
+  },
+
   // `string`, not `enum`, on purpose: `coerce` validates an enum against a fixed list, and a
   // theme id is a filename the user invents. Validation happens where it can be true — the
   // theme loader falls back to no theme when the selected file is gone.
@@ -194,6 +239,7 @@ export const SETTINGS = {
     // Its own section, drawn by Themes.svelte rather than as a schema row: a theme is a
     // choice among files on disk, each with a description and swatches, not one dropdown.
     section: 'themes',
+    drawnBy: 'themes',
     help:
       'Restyles SoundCloud’s page. Drop a .css file in the themes folder in your ' +
       'BetterSoundCloud data directory to add your own.'

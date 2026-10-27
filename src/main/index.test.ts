@@ -49,7 +49,13 @@ vi.mock('./window', () => ({
   closeSettings: vi.fn(),
   setContentAppearance: mocks.setContentAppearance,
   setPageTheme: vi.fn(),
-  setContentCover: vi.fn()
+  setContentCover: vi.fn(),
+  setContentPicture: vi.fn()
+}))
+vi.mock('./background', () => ({
+  choosePicture: vi.fn(),
+  pictureDataUri: () => '',
+  pictureThumbnail: () => null
 }))
 vi.mock('./tray', () => ({ createTray: mocks.createTray }))
 vi.mock('./page-status', () => ({
@@ -368,6 +374,36 @@ describe('main window lifecycle', () => {
     handlerFor('on', CH.themeOpenFile)(fromSettings, 'darkcloud')
     expect(themes.openThemesFolder).toHaveBeenCalledOnce()
     expect(themes.openThemeFile).toHaveBeenCalledWith('darkcloud')
+  })
+
+  it('lets only our settings UI choose a background picture, and takes no path from it', async () => {
+    const { app } = await import('electron')
+    const background = await import('./background')
+    app.emit('activate')
+    const shell = mocks.createShell.mock.results.at(-1)!.value as ReturnType<typeof makeShell>
+    const handle = (channel: string) =>
+      mocks.ipcHandle.mock.calls.find(([name]) => name === channel)![1] as (
+        event: unknown,
+        ...args: unknown[]
+      ) => unknown
+    const fromSettings = { sender: shell.settings.webContents }
+    const fromPage = { sender: shell.content.webContents }
+
+    expect(handle(CH.backgroundPicture)(fromPage)).toBeNull()
+    expect(await handle(CH.backgroundChoosePicture)(fromPage, 'C:/secret.jpg')).toEqual({
+      thumbnail: null,
+      error: 'Not allowed.'
+    })
+    expect(background.choosePicture).not.toHaveBeenCalled()
+
+    // A cancelled dialog is not an error.
+    vi.mocked(background.choosePicture).mockResolvedValueOnce({ status: 'cancelled' })
+    expect(await handle(CH.backgroundChoosePicture)(fromSettings, 'C:/secret.jpg')).toEqual({
+      thumbnail: null,
+      error: ''
+    })
+    // The handler ignores anything the view sends: the dialog is the only way a file is picked.
+    expect(background.choosePicture).toHaveBeenCalledWith(shell.window)
   })
 
   it('gives every window the same identity, its header built from the page’s languages', () => {

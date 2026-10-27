@@ -80,6 +80,13 @@ export interface ContentCssOptions {
    */
   minimalNavigation?: string
   /**
+   * The background layer (`backgroundCss`) when the Background setting is on, else empty. After
+   * the theme and Minimal navigation, because it has to win over a theme's own page colours and
+   * over a theme's own `body::before` (Glassmorphism draws its backdrop there); before the layout
+   * rules for the same reason as a theme.
+   */
+  background?: string
+  /**
    * CSS pixels to reserve at the right-hand end of the play controls for our own buttons,
    * or null when they are switched off.
    */
@@ -110,6 +117,7 @@ export function buildContentCss({
   palette,
   theme,
   minimalNavigation,
+  background,
   playerReserve,
   compactHeader,
   fitHeader,
@@ -142,6 +150,7 @@ export function buildContentCss({
   if (palette) rules.push(palette)
   if (theme) rules.push(theme)
   if (minimalNavigation) rules.push(minimalNavigation)
+  if (background) rules.push(background)
 
   if (fullWidth) {
     // `min-width`, never `width`. SoundCloud's `.l-container` is 1240px and steps down to
@@ -217,4 +226,79 @@ export function buildContentCss({
   }
 
   return rules.join('\n')
+}
+
+/*
+ * ── The background ────────────────────────────────────────────────────────────────────────
+ *
+ * v0.7.x's custombg plugin prepended a full-window <div> into SoundCloud's #app, rewrote the
+ * inline styles of their content column, and swapped the picture on a 100ms timer. v2 does it
+ * with one stylesheet: a pseudo-element of their <body>, which adds no node to their document,
+ * fed by a custom property that changes once per track (`--bsc-cover`) or once per chosen
+ * picture (`--bsc-picture`).
+ */
+
+export interface BackgroundOptions {
+  /** What to show: the playing track's artwork, or the picture the user chose. */
+  source: 'artwork' | 'picture'
+  /** Blur in CSS pixels, 0 for none. */
+  blur: number
+  /** How much of the picture shows, in percent: 100 is full colour, lower fades it out. */
+  strength: number
+}
+
+/**
+ * The layer behind SoundCloud's page.
+ *
+ * How it stacks, which is the whole trick: `isolation: isolate` makes <body> a stacking context
+ * without positioning it, so `body::before` at `z-index: -1` paints ABOVE body's own background
+ * and BELOW everything inside it. The picture is then faded with `opacity`, which blends it into
+ * whatever colour the page itself is — SoundCloud's light or dark, or the theme's — so the page
+ * keeps its palette and its text stays readable. With nothing playing, `--bsc-cover` is `none`,
+ * the layer is empty, and the page looks exactly as it does without a background.
+ *
+ * `#app` and the content column are made see-through, because most themes paint them solid and
+ * the background would otherwise not show anywhere (measured 2026-10-27: Dark Cloud, Hover,
+ * Nocturnal and PostMorphic all hid it completely). The header, the player and a theme's own
+ * panels keep their colours.
+ *
+ * The layer reaches twice the blur past every edge: a blur fades the picture out toward its
+ * edges, and that fade must happen off screen. A fixed box adds nothing to the page's scrolling,
+ * however far it reaches (measured: no change in either direction).
+ *
+ * Selectors start `html body` and every value is `!important`, so this wins over a theme's
+ * `body` and `body::before` rules wherever the two are inserted.
+ */
+export function backgroundCss({ source, blur, strength }: BackgroundOptions): string {
+  const px = Math.min(Math.max(Math.round(blur), 0), 40)
+  const opacity = Math.min(Math.max(Math.round(strength), 0), 100) / 100
+  const image = source === 'picture' ? 'var(--bsc-picture, none)' : 'var(--bsc-cover, none)'
+  return `html body { isolation: isolate !important; }
+html body #app,
+html body #app > .l-container,
+html body #app .l-container.l-content { background: transparent !important; }
+html body::before {
+  content: '' !important;
+  position: fixed !important;
+  inset: ${-2 * px}px !important;
+  z-index: -1 !important;
+  pointer-events: none !important;
+  background: ${image} center / cover no-repeat !important;
+  filter: ${px > 0 ? `blur(${px}px)` : 'none'} !important;
+  opacity: ${opacity} !important;
+  transform: none !important;
+}`
+}
+
+/**
+ * The sheet that carries the chosen picture as `--bsc-picture`: a JPEG main made itself, as a
+ * `data:` URI, or `none`. Kept apart from the main page sheet, like `coverCss`, so the picture
+ * (a few hundred kilobytes) is inserted once rather than with every settings change.
+ *
+ * Checked even though main wrote the file, because it is written into CSS: only a base64 JPEG
+ * gets through, which cannot close the `url("…")` it sits in.
+ */
+export function pictureCss(dataUri: string): string {
+  const safe = /^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(dataUri)
+  return `html:root { --bsc-picture: ${safe ? `url("${dataUri}")` : 'none'}; }`
 }

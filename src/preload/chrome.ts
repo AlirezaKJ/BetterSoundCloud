@@ -48,6 +48,13 @@ const api: ChromeApi = {
   copyTheme: (id: string) => ipcRenderer.invoke(CH.themeCopy, id) as Promise<{ error: string }>,
   openThemesFolder: () => ipcRenderer.send(CH.themesOpenFolder),
   openThemeFile: (id: string) => ipcRenderer.send(CH.themeOpenFile, id),
+  getBackgroundPicture: () =>
+    ipcRenderer.invoke(CH.backgroundPicture) as Promise<string | null>,
+  chooseBackgroundPicture: () =>
+    ipcRenderer.invoke(CH.backgroundChoosePicture) as Promise<{
+      thumbnail: string | null
+      error: string
+    }>,
 
   onPageTheme: (cb: (theme: PageTheme) => void) => subscribe(CH.pageThemeChanged, cb),
   onSettingsChanged: (cb: (settings: Settings) => void) => subscribe(CH.settingsChanged, cb),

@@ -50,7 +50,13 @@ vi.mock('./window', () => ({
   closeSettings: vi.fn(),
   setContentAppearance: vi.fn(),
   setPageTheme: vi.fn(),
-  setContentCover: vi.fn()
+  setContentCover: vi.fn(),
+  setContentPicture: vi.fn()
+}))
+vi.mock('./background', () => ({
+  choosePicture: vi.fn(),
+  pictureDataUri: () => '',
+  pictureThumbnail: () => null
 }))
 vi.mock('./page-status', () => ({
   attachPageStatus: vi.fn(),

@@ -13,6 +13,7 @@
   import DiscordStatus from './DiscordStatus.svelte'
   import Plugins from './Plugins.svelte'
   import Themes from './Themes.svelte'
+  import Background from './Background.svelte'
 
   /*
    * The entire form is generated from the schema. Adding a setting means adding one
@@ -38,6 +39,9 @@
 
   const keysIn = (section: Section): SettingKey[] =>
     SETTING_KEYS.filter((k) => SETTINGS[k].section === section)
+
+  /** Drawn by its own component (`drawnBy` in the schema), so it gets no ordinary row. */
+  const drawnElsewhere = (key: SettingKey): boolean => 'drawnBy' in SETTINGS[key]
 
   onMount(() => {
     open = true
@@ -207,19 +211,21 @@
         <!-- Not schema-driven: plugins are found on disk, so their rows are too. -->
         <Plugins />
       {:else if active === 'themes'}
-        <!-- The section's switches, such as Minimal navigation, which work with any theme;
-             then the themes themselves. Those are files, each with its own description and
-             swatches, so `appearance.theme` is drawn by Themes.svelte, not as a row here. -->
+        <!-- The section's switches, such as Minimal navigation, which work with any theme; then
+             the background, which needs a preview and sliders (Background.svelte); then the themes
+             themselves, which are files with descriptions and swatches (Themes.svelte). Settings
+             with `drawnBy` belong to those two components, so they get no row here. -->
         {#if values}
-          {#each keysIn('themes').filter((k) => k !== 'appearance.theme') as key (key)}
+          {#each keysIn('themes').filter((k) => !drawnElsewhere(k)) as key (key)}
             {@render settingRow(key)}
           {/each}
         {/if}
+        <Background />
         <Themes />
       {:else if !values}
         <p class="loading">Loading…</p>
       {:else}
-        {#each keysIn(active) as key (key)}
+        {#each keysIn(active).filter((k) => !drawnElsewhere(k)) as key (key)}
           {@render settingRow(key)}
         {/each}
       {/if}

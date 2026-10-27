@@ -32,6 +32,14 @@ export interface ThemeSummary {
    * SoundCloud. A theme with no `@mode` has to look after both modes itself.
    */
   readonly mode: PageTheme | null
+  /**
+   * The theme is made to sit on a background, from `@background required` in its header —
+   * Glassmorphism's see-through panels are nothing over a flat colour. While such a theme is
+   * selected, the Background setting cannot be None: `backgroundSource` turns None into the
+   * playing track's artwork, without changing the stored setting, so None comes back with the
+   * next theme.
+   */
+  readonly needsBackground: boolean
 }
 
 /**
@@ -69,8 +77,21 @@ export function parseThemeMetadata(
       .split(/\s+/)
       .filter((colour) => /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(colour))
       .slice(0, 5),
-    mode: readMode(tag('mode'))
+    mode: readMode(tag('mode')),
+    needsBackground: (tag('background') ?? '').toLowerCase() === 'required'
   }
+}
+
+/**
+ * What the Background shows, given the setting and whether the selected theme needs one. The
+ * one place that decides it, for main (what goes on the page) and the settings panel (which
+ * choice it shows as on).
+ */
+export function backgroundSource(
+  setting: 'none' | 'artwork' | 'picture',
+  themeNeedsBackground: boolean
+): 'none' | 'artwork' | 'picture' {
+  return setting === 'none' && themeNeedsBackground ? 'artwork' : setting
 }
 
 /** `@mode dark` or `@mode light`, in any case; anything else is no mode at all. */

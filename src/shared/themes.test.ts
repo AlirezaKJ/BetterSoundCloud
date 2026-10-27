@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
+  backgroundSource,
   chromeCssFor,
   contentCssOf,
   coverCss,
@@ -25,7 +26,8 @@ describe('parseThemeMetadata', () => {
       version: '2.1.0',
       description: 'Darker everything.',
       preview: [],
-      mode: null
+      mode: null,
+      needsBackground: false
     })
   })
 
@@ -51,7 +53,8 @@ describe('parseThemeMetadata', () => {
       version: '0.0.0',
       description: '',
       preview: [],
-      mode: null
+      mode: null,
+      needsBackground: false
     })
   })
 
@@ -93,6 +96,31 @@ describe('@mode', () => {
     expect(parseThemeMetadata('/**\n * @mode auto\n */', 'a').mode).toBeNull()
     expect(parseThemeMetadata('/**\n * @mode dark light\n */', 'b').mode).toBeNull()
     expect(parseThemeMetadata('/**\n * @name No mode\n */', 'c').mode).toBeNull()
+  })
+})
+
+describe('@background', () => {
+  it('reads whether a theme needs a background', () => {
+    const needs = (line: string) =>
+      parseThemeMetadata(`/**\n * ${line}\n */`, 'g').needsBackground
+    expect(needs('@background required')).toBe(true)
+    expect(needs('@background Required')).toBe(true)
+    expect(needs('@background optional')).toBe(false)
+    expect(needs('@name No background')).toBe(false)
+  })
+})
+
+describe('backgroundSource', () => {
+  it('is the setting, for a theme that does not need a background', () => {
+    expect(backgroundSource('none', false)).toBe('none')
+    expect(backgroundSource('artwork', false)).toBe('artwork')
+    expect(backgroundSource('picture', false)).toBe('picture')
+  })
+
+  it('never None for a theme that needs one: the artwork instead, and a chosen picture stays', () => {
+    expect(backgroundSource('none', true)).toBe('artwork')
+    expect(backgroundSource('artwork', true)).toBe('artwork')
+    expect(backgroundSource('picture', true)).toBe('picture')
   })
 })
 

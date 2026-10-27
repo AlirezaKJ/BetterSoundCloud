@@ -10,6 +10,7 @@ import {
   upgradeValues,
   APPLIES_NOTES
 } from './settings-schema'
+import type { SettingDef } from './settings-schema'
 
 describe('schema integrity', () => {
   it('gives every setting a label and a known section', () => {
@@ -56,6 +57,9 @@ describe('schema integrity', () => {
       'advanced.adBlocker',
       'advanced.blockAudioAds',
       'advanced.hardwareAcceleration',
+      'appearance.background',
+      'appearance.backgroundBlur',
+      'appearance.backgroundStrength',
       'appearance.colorScheme',
       'appearance.fullWidthLayout',
       'appearance.hideMenuBar',
@@ -190,5 +194,16 @@ describe('upgradeValues', () => {
     expect(upgradeValues(2, { 'appearance.theme': 'minimal-nav' })).toEqual({
       'appearance.theme': 'minimal-nav'
     })
+  })
+})
+
+describe('drawnBy', () => {
+  it('is only used in the Themes section, which is the only one that draws its own components', () => {
+    // Settings.svelte skips these rows everywhere, but only the Themes section renders the
+    // components that draw them — a `drawnBy` setting anywhere else would simply vanish.
+    for (const key of SETTING_KEYS) {
+      const def: SettingDef = SETTINGS[key]
+      if (def.drawnBy) expect(def.section, key).toBe('themes')
+    }
   })
 })

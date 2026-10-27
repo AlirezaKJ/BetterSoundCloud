@@ -43,6 +43,11 @@ in Settings.
 `@mode` is `dark` or `light`: which of SoundCloud's two modes you wrote the theme for. Set it. It is
 what makes your theme look the same whichever mode SoundCloud is in; section 5 explains how.
 
+`@background required` says your theme is made to sit on a background, as Glassmorphism's
+see-through panels are. While it is selected, the Background setting cannot be None: it shows the
+playing track's artwork instead, unless the listener chose a picture. Their own choice is kept, and
+comes back with the next theme. Leave the line out if your theme looks right on a plain page.
+
 ## 3. Sections: where the CSS goes
 
 Everything before the first marker styles SoundCloud's page. A line that is exactly
@@ -149,9 +154,21 @@ independent values, not derived from one another: the buttons, inputs, toggles a
   the section above first: with `@mode` you rarely need it.
 - **SoundCloud's colour variables**, as above.
 - **`var(--bsc-cover)`** — the artwork of the track playing, at 500×500, as `url("…")`, or `none`
-  when nothing is loaded. It changes once per track. The Glassmorphism theme uses it for a blurred
-  backdrop.
+  when nothing is loaded. It changes once per track. To put it behind the whole page, use the
+  Background setting (below) rather than drawing your own layer.
+- **`var(--bsc-picture)`** — the listener's own background picture, as `url("…")`, while the
+  Background setting is set to it; otherwise unset, so write `var(--bsc-picture, none)`.
 - Anything SoundCloud's own stylesheet defines.
+
+**The Background setting and your theme.** Settings → Themes → Background puts the track's artwork
+or the listener's own picture behind SoundCloud's page, with any theme. It owns `body::before`, so do
+not draw a backdrop of your own there: if your theme needs one, say `@background required` and the
+listener's background, with their blur, strength and picture, is yours. While it is on it makes `#app`
+and SoundCloud's content column (`.l-container.l-content`) see-through, and the picture fades into
+your page colour — the `background` you give `<body>` or `<html>` — so that colour sets the mood: a
+dark one deepens the picture, a light or grey one frosts it, as Glassmorphism's does. Everything else
+your theme paints stays solid and covers it, which is how a theme decides where the background
+shows; translucent panels, as in Glassmorphism, let it show through them.
 
 ## 7. Rules
 
@@ -185,13 +202,13 @@ after your theme, so it works with any theme, yours included. Its stylesheet,
 `resources/minimal-nav.css`, is still the best example of restyling SoundCloud without touching its
 page — every rule says why it is there.
 
-| Theme         | Notes                                                          |
-| ------------- | -------------------------------------------------------------- |
-| Dark Cloud    | Dark, with its own player and action icons                     |
-| Nocturnal     | Deep blue-black, muted text                                    |
-| PostMorphic   | Textured dark grey, orange and blue                            |
-| Hover         | Purple-black with a bright green accent                        |
-| Glassmorphism | Translucent panels over the blurred artwork of what is playing |
+| Theme         | Notes                                                                       |
+| ------------- | --------------------------------------------------------------------------- |
+| Dark Cloud    | Dark, with its own player and action icons                                  |
+| Nocturnal     | Deep blue-black, muted text                                                 |
+| PostMorphic   | Textured dark grey, orange and blue                                         |
+| Hover         | Purple-black with a bright green accent                                     |
+| Glassmorphism | Translucent panels over your background; needs one (`@background required`) |
 
 All five were ported from BetterSoundCloud v0.7.x, and all five are `@mode dark`: they look the same
 in both of SoundCloud's modes. What changed in the port: rules for v0.7.x's own injected buttons are

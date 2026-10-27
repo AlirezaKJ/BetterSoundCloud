@@ -17,10 +17,13 @@ import {
   closeSettings,
   setContentAppearance,
   setPageTheme,
-  setContentCover
+  setContentCover,
+  setContentPicture
 } from './window'
+import { choosePicture, pictureDataUri, pictureThumbnail } from './background'
 import { setChromeTheme } from './chrome-theme'
-import { chromeCssFor } from '@shared/themes'
+import type { BackgroundOptions } from './content-css'
+import { backgroundSource, chromeCssFor } from '@shared/themes'
 import type { ThemeSummary } from '@shared/themes'
 import {
   attachPageStatus,
@@ -520,6 +523,21 @@ function registerIpc(): void {
     if (fromSettingsUi(e) && typeof id === 'string') openThemeFile(id)
   })
 
+  // The Background setting's own picture. Main shows the dialog and does all the file handling;
+  // the panel sends no path and gets back only a small preview.
+  ipcMain.handle(CH.backgroundPicture, (e) => (fromSettingsUi(e) ? pictureThumbnail() : null))
+  ipcMain.handle(CH.backgroundChoosePicture, async (e) => {
+    if (!fromSettingsUi(e) || !shell) return { thumbnail: null, error: 'Not allowed.' }
+    const result = await choosePicture(shell.window)
+    if (result.status === 'cancelled') return { thumbnail: null, error: '' }
+    if (result.status === 'failed') return { thumbnail: null, error: result.error }
+    // Chosen: show it straight away, which is what choosing one means.
+    settings.set('appearance.background', 'picture')
+    applyLiveSettings()
+    broadcastSettings(settings.getAll())
+    return { thumbnail: pictureThumbnail(), error: '' }
+  })
+
   // A theme file saved, added or deleted: the selected theme re-applies everywhere, and an open
   // panel redraws its list. This is what makes writing a theme feel live.
   watchUserThemes(() => {
@@ -655,7 +673,7 @@ function broadcastSettings(next: Settings): void {
  */
 function themeSummaries(): ThemeSummary[] {
   return listThemes().map(
-    ({ id, name, author, version, description, builtIn, preview, overridesBuiltIn, mode }) => ({
+    ({
       id,
       name,
       author,
@@ -664,7 +682,19 @@ function themeSummaries(): ThemeSummary[] {
       builtIn,
       preview,
       overridesBuiltIn,
-      mode
+      mode,
+      needsBackground
+    }) => ({
+      id,
+      name,
+      author,
+      version,
+      description,
+      builtIn,
+      preview,
+      overridesBuiltIn,
+      mode,
+      needsBackground
     })
   )
 }
@@ -696,6 +726,29 @@ function applyLiveSettings(): void {
     fullWidth: settings.get('appearance.fullWidthLayout'),
     theme: settings.get('appearance.theme'),
     minimalNavigation: settings.get('appearance.minimalNavigation'),
+    background: backgroundOptions(),
     playerButtons: settings.get('appearance.playerButtons')
   })
+  // The chosen picture travels in its own sheet, and only while it is the background.
+  setContentPicture(shell, currentBackground() === 'picture' ? pictureDataUri() : '')
+}
+
+/** What the Background shows: the setting, unless the selected theme needs one (`@background`). */
+function currentBackground(): 'none' | 'artwork' | 'picture' {
+  const theme = findTheme(settings.get('appearance.theme'))
+  return backgroundSource(
+    settings.get('appearance.background'),
+    theme?.needsBackground ?? false
+  )
+}
+
+/** The Background settings as the page stylesheet wants them, or null for no background. */
+function backgroundOptions(): BackgroundOptions | null {
+  const source = currentBackground()
+  if (source === 'none') return null
+  return {
+    source,
+    blur: settings.get('appearance.backgroundBlur'),
+    strength: settings.get('appearance.backgroundStrength')
+  }
 }

@@ -457,6 +457,14 @@ radio group, and the arrow keys move through it.
   sits above the list, and a Label-size heading, "Theme", in the secondary ink names the list
   under it (it is also the radio group's accessible name), so the switch never reads as one of the
   choices.
+- **The Background group comes next** (`Background.svelte`): a "Background" heading like the
+  theme list's, one Caption line saying where it shows, a radio group — None, the playing track's
+  artwork, a picture of your own — and two sliders, Blur and Strength, each with its value in
+  tabular figures at the right. The sliders are disabled while None is chosen. The picture row
+  carries a 120×68 preview behind a Hairline at the control radius, and "Choose a picture…" /
+  "Choose another picture…". Choosing a picture also selects it. While the selected theme needs a
+  background (Glassmorphism), None is disabled and its caption says why, and the choice shown as on
+  is the one in effect — the artwork — not the stored None.
 - **"None" heads the list**, always: no theme on top of SoundCloud's own look. It is a choice, not
   an absence.
 - **One row per theme**, the settings-row shape with the radio on the right: the name (Body; 600

@@ -76,6 +76,7 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CU
 | `main/settings-store.ts`           | electron-store wrapper: `get`, `getAll`, `set`, `reset`. Lazy — built on first use                                                                                 |
 | `main/content-css.ts`              | `buildContentCss()`: the one stylesheet injected into SoundCloud's page (pure, tested)                                                                             |
 | `main/themes.ts`                   | `listThemes()`, `findTheme()`, hot reload (`watchUserThemes`), editable copies, `soundCloudPaletteCss()`; reads `resources/themes/` and `<userData>/themes/` (§17) |
+| `main/background.ts`               | The Background setting's own picture: the open dialog, shrinking it to our JPEG in the profile, `pictureDataUri()`, `pictureThumbnail()` (§17)                     |
 | `main/chrome-theme.ts`             | A theme's `chrome` sections into our own views: `themeChromeView()`, `setChromeTheme()`                                                                            |
 | `main/blocker.ts` + `net-rules.ts` | Ad/tracker blocking and the never-filter allowlist                                                                                                                 |
 | `main/diagnostics.ts`              | Dev-only network and page-error log, `whoAnswered()` (SoundCloud vs DataDome)                                                                                      |
@@ -180,6 +181,7 @@ views:
 | `closeSettings`                                       | send        | the settings view only                                                   |
 | `getSettings`, `setSetting`, `listThemes`             | invoke      | `fromSettingsUi` = header, embedded, settings                            |
 | `copyTheme`, `openThemesFolder`, `openThemeFile`      | invoke/send | `fromSettingsUi`; none takes a path                                      |
+| `getBackgroundPicture`, `chooseBackgroundPicture`     | invoke      | `fromSettingsUi`; main shows the dialog, so no path ever crosses IPC     |
 | `onThemesChanged`                                     | subscribe   | pushed to the settings view when the themes folder changes               |
 | `contextMenuAction`, `goToUrl`, `closeContextMenu`    | send/invoke | the context-menu view only                                               |
 | `getNowPlaying`                                       | invoke      | `fromOurViews` = header, settings, embedded, player, contextMenu, status |
@@ -388,7 +390,9 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
   prose — a test forbids it.
 - The **Themes** section is half schema-driven: `Settings.svelte` draws its schema rows (the
   `appearance.minimalNavigation` switch) with the same `settingRow` snippet as every other section,
-  then `Themes.svelte` draws the theme list. `appearance.theme` is the list, so it has no row.
+  then `Background.svelte` the background group, then `Themes.svelte` the theme list. A setting a
+  component draws says so with `drawnBy: 'themes' | 'background'` and gets no ordinary row; it is
+  still stored, coerced and defaulted from the schema. Only the Themes section may use it (pinned).
 - **Stored values carry a version** (`SETTINGS_VERSION`). When a setting's meaning changes, bump
   it and add one step to `upgradeValues` in `settings-schema.ts` (pure, tested); the store runs
   it once on load and saves the result.
@@ -444,19 +448,19 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
 
 Dev builds log to the terminal running `npm run dev`. Tags:
 
-| Tag                                                                  | Meaning                                                                                                                                                         |
-| -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `[bsc]`                                                              | Chromium version, user agent and language list at startup; a warning if `navigator.languages` and the header disagree                                           |
-| `[net]`                                                              | A failed request: status, method, layer (`stream`/`licence`/`api`/`auth`/`other`), URL, and who answered (`from SoundCloud: server am/2`, `from CloudFront`, …) |
-| `[datadome]`                                                         | `blocked …` — SoundCloud's bot check refused a request; `challenge shown` — a captcha page loaded                                                               |
-| `[page]`                                                             | A console error from SoundCloud's page                                                                                                                          |
-| `[now-playing]`                                                      | Track, play/pause and like changes                                                                                                                              |
-| `[discord]`                                                          | Connected, what the card shows, Discord not running (once per outage), and any update Discord refused (all builds)                                              |
-| `[plugin:<id>]`, `[plugins]`                                         | A plugin's own log (warnings in every build), and the service's                                                                                                 |
-| `[widevine]`                                                         | How long the Widevine wait took, or why it failed                                                                                                               |
-| `[page-status]`                                                      | What the status view is saying (`load failed -106 ERR_INTERNET_DISCONNECTED`, `cleared`, …)                                                                     |
-| `[content]`, `[window]`                                              | A failed SoundCloud load; the window shown without its header                                                                                                   |
-| `[theme]`, `[player]`, `[context-menu]`, `[blocker]`, `[ad-request]` | Their features                                                                                                                                                  |
+| Tag                                                                                  | Meaning                                                                                                                                                         |
+| ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `[bsc]`                                                                              | Chromium version, user agent and language list at startup; a warning if `navigator.languages` and the header disagree                                           |
+| `[net]`                                                                              | A failed request: status, method, layer (`stream`/`licence`/`api`/`auth`/`other`), URL, and who answered (`from SoundCloud: server am/2`, `from CloudFront`, …) |
+| `[datadome]`                                                                         | `blocked …` — SoundCloud's bot check refused a request; `challenge shown` — a captcha page loaded                                                               |
+| `[page]`                                                                             | A console error from SoundCloud's page                                                                                                                          |
+| `[now-playing]`                                                                      | Track, play/pause and like changes                                                                                                                              |
+| `[discord]`                                                                          | Connected, what the card shows, Discord not running (once per outage), and any update Discord refused (all builds)                                              |
+| `[plugin:<id>]`, `[plugins]`                                                         | A plugin's own log (warnings in every build), and the service's                                                                                                 |
+| `[widevine]`                                                                         | How long the Widevine wait took, or why it failed                                                                                                               |
+| `[page-status]`                                                                      | What the status view is saying (`load failed -106 ERR_INTERNET_DISCONNECTED`, `cleared`, …)                                                                     |
+| `[content]`, `[window]`                                                              | A failed SoundCloud load; the window shown without its header                                                                                                   |
+| `[theme]`, `[background]`, `[player]`, `[context-menu]`, `[blocker]`, `[ad-request]` | Their features                                                                                                                                                  |
 
 F12 or Ctrl/Cmd+Shift+I opens DevTools for the focused view (header, content, settings and
 context menu have the shortcut; embedded and player do not).
@@ -644,5 +648,23 @@ Rules that hold this together:
 - **`--bsc-cover`**: `url("<500×500 artwork>")` or `none`. The page sheet sets the `none` default on
   `:root`; the cover sheet uses `html:root` so it wins whichever was inserted last. `coverCss` only
   lets an https `i*.sndcdn.com` URL of safe characters through, since it is written into CSS.
+- **The Background** (`appearance.background` none | artwork | picture, with blur and strength) is
+  v0.7.x's custombg plugin as one stylesheet, not a plugin: plugins cannot touch SoundCloud's page
+  (§16). `backgroundCss` in content-css.ts goes after the theme and Minimal navigation (it must beat
+  a theme's page colours and `body::before`) and before the layout rules. It is `body::before` at
+  `z-index: -1` inside `body { isolation: isolate }` — above the page colour, below everything else,
+  nothing repositioned — faded with `opacity` into whatever colour the page is, and it makes `#app`
+  and the content column see-through (four of the five built-in themes painted them solid and hid
+  it, measured). The picture is ours: main/background.ts decodes the chosen JPEG/PNG, shrinks it
+  to 2560px and stores a JPEG in the profile; it reaches the page as `--bsc-picture` in its own
+  sheet (`pictureCss`, base64 JPEG only, `none` otherwise), inserted once per picture and re-applied
+  on load like the cover. The settings panel never sends a path.
+- **A theme that needs a background says `@background required`** (`needsBackground`); it never
+  draws its own `body::before` — no shipped theme does (pinned). While one is selected,
+  `backgroundSource` (shared/themes.ts, used by main and the panel) turns None into the artwork
+  without changing the stored setting; the panel shows None disabled with the reason. Glassmorphism
+  is the one: its old backdrop is gone, and the 50% grey veil it laid over the artwork now sits in
+  its `<html>` background, which is what the picture fades into — at 40% strength it matches
+  v0.7.x's look, measured side by side.
 - Never edit a theme into SoundCloud's DOM, and never target Svelte's `svelte-…` classes in our
   views — `data-bsc-*` attributes and the `--bsc-*` tokens are the public API.

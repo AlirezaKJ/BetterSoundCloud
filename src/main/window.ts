@@ -7,11 +7,14 @@ import { attachDiagnostics } from './diagnostics'
 import { attachBlocker } from './blocker'
 import { isDev } from './env'
 import {
+  backgroundCss,
   buildContentCss,
   COMPACT_HEADER_WIDTH,
   FIT_HEADER_WIDTH,
-  MIN_EMBED_WIDTH
+  MIN_EMBED_WIDTH,
+  pictureCss
 } from './content-css'
+import type { BackgroundOptions } from './content-css'
 import { findTheme, minimalNavigationCss, NO_THEME, soundCloudPaletteCss } from './themes'
 import { themeChromeView } from './chrome-theme'
 import { contentCssOf, coverCss } from '@shared/themes'
@@ -131,6 +134,16 @@ export type Shell = {
   cover: string
   coverKey: string | null
   coverGeneration: number
+  /** The Background setting: what goes behind the page, or null for nothing. */
+  background: BackgroundOptions | null
+  /**
+   * The chosen background picture as a `data:` URI, or '' — and its own small stylesheet, for
+   * the same reason as the cover's: it is a few hundred kilobytes, inserted once per picture
+   * rather than with every settings change.
+   */
+  picture: string
+  pictureKey: string | null
+  pictureGeneration: number
   /** Re-runs the view layout. Assigned in `createShell`; call it after changing a mode. */
   layout: () => void
 }
@@ -248,6 +261,10 @@ export function createShell(identity: Identity): Shell {
     cover: '',
     coverKey: null,
     coverGeneration: 0,
+    background: null,
+    picture: '',
+    pictureKey: null,
+    pictureGeneration: 0,
     fullWidthLayout: false,
     theme: NO_THEME,
     minimalNavigation: false,
@@ -566,6 +583,7 @@ async function applyContentCss(shell: Shell, fullWidth: boolean, theme: string):
         palette: selected?.mode ? soundCloudPaletteCss(selected.mode) : '',
         theme: selected ? contentCssOf(selected.sections) : '',
         minimalNavigation: shell.minimalNavigation ? minimalNavigationCss() : '',
+        background: shell.background ? backgroundCss(shell.background) : '',
         playerReserve,
         compactHeader,
         fitHeader
@@ -607,6 +625,32 @@ async function applyCover(shell: Shell): Promise<void> {
 }
 
 /**
+ * The background picture changed (or was switched on or off): replace its sheet. '' removes it,
+ * so a picture nobody is looking at does not sit in the page's memory.
+ */
+export function setContentPicture(shell: Shell, dataUri: string): void {
+  if (dataUri === shell.picture) return
+  shell.picture = dataUri
+  void applyPicture(shell)
+}
+
+async function applyPicture(shell: Shell): Promise<void> {
+  const { webContents } = shell.content
+  const generation = ++shell.pictureGeneration
+  if (webContents.isDestroyed()) return
+  const previous = shell.pictureKey
+  const key = shell.picture
+    ? await webContents.insertCSS(pictureCss(shell.picture)).catch(() => null)
+    : null
+  if (generation !== shell.pictureGeneration) {
+    if (key) void webContents.removeInsertedCSS(key).catch(() => undefined)
+    return
+  }
+  shell.pictureKey = key
+  if (previous) await webContents.removeInsertedCSS(previous).catch(() => undefined)
+}
+
+/**
  * Apply both page-appearance settings together.
  *
  * One entry point rather than two, because the overlay and the stylesheet have to agree:
@@ -621,12 +665,14 @@ export function setContentAppearance(
     fullWidth: boolean
     theme: string
     minimalNavigation: boolean
+    background: BackgroundOptions | null
     playerButtons: boolean
   }
 ): void {
   shell.fullWidthLayout = options.fullWidth
   shell.theme = options.theme
   shell.minimalNavigation = options.minimalNavigation
+  shell.background = options.background
   shell.hideMenuBar = options.hideMenuBar
   setThemeMode(
     shell,
@@ -841,6 +887,7 @@ function wireStateEvents(shell: Shell): void {
     // chosen after it (measured, 2026-10-27). Removing a key the document no longer has is a no-op.
     void applyContentCss(shell, shell.fullWidthLayout, shell.theme)
     void applyCover(shell)
+    void applyPicture(shell)
   })
 
   content.webContents.on('did-navigate', sendNav)

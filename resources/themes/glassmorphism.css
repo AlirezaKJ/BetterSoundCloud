@@ -1,10 +1,12 @@
 /**
  * @name Glassmorphism
  * @author reoireopit w/ novembercry
- * @version 2.1.0
+ * @version 2.2.0
  * @mode dark
- * @description Dark, see-through panels with rounded corners and a soft blur, over a blurred
- *              copy of the playing track's artwork, with pill-shaped buttons.
+ * @background required
+ * @description Dark, see-through panels with rounded corners and a soft blur over your
+ *              background — the playing track's artwork, or a picture of your own — with
+ *              pill-shaped buttons.
  * @preview #383838 #222222 #ffffff #ff5500
  * @license MIT
  */
@@ -14,9 +16,11 @@
  * credited it (the commit that added it is signed wasd). What changed, and why:
  *
  * - v0.7.x paired this theme with its `custombg` plugin, which inserted a div into SoundCloud's
- *   page to show the playing track's artwork behind everything. v2 inserts nothing into the
- *   page, so the backdrop is now a pseudo-element on <body> fed by `--bsc-cover` (the first
- *   rules below). The commented-out wallpaper rule, a hot-linked third-party image, is gone.
+ *   page to show the playing track's artwork behind everything. In v2 that is the Background
+ *   setting (Settings → Themes), and `@background required` says this theme needs it: while it is
+ *   selected, Background cannot be None, and the blur, the strength and the picture are the
+ *   listener's to choose. The commented-out wallpaper rule, a hot-linked third-party image, is
+ *   gone; a picture of your own is what it was for.
  * - The rules that pinned the header and play bar to 1240px and centred the page are gone. v2
  *   has its own full-width setting and reserves room on those two bars for its own buttons; a
  *   theme that fights that only looks broken.
@@ -29,37 +33,21 @@
  */
 
 /* v0.7.x: the custombg plugin prepended a div into SoundCloud's #app showing the playing
-   track's artwork (500×500, centred, cover) at 80% opacity, with a second div inside it filled
-   with 50% grey. This theme's own wallpaper rule, commented out in v0.7.x, blurred it by 7px.
-   v2 injects no markup, so the same picture is painted by a pseudo-element of <body>, which
-   adds no node to the page. `--bsc-cover` is the artwork, which BetterSoundCloud updates once
-   per track, or `none` when nothing is loaded; the gradient on <html> below shows then.
+   track's artwork at 80% opacity over 50% grey, which this theme blurred by 7px. v2's Background
+   setting draws that layer now (`backgroundCss` in BetterSoundCloud's content-css.ts), for every
+   theme; this one asks for it with `@background required` instead of drawing its own, so there
+   is one background, with the listener's blur, strength and picture.
 
-   z-index -1 paints it under every element of the page and over nothing but the page's own
-   background, so no SoundCloud container has to be repositioned and every control keeps its
-   clicks; pointer-events: none makes sure of that. The 8% scale pushes the blur's faded edges
-   off screen. */
-body::before {
-  content: '' !important;
-  position: fixed !important;
-  inset: 0 !important;
-  z-index: -1 !important;
-  pointer-events: none !important;
-  background:
-    linear-gradient(rgb(122 122 122 / 50%), rgb(122 122 122 / 50%)),
-    var(--bsc-cover, none) center / cover no-repeat !important;
-  filter: blur(7px) !important;
-  opacity: 0.8 !important;
-  transform: scale(1.08) !important;
-}
-
-/* New in v2: what is underneath the backdrop. It is all that shows (through the grey) before
-   anything plays, and the backdrop's 80% opacity lets a fifth of it through over artwork.
-   v0.7.x left SoundCloud's own page colour here, which is white in their light setting.
-   It goes on <html> with <body> cleared because <body>'s background is only drawn beneath the
-   backdrop while <html> has none; this way it stays beneath whatever SoundCloud does. */
+   What is underneath the background: what shows before anything plays, and the colour the
+   background fades into at less than full strength. It carries v0.7.x's 50% grey veil, so the
+   glass keeps its frosted look: two thirds grey over a dark gradient makes the Background at 40%
+   strength come out as v0.7.x did (40% artwork, 40% grey, 20% gradient). v0.7.x left SoundCloud's
+   own page colour here, which is white in their light setting. It goes on <html> with <body>
+   cleared, so it stays beneath whatever SoundCloud does. */
 html {
-  background: linear-gradient(160deg, #3d1f0c 0%, #0c0c0c 50%, #0d1b33 100%) fixed #0c0c0c !important;
+  background:
+    linear-gradient(rgb(122 122 122 / 67%), rgb(122 122 122 / 67%)) fixed,
+    linear-gradient(160deg, #3d1f0c 0%, #0c0c0c 50%, #0d1b33 100%) fixed #0c0c0c !important;
 }
 
 body {
