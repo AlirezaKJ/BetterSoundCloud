@@ -27,6 +27,7 @@ vi.mock('./discord-ipc', () => ({
 vi.mock('./env', () => ({ isDev: false }))
 
 const NOW = 1_800_000_000_000
+const NOT_RUNNING = { kind: 'not-running' } as const
 
 const TRACK: NowPlaying = {
   title: 'Birahe',
@@ -137,7 +138,7 @@ describe('presence', () => {
     expect(latest().close).toHaveBeenCalledOnce()
 
     // Its own close arriving late must not bring it back.
-    latest().options.onClose('closed')
+    latest().options.onClose({ kind: 'lost', message: 'closed' })
     vi.advanceTimersByTime(600_000)
     expect(mocks.connections).toHaveLength(1)
   })
@@ -148,7 +149,7 @@ describe('presence', () => {
 
     for (const delay of [5_000, 15_000, 30_000, 60_000, 60_000]) {
       const before = mocks.connections.length
-      latest().options.onClose('Discord is not running')
+      latest().options.onClose(NOT_RUNNING)
       vi.advanceTimersByTime(delay - 1)
       expect(mocks.connections).toHaveLength(before)
       vi.advanceTimersByTime(1)
@@ -157,7 +158,7 @@ describe('presence', () => {
 
     // Once it gets through, the next outage starts from the short wait again.
     latest().options.onReady()
-    latest().options.onClose('Discord closed the connection')
+    latest().options.onClose({ kind: 'lost', message: 'Discord closed the connection' })
     vi.advanceTimersByTime(5_000)
     expect(mocks.connections).toHaveLength(7)
   })
@@ -173,5 +174,92 @@ describe('presence', () => {
     // The old pipe finally answering must not make the new one think it is ready.
     first.options.onReady()
     expect(latest().setActivity).not.toHaveBeenCalled()
+  })
+})
+
+describe('presence status, for the settings panel', () => {
+  it('says off, then looking, then connected with the card it is showing', async () => {
+    const { setPresenceOptions, setNowPlaying, getPresenceStatus, onPresenceStatusChange } =
+      await load()
+    const seen: unknown[] = []
+    onPresenceStatusChange((status) => seen.push(status))
+    expect(getPresenceStatus()).toEqual({ state: 'off' })
+
+    setNowPlaying(TRACK)
+    setPresenceOptions({ enabled: true, showWhenPaused: false })
+    expect(getPresenceStatus()).toEqual({ state: 'connecting' })
+
+    latest().options.onReady()
+    expect(getPresenceStatus()).toEqual({
+      state: 'connected',
+      showing: { title: 'Birahe', artist: 'Ali Sorena', paused: false },
+      hiddenWhilePaused: false,
+      refused: ''
+    })
+    // Every change was announced, once each.
+    expect(seen.map((s) => (s as { state: string }).state)).toEqual(['connecting', 'connected'])
+  })
+
+  it('says why there is no card: paused, or nothing playing', async () => {
+    const { setPresenceOptions, setNowPlaying, getPresenceStatus } = await load()
+    setPresenceOptions({ enabled: true, showWhenPaused: false })
+    latest().options.onReady()
+    expect(getPresenceStatus()).toMatchObject({ showing: null, hiddenWhilePaused: false })
+
+    setNowPlaying({ ...TRACK, playing: false })
+    expect(getPresenceStatus()).toMatchObject({ showing: null, hiddenWhilePaused: true })
+  })
+
+  it('keeps naming the failure while it retries, instead of flickering to "looking"', async () => {
+    const { setPresenceOptions, getPresenceStatus, onPresenceStatusChange } = await load()
+    setPresenceOptions({ enabled: true, showWhenPaused: false })
+    latest().options.onClose(NOT_RUNNING)
+    const unavailable = { state: 'unavailable', reason: NOT_RUNNING }
+    expect(getPresenceStatus()).toEqual(unavailable)
+
+    const seen: unknown[] = []
+    onPresenceStatusChange((status) => seen.push(status))
+    vi.advanceTimersByTime(5_000) // the scheduled retry starts...
+    expect(mocks.connections).toHaveLength(2)
+    expect(getPresenceStatus()).toEqual(unavailable) // ...without the line changing
+    latest().options.onClose(NOT_RUNNING)
+    expect(seen).toEqual([])
+  })
+
+  it('tries at once when asked, but never opens a second connection', async () => {
+    const { setPresenceOptions, retryPresenceNow, getPresenceStatus } = await load()
+    setPresenceOptions({ enabled: true, showWhenPaused: false })
+    latest().options.onClose(NOT_RUNNING)
+
+    retryPresenceNow()
+    expect(mocks.connections).toHaveLength(2)
+    expect(getPresenceStatus()).toEqual({ state: 'connecting' })
+    retryPresenceNow() // a second press while that attempt is out
+    expect(mocks.connections).toHaveLength(2)
+
+    // The press replaced the scheduled retry rather than adding to it.
+    latest().options.onReady()
+    vi.advanceTimersByTime(600_000)
+    expect(mocks.connections).toHaveLength(2)
+  })
+
+  it('does nothing when asked to try while switched off', async () => {
+    const { retryPresenceNow } = await load()
+    retryPresenceNow()
+    expect(mocks.connections).toHaveLength(0)
+  })
+
+  it('reports an update Discord refused, until one is accepted', async () => {
+    const { setPresenceOptions, setNowPlaying, getPresenceStatus } = await load()
+    setNowPlaying(TRACK)
+    setPresenceOptions({ enabled: true, showWhenPaused: false })
+    latest().options.onReady()
+
+    latest().options.onError('child "activity" fails')
+    expect(getPresenceStatus()).toMatchObject({ refused: 'child "activity" fails' })
+
+    vi.advanceTimersByTime(5_000)
+    setNowPlaying({ ...TRACK, title: 'Next one', elapsed: 0 })
+    expect(getPresenceStatus()).toMatchObject({ refused: '' })
   })
 })

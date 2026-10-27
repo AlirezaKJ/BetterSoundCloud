@@ -2,7 +2,7 @@ import { createConnection } from 'node:net'
 import type { Socket } from 'node:net'
 import { join } from 'node:path'
 import { randomUUID } from 'node:crypto'
-import type { Activity } from '@shared/presence'
+import type { Activity, DiscordCloseReason } from '@shared/presence'
 
 /**
  * A minimal client for the Discord app's local RPC pipe: just enough to show an activity.
@@ -86,8 +86,8 @@ export type DiscordConnection = {
 export type ConnectOptions = {
   clientId: string
   onReady: () => void
-  /** The connection is gone, or never came up. `reason` is for the dev log. Called once. */
-  onClose: (reason: string) => void
+  /** The connection is gone, or never came up. Called once. */
+  onClose: (reason: DiscordCloseReason) => void
   /** Discord refused a command — almost always an activity field it did not accept. */
   onError: (message: string) => void
   /** Where to look. Defaults to this platform's places; tests pass their own. */
@@ -102,10 +102,14 @@ export function connectDiscord(options: ConnectOptions): DiscordConnection {
   let socket: Socket | null = null
   let ready = false
   let finished = false
-  let closeReason = 'Discord closed the connection'
+  // What to report when the pipe closes: Discord's own CLOSE message if it sent one first.
+  let closeReason: DiscordCloseReason = {
+    kind: 'lost',
+    message: 'Discord closed the connection'
+  }
   const reader = new FrameReader()
 
-  const finish = (reason: string): void => {
+  const finish = (reason: DiscordCloseReason): void => {
     if (finished) return
     finished = true
     clearTimeout(handshakeTimer)
@@ -114,7 +118,7 @@ export function connectDiscord(options: ConnectOptions): DiscordConnection {
   }
 
   const handshakeTimer = setTimeout(
-    () => finish('Discord did not answer the handshake'),
+    () => finish({ kind: 'lost', message: 'Discord did not answer the handshake' }),
     HANDSHAKE_TIMEOUT_MS
   )
 
@@ -124,7 +128,7 @@ export function connectDiscord(options: ConnectOptions): DiscordConnection {
       return
     }
     if (op === OP.close) {
-      closeReason = messageOf(body) || closeReason
+      closeReason = { kind: 'refused', message: messageOf(body) || 'no reason given' }
       socket?.end()
       return
     }
@@ -144,7 +148,7 @@ export function connectDiscord(options: ConnectOptions): DiscordConnection {
     if (finished) return
     const path = paths[index]
     if (path === undefined) {
-      finish('Discord is not running')
+      finish({ kind: 'not-running' })
       return
     }
 
@@ -161,7 +165,9 @@ export function connectDiscord(options: ConnectOptions): DiscordConnection {
       }
       socket = candidate
       candidate.removeAllListeners('error')
-      candidate.on('error', () => finish('the connection to Discord failed'))
+      candidate.on('error', () =>
+        finish({ kind: 'lost', message: 'the connection to Discord failed' })
+      )
       candidate.on('close', () => finish(closeReason))
       candidate.on('data', (chunk: Buffer) => reader.push(chunk).forEach(onFrame))
       candidate.write(encodeFrame(OP.handshake, { v: 1, client_id: options.clientId }))

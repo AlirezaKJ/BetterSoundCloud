@@ -72,7 +72,12 @@ vi.mock('./blocker', () => ({
 vi.mock('./settings-store', () => ({ get: () => true }))
 vi.mock('./themes', () => ({ listThemes: () => [] }))
 // The real one would connect to the Discord app on whatever machine runs the tests.
-vi.mock('./presence', () => ({ setPresenceOptions: vi.fn() }))
+vi.mock('./presence', () => ({
+  setPresenceOptions: vi.fn(),
+  getPresenceStatus: () => ({ state: 'off' }),
+  onPresenceStatusChange: vi.fn(),
+  retryPresenceNow: vi.fn()
+}))
 
 function makeShell() {
   const view = () => ({
@@ -245,6 +250,29 @@ describe('main window lifecycle', () => {
       }
     )
     expect(send).not.toHaveBeenCalled()
+  })
+
+  it('lets the settings panel read Discord’s status and ask for a retry, and nothing on the page', async () => {
+    const { app } = await import('electron')
+    const presence = await import('./presence')
+    app.emit('activate')
+    const shell = mocks.createShell.mock.results.at(-1)!.value as ReturnType<typeof makeShell>
+    const handlerFor = (method: 'on' | 'handle', channel: string) => {
+      const registered = method === 'on' ? mocks.ipcOn : mocks.ipcHandle
+      return registered.mock.calls.find(([name]) => name === channel)![1] as (
+        event: unknown
+      ) => unknown
+    }
+
+    const get = handlerFor('handle', CH.presenceStatusGet)
+    expect(get({ sender: shell.settings.webContents })).toEqual({ state: 'off' })
+    expect(get({ sender: shell.content.webContents })).toBeNull()
+
+    const retry = handlerFor('on', CH.presenceRetry)
+    retry({ sender: shell.content.webContents })
+    expect(presence.retryPresenceNow).not.toHaveBeenCalled()
+    retry({ sender: shell.settings.webContents })
+    expect(presence.retryPresenceNow).toHaveBeenCalledOnce()
   })
 
   it('gives every window the same identity, its header built from the page’s languages', () => {

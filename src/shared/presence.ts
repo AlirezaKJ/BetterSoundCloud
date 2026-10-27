@@ -62,6 +62,8 @@ const PROJECT_BUTTON = {
 
 /** Discord rejects a text field shorter than 2 or longer than 128 characters. */
 const MIN_TEXT = 2
+/** Pads a one-character field to Discord's minimum without showing anything. */
+const ZERO_WIDTH_SPACE = '\u200b'
 const MAX_TEXT = 128
 
 /**
@@ -156,5 +158,110 @@ function fit(text: string): string {
     }
     return `${cut}…`
   }
-  return trimmed.length < MIN_TEXT ? trimmed.padEnd(MIN_TEXT, '​') : trimmed
+  return trimmed.length < MIN_TEXT ? trimmed.padEnd(MIN_TEXT, ZERO_WIDTH_SPACE) : trimmed
+}
+
+/*
+ * ── Whether it is working ─────────────────────────────────────────────────────────────────
+ *
+ * The settings panel shows this under the Discord toggle. Without it, a user with Discord
+ * closed sees a ticked box and no card — a control that silently does nothing, which is the
+ * one thing this app has promised not to ship (docs/PRODUCT.md, "Say what does not work").
+ */
+
+/** Why the connection to Discord is not up. Set by src/main/discord-ipc.ts. */
+export type DiscordCloseReason =
+  /** Nothing is listening on any of Discord's pipes: the desktop app is closed or not installed. */
+  | { kind: 'not-running' }
+  /** Discord answered and turned us away, with its own message (e.g. "Invalid Client ID"). */
+  | { kind: 'refused'; message: string }
+  /** It was up, or half up, and went away: Discord quit, or stopped answering. */
+  | { kind: 'lost'; message: string }
+
+/** What the card on Discord is right now, as far as BetterSoundCloud knows. */
+export type PresenceStatus =
+  | { state: 'off' }
+  | { state: 'connecting' }
+  | {
+      state: 'connected'
+      /** The track on the card, or null when there is no card. */
+      showing: { title: string; artist: string; paused: boolean } | null
+      /** No card because the track is paused and the setting says to clear it. */
+      hiddenWhilePaused: boolean
+      /** Discord's reason for refusing the last update, or '' when it took it. */
+      refused: string
+    }
+  | { state: 'unavailable'; reason: DiscordCloseReason }
+
+export type PresenceStatusMessage = {
+  /** The state in two or three words, drawn stronger than the rest. */
+  lead: string
+  /** The rest of the sentence: what that means, or what to do. */
+  detail: string
+  /** A problem worth its own line — Discord refusing an update. Empty when there is none. */
+  problem: string
+  /** Offer "Try now". Only where trying again can have a different result. */
+  canRetry: boolean
+}
+
+/** The words for a status, or null for nothing to show — presence switched off says so itself. */
+export function describePresenceStatus(status: PresenceStatus): PresenceStatusMessage | null {
+  switch (status.state) {
+    case 'off':
+      return null
+
+    case 'connecting':
+      return { lead: 'Looking for Discord…', detail: '', problem: '', canRetry: false }
+
+    case 'connected': {
+      const problem = status.refused
+        ? `Discord didn’t accept the last update: ${status.refused}`
+        : ''
+      if (status.showing) {
+        const { title, artist, paused } = status.showing
+        const by = artist ? ` by ${artist}` : ''
+        return {
+          lead: 'Connected',
+          detail: `Showing “${title}”${by}${paused ? ', paused' : ''}.`,
+          problem,
+          canRetry: false
+        }
+      }
+      return {
+        lead: 'Connected',
+        detail: status.hiddenWhilePaused
+          ? 'Your status is hidden while the track is paused.'
+          : 'Nothing is playing, so nothing is shown.',
+        problem,
+        canRetry: false
+      }
+    }
+
+    case 'unavailable':
+      switch (status.reason.kind) {
+        case 'not-running':
+          return {
+            lead: 'Discord isn’t running',
+            detail:
+              'Open the Discord desktop app on this computer. BetterSoundCloud connects by itself ' +
+              'within a minute.',
+            problem: '',
+            canRetry: true
+          }
+        case 'refused':
+          return {
+            lead: 'Discord refused the connection',
+            detail: `It said: ${status.reason.message}`,
+            problem: '',
+            canRetry: true
+          }
+        case 'lost':
+          return {
+            lead: 'Lost the connection to Discord',
+            detail: 'Trying again by itself.',
+            problem: '',
+            canRetry: true
+          }
+      }
+  }
 }

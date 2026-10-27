@@ -1,5 +1,11 @@
 import { buildActivity, sameActivity } from '@shared/presence'
-import type { Activity, PresenceOptions } from '@shared/presence'
+import type {
+  Activity,
+  DiscordCloseReason,
+  PresenceOptions,
+  PresenceStatus
+} from '@shared/presence'
+import type { NowPlaying } from '@shared/now-playing'
 import { connectDiscord } from './discord-ipc'
 import type { DiscordConnection } from './discord-ipc'
 import { getNowPlaying, onNowPlayingChange } from './now-playing'
@@ -45,10 +51,78 @@ let ready = false
 let failures = 0
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null
 
-/** What Discord is showing right now, as far as we know. */
+/** What Discord is showing right now, as far as we know — and the track it was built from. */
 let shown: Activity | null = null
+let shownTrack: NowPlaying | null = null
 let lastSentAt = 0
 let sendTimer: ReturnType<typeof setTimeout> | null = null
+
+/** Why the last connection ended, until one succeeds. Null on the first attempt. */
+let lastClose: DiscordCloseReason | null = null
+/** Discord's reason for refusing the last update, or '' when it accepted it. */
+let refused = ''
+
+type StatusListener = (status: PresenceStatus) => void
+const statusListeners = new Set<StatusListener>()
+let lastStatusJson = ''
+
+/**
+ * Whether it is working, for the settings panel. `getPresenceStatus` reads it once;
+ * `onPresenceStatusChange` follows it. It changes on connecting, on losing Discord, and when the
+ * card does — at most every few seconds.
+ */
+export function getPresenceStatus(): PresenceStatus {
+  if (!enabled) return { state: 'off' }
+  if (ready) {
+    const playing = getNowPlaying()
+    return {
+      state: 'connected',
+      showing:
+        shown && shownTrack
+          ? { title: shownTrack.title, artist: shownTrack.artist, paused: !shownTrack.playing }
+          : null,
+      hiddenWhilePaused:
+        !shown && playing !== null && !playing.playing && !options.showWhenPaused,
+      refused
+    }
+  }
+  // While retrying after a failure, keep saying what the failure was. Flipping to "looking"
+  // and back on every attempt would make the line flicker once a minute for nothing.
+  return lastClose ? { state: 'unavailable', reason: lastClose } : { state: 'connecting' }
+}
+
+/** Run `listener` whenever the status changes. Returns a function that stops it. */
+export function onPresenceStatusChange(listener: StatusListener): () => void {
+  statusListeners.add(listener)
+  return () => {
+    statusListeners.delete(listener)
+  }
+}
+
+/**
+ * Try Discord now rather than at the next scheduled attempt — for "Try now" in settings, and
+ * for the moment the Discord section opens. Does nothing while connected or switched off.
+ */
+export function retryPresenceNow(): void {
+  if (!enabled || connection) return
+  lastClose = null
+  connect()
+  notifyStatus()
+}
+
+function notifyStatus(): void {
+  const status = getPresenceStatus()
+  const json = JSON.stringify(status)
+  if (json === lastStatusJson) return
+  lastStatusJson = json
+  for (const listener of statusListeners) {
+    try {
+      listener(status)
+    } catch (error) {
+      console.error('[discord] status listener failed:', error)
+    }
+  }
+}
 
 /**
  * Follow the settings. Called from `applyLiveSettings`, so at startup and on every change.
@@ -66,6 +140,7 @@ export function setPresenceOptions(next: { enabled: boolean } & PresenceOptions)
     else disconnect()
   }
   update()
+  notifyStatus()
 }
 
 /** Bring the card in line with what is playing, if it is out of line. */
@@ -74,8 +149,9 @@ function update(): void {
   const wanted = buildActivity(getNowPlaying(), options, Date.now())
   // A reading arrives every second while a track plays. Almost all of them change nothing
   // Discord shows, and must not cost an update.
-  if (sameActivity(wanted, shown)) return
-  scheduleSend()
+  if (!sameActivity(wanted, shown)) scheduleSend()
+  // "Hidden while paused" follows the track, not the card, so it can change without a send.
+  notifyStatus()
 }
 
 function scheduleSend(): void {
@@ -95,7 +171,11 @@ function send(): void {
 
   connection.setActivity(wanted)
   shown = wanted
+  shownTrack = wanted ? getNowPlaying() : null
   lastSentAt = Date.now()
+  // Cleared on every send; Discord's answer arrives after it, and sets it again if it refused.
+  refused = ''
+  notifyStatus()
   if (isDev) {
     console.log(
       wanted
@@ -113,23 +193,38 @@ function connect(): void {
       if (connection !== mine) return
       ready = true
       failures = 0
+      lastClose = null
       // A fresh connection starts with no card, whatever the last one showed.
       shown = null
+      shownTrack = null
       if (isDev) console.log('[discord] connected')
       update()
+      notifyStatus()
     },
     onClose: (reason) => {
       if (connection !== mine) return
       connection = null
       ready = false
       shown = null
+      shownTrack = null
+      lastClose = reason
       failures += 1
       // Once per outage, not once a minute while Discord stays closed.
-      if (isDev && failures === 1) console.log(`[discord] ${reason} — will keep trying`)
+      if (isDev && failures === 1) {
+        const why = reason.kind === 'not-running' ? 'Discord is not running' : reason.message
+        console.log(`[discord] ${why} — will keep trying`)
+      }
       if (enabled) scheduleReconnect()
+      notifyStatus()
     },
-    // An activity Discord refused is a bug in what we built, so it is logged in every build.
-    onError: (message) => console.warn(`[discord] Discord refused the update: ${message}`)
+    // An activity Discord refused is a bug in what we built, so it is logged in every build —
+    // and shown in settings, so it is not only a line in a log nobody reads.
+    onError: (message) => {
+      if (connection !== mine) return
+      console.warn(`[discord] Discord refused the update: ${message}`)
+      refused = message
+      notifyStatus()
+    }
   })
   connection = mine
 }
@@ -147,6 +242,9 @@ function disconnect(): void {
   connection = null
   ready = false
   shown = null
+  shownTrack = null
+  lastClose = null
+  refused = ''
   failures = 0
 }
 

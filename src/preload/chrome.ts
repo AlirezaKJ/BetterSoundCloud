@@ -7,6 +7,7 @@ import type { PageTheme } from '@shared/page-theme'
 import type { ContextMenuAction, ContextMenuRequest, GoToUrlResult } from '@shared/context-menu'
 import type { NowPlaying } from '@shared/now-playing'
 import type { PageStatus, PageStatusAction } from '@shared/page-status'
+import type { PresenceStatus } from '@shared/presence'
 
 /**
  * Preload for OUR OWN chrome (header, settings, the overlays, the right-click menu). This
@@ -59,7 +60,12 @@ const api: ChromeApi = {
     subscribe(CH.nowPlayingChanged, cb),
 
   onPageStatus: (cb: (status: PageStatus) => void) => subscribe(CH.pageStatusChanged, cb),
-  pageStatusAction: (action: PageStatusAction) => ipcRenderer.send(CH.pageStatusAction, action)
+  pageStatusAction: (action: PageStatusAction) => ipcRenderer.send(CH.pageStatusAction, action),
+
+  getPresenceStatus: () => ipcRenderer.invoke(CH.presenceStatusGet) as Promise<PresenceStatus>,
+  onPresenceStatus: (cb: (status: PresenceStatus) => void) =>
+    subscribe(CH.presenceStatusChanged, cb),
+  retryPresence: () => ipcRenderer.send(CH.presenceRetry)
 }
 
 contextBridge.exposeInMainWorld('bsc', api)

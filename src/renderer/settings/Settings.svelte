@@ -11,6 +11,7 @@
   } from '@shared/settings-schema'
   import type { Section, SettingKey, Settings } from '@shared/settings-schema'
   import type { ThemeSummary } from '@shared/themes'
+  import DiscordStatus from './DiscordStatus.svelte'
 
   /*
    * The entire form is generated from the schema. Adding a setting means adding one
@@ -154,6 +155,11 @@
               {#if 'applies' in def && def.applies}
                 <p class="help">{APPLIES_NOTES[def.applies]}</p>
               {/if}
+              <!--
+                Whether the feature behind the control is working right now, for the settings
+                whose answer can change on its own — Discord being opened or closed, say.
+              -->
+              {#if 'statusFrom' in def && def.statusFrom === 'discord'}<DiscordStatus />{/if}
             </div>
 
             <div class="control">

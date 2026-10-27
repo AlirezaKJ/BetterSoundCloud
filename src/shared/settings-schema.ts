@@ -71,6 +71,13 @@ type Base = {
    * cannot work here: the whole point of a theme folder is that the user adds files to it.
    */
   readonly optionsFrom?: 'themes'
+  /**
+   * A live line under the control saying whether the feature behind it is actually working,
+   * when that can change without the setting changing. `discord`: whether the Discord app is
+   * running and connected. A ticked box over a feature that cannot work right now is a control
+   * that silently does nothing — the line is how the panel says so.
+   */
+  readonly statusFrom?: 'discord'
 }
 
 export type SettingDef =
@@ -188,6 +195,7 @@ export const SETTINGS = {
     default: true,
     label: 'Discord Rich Presence',
     section: 'discord',
+    statusFrom: 'discord',
     help:
       'Shows the track you’re playing on your Discord profile. Needs the Discord desktop app ' +
       'running on this computer.'

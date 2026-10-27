@@ -401,6 +401,26 @@ silently does nothing is worse than one that admits it. It is the clearest visua
 the product's voice, and it should be reused for any capability that ships its shape before its
 behaviour.
 
+### The status line
+
+The pending setting's sibling. Where that one says a feature does not exist yet, this one says
+whether a feature that does exist is working right now — for settings whose answer can change
+without the setting changing. Today that is Discord presence, which needs the Discord app to be
+running (`statusFrom: 'discord'` in the schema, `src/renderer/settings/DiscordStatus.svelte`).
+
+- **Under the help text**, in the label column: one Caption line. The state comes first, in two
+  or three words of Ink at 600 ("Connected", "Discord isn’t running"), then a full stop and the
+  rest of the sentence in Muted Ink — what it means, or what to do.
+- **Words, not a dot.** There are no circles in this system, and the accent marks focus and
+  selection, not health. A glance catches the bold state; the sentence carries the meaning.
+- **"Connected" is proof, not a claim:** it says what Discord is showing ("Showing “Birahe” by
+  Ali Sorena."), or why it shows nothing (paused, or nothing playing).
+- **A problem gets its own line in Ink**, never red — Danger Red belongs to the close button.
+- **"Try now"** appears only where trying again can change the answer: the Prompt's button at
+  13px. A press holds "Looking for Discord…" for 600ms, because the real attempt fails in
+  milliseconds and the press would otherwise look like it did nothing.
+- Switched off, it shows nothing: the unticked box already says so.
+
 ### Motion
 
 One motion pattern, used only for modality. The settings panel enters with a 180ms

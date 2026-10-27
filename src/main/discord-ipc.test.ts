@@ -177,7 +177,9 @@ describe('connectDiscord', () => {
       }
     })
     const { onReady, onClose } = connect([fake.path])
-    await vi.waitFor(() => expect(onClose).toHaveBeenCalledWith('Invalid Client ID'))
+    await vi.waitFor(() =>
+      expect(onClose).toHaveBeenCalledWith({ kind: 'refused', message: 'Invalid Client ID' })
+    )
     expect(onReady).not.toHaveBeenCalled()
   })
 
@@ -208,7 +210,7 @@ describe('connectDiscord', () => {
     await vi.waitFor(() => expect(found.onReady).toHaveBeenCalled())
 
     const none = connect([freshPath(), freshPath()])
-    await vi.waitFor(() => expect(none.onClose).toHaveBeenCalledWith('Discord is not running'))
+    await vi.waitFor(() => expect(none.onClose).toHaveBeenCalledWith({ kind: 'not-running' }))
   })
 
   it('reports Discord quitting, but not a close of its own', async () => {
@@ -216,7 +218,12 @@ describe('connectDiscord', () => {
     const quitting = connect([fake.path])
     await vi.waitFor(() => expect(quitting.onReady).toHaveBeenCalled())
     for (const socket of fake.sockets) socket.destroy()
-    await vi.waitFor(() => expect(quitting.onClose).toHaveBeenCalledOnce())
+    await vi.waitFor(() =>
+      expect(quitting.onClose).toHaveBeenCalledWith({
+        kind: 'lost',
+        message: 'Discord closed the connection'
+      })
+    )
 
     const fake2 = await fakeDiscord()
     const leaving = connect([fake2.path])

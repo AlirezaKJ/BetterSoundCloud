@@ -47,7 +47,13 @@ import { listThemes } from './themes'
 import { isSoundCloudUrl, readNowPlaying } from '@shared/now-playing'
 import type { NowPlaying } from '@shared/now-playing'
 import { getNowPlaying, onNowPlayingChange, setNowPlaying } from './now-playing'
-import { setPresenceOptions } from './presence'
+import {
+  getPresenceStatus,
+  onPresenceStatusChange,
+  retryPresenceNow,
+  setPresenceOptions
+} from './presence'
+import type { PresenceStatus } from '@shared/presence'
 
 let shell: Shell | null = null
 let quitting = false
@@ -434,6 +440,13 @@ function registerIpc(): void {
 
   ipcMain.handle(CH.settingsGetAll, (e) => (fromSettingsUi(e) ? settings.getAll() : null))
 
+  // Whether Discord presence is working, for the line under its toggle in settings.
+  ipcMain.handle(CH.presenceStatusGet, (e) => (fromSettingsUi(e) ? getPresenceStatus() : null))
+  ipcMain.on(CH.presenceRetry, (e) => {
+    if (fromSettingsUi(e)) retryPresenceNow()
+  })
+  onPresenceStatusChange(broadcastPresenceStatus)
+
   // The CSS never leaves main — the panel only needs enough to draw a list, and shipping a
   // whole stylesheet over IPC for every render would be waste.
   ipcMain.handle(CH.themesList, (e) =>
@@ -511,6 +524,14 @@ function broadcastNowPlaying(nowPlaying: NowPlaying | null): void {
     if (view && !view.webContents.isDestroyed()) {
       view.webContents.send(CH.nowPlayingChanged, nowPlaying)
     }
+  }
+}
+
+/** The settings panel is the one view that shows it, and only while it is open. */
+function broadcastPresenceStatus(status: PresenceStatus): void {
+  const view = shell?.settings
+  if (view && !view.webContents.isDestroyed()) {
+    view.webContents.send(CH.presenceStatusChanged, status)
   }
 }
 

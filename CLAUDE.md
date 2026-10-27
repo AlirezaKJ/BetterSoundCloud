@@ -68,7 +68,7 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md
 | `main/window.ts`                   | `Shell` type, `createShell()`, `layout()`, every overlay view, `applyContentCss()`, `rendererUrl()`, `enableDevToolsShortcut()`                     |
 | `main/context-menu.ts`             | The right-click menu view and every menu action                                                                                                     |
 | `main/page-status.ts`              | The page-status view: failed loads (and their retries), crashes, hangs, slow starts, and its buttons                                                |
-| `main/presence.ts`                 | Discord Rich Presence: follows now-playing and the `discord.*` settings, spaces updates, reconnects                                                 |
+| `main/presence.ts`                 | Discord Rich Presence: follows now-playing and the `discord.*` settings, spaces updates, reconnects; `getPresenceStatus` for settings               |
 | `main/discord-ipc.ts`              | Our own small client for the Discord app's local pipe (no Electron, tested against a real pipe)                                                     |
 | `main/now-playing.ts`              | The one copy of "what is playing": `getNowPlaying`, `setNowPlaying`, `onNowPlayingChange`                                                           |
 | `main/session.ts`                  | `hardenSession`, permission allowlist, `routeNewWindowsToBrowser`, `isInternalUrl`, `openInBrowser`                                                 |
@@ -180,6 +180,8 @@ views:
 | `onNowPlaying`                                     | subscribe   | pushed to all six of our views (`broadcastNowPlaying`)                   |
 | `pageStatusAction`                                 | send        | the status view only; re-checked against `shell.pageStatus`              |
 | `onPageStatus`                                     | subscribe   | pushed to the status view (on its load and on every change)              |
+| `getPresenceStatus`, `retryPresence`               | invoke/send | `fromSettingsUi`                                                         |
+| `onPresenceStatus`                                 | subscribe   | pushed to the settings view while it is open (`broadcastPresenceStatus`) |
 
 Every `on…` returns an unsubscribe function. A new view that needs one of the gated methods must
 be added to that sender check, and to the matching broadcast list if it needs pushes.
@@ -368,6 +370,10 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
 - `applies: 'reload' | 'restart'` when the effect is not immediate. Never write timing into `help`
   prose — a test forbids it.
 - `optionsFrom: 'themes'` for choices read from disk.
+- `statusFrom: 'discord'` puts a live line under the control saying whether the feature behind
+  it is working right now (`renderer/settings/DiscordStatus.svelte`, words from
+  `describePresenceStatus`). Use it wherever a ticked box can be true while the feature cannot
+  work — the panel must not show a control that silently does nothing.
 - Main reads with `settings.get(key)` / `getAll()`; writes go through `settings.set`, which
   coerces. Live effects are applied in `applyLiveSettings()` in `index.ts`.
 - Renderers read with `getSettings()` + `onSettingsChanged()` and write with `setSetting()`, which

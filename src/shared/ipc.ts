@@ -4,6 +4,7 @@ import type { PageTheme } from './page-theme'
 import type { ContextMenuAction, ContextMenuRequest, GoToUrlResult } from './context-menu'
 import type { NowPlaying } from './now-playing'
 import type { PageStatus, PageStatusAction } from './page-status'
+import type { PresenceStatus } from './presence'
 
 /** Every IPC channel name, in one place. Strings are never written inline. */
 export const CH = {
@@ -47,7 +48,12 @@ export const CH = {
 
   // main -> the page-status view (src/renderer/status), then its buttons -> main.
   pageStatusChanged: 'page-status:changed',
-  pageStatusAction: 'page-status:action'
+  pageStatusAction: 'page-status:action',
+
+  // settings renderer <-> main. Whether Discord presence is working, and "Try now".
+  presenceStatusGet: 'presence:status-get',
+  presenceStatusChanged: 'presence:status-changed',
+  presenceRetry: 'presence:retry'
 } as const
 
 export type NavState = {
@@ -121,4 +127,14 @@ export type ChromeApi = {
   onPageStatus(cb: (status: PageStatus) => void): () => void
   /** One of that view's buttons. Main checks it against the current status before acting. */
   pageStatusAction(action: PageStatusAction): void
+
+  /**
+   * Whether Discord presence is working — off, looking for Discord, connected (and what the card
+   * shows), or unavailable and why. Read once, then follow `onPresenceStatus`; it changes on
+   * connecting, on losing Discord and when the card does, at most every few seconds.
+   */
+  getPresenceStatus(): Promise<PresenceStatus>
+  onPresenceStatus(cb: (status: PresenceStatus) => void): () => void
+  /** Look for Discord now instead of at the next scheduled attempt. */
+  retryPresence(): void
 }

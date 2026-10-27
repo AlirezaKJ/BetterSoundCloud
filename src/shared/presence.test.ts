@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { buildActivity, PRESENCE_LOGO, sameActivity } from './presence'
-import type { Activity } from './presence'
+import { buildActivity, describePresenceStatus, PRESENCE_LOGO, sameActivity } from './presence'
+import type { Activity, PresenceStatus } from './presence'
 import type { NowPlaying } from './now-playing'
 
 const NOW = 1_800_000_000_000
@@ -132,5 +132,90 @@ describe('sameActivity', () => {
     expect(sameActivity(null, null)).toBe(true)
     expect(sameActivity(null, at(NOW, 80))).toBe(false)
     expect(sameActivity(at(NOW, 80), null)).toBe(false)
+  })
+})
+
+describe('describePresenceStatus', () => {
+  const connected = (
+    extra: Partial<Extract<PresenceStatus, { state: 'connected' }>>
+  ): PresenceStatus => ({
+    state: 'connected',
+    showing: null,
+    hiddenWhilePaused: false,
+    refused: '',
+    ...extra
+  })
+
+  it('shows nothing when presence is switched off — the unticked box already says so', () => {
+    expect(describePresenceStatus({ state: 'off' })).toBeNull()
+  })
+
+  it('says what the card shows, so "connected" is proof rather than a claim', () => {
+    expect(
+      describePresenceStatus(
+        connected({ showing: { title: 'Birahe', artist: 'Ali Sorena', paused: false } })
+      )
+    ).toEqual({
+      lead: 'Connected',
+      detail: 'Showing “Birahe” by Ali Sorena.',
+      problem: '',
+      canRetry: false
+    })
+    expect(
+      describePresenceStatus(
+        connected({ showing: { title: 'Birahe', artist: '', paused: true } })
+      )?.detail
+    ).toBe('Showing “Birahe”, paused.')
+  })
+
+  it('explains an empty card instead of leaving it looking broken', () => {
+    expect(describePresenceStatus(connected({}))?.detail).toBe(
+      'Nothing is playing, so nothing is shown.'
+    )
+    expect(describePresenceStatus(connected({ hiddenWhilePaused: true }))?.detail).toMatch(
+      /hidden while the track is paused/
+    )
+  })
+
+  it('puts a refused update on its own line', () => {
+    expect(
+      describePresenceStatus(connected({ refused: 'child "activity" fails' }))?.problem
+    ).toBe('Discord didn’t accept the last update: child "activity" fails')
+  })
+
+  it('tells the user what to do when Discord is closed, and offers to try again', () => {
+    const message = describePresenceStatus({
+      state: 'unavailable',
+      reason: { kind: 'not-running' }
+    })
+    expect(message?.lead).toBe('Discord isn’t running')
+    expect(message?.detail).toMatch(/Open the Discord desktop app/)
+    expect(message?.canRetry).toBe(true)
+  })
+
+  it('passes Discord’s own words on when it refuses us', () => {
+    expect(
+      describePresenceStatus({
+        state: 'unavailable',
+        reason: { kind: 'refused', message: 'Invalid Client ID' }
+      })?.detail
+    ).toBe('It said: Invalid Client ID')
+  })
+
+  it('offers "Try now" only where trying again can change the answer', () => {
+    const statuses: PresenceStatus[] = [
+      { state: 'connecting' },
+      connected({}),
+      { state: 'unavailable', reason: { kind: 'not-running' } },
+      { state: 'unavailable', reason: { kind: 'refused', message: 'x' } },
+      { state: 'unavailable', reason: { kind: 'lost', message: 'x' } }
+    ]
+    expect(statuses.map((s) => describePresenceStatus(s)?.canRetry)).toEqual([
+      false,
+      false,
+      true,
+      true,
+      true
+    ])
   })
 })
