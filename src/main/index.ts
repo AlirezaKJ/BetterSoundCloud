@@ -115,6 +115,20 @@ if (leaksAppIdentity(USER_AGENT)) {
 }
 
 app.userAgentFallback = USER_AGENT
+
+/*
+ * The app's name is also its profile folder, `<appData>/BetterSoundCloud`: cookies, settings,
+ * themes, plugins. It is fixed (decided 2026-10-28), because renaming it signs every user out and
+ * loses their settings. It must come before anything resolves `userData` (the settings store, the
+ * single-instance lock); index.startup.test.ts pins that order.
+ *
+ * v0.7.x set no name, so its folder was the package name, `bettersoundcloud`. On Windows, where
+ * folder names ignore case, that is this same folder, and upgraders should stay signed in (a step
+ * in docs/RELEASE_CHECKLIST.md). On Linux it is a different folder and upgraders start signed out,
+ * on purpose: most Linux v0.7.x installs ran PR #103's spoofing, so their old bot-check cookie may
+ * carry a bad reputation, and copying it across would also undo the "delete the profile folder"
+ * fix that cleared blocks on #97.
+ */
 app.setName('BetterSoundCloud')
 
 // Printed in dev so the identity is verifiable at a glance without opening DevTools.

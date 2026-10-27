@@ -16,19 +16,22 @@ const mocks = vi.hoisted(() => ({
   showPageStatus: vi.fn(),
   noticeSlowStart: vi.fn(),
   showErrorBox: vi.fn(),
-  quit: vi.fn()
+  quit: vi.fn(),
+  setName: vi.fn(),
+  requestSingleInstanceLock: vi.fn(() => true),
+  settingsGet: vi.fn(() => true)
 }))
 
 vi.mock('electron', async () => {
   const { EventEmitter } = await import('node:events')
   return {
     app: Object.assign(new EventEmitter(), {
-      setName: vi.fn(),
+      setName: mocks.setName,
       setPath: vi.fn(),
       getPath: () => '/tmp',
       getLocale: () => 'en-US',
       getPreferredSystemLanguages: () => ['en-US'],
-      requestSingleInstanceLock: () => true,
+      requestSingleInstanceLock: mocks.requestSingleInstanceLock,
       whenReady: () => Promise.resolve(),
       quit: mocks.quit
     }),
@@ -88,7 +91,7 @@ vi.mock('./blocker', () => ({
   setBlockingEnabled: vi.fn(),
   setAudioAdBlocking: vi.fn()
 }))
-vi.mock('./settings-store', () => ({ get: () => true }))
+vi.mock('./settings-store', () => ({ get: mocks.settingsGet }))
 vi.mock('./themes', () => ({
   listThemes: () => [],
   findTheme: () => null,
@@ -167,6 +170,21 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers()
+})
+
+describe('the profile folder', () => {
+  it('is named BetterSoundCloud before anything reads settings or takes the lock', async () => {
+    // Renaming it signs every user out. Naming it late puts the settings file and the lock in
+    // the default folder, which is v0.7.x's lowercase `bettersoundcloud` on Linux.
+    mocks.whenWidevineReady.mockReturnValue(new Promise(() => undefined))
+    await start()
+
+    expect(mocks.setName).toHaveBeenCalledOnce()
+    expect(mocks.setName).toHaveBeenCalledWith('BetterSoundCloud')
+    const named = mocks.setName.mock.invocationCallOrder[0]!
+    expect(named).toBeLessThan(mocks.settingsGet.mock.invocationCallOrder[0]!)
+    expect(named).toBeLessThan(mocks.requestSingleInstanceLock.mock.invocationCallOrder[0]!)
+  })
 })
 
 describe('startup and Widevine', () => {

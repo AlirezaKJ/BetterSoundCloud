@@ -26,6 +26,10 @@ CLAUDE.md is worse than none, because it gets trusted.
 | `npx prettier --write <files>` | Fix formatting before `check`                                                                                   |
 
 - Dev runs from its own profile, `%APPDATA%/BetterSoundCloud (dev)`, set in `src/main/index.ts`.
+- **The installed app's profile folder is `<appData>/BetterSoundCloud`, from `app.setName`.** Never
+  rename it: that signs every user out. It must run before anything resolves `userData`
+  (`index.startup.test.ts` pins this). v0.7.x's lowercase `bettersoundcloud` is the same folder on
+  Windows and a separate one on Linux, where upgraders start signed out on purpose.
 - **A stale `npm run dev` holds the single-instance lock.** A second one starts on port 5174 and
   its Electron exits silently, leaving the old main-process code running. Check for a listener on
   5173 and running `electron.exe` processes before assuming a build is live.

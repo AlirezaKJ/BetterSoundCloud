@@ -45,6 +45,13 @@ when one is refused, write down what SoundCloud said rather than retrying.
 - [ ] Install the NSIS installer on a machine (or a Windows user) that has never run BetterSoundCloud.
       On a machine that has, run the portable build with `--user-data-dir=<an empty folder>` instead:
       v0.7.x and v2 share `%APPDATA%\BetterSoundCloud`, and a fresh profile is the point of the test.
+- [ ] Upgrade on Windows: on a machine where v0.7.x is installed and signed in, install v2 and launch
+      it. It should open signed in, because it uses the same profile folder. Not yet seen on a real
+      upgrade.
+- [ ] The release notes say that on Linux, people coming from v0.7.x start signed out and with default
+      settings. v0.7.x kept its profile in `~/.config/bettersoundcloud` and v2 keeps it in
+      `~/.config/BetterSoundCloud`; nothing is copied across, on purpose (see `app.setName` in
+      `src/main/index.ts`).
       The smoke check also runs against the portable build: `npm run smoke:packaged -- <its path>`.
 - [ ] Sign in from the fresh profile. No challenge, no "unusual activity".
 - [ ] Play ten tracks from a large playlist, **including one that greys out and skips on v0.7.1** —
