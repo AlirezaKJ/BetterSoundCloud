@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { app, shell } from 'electron'
 import { parseThemeMetadata, splitThemeTargets } from '@shared/themes'
 import type { ThemeSections, ThemeSummary } from '@shared/themes'
+import type { PageTheme } from '@shared/page-theme'
 
 /**
  * Themes: CSS files that restyle SoundCloud's page — and, through `@target` sections, our own
@@ -61,6 +62,23 @@ function builtInDir(): string {
 export function minimalNavigationCss(): string {
   try {
     return readFileSync(join(import.meta.dirname, '../../resources/minimal-nav.css'), 'utf8')
+  } catch {
+    return ''
+  }
+}
+
+/**
+ * SoundCloud's own colours for one of its modes, scoped to the OTHER mode: the layer that goes
+ * under a theme with `@mode`, so that theme looks the same whichever mode SoundCloud is in.
+ * `resources/soundcloud-palette-dark.css` applies only while SoundCloud is light, and the light
+ * one only while it is dark; each file says how it was measured. '' if it cannot be read.
+ */
+export function soundCloudPaletteCss(mode: PageTheme): string {
+  try {
+    return readFileSync(
+      join(import.meta.dirname, `../../resources/soundcloud-palette-${mode}.css`),
+      'utf8'
+    )
   } catch {
     return ''
   }

@@ -29,6 +29,7 @@ letters, digits, dots, dashes and underscores. Keep it lowercase — it is a fil
  * @name Dark Cloud
  * @author You
  * @version 1.0.0
+ * @mode dark
  * @description One or two sentences about how it looks.
  * @preview #121212 #1e1e1e #e0e0e0 #ff5500
  * @license MIT
@@ -38,6 +39,9 @@ letters, digits, dots, dashes and underscores. Keep it lowercase — it is a fil
 Every field is optional; a file with no header still loads, under its file name. `@preview` is up to
 five hex colours that sum the theme up — page background, a surface, text, accent — drawn as swatches
 in Settings.
+
+`@mode` is `dark` or `light`: which of SoundCloud's two modes you wrote the theme for. Set it. It is
+what makes your theme look the same whichever mode SoundCloud is in; section 5 explains how.
 
 ## 3. Sections: where the CSS goes
 
@@ -54,8 +58,8 @@ Everything before the first marker styles SoundCloud's page. A line that is exac
 A marker inside a rule, or after code on the same line, is an ordinary comment. A section for a
 target that does not exist is dropped. Sections can repeat; each is appended to its target.
 
-The window buttons drawn on SoundCloud's own bars are not `chrome`: they follow SoundCloud's light
-or dark setting so they match the bar beneath them.
+The window buttons drawn on SoundCloud's own bars are not `chrome`: they match the bar beneath them,
+so they follow your theme's `@mode`, or SoundCloud's own light or dark setting if it has none.
 
 ## 4. Recolouring our windows
 
@@ -89,18 +93,67 @@ For that, use the element's `data-bsc-*` attribute, such as `[data-bsc-header]` 
 `[data-bsc-settings-panel]`. These are the stable names. **Never target the `svelte-…` hash
 classes** — they change with every build.
 
-## 5. What you can use on SoundCloud's page
+## 5. SoundCloud's light and dark mode
 
-- **SoundCloud's own light or dark setting**, as a class on `<body>`: `theme-light` or `theme-dark`.
-  SoundCloud draws dark icons in light mode and light icons in dark mode, so a rule that inverts or
-  recolours icons almost always belongs under one of them. The built-in themes scope their
-  `filter: invert(…)` rules to `body.theme-light`.
+SoundCloud has a light and a dark mode; each listener picks one in SoundCloud's own settings, and it
+marks the choice with a class on `<body>`: `theme-light` or `theme-dark`. Your theme has to look
+right in both, and the easy way is to write it for one and say which with `@mode`.
+
+**How SoundCloud switches.** Nearly the whole difference between its two modes is one set of about
+110 colour variables, declared on `<body>` — `--surface-color`, `--primary-color` and so on (the full
+list, with SoundCloud's dark values, is `resources/soundcloud-palette-dark.css`). Every text colour
+and background on the page is drawn from them, and so is every icon: SoundCloud's icons are inline
+SVGs filled with `currentColor`, which means they are whatever `color` their button has.
+
+**What `@mode` does.** While SoundCloud shows the other mode, BetterSoundCloud puts SoundCloud's own
+colours for your mode back underneath your theme. A `@mode dark` theme on SoundCloud's light mode
+therefore sits on exactly the page it was written on, and looks the same as it does there. Your
+theme's rules still win over that layer. The window buttons BetterSoundCloud draws over SoundCloud's
+header and play bar follow your `@mode` as well, so they stay visible on your colours.
+
+**Without `@mode`**, anything your theme does not paint itself keeps SoundCloud's colours for the
+mode the listener chose. A dark theme on SoundCloud's light mode then shows dark text and dark icons
+on your dark backgrounds. You can handle the two modes yourself with `body.theme-light …` and
+`body.theme-dark …` rules, but `@mode` is less work and cannot miss anything.
+
+**Never invert icons.** Older themes used `filter: invert(1)` to turn SoundCloud's dark icons light.
+Today an icon is already light wherever the text is, so inverting it makes it dark again. To recolour
+an icon, set `color` on its button.
+
+**Recolouring all of SoundCloud at once.** Because SoundCloud paints itself from those variables, you
+can set them to your own palette instead of chasing every element:
+
+```css
+body.theme-light,
+body.theme-dark {
+  --background-surface-color: #1a1b26; /* the page itself, and the header */
+  --surface-color: #1a1b26; /* menus, dialogs, plain buttons; the triangle on a play button */
+  --primary-color: #e0e0e0; /* main text and icons; the round play button */
+  --primary-rgb:
+    224, 224, 224; /* the same colour, for SoundCloud's rgba(): keep the two in step */
+  --secondary-color: #888; /* secondary text and icons */
+  --highlight-color: #2a2a3a; /* secondary buttons and labels */
+  --link-color: #74857c;
+}
+```
+
+Declare them on `body.theme-light, body.theme-dark`, not `:root` or plain `body`. SoundCloud declares
+them on `.theme-light` and `.theme-dark`, and a stylesheet BetterSoundCloud inserts loses to the
+page's own when the two are equally specific, so yours needs the extra element. The variables are
+independent values, not derived from one another: the buttons, inputs, toggles and tags have their own
+(`--button-…`, `--input-…`, `--toggle-…`, `--tag-…`), so set those too if you want them to change.
+
+## 6. What you can use on SoundCloud's page
+
+- **SoundCloud's own light or dark setting**, as `theme-light` or `theme-dark` on `<body>` — but read
+  the section above first: with `@mode` you rarely need it.
+- **SoundCloud's colour variables**, as above.
 - **`var(--bsc-cover)`** — the artwork of the track playing, at 500×500, as `url("…")`, or `none`
   when nothing is loaded. It changes once per track. The Glassmorphism theme uses it for a blurred
   backdrop.
 - Anything SoundCloud's own stylesheet defines.
 
-## 6. Rules
+## 7. Rules
 
 - **Style what is there; never restructure it.** CSS cannot add or remove SoundCloud's elements,
   and you should not try with tricks either. Pseudo-elements (`::before`, `::after`) on existing
@@ -109,6 +162,13 @@ classes** — they change with every build.
 - **Keep "on" visible.** SoundCloud shows a liked, followed or reposted button through its `color`.
   A theme that sets `color` on every `.sc-button` also erases that, so add a colour for
   `.sc-button.sc-button-selected`, as every built-in theme does.
+- **Keep the play buttons round and solid.** SoundCloud draws a play or pause button (`.sc-button-play`,
+  `.sc-button-pause`) as a round `background-color` with the triangle in the page colour. A theme
+  that makes that background transparent, or the same colour as the page, leaves the most used
+  button on every track list invisible. Give it a colour that stands out, as the built-in themes do.
+- **Move boxes with margins, not `position: relative; left`.** A relative offset moves a box without
+  making room for it, so a box near the right edge ends up outside the window and the whole page
+  scrolls sideways.
 - **Leave SoundCloud's header 46px tall.** BetterSoundCloud's window buttons are measured against
   it, and the page below is laid out for it.
 - **You cannot move SoundCloud's controls under our buttons.** The space reserved for our buttons
@@ -117,7 +177,7 @@ classes** — they change with every build.
   using the theme. In our own windows they are blocked outright. Built-in themes load nothing but
   SoundCloud's own images; anything else is embedded in the file as a `data:` URI.
 
-## 7. The built-in themes
+## 8. The built-in themes
 
 **Minimal navigation is not a theme.** It is the switch at the top of Settings → Themes: Home, Feed
 and Library become icons and the upsells beside them are hidden. It goes into SoundCloud's page right
@@ -133,14 +193,17 @@ page — every rule says why it is there.
 | Hover         | Purple-black with a bright green accent                        |
 | Glassmorphism | Translucent panels over the blurred artwork of what is playing |
 
-All five were ported from BetterSoundCloud v0.7.x. What changed in the port: rules
-for v0.7.x's own injected buttons are gone (v2 injects nothing into the page), images that were
-hot-linked from the project's repository are embedded, images on hosts that no longer exist are
-dropped, Nocturnal's and Hover's 60px header is back to 46px, icon inversion applies only in
-SoundCloud's light mode (v0.7.x predates its dark mode), the liked/followed state is visible again,
-and each now recolours our windows to match.
+All five were ported from BetterSoundCloud v0.7.x, and all five are `@mode dark`: they look the same
+in both of SoundCloud's modes. What changed in the port: rules for v0.7.x's own injected buttons are
+gone (v2 injects nothing into the page), images that were hot-linked from the project's repository are
+embedded, images on hosts that no longer exist are dropped, Nocturnal's and Hover's 60px header is
+back to 46px, and each now recolours our windows to match. v0.7.x predates SoundCloud's dark mode and
+its SVG icons, so these went too: the icon inversions (they turned today's light icons dark), Dark
+Cloud's own PNG play-bar icons (they drew a second icon behind SoundCloud's), the transparent play
+buttons in Hover and Nocturnal (they hid the triangle), and Hover's sideways nudge of the sidebar
+(it made the page scroll sideways). The liked/followed state is visible again in every theme.
 
-Every shipped theme is checked by `src/main/themes.test.ts`: lowercase file name, a header, nothing
-loaded from the network but SoundCloud's CDN, nothing aimed at v0.7.x's markup, icon inversion only
-under `body.theme-light`, and a `chrome` block that sets tokens and nothing else and meets the
-contrast floor above.
+Every shipped theme is checked by `src/main/themes.test.ts`: lowercase file name, a header with
+`@mode dark`, nothing loaded from the network but SoundCloud's CDN, nothing aimed at v0.7.x's markup,
+no rules for one SoundCloud mode only and no inverted icons, no `position: relative; left` nudges, and
+a `chrome` block that sets tokens and nothing else and meets the contrast floor above.

@@ -1,7 +1,8 @@
 /**
  * @name Dark Cloud
  * @author BetterSoundCloud
- * @version 2.0.0
+ * @version 2.1.0
+ * @mode dark
  * @description A near-black SoundCloud with light grey text, and rounded white icons on the
  *              play bar and track buttons that turn orange when switched on.
  * @preview #121212 #1a1a1a #e0e0e0 #ff5500
@@ -61,68 +62,15 @@ body {
   border: solid #555 1px !important;
 }
 
-/* Play bar icons. v0.7.x fetched these PNGs from GitHub at runtime; v2 inlines them. */
-.playControls__elements > .playControls__play {
-  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAQAAABKfvVzAAAAYklEQVQ4y+3SsQ1AABRF0a9RSDCHGRjIFmIJiX3MQMkIWgVXYQG35vUn+Xn/RfyJoCB3YGWnJXkPnkxUDsBBT2oAwELjAFyMlAYAbGQOrAacDOakmdrU2plaxeP0NOz4vpAbhKmoJpKQ0QEAAAAASUVORK5CYII=") !important;
-}
-
-.playControls__elements > .playing {
-  /* Pause Icon */
-  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAQAAABKfvVzAAAAMElEQVQ4y2NgGOngv8f/x0DogYuPqeHRfxB4hIuPqQEKcPFHNQwbDSQnDVIT30gBAGjZ16FR0lKkAAAAAElFTkSuQmCC") !important;
-}
-
-.playControls__elements > .skipControl__previous {
-  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAQAAABKfvVzAAAAXUlEQVQ4y2NgGAUkgv9H/h/BEGPEpwEI0ETs/t/7f4lIDf9Z/7f//wMS+89MhIb/Gv/P/IcBwhr+Z/3/+v8/0Rr+d/9HBVTXQLKTyPA0GcGKFHEXSUsaTKNZhnQAAPnjoz94jX5wAAAAAElFTkSuQmCC") !important;
-}
-
-.playControls__elements > .skipControl__next {
-  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAQAAABKfvVzAAAAWUlEQVQ4y2NgGAUkg/+MGCJH/h/Brfz8//v/7dHEgAC3BhD487/jPyspGkDg7H8N0jT8///1fyZpGkCgm1QNvaQ5KZs0T2sS7+m//zuJD1ZSI47kpDEKcAAATq6bNsNf5IAAAAAASUVORK5CYII=") !important;
-}
-
-.playControls__elements .playControls__shuffle .shuffleControl::before {
-  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAQAAABKfvVzAAAAnklEQVQ4y92SsQ2DMBBFvQO2y8AkKdgKiX1QigxjcItYgD7pXgoji/gwThUp+eXpPVl3/kr9UajpsWJ6J2SVQgf4VKFhCYYUKpxUsPiMoBQ6VTbcsxwKqRJxS8OQW13jeNDu8dK1NNeIT5jPTvw1nLa8QcDHDX/iT9/Z4/HIE4YLtyL+psxH1TB4wKHFv2S61Ev8vHw1HZWYDtl6/3BedLPjeyB/DFYAAAAASUVORK5CYII=") !important;
-}
-
-.playControls__elements .playControls__shuffle .shuffleControl::after {
-  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAARpJREFUSEvdlDFuwkAQRd8Aaaho6EC5AJfAR0gDQuIUQCSkdEhBiU8QKQdIkyuEhiNwBDpugBItshVbNobd2bVocOvZ/3b+zh/hxp/cWJ87BJgZjzSY0uJD1hxsFpo53whPhZq9xPSLZyoWmTlLhFdgR4vIBvm/zBboZaISl22vApZ0+eUHGLggplybMpyApOjs4MVOKjXQSTpRAVyQSxfgSJsGbxIztr5B8WdJSIjknY2mOzUg7+SPQYh4+ibaJPvePJ8qDSBUXNXBNXHzzJAmO1cYrRZZxU2aFWcYrwJsttQeU43nwUHTiGeDEbQqzIIXYKXxN2zZJetamPDAp2tCzIIvYOS1rjW58KlRJ9lH1GsXhQp7rYo6kBPi/JsZ6kjO9wAAAABJRU5ErkJggg==") !important;
-}
-
-.playControls__elements .playControls__repeat .repeatControl.m-none {
-  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAQAAABKfvVzAAAAZklEQVQ4EdXBwQnAIBAAwW0nkO4CeQk2Z1uyuXz1EPwlM3yBB3vsVnb4qsxsrtyMXLsYGUj4KswMJOwWMgYSnuRsNv7BZiPnScJAxmInYWBmMZAwMPJyiZG3K42Z1cAOq509HnzAA+LXxD8lfvNoAAAAAElFTkSuQmCC") !important;
-}
-
-.playControls__elements .playControls__repeat .repeatControl::before {
-  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAM9JREFUSEvVldENwjAMRM/jILEBTIRaBoBvGAAQE5UNkBjHKCiVIDjGDu5H+x372b47lTDxRxP3RwiAN1jQFQ9p2BhABwZhT2ccS0gcIHUWICKAOwwAVk36FJAagJuaC1uoALrYTMBJA+eJXgUugEfkcSIzYIslnXA32zSLnDZYN2uRC0Nsqg0xD4B20uoGrAhXnkQzhZyDHjswDmYX5RxI778AnJu7c1DJzQfgvXmLPX9u8CfgJuUm5ETuHIybWEV2A1KB9hv06DOPJGsbPQEqA1UZp8KahQAAAABJRU5ErkJggg==") !important;
-}
-
-.playControls__elements .playControls__repeat .repeatControl::after {
-  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAAAXNSR0IArs4c6QAAA79JREFUeF7t3T9rFEEcxvHvmKgYtDOmsrCxECvBwtYXoFWwE4wiEhODWFlIIvgCDIYgiuJb8FWIXSqxU7DyT6uFqCMXLvG83O3uzP5mZzf3XBl2Znafz/zZ2WwuDn2yJuCytq7GEUDmTiAAAWROIHPzGgECyJxA5uY1AgSQOYGh5v0Sq26Dh02dlUbAXgAPrDWFIIDRAL2fNoIggPEAjSAIoBggOYIAygGSIgigGkAyBAFUB0iCIIAwAHMEAYQDmCIIIA7ADEEA8QAmCOYAfoneVn6SPrV2zAKw6SrRCAKwAYiejgRgBxCFIAAB2CaQsbaodUAjwEYsKvxe0wKoDxAdfhYAt2GPXj/DfzUE7mNqhS+AEXIBALXDF0A8gEn4AogDMAtfAOEApuF3HsAvcpIDPALO9bPc4hf33FO+xC7MBWuAefidBvB3OIvnJZ7zA2Fv8YdLbpNPxgBJwu8kgO/tXW5zEcdz4NRQ0CkAkoXfOQA/zxRzXAEeA7Mjerk1QNLwOwXglzmMZwVYBWbGTDGWAMnD7wyAX+AYM9tvLC8BBwvmdyuARsLvBIBfYY7frAPzwIGB8L8DH4EzA8+0LAC6/Xp62VY+5FlQf8G9imNzaNr5jOMuntPAA2Bq9za05l1Q7N1TbLnGn4aGAPQuyi9yFMc6jmv9nv4euMFx3vKN+/01QQA7PcByBOzWeYsTTLOA4wieV26DD36NaQGEb+UJHQHjhrYAYic9o3ICMAoythoBxCZnVE4ARkHGViOA2OSMygnAKMjYagQQm5xROQEYBRlbjQBikzMqlwogxU6+6JLNnwUZ5VtajQBKI0p7gADS5ltauwBKI9p7QOx38fhlZvG8Bi5ENPsGx2X3hK9Vyu7bNaAXfv8rYILXHQFU6ToFx+yE3zsk5nG0AGoADIYfDXCTGQ5xffv3vz7g9Xa3/Sez7/jJC/eMH1UuY19NQcPhxwJUCc7qmH0DMCp8AeztJsELYpWeNi58ATQAUBS+ABIDlIUvgIQAVcIXQCKAquELIAFASPgCMAYIDb/KHVTbj4nZyRddU/Rt6CSGn2IERwFMavitAJjk8AXQggWiFWvAJI+CVgD0OuKkIrQGYFIRWgUQg2B9AS1YFmqdQtRt6HCLIdORAP5PzwQgZCQIIBFAVQQBJASogiCAxABlCAJoAKAIQQANAYxDEECDAKMQBNAwwDCCADIADCIIIBPADkJT/6W01vOBBgub7YQbPOd91ZQAMnMKQACZE8jcvEaAADInkLl5jQABZE4gc/N/AeRgAn+Ms3SdAAAAAElFTkSuQmCC") !important;
-  background-size: contain;
-}
+/* v0.7.x drew its own white PNG icons on the play bar here: play, pause, previous, next,
+   shuffle, repeat and the three volume levels. SoundCloud then drew those icons dark, as
+   background images that the PNGs replaced. It now draws them as SVGs in the text colour, which
+   this theme makes light, so the PNGs only painted a second icon behind SoundCloud's own (and,
+   tiling in the taller buttons, stray marks under it). They are gone; the icons are SoundCloud's,
+   in this theme's colours (measured 2026-10-27). */
 
 .playControls__elements .playbackTimeline * {
   color: #e0e0e0 !important;
-}
-
-/* Volume icons, inlined for the same reason as the play bar icons above. */
-.volume[data-level="0"] .volume__button {
-  background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAQAAABKfvVzAAAA+0lEQVQ4y83TPUoDURAA4LEQBBEEiTdQsBEFFVEQCyGQCwiClcRrbGMT9AJWHiE2HsCfG6yVN7CQrIgYq88iu/kzyabMVI/hfTxm3kzErIZt11b/ZauOx4EbvA4TX3i2NgpUpD3izGlEhAstZI5KiJrPbraJlvVS0s3Oe8CTudHkvb8WTUsRlmU4Gbz6oj+KWtruIyJc4W4QDEeqEqGmbSfCId4mgx65jLCC7zJQkIUIi8jKX8hJhC2kk4pG3uTOK7t+3I4ekaS43/2XDqk6GDdVSQEGyaTJTdDOzxt+pyHn+fDVZf0dK9+SDzzal6IxDdjrLJCKhs2Z3f4/57xXqFeXkjYAAAAASUVORK5CYII=") no-repeat 0 !important;
-}
-
-.volume[data-level="1"] .volume__button,
-.volume[data-level="2"] .volume__button,
-.volume[data-level="3"] .volume__button,
-.volume[data-level="4"] .volume__button,
-.volume[data-level="5"] .volume__button {
-  background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAQAAABKfvVzAAAAX0lEQVQ4jWNgGAUI8D/pfwQpyhv/////g3jlDf/BgETlEA3/1//nxaXwyH80ABb9/38DLg0YAC5qQqqGXJprMKaOp+Ea61E0rMMZrJhaCCpE00J80gBrif0fTpKG4QwAMHm/SWOaySYAAAAASUVORK5CYII=") no-repeat 0 !important;
-}
-
-.volume[data-level="6"] .volume__button,
-.volume[data-level="7"] .volume__button,
-.volume[data-level="8"] .volume__button,
-.volume[data-level="9"] .volume__button,
-.volume[data-level="10"] .volume__button {
-  background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAQAAABKfvVzAAAAsElEQVQ4y2NgGFrgv8d/e9I0fP7////h/6qEFSb9jwDTKf/fA7V8+G+LX3kjUNEPKFv0/3og7/1/ddzKG/6DAZzP+n8r2GGMeJVDNABN5wWSAkBH/f/vgqrwyH80ABb9/38DmG4BsuajaviPQ8P//yZA2hpI3yJWQy6QFgbSX2mmwRi7k0j1NFxjPYqGdTiDFVMLkREH10J80gAri/0fDqZTiUp8ZCRvuAY3EjPQwAAA9HUsfxIc6rQAAAAASUVORK5CYII=") no-repeat 0 !important;
 }
 
 .playbackSoundBadge .playbackSoundBadge__titleContextContainer .playbackSoundBadge__lightLink:hover {
@@ -172,6 +120,15 @@ body {
   border-color: #555 !important;
   background-color: #2a2a2a !important;
   color: #e0e0e0 !important;
+}
+
+/* SoundCloud draws a play or pause button as a round background with the triangle in the page
+   colour. The rule above turned that background the same dark grey as the page, so the play
+   buttons on every track list all but vanished (measured 2026-10-27). They take the theme's light
+   grey instead, as on the play bar. */
+.sc-button.sc-button-play,
+.sc-button.sc-button-pause {
+  background-color: #e0e0e0 !important;
 }
 
 /* SoundCloud shows a switched-on button (liked, followed, reposted) by its `color`, which the

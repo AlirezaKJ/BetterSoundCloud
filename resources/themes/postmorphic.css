@@ -1,7 +1,8 @@
 /**
  * @name PostMorphic
  * @author BetterSoundCloud
- * @version 2.0.0
+ * @version 2.1.0
+ * @mode dark
  * @description Dark charcoal on a fine tiled texture, with sunken square buttons, glowing blue
  *              headings, diagonal stripes under the playing track and orange highlights.
  * @preview #212121 #1c1c1c #bbbbbb #ff6600 #0066cc
@@ -764,35 +765,10 @@ div.headerMenu ul.headerMenu__list,
   margin-left: -4px !important;
   margin-top: -4px !important;
 }
-/*
- * v0.7.x inverted SoundCloud's icons here because SoundCloud only had a light mode, with dark
- * icons. Its dark mode draws them light already, and inverting those made them dark on a dark
- * bar (the play button all but vanished, measured 2026-10-27). So these rules now apply only
- * while SoundCloud itself is light, which it marks with `theme-light` on <body>.
- */
-body.theme-light .playControls .playControls__icon,
-body.theme-light .playControls .volume__speakerIcon,
-body.theme-light button.playControls__control,
-body.theme-light .playControls__control > button,
-body.theme-light .playbackSoundBadge__showQueue {
-  filter: invert(66.5%) hue-rotate(180deg) !important;
-  -webkit-filter: invert(66.5%) hue-rotate(180deg) !important;
-  transition: 0.3s !important;
-}
-body.theme-light .playControls .playControls__icon:hover,
-body.theme-light .playControls .volume__speakerIcon:hover,
-body.theme-light button.playControls__control:hover,
-body.theme-light .playControls__control > button:hover,
-body.theme-light .playbackSoundBadge__showQueue:hover {
-  filter: invert(100%) hue-rotate(180deg) !important;
-  -webkit-filter: invert(100%) hue-rotate(180deg) !important;
-}
-body.theme-light .shuffleControl.m-shuffling,
-body.theme-light .repeatControl.m-one,
-body.theme-light .repeatControl.m-all,
-body.theme-light .m-queueVisible .playbackSoundBadge__showQueue {
-  filter: invert(100%) hue-rotate(180deg) !important;
-}
+/* v0.7.x inverted SoundCloud's player icons here, and more icons further down, because
+   SoundCloud then drew them dark. This theme says `@mode dark`, so SoundCloud draws them light
+   in both of its modes, and the inversions, which made them dark again, are gone. The greys the
+   inversions aimed for come from the button colours above (#777, #999 on hover). */
 .volume__sliderWrapper {
   background: #222 !important;
   border-color: #000 !important;
@@ -858,29 +834,8 @@ header.header {
   box-shadow: inset 0 0 1px rgba(99, 99, 99, 0.5) !important;
 }
 
-body.theme-light .g-tabs-item.active .g-tabs-link,
-body.theme-light .sc-ministats-small.sc-ministats-sounds:not(.sc-ministats-inverted):before,
-body.theme-light .sc-buylink:before,
-body.theme-light .sc-button-small:not(.sc-button-selected):not(.sc-button-play):not(
-    .sc-button-lightfg
-  ):before,
-body.theme-light .sc-button-small.sc-button-reply:before,
-body.theme-light .sc-button-small.hintButton,
-body.theme-light .sc-button-medium:not(.sc-button-selected):before,
-body.theme-light .m-light.profileMenu .headerMenu__link::after,
-body.theme-light .quotaMeter__dropdownButton,
-body.theme-light .ui-datepicker-prev,
-body.theme-light .ui-datepicker-next {
-  filter: invert(100%) !important;
-  -webkit-filter: invert(100%) !important;
-}
 .sc-button-small:not(.sc-button-selected):not(.sc-button-play):before {
   opacity: 0.4 !important;
-}
-body.theme-light .audibleTile__actions
-  .sc-button-small:not(.sc-button-selected):not(.sc-button-play):before,
-body.theme-light .sc-button-medium.sc-button-cta.sc-button-follow::before {
-  filter: invert(0%) !important;
 }
 
 /* .waveform__layer .sceneLayer:nth-child(1) {opacity: 0.6 !important} */

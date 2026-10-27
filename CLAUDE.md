@@ -55,37 +55,38 @@ src/preload/    chrome.ts   -> window.bsc for OUR views (contextBridge)
 src/renderer/   Svelte 5. One folder per view, each with index.html + main.ts + Component.svelte.
                 tokens.css (design tokens), lib/ (shared components)
 src/shared/     Pure TypeScript shared by main, preload and renderer. No Electron, no DOM.
-resources/      Shipped at runtime: engine.bin (ad blocker), themes/, plugins/, icon.png
+resources/      Shipped at runtime: engine.bin (ad blocker), themes/, plugins/, minimal-nav.css,
+                soundcloud-palette-{dark,light}.css (§17), icon.png
 scripts/        Blocker engine build, VMP signing hooks
 docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CUSTOM_PLUGINS.md
 ```
 
 ### Key main-process files
 
-| File                               | Owns                                                                                                                                                |
-| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `main/index.ts`                    | Startup order, the Widevine wait, single-instance lock, `registerIpc()` (every IPC handler and its sender check), `applyLiveSettings()`, broadcasts |
-| `main/window.ts`                   | `Shell` type, `createShell()`, `layout()`, every overlay view, `applyContentCss()`, `rendererUrl()`, `enableDevToolsShortcut()`                     |
-| `main/context-menu.ts`             | The right-click menu view and every menu action                                                                                                     |
-| `main/page-status.ts`              | The page-status view: failed loads (and their retries), crashes, hangs, slow starts, and its buttons                                                |
-| `main/presence.ts`                 | Discord Rich Presence: follows now-playing and the `discord.*` settings, spaces updates, reconnects; `getPresenceStatus` for settings               |
-| `main/discord-ipc.ts`              | Our own small client for the Discord app's local pipe (no Electron, tested against a real pipe)                                                     |
-| `main/now-playing.ts`              | The one copy of "what is playing": `getNowPlaying`, `setNowPlaying`, `onNowPlayingChange`                                                           |
-| `main/session.ts`                  | `hardenSession`, permission allowlist, `routeNewWindowsToBrowser`, `isInternalUrl`, `openInBrowser`                                                 |
-| `main/settings-store.ts`           | electron-store wrapper: `get`, `getAll`, `set`, `reset`. Lazy — built on first use                                                                  |
-| `main/content-css.ts`              | `buildContentCss()`: the one stylesheet injected into SoundCloud's page (pure, tested)                                                              |
-| `main/themes.ts`                   | `listThemes()`, `findTheme()`, hot reload (`watchUserThemes`), editable copies; reads `resources/themes/` and `<userData>/themes/` (§17)            |
-| `main/chrome-theme.ts`             | A theme's `chrome` sections into our own views: `themeChromeView()`, `setChromeTheme()`                                                             |
-| `main/blocker.ts` + `net-rules.ts` | Ad/tracker blocking and the never-filter allowlist                                                                                                  |
-| `main/diagnostics.ts`              | Dev-only network and page-error log, `whoAnswered()` (SoundCloud vs DataDome)                                                                       |
-| `main/tray.ts`                     | Tray icon and menu (playback items disabled until playback control exists)                                                                          |
-| `main/go-to-url.ts`                | `resolveGoToUrl()` for the menu's "Go to URL" prompt                                                                                                |
-| `main/plugins.ts`                  | The plugin service: finds plugins, records approvals, runs each in its own process, answers its calls (§16)                                         |
-| `main/plugin-host.ts`              | The entry point of a plugin's own utility process: relays messages, makes its https requests                                                        |
-| `main/plugin-sandbox.ts`           | `runPlugin()`: the `vm` context and the `bsc` API. No Electron, so it is tested directly                                                            |
-| `main/secrets.ts`                  | `safeStorage`-encrypted secrets, namespaced; refuses where there is no real encryption                                                              |
-| `main/json-file.ts`                | Crash-safe JSON files in the profile: write to a temp file, then rename                                                                             |
-| `main/env.ts`                      | `isDev`                                                                                                                                             |
+| File                               | Owns                                                                                                                                                               |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `main/index.ts`                    | Startup order, the Widevine wait, single-instance lock, `registerIpc()` (every IPC handler and its sender check), `applyLiveSettings()`, broadcasts                |
+| `main/window.ts`                   | `Shell` type, `createShell()`, `layout()`, every overlay view, `applyContentCss()`, `rendererUrl()`, `enableDevToolsShortcut()`                                    |
+| `main/context-menu.ts`             | The right-click menu view and every menu action                                                                                                                    |
+| `main/page-status.ts`              | The page-status view: failed loads (and their retries), crashes, hangs, slow starts, and its buttons                                                               |
+| `main/presence.ts`                 | Discord Rich Presence: follows now-playing and the `discord.*` settings, spaces updates, reconnects; `getPresenceStatus` for settings                              |
+| `main/discord-ipc.ts`              | Our own small client for the Discord app's local pipe (no Electron, tested against a real pipe)                                                                    |
+| `main/now-playing.ts`              | The one copy of "what is playing": `getNowPlaying`, `setNowPlaying`, `onNowPlayingChange`                                                                          |
+| `main/session.ts`                  | `hardenSession`, permission allowlist, `routeNewWindowsToBrowser`, `isInternalUrl`, `openInBrowser`                                                                |
+| `main/settings-store.ts`           | electron-store wrapper: `get`, `getAll`, `set`, `reset`. Lazy — built on first use                                                                                 |
+| `main/content-css.ts`              | `buildContentCss()`: the one stylesheet injected into SoundCloud's page (pure, tested)                                                                             |
+| `main/themes.ts`                   | `listThemes()`, `findTheme()`, hot reload (`watchUserThemes`), editable copies, `soundCloudPaletteCss()`; reads `resources/themes/` and `<userData>/themes/` (§17) |
+| `main/chrome-theme.ts`             | A theme's `chrome` sections into our own views: `themeChromeView()`, `setChromeTheme()`                                                                            |
+| `main/blocker.ts` + `net-rules.ts` | Ad/tracker blocking and the never-filter allowlist                                                                                                                 |
+| `main/diagnostics.ts`              | Dev-only network and page-error log, `whoAnswered()` (SoundCloud vs DataDome)                                                                                      |
+| `main/tray.ts`                     | Tray icon and menu (playback items disabled until playback control exists)                                                                                         |
+| `main/go-to-url.ts`                | `resolveGoToUrl()` for the menu's "Go to URL" prompt                                                                                                               |
+| `main/plugins.ts`                  | The plugin service: finds plugins, records approvals, runs each in its own process, answers its calls (§16)                                                        |
+| `main/plugin-host.ts`              | The entry point of a plugin's own utility process: relays messages, makes its https requests                                                                       |
+| `main/plugin-sandbox.ts`           | `runPlugin()`: the `vm` context and the `bsc` API. No Electron, so it is tested directly                                                                           |
+| `main/secrets.ts`                  | `safeStorage`-encrypted secrets, namespaced; refuses where there is no real encryption                                                                             |
+| `main/json-file.ts`                | Crash-safe JSON files in the profile: write to a temp file, then rename                                                                                            |
+| `main/env.ts`                      | `isDev`                                                                                                                                                            |
 
 ### Key shared files
 
@@ -94,7 +95,7 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CU
 | `shared/ipc.ts`             | `CH` (every channel name), `ChromeApi` (the `window.bsc` type), `NavState`, `WindowState`                       |
 | `shared/settings-schema.ts` | `SETTINGS`, `SECTIONS`, `Settings`, `SettingKey`, `coerce`, `coerceAll`, `defaults`                             |
 | `shared/now-playing.ts`     | `PlayerReading`, `NowPlaying`, `readNowPlaying()` and its cleaners                                              |
-| `shared/page-theme.ts`      | `PageTheme`, `detectPageTheme()`                                                                                |
+| `shared/page-theme.ts`      | `PageTheme`, `detectPageTheme()`, `overlayTheme()` (a theme's `@mode` beats SoundCloud's setting)               |
 | `shared/context-menu.ts`    | `ContextMenuRequest`, `CONTEXT_MENU_ACTIONS`, `cleanUrl`, `shortUrl`, `elide`                                   |
 | `shared/presence.ts`        | `Activity`, `buildActivity()` (the Discord card), `sameActivity()`, `PRESENCE_LOGO`                             |
 | `shared/page-status.ts`     | `PageStatus`, `describePageStatus()` (every word on that view), `describeLoadFailure()`, `retryDelay()`         |
@@ -250,9 +251,9 @@ Each view is `src/renderer/<entry>/{index.html, main.ts, <Name>.svelte}`.
 - **Two colour sources.** Our own surfaces (header, settings, menu) follow
   `appearance.colorScheme`, which main applies through `nativeTheme.themeSource`, so tokens.css's
   `prefers-color-scheme` block just works — no IPC. Overlays drawn ON SoundCloud's bars follow
-  SoundCloud's own light/dark setting instead: subscribe to `onPageTheme` and switch a class
-  (see `Player.svelte`, `Embedded.svelte`). Override tokens locally in that case, e.g.
-  `--bsc-bg-hover`.
+  SoundCloud's own light/dark setting instead — or the selected theme's `@mode`, which wins
+  (`overlayTheme`, §17): subscribe to `onPageTheme` and switch a class (see `Player.svelte`,
+  `Embedded.svelte`). Override tokens locally in that case, e.g. `--bsc-bg-hover`.
 - Reuse `lib/WindowControls.svelte` for minimize/maximize/close; it hides itself on macOS.
 - Dialog-style views close in two steps: set state so the outro plays, then tell main to destroy
   the view on `onoutroend`, with a timer backstop (`Settings.svelte`).
@@ -312,8 +313,9 @@ already shipped once:
    detect us. Results go to main over `ipcRenderer.send`, never `console.log`.
 4. **Cosmetic changes are CSS only**, injected by main with `webContents.insertCSS()`
    (`applyContentCss` → `buildContentCss`, re-applied on every load). The selected theme goes
-   after the overridable basics and **before** the overlay reservations and layout settings, so
-   no theme can slide SoundCloud's controls under our transparent buttons. Swap a stylesheet by
+   after the overridable basics (and right after SoundCloud's palette for its `@mode`, §17) and
+   **before** the overlay reservations and layout settings, so no theme can slide SoundCloud's
+   controls under our transparent buttons. Swap a stylesheet by
    inserting the new one before removing the old, or the page flashes unstyled.
 5. **No synthetic input on SoundCloud's controls** — no `.click()`, no `dispatchEvent`, no
    `sendInputEvent`. Implicated in the like/follow blocks.
@@ -587,6 +589,8 @@ guide is `docs/CUSTOM_THEMES.md`.
 theme file --splitThemeTargets--> sections: content | chrome | header | settings | menu | status | all
   content + all  --> buildContentCss() into SoundCloud's page (after the basics, before the layout rules)
   chrome + <view> + all --> chrome-theme.ts into each of our views that called themeChromeView()
+@mode dark|light --> soundcloud-palette-<mode>.css right before the theme's page CSS, and the
+                     overlays' colours (overlayTheme)
 --bsc-cover  --> a separate tiny sheet on SoundCloud's page (coverCss), replaced once per track
 ```
 
@@ -602,7 +606,7 @@ Rules that hold this together:
 - **Our own views get a theme through `themeChromeView(view, kind)`** — the header, settings, the
   right-click menu and the status view call it when they are created. A new view of ours that follows
   the app's colours calls it too. The overlays over SoundCloud's bars do not: they follow
-  SoundCloud's light/dark setting (§6, "Two colour sources").
+  SoundCloud's light/dark setting, or the theme's `@mode` (§6, "Two colour sources").
 - **Bundled themes load nothing from the network but SoundCloud's own CDN**; the project's old
   hot-linked icons are embedded as `data:` URIs. Our renderers' CSP blocks remote loads in chrome
   regardless. `themes.test.ts` holds every shipped theme to this, to a lowercase file name, to no
@@ -614,10 +618,26 @@ Rules that hold this together:
   loading belongs to the document that load event reports; dropping its key left the startup theme
   stuck on the page under every later one (measured). Re-apply and let the old key be removed —
   removing a key the document no longer has is a no-op.
-- **SoundCloud has a light and a dark mode** (`theme-light` / `theme-dark` on `<body>`). v0.7.x
-  themes predate the dark one and invert icons; in the ports that only happens under
-  `body.theme-light` (pinned). A theme that sets `color` on `.sc-button` must give
-  `.sc-button.sc-button-selected` one too, or liked and not liked look the same.
+- **SoundCloud's light and dark mode are one set of colour variables.** It marks the mode with
+  `theme-light` / `theme-dark` on `<body>`, and the difference is ~110 variables declared there
+  (`--surface-color`, `--primary-color`, …); its icons are inline SVGs in `currentColor`, so they
+  follow too (measured 2026-10-27). A theme says which mode it was written for with `@mode`; while
+  SoundCloud shows the other one, `buildContentCss` puts `soundcloud-palette-<mode>.css` (SoundCloud's
+  own values, scoped to `body.theme-<other>`) right before the theme, so the theme looks the same in
+  both — all five built-ins measured pixel-identical in both modes on the signed-out discover page.
+  The overlays then follow the theme's mode, not SoundCloud's (`overlayTheme`; `setThemeMode` in
+  window.ts re-sends when the theme changes). The palette files are SoundCloud's values copied on
+  that date: if SoundCloud changes its palette, re-measure them (read `.theme-dark` and
+  `.theme-light, :root` from its app CSS) rather than hand-editing. Every built-in theme is
+  `@mode dark` (pinned).
+- **No icon inversion, no mode-specific rules in the built-ins** (pinned). v0.7.x inverted icons
+  because SoundCloud then drew them dark; today an inversion turns a light icon dark. A theme that
+  sets `color` on `.sc-button` must give `.sc-button.sc-button-selected` one too, or liked and not
+  liked look the same; and one that restyles `.sc-button` must keep `.sc-button-play` /
+  `.sc-button-pause` a solid round background, which SoundCloud draws the triangle on in the page
+  colour (transparent or page-coloured, the play buttons vanished in three ports).
+- **No `position: relative; left: …` nudges** (pinned): the box moves without making room, and one
+  near the right edge makes the whole page scroll sideways (Hover's sidebar did). Use margins.
 - **A theme must not change SoundCloud's header height** (46 CSS px): the embedded window buttons
   and the page below are measured against it. The v0.7.x Nocturnal and Hover themes made it 60px;
   v2's ports do not.

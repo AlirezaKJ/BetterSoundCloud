@@ -655,7 +655,7 @@ function broadcastSettings(next: Settings): void {
  */
 function themeSummaries(): ThemeSummary[] {
   return listThemes().map(
-    ({ id, name, author, version, description, builtIn, preview, overridesBuiltIn }) => ({
+    ({ id, name, author, version, description, builtIn, preview, overridesBuiltIn, mode }) => ({
       id,
       name,
       author,
@@ -663,7 +663,8 @@ function themeSummaries(): ThemeSummary[] {
       description,
       builtIn,
       preview,
-      overridesBuiltIn
+      overridesBuiltIn,
+      mode
     })
   )
 }

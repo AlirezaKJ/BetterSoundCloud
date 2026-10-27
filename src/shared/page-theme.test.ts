@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { detectPageTheme, luminance } from './page-theme'
+import { detectPageTheme, luminance, overlayTheme } from './page-theme'
 
 describe('luminance', () => {
   it('reads both rgb and rgba', () => {
@@ -46,5 +46,19 @@ describe('detectPageTheme', () => {
     // The other way round is invisible on SoundCloud's default dark page.
     expect(detectPageTheme('', 'transparent')).toBe('dark')
     expect(detectPageTheme('', '')).toBe('dark')
+  })
+})
+
+describe('overlayTheme', () => {
+  it('follows SoundCloud while no theme says which mode it is for', () => {
+    expect(overlayTheme('light', null)).toBe('light')
+    expect(overlayTheme('dark', null)).toBe('dark')
+  })
+
+  it('follows the theme’s mode when it has one, whatever SoundCloud is set to', () => {
+    // Dark Cloud on SoundCloud's light mode is a near-black header; the window buttons drawn on
+    // it need light glyphs, which is what "dark" gives them.
+    expect(overlayTheme('light', 'dark')).toBe('dark')
+    expect(overlayTheme('dark', 'light')).toBe('light')
   })
 })

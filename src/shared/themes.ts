@@ -1,3 +1,5 @@
+import type { PageTheme } from './page-theme'
+
 /**
  * What the settings panel knows about a theme.
  *
@@ -22,6 +24,14 @@ export interface ThemeSummary {
   readonly preview: readonly string[]
   /** A built-in theme the user has copied into their own folder, which now takes its place. */
   readonly overridesBuiltIn: boolean
+  /**
+   * Which of SoundCloud's two modes the theme was made for, from its `@mode` line, or null when it
+   * does not say. While SoundCloud shows the other mode, BetterSoundCloud puts that mode's own
+   * colours back underneath the theme (resources/soundcloud-palette-*.css), so the theme looks the
+   * same in both; and the window buttons drawn on SoundCloud's bars follow it rather than
+   * SoundCloud. A theme with no `@mode` has to look after both modes itself.
+   */
+  readonly mode: PageTheme | null
 }
 
 /**
@@ -58,8 +68,15 @@ export function parseThemeMetadata(
     preview: (tag('preview') ?? '')
       .split(/\s+/)
       .filter((colour) => /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(colour))
-      .slice(0, 5)
+      .slice(0, 5),
+    mode: readMode(tag('mode'))
   }
+}
+
+/** `@mode dark` or `@mode light`, in any case; anything else is no mode at all. */
+function readMode(value: string | null): PageTheme | null {
+  const word = (value ?? '').toLowerCase()
+  return word === 'dark' || word === 'light' ? word : null
 }
 
 /*

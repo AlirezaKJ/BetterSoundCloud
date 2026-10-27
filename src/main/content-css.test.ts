@@ -211,4 +211,18 @@ describe('buildContentCss', () => {
     expect(navAt).toBeLessThan(css.indexOf('padding-right: 144px'))
     expect(navAt).toBeLessThan(css.indexOf('min-width: 100%'))
   })
+
+  it('puts SoundCloud’s palette for the theme’s mode right under the theme', () => {
+    // The palette is the floor a `@mode` theme was written on; the theme must still beat it.
+    const css = buildContentCss({
+      fullWidth: true,
+      reserve: 144,
+      palette: 'body.theme-light { --surface-color: #121212; }',
+      theme: '.themed { color: red }'
+    })
+    const paletteAt = css.indexOf('--surface-color')
+    expect(paletteAt).toBeGreaterThan(css.indexOf('::-webkit-scrollbar'))
+    expect(paletteAt).toBeLessThan(css.indexOf('.themed'))
+    expect(paletteAt).toBeLessThan(css.indexOf('padding-right: 144px'))
+  })
 })

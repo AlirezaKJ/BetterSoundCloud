@@ -1,10 +1,10 @@
 /**
  * @name Glassmorphism
  * @author reoireopit w/ novembercry
- * @version 2.0.0
+ * @version 2.1.0
+ * @mode dark
  * @description Dark, see-through panels with rounded corners and a soft blur, over a blurred
- *              copy of the playing track's artwork, with pill-shaped buttons. Made for
- *              SoundCloud's dark setting.
+ *              copy of the playing track's artwork, with pill-shaped buttons.
  * @preview #383838 #222222 #ffffff #ff5500
  * @license MIT
  */
@@ -24,8 +24,8 @@
  *   SoundCloud's header, whose contents v2 manages itself.
  * - New: the `@target chrome` block at the end recolours our own bar and panels to match.
  *
- * Everything else is the v0.7.x theme as it was. It sets no text colours, so it relies on
- * SoundCloud's dark setting for light text; in their light setting the text stays dark.
+ * Everything else is the v0.7.x theme as it was. It sets no text colours of its own: the light
+ * text is SoundCloud's dark mode, which `@mode dark` gives it in either of SoundCloud's settings.
  */
 
 /* v0.7.x: the custombg plugin prepended a div into SoundCloud's #app showing the playing

@@ -1,7 +1,8 @@
 /**
  * @name Hover
  * @author BetterSoundCloud
- * @version 2.0.0
+ * @version 2.1.0
+ * @mode dark
  * @description Deep purple surfaces with neon green text, and track artwork that lifts off the
  *              page when you point at it.
  * @preview #241e29 #2e2735 #08fc9c #f70363
@@ -200,18 +201,9 @@ a {
   border: none;
 }
 
-/*
- * v0.7.x inverted SoundCloud's icons here because SoundCloud only had a light mode, with dark
- * icons. Its dark mode draws them light already, and inverting those made them dark on a dark
- * bar (the play button all but vanished, measured 2026-10-27). So these rules now apply only
- * while SoundCloud itself is light, which it marks with `theme-light` on <body>.
- */
-body.theme-light .Hint__toggle,
-body.theme-light .quotaMeter__dropdownButton:after,
-body.theme-light .sc-button-medium.sc-button-pageleft:before,
-body.theme-light .sc-button-medium.sc-button-pageright:before {
-  filter: invert(1);
-}
+/* v0.7.x inverted a few of SoundCloud's icons here, and two more groups further down, because
+   SoundCloud then drew them dark. This theme says `@mode dark`, so SoundCloud draws them light
+   in both of its modes, and the inversions, which made them dark again, are gone. */
 
 a.sc-link-dark,
 .g-tabs-link.active,
@@ -377,40 +369,25 @@ select,
   background-color: var(--main) !important;
 }
 
+/* v0.7.x padded tags by 10px all round. SoundCloud's tags are now a fixed 24px tall, so the top
+   padding pushed the text out through the bottom of its box (measured 2026-10-27); the padding is
+   now only at the sides. */
 .sc-tag,
 .sc-tag:visited {
   background-color: var(--main) !important;
   border-radius: 0px !important;
-  padding: 10px !important;
+  padding: 2px 10px !important;
 }
 
-body.theme-light .sc-button-medium.sc-button-startstation::before,
-body.theme-light .sc-button-medium.sc-button-message::before,
-body.theme-light .sc-button-medium.sc-button-more::before,
-body.theme-light .playControls__control,
-body.theme-light .playControl,
-body.theme-light button.skipControl,
-body.theme-light svg:not(:root),
-body.theme-light .volume__button,
-body.theme-light .sc-button-small::before,
-body.theme-light .sc-button-medium.sc-button-share::before,
-body.theme-light .sc-button-medium.sc-button-edit::before {
-  filter: invert(100) !important;
-  opacity: 0.5 !important;
-}
-
+/* Play and pause buttons. v0.7.x made them transparent here, because SoundCloud then drew a
+   light icon on top. Today SoundCloud draws the round button as its background and the triangle
+   in the page colour, so a transparent button left a dark triangle on a dark page, all but
+   invisible on every track list and on the play bar (measured 2026-10-27). The round button
+   comes back in the theme's green. */
 .sc-button-pause,
 .sc-button-play {
-  /* filter: invert(100) !important; */
-  background: transparent !important;
-  opacity: 1 !important;
-}
-
-/* SoundCloud's play-bar button now carries `sc-button-play` too, so the rule above made its disc
-   transparent and left a dark triangle on the dark bar, all but invisible (measured 2026-10-27).
-   The disc comes back in the theme's green, which is what the rest of the bar is drawn in. */
-.playControls .playControls__play {
   background-color: var(--text) !important;
+  opacity: 1 !important;
 }
 
 .playableTile__artwork:hover {
@@ -447,22 +424,24 @@ body.theme-light .sc-button-medium.sc-button-edit::before {
   box-shadow: -10px 0 20px -10px #000;
 }
 
-/* Margin for right profile tab */
+/* Margin for right profile tab. v0.7.x moved these with `position: relative; left: …`, which
+   shifts a box without making room for it: the 360px sidebar module then stuck 15px out of the
+   window and the whole page scrolled sideways (measured 2026-10-27). A margin indents the same
+   amount and lets the box narrow to fit. */
 .sidebarModule.g-all-transitions-200-linear {
-  position: relative;
-  left: 15px;
+  margin-left: 15px;
   border-top: 1px solid var(--border);
 }
 
 .infoStats {
   position: relative;
-  left: 38px;
+  margin-left: 38px;
   top: 20px;
 }
 
+/* A margin rather than `left: 20px`, for the same reason as the module above. */
 .insightsSidebarModule.sc-font.sc-mb-3x {
-  position: relative;
-  left: 20px;
+  margin-left: 20px;
 }
 
 .sc-button.sc-button-white.sc-button-large.insightsSidebarModule__button {
@@ -533,26 +512,6 @@ svg:not(:root),
 .sc-button-medium.sc-button-share::before,
 .sc-button-medium.sc-button-edit::before {
   opacity: 1 !important;
-}
-
-/* light icons */
-body.theme-light .m-light .profileMenu__profile:after,
-body.theme-light .m-light .profileMenu__likes:after,
-body.theme-light .m-light .profileMenu__sets:after,
-body.theme-light .m-light .profileMenu__stations:after,
-body.theme-light .m-light .profileMenu__following:after,
-body.theme-light .m-light .profileMenu__friends:after,
-body.theme-light .m-light .profileMenu__premium:after,
-body.theme-light .m-light .profileMenu__trackManager:after,
-body.theme-light .sc-classic .m-light .profileMenu__insights:after,
-body.theme-light .m-light .profileMenu__distribute:after,
-body.theme-light .sc-button-medium.sc-button-repost:before,
-body.theme-light .sc-button-medium.sc-button-copylink:before,
-body.theme-light .sc-button-queue:before,
-body.theme-light .sc-button-medium.sc-button-addtoset:before,
-body.theme-light .sc-button-report:before,
-body.theme-light .sc-button-medium.sc-button-like:before {
-  filter: invert(100) !important;
 }
 
 .sc-classic .m-light .headerMenu__link:focus,

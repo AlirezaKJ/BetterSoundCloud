@@ -12,9 +12,10 @@ import {
   FIT_HEADER_WIDTH,
   MIN_EMBED_WIDTH
 } from './content-css'
-import { findTheme, minimalNavigationCss, NO_THEME } from './themes'
+import { findTheme, minimalNavigationCss, NO_THEME, soundCloudPaletteCss } from './themes'
 import { themeChromeView } from './chrome-theme'
 import { contentCssOf, coverCss } from '@shared/themes'
+import { overlayTheme } from '@shared/page-theme'
 import type { PageTheme } from '@shared/page-theme'
 import { hidesPage } from '@shared/page-status'
 import type { PageStatus } from '@shared/page-status'
@@ -89,6 +90,11 @@ export type Shell = {
    * the wrong colours until the user next flips the setting.
    */
   pageTheme: PageTheme
+  /**
+   * The selected theme's `@mode`, or null. A theme with a mode paints SoundCloud's bars for that
+   * mode in either of SoundCloud's, so the overlays follow it instead (`overlayTheme`).
+   */
+  themeMode: PageTheme | null
   /**
    * Whether the embedded overlay is actually on screen. Distinct from `hideMenuBar`: the
    * setting can be on while the window is too narrow to honour it. The stylesheet's
@@ -232,6 +238,7 @@ export function createShell(identity: Identity): Shell {
     status: null,
     pageStatus: null,
     pageTheme: 'dark',
+    themeMode: null,
     embeddedShowing: false,
     compactHeader: false,
     fitHeader: false,
@@ -547,13 +554,17 @@ async function applyContentCss(shell: Shell, fullWidth: boolean, theme: string):
   const compactHeader = shell.compactHeader
   const fitHeader = shell.fitHeader
 
+  // Read once: the theme's page CSS, and SoundCloud's palette for the mode it was made for.
+  const selected = theme === NO_THEME ? null : findTheme(theme)
+
   const key = await webContents
     .insertCSS(
       buildContentCss({
         fullWidth,
         reserve,
         nativeControlsReserve: process.platform === 'darwin' ? Math.ceil(80 / zoom) : 0,
-        theme: themeContentCss(theme),
+        palette: selected?.mode ? soundCloudPaletteCss(selected.mode) : '',
+        theme: selected ? contentCssOf(selected.sections) : '',
         minimalNavigation: shell.minimalNavigation ? minimalNavigationCss() : '',
         playerReserve,
         compactHeader,
@@ -569,12 +580,6 @@ async function applyContentCss(shell: Shell, fullWidth: boolean, theme: string):
   }
   shell.reservationKey = key
   if (previous) await webContents.removeInsertedCSS(previous).catch(() => undefined)
-}
-
-/** A theme's CSS for SoundCloud's page: its `all` and `content` sections, read fresh from disk. */
-function themeContentCss(id: string): string {
-  const theme = id === NO_THEME ? null : findTheme(id)
-  return theme ? contentCssOf(theme.sections) : ''
 }
 
 /**
@@ -623,6 +628,10 @@ export function setContentAppearance(
   shell.theme = options.theme
   shell.minimalNavigation = options.minimalNavigation
   shell.hideMenuBar = options.hideMenuBar
+  setThemeMode(
+    shell,
+    options.theme === NO_THEME ? null : (findTheme(options.theme)?.mode ?? null)
+  )
 
   // The embedded bar exists exactly while our own bar is hidden — it carries the only
   // way back, so the two states are one thing, not two settings that could disagree.
@@ -758,23 +767,41 @@ function setPlayerButtons(shell: Shell, enabled: boolean): void {
 function sendPageThemeOnLoad(shell: Shell, view: WebContentsView): void {
   view.webContents.once('did-finish-load', () => {
     if (!view.webContents.isDestroyed()) {
-      view.webContents.send(CH.pageThemeChanged, shell.pageTheme)
+      view.webContents.send(CH.pageThemeChanged, overlayTheme(shell.pageTheme, shell.themeMode))
     }
   })
 }
 
 /**
- * Push SoundCloud's light/dark choice out to every overlay drawn on top of their page.
+ * SoundCloud's own light/dark choice, as the content preload reported it. The overlays drawn on
+ * top of their page follow it — unless the selected theme has a `@mode`, which wins.
  *
  * Only the overlays: our own header and settings panel are our surfaces and follow the
  * user's `appearance.colorScheme`, not SoundCloud's.
  */
 export function setPageTheme(shell: Shell, theme: PageTheme): void {
   if (isDev && theme !== shell.pageTheme) console.log(`[theme] SoundCloud page is ${theme}`)
+  const before = overlayTheme(shell.pageTheme, shell.themeMode)
   shell.pageTheme = theme
+  sendOverlayTheme(shell, before)
+}
+
+/** The selected theme's `@mode` changed (or the theme did): the overlays may need new colours. */
+function setThemeMode(shell: Shell, mode: PageTheme | null): void {
+  if (mode === shell.themeMode) return
+  const before = overlayTheme(shell.pageTheme, shell.themeMode)
+  shell.themeMode = mode
+  sendOverlayTheme(shell, before)
+}
+
+/** Tell the overlays their colours, if they changed from `before`. */
+function sendOverlayTheme(shell: Shell, before: PageTheme): void {
+  const now = overlayTheme(shell.pageTheme, shell.themeMode)
+  if (now === before) return
+  if (isDev && shell.themeMode) console.log(`[theme] overlays follow the theme: ${now}`)
   for (const view of [shell.embedded, shell.player]) {
     if (view && !view.webContents.isDestroyed()) {
-      view.webContents.send(CH.pageThemeChanged, theme)
+      view.webContents.send(CH.pageThemeChanged, now)
     }
   }
 }

@@ -270,15 +270,32 @@ describe.each(SHIPPED)('the shipped theme %s', (file) => {
     }
   })
 
-  it('inverts icons only while SoundCloud itself is light', () => {
-    // v0.7.x themes inverted SoundCloud's dark icons to make them light. In SoundCloud's dark
-    // mode the icons are light already, and inverting them made the play button vanish.
+  it('says it was made for SoundCloud’s dark mode', () => {
+    // Every built-in theme is a dark one. `@mode dark` is what keeps it whole while SoundCloud
+    // is set to light: the app puts SoundCloud's dark colours back underneath it.
+    expect(parseThemeMetadata(css, file).mode).toBe('dark')
+  })
+
+  it('looks the same in both of SoundCloud’s modes: no rules for one mode, no inverted icons', () => {
+    // SoundCloud's icons are SVGs in the text colour, and under `@mode dark` that colour is light
+    // in either mode. v0.7.x inverted icons because SoundCloud then drew them dark; an inversion
+    // now turns a light icon dark on a dark page (the play button all but vanished, 2026-10-27).
+    expect(rules).not.toMatch(/theme-(light|dark)/)
     for (const match of rules.matchAll(/([^{}]+)\{([^{}]*invert\([^{}]*)\}/g)) {
       const selectors = (match[1] ?? '').split(',').map((s) => s.trim())
       for (const selector of selectors) {
-        if (selector.includes('__image')) continue // a picture, not an icon
-        expect(selector, selector).toMatch(/^body\.theme-light /)
+        expect(selector.includes('__image'), selector).toBe(true) // a picture, not an icon
       }
+    }
+  })
+
+  it('never nudges a box right with `position: relative; left`, which can push it out of the window', () => {
+    // `position: relative; left: 15px` moves a box without making room for it: Hover's sidebar
+    // stuck out of the window and the whole page scrolled sideways (measured 2026-10-27).
+    for (const match of rules.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+      const body = match[2] ?? ''
+      if (!/position:\s*relative/.test(body)) continue
+      expect(body, (match[1] ?? '').trim()).not.toMatch(/(^|[\s;])left:\s*[1-9]/)
     }
   })
 
@@ -295,6 +312,59 @@ describe.each(SHIPPED)('the shipped theme %s', (file) => {
     ] as const) {
       const ratio = contrast(tokens.get(token) ?? '', background)
       expect(ratio, `${token} on --bsc-bg-primary`).toBeGreaterThanOrEqual(floor)
+    }
+  })
+})
+
+/*
+ * SoundCloud's own palettes: what goes under a theme with `@mode`. Measured from SoundCloud's
+ * stylesheet; these tests hold the files to the shape the app relies on.
+ */
+describe('SoundCloud’s palette files', () => {
+  const read = (mode: string) =>
+    readFileSync(
+      join(import.meta.dirname, `../../resources/soundcloud-palette-${mode}.css`),
+      'utf8'
+    ).replace(/\/\*[\s\S]*?\*\//g, '')
+  const variables = (css: string) =>
+    [...css.matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1]).sort()
+
+  it('are what soundCloudPaletteCss reads', () => {
+    expect(themes.soundCloudPaletteCss('dark')).toContain('body.theme-light {')
+    expect(themes.soundCloudPaletteCss('light')).toContain('body.theme-dark {')
+  })
+
+  it('apply only while SoundCloud shows the OTHER mode, and beat SoundCloud’s own rule', () => {
+    // `body.theme-light` outranks SoundCloud's `.theme-light` by one element. It has to: the app's
+    // stylesheet cascades before the page's own when specificity is equal.
+    for (const [mode, other] of [
+      ['dark', 'light'],
+      ['light', 'dark']
+    ] as const) {
+      const css = read(mode)
+      for (const [, selectors = ''] of css.matchAll(/([^{}]+)\{/g)) {
+        for (const selector of selectors.split(',').map((s) => s.trim())) {
+          expect(selector, `${mode}: ${selector}`).toMatch(
+            new RegExp(`^(html )?body\\.theme-${other}\\b`)
+          )
+        }
+      }
+    }
+  })
+
+  it('set the same variables, each once, so switching mode can leave nothing behind', () => {
+    const dark = variables(read('dark'))
+    const light = variables(read('light'))
+    expect(dark.length).toBeGreaterThan(100)
+    expect(new Set(dark).size).toBe(dark.length)
+    expect(dark).toEqual(light)
+    for (const name of [
+      '--surface-color',
+      '--primary-color',
+      '--secondary-color',
+      '--link-color'
+    ]) {
+      expect(dark).toContain(name)
     }
   })
 })

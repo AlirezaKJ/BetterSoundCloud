@@ -40,6 +40,19 @@ export function luminance(color: string): number | null {
 }
 
 /**
+ * The colours the overlays on SoundCloud's bars should take: the selected theme's `@mode` when it
+ * has one, else SoundCloud's own setting.
+ *
+ * A theme with a mode paints SoundCloud's bars for that mode whichever one SoundCloud is in (the
+ * app puts the matching palette underneath it), so SoundCloud's own setting no longer says what is
+ * under the overlays. Measured 2026-10-27: Dark Cloud on SoundCloud's light mode is a near-black
+ * header, and the window buttons, told "light", drew dark glyphs on it.
+ */
+export function overlayTheme(page: PageTheme, themeMode: PageTheme | null): PageTheme {
+  return themeMode ?? page
+}
+
+/**
  * Decide the page theme from what the content preload could read.
  *
  * Measured on the live site: SoundCloud puts `theme-light` on `<body>`, and it does NOT

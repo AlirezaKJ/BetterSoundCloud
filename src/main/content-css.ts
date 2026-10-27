@@ -60,6 +60,13 @@ export const MIN_EMBED_WIDTH = 800
 
 export interface ContentCssOptions {
   /**
+   * SoundCloud's own colours for the mode the theme was made for (its `@mode`), or empty. Goes
+   * right BEFORE the theme, so the theme still wins: it is the floor the theme was written on, not
+   * part of the theme. It only applies while SoundCloud shows the other mode — see
+   * resources/soundcloud-palette-dark.css.
+   */
+  palette?: string
+  /**
    * The selected theme's CSS for SoundCloud's page, or empty for none. Placed after the rules a
    * theme may restyle (the scrollbar) and BEFORE the rules it must not break: the space reserved
    * for our overlays, and the user's own layout settings. A theme that set `.header__inner`'s
@@ -100,6 +107,7 @@ export interface ContentCssOptions {
 export function buildContentCss({
   fullWidth,
   reserve,
+  palette,
   theme,
   minimalNavigation,
   playerReserve,
@@ -131,6 +139,7 @@ export function buildContentCss({
 
   // A theme restyles everything above; everything below keeps SoundCloud's controls clickable
   // and the user's own settings in force, so it comes after the theme and wins.
+  if (palette) rules.push(palette)
   if (theme) rules.push(theme)
   if (minimalNavigation) rules.push(minimalNavigation)
 

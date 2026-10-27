@@ -1,7 +1,8 @@
 /**
  * @name Nocturnal
  * @author BetterSoundCloud
- * @version 2.0.0
+ * @version 2.1.0
+ * @mode dark
  * @description Deep navy-black surfaces with soft grey text, dusty blue links and sage green
  *              for active tabs and the volume slider. Icons and the waveform are dimmed to
  *              grey, and artwork spins on hover.
@@ -325,11 +326,14 @@ select,
 
 /* songs */
 
+/* v0.7.x padded tags by 10px all round. SoundCloud's tags are now a fixed 24px tall, so the top
+   padding pushed the text out through the bottom of its box (measured 2026-10-27); the padding is
+   now only at the sides. */
 .sc-tag,
 .sc-tag:visited {
   background-color: var(--main-bg) !important;
   border-radius: 0px !important;
-  padding: 10px !important;
+  padding: 2px 10px !important;
 }
 
 .sceneLayer,
@@ -344,38 +348,34 @@ select,
 /* fix black icons */
 
 /*
- * v0.7.x inverted SoundCloud's icons here because SoundCloud only had a light mode, with dark
- * icons. Its dark mode draws them light already, and inverting those made them dark on a dark
- * bar (the play button all but vanished, measured 2026-10-27). So these rules now apply only
- * while SoundCloud itself is light, which it marks with `theme-light` on <body>.
+ * v0.7.x inverted SoundCloud's icons here, because SoundCloud then drew them dark, and dimmed
+ * them to half strength. The inversion is gone: this theme says `@mode dark`, so SoundCloud
+ * draws its icons light in both of its modes, and inverting made them dark on a dark page. The
+ * dimming is what gives the theme its muted icons, so it stays, in both modes.
  */
-body.theme-light .sc-button-medium.sc-button-startstation::before,
-body.theme-light .sc-button-medium.sc-button-message::before,
-body.theme-light .sc-button-medium.sc-button-more::before,
-body.theme-light .playControls__control,
-body.theme-light .playControl,
-body.theme-light button.skipControl,
-body.theme-light svg:not(:root),
-body.theme-light .volume__button,
-body.theme-light .sc-button-small::before,
-body.theme-light .sc-button-medium.sc-button-share::before,
-body.theme-light .sc-button-medium.sc-button-edit::before {
-  filter: invert(100) !important;
+.sc-button-medium.sc-button-startstation::before,
+.sc-button-medium.sc-button-message::before,
+.sc-button-medium.sc-button-more::before,
+.playControls__control,
+.playControl,
+button.skipControl,
+svg:not(:root),
+.volume__button,
+.sc-button-small::before,
+.sc-button-medium.sc-button-share::before,
+.sc-button-medium.sc-button-edit::before {
   opacity: 0.5 !important;
 }
 
+/* Play and pause buttons. v0.7.x made them transparent here, because SoundCloud then drew a
+   light icon on top. Today SoundCloud draws the round button as its background and the triangle
+   in the page colour, so a transparent button left a dark triangle on a dark page, all but
+   invisible on every track list and on the play bar (measured 2026-10-27). The round button
+   comes back in the theme's text grey. */
 .sc-button-pause,
 .sc-button-play {
-  /*     filter: invert(100) !important; */
-  background: transparent !important;
-  opacity: 1 !important;
-}
-
-/* SoundCloud's play-bar button now carries `sc-button-play` too, so the rule above made its disc
-   transparent and left a dark triangle on the dark bar, all but invisible (measured 2026-10-27).
-   The disc comes back in the theme's text grey. */
-.playControls .playControls__play {
   background-color: var(--main-text) !important;
+  opacity: 1 !important;
 }
 
 .commentPopover__username,

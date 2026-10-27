@@ -24,7 +24,8 @@ describe('parseThemeMetadata', () => {
       author: 'Someone',
       version: '2.1.0',
       description: 'Darker everything.',
-      preview: []
+      preview: [],
+      mode: null
     })
   })
 
@@ -49,7 +50,8 @@ describe('parseThemeMetadata', () => {
       author: 'Unknown',
       version: '0.0.0',
       description: '',
-      preview: []
+      preview: [],
+      mode: null
     })
   })
 
@@ -77,6 +79,20 @@ describe('@preview', () => {
       'p'
     )
     expect(meta.preview).toEqual(['#121212', '#1E1E1E', '#abc', '#ff5500', '#000'])
+  })
+})
+
+describe('@mode', () => {
+  it('reads which of SoundCloud’s modes a theme was made for', () => {
+    expect(parseThemeMetadata('/**\n * @name D\n * @mode dark\n */', 'd').mode).toBe('dark')
+    expect(parseThemeMetadata('/**\n * @mode Light\n */', 'l').mode).toBe('light')
+  })
+
+  it('treats anything else as no mode, so the theme is left to handle both itself', () => {
+    // A wrong guess here would put a whole palette under the theme, so only the two words count.
+    expect(parseThemeMetadata('/**\n * @mode auto\n */', 'a').mode).toBeNull()
+    expect(parseThemeMetadata('/**\n * @mode dark light\n */', 'b').mode).toBeNull()
+    expect(parseThemeMetadata('/**\n * @name No mode\n */', 'c').mode).toBeNull()
   })
 })
 
