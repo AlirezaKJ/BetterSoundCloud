@@ -101,8 +101,22 @@ Signing happens at a different point per platform, which is why there are two ho
 (Windows, after). Both call `signPackage()` in `scripts/vmp-sign.js`. Linux needs no VMP
 signature.
 
-Before tagging a release, run `npm run smoke:packaged` against the packed build and work through
-[`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md).
+### Releases are built by GitHub Actions
+
+Pushing a tag `v<version>` (it must match `package.json`, e.g. `v2.0.0-alpha.0`) runs
+[`.github/workflows/release.yml`](.github/workflows/release.yml). It runs the checks, builds the
+Windows installer and portable build (VMP-signed, with `STRICT_VMP_SIGNING=true`) and the Linux
+AppImage, `.deb` and `.rpm`, confirms Electron's fuses are set (`scripts/verify-fuses.mjs`), and
+puts every file plus `SHA256SUMS.txt` in a **draft** release. Nothing is public until you publish
+the draft. Versions with a suffix (`-alpha.0`) are marked as pre-releases. macOS is not built
+until notarization is funded.
+
+It needs two repository secrets, your Castlabs EVS login: `EVS_ACCOUNT_NAME` and `EVS_PASSWD`
+(`gh secret set EVS_ACCOUNT_NAME`, then `gh secret set EVS_PASSWD`; each asks for the value).
+Without them the Windows job stops at its first step.
+
+Test the draft's files before publishing: run `npm run smoke:packaged -- <path to the exe>` and work
+through [`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md).
 
 > **`requestMediaKeySystemAccess()` is not a test for this.** It is a local capability
 > probe that never contacts a licence server, so it succeeds on an unsigned build. The only

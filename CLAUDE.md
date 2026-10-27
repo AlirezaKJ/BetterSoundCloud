@@ -35,6 +35,11 @@ CLAUDE.md is worse than none, because it gets trusted.
   5173 and running `electron.exe` processes before assuming a build is live.
 - `npm install` needs `allow-git=root` (in `.npmrc`) because Electron comes from the Castlabs
   GitHub release (Widevine build). `postinstall` fetches the binary.
+- **Releases are built by `.github/workflows/release.yml`**, on a pushed tag `v<version>` that
+  must match `package.json`: Windows VMP-signed (repository secrets `EVS_ACCOUNT_NAME`,
+  `EVS_PASSWD`) and Linux, fuses checked by `scripts/verify-fuses.mjs`, all into a draft release.
+  Signing never runs on pushes or pull requests. macOS is not built until notarization is funded.
+  Its actions are pinned to commit hashes; keep them pinned.
 
 ---
 
@@ -62,7 +67,7 @@ src/renderer/   Svelte 5. One folder per view, each with index.html + main.ts + 
 src/shared/     Pure TypeScript shared by main, preload and renderer. No Electron, no DOM.
 resources/      Shipped at runtime: engine.bin (ad blocker), themes/, plugins/, minimal-nav.css,
                 soundcloud-palette-{dark,light}.css (§17), icon.png
-scripts/        Blocker engine build, VMP signing hooks
+scripts/        Blocker engine build, VMP signing hooks, the packaged smoke check, the fuse check
 docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CUSTOM_PLUGINS.md
 ```
 

@@ -16,7 +16,7 @@
  *
  * Setup for release builds:
  *   pip install --upgrade castlabs-evs
- *   python -m castlabs_evs.account reauth     (or set EVS_USERNAME / EVS_PASSWORD)
+ *   python -m castlabs_evs.account reauth     (or set EVS_ACCOUNT_NAME / EVS_PASSWD)
  *
  * To sign a build by hand:
  *   python -m castlabs_evs.vmp sign-pkg <path-to-packaged-app>
@@ -115,7 +115,8 @@ export function signPackage(context) {
 
   // Note there is no credentials precondition here. There are two valid ways to be
   // authenticated with EVS — a stored token from `castlabs_evs.account signup/reauth`
-  // (what a developer machine uses) and EVS_USERNAME / EVS_PASSWORD (what CI uses).
+  // (what a developer machine uses) and EVS_ACCOUNT_NAME / EVS_PASSWD, the names
+  // castlabs-evs reads (what .github/workflows/release.yml uses, with EVS_NO_ASK).
   // Requiring the env vars, as soundcloud-rpc's script does, fails the build for anyone
   // signed in the normal way. The rule that actually matters is simpler and is enforced
   // below: in strict mode, signing must succeed.

@@ -5,7 +5,7 @@ release/
 *.log
 npm-debug.log*
 
-# Local env / secrets. EVS_USERNAME + EVS_PASSWORD for Castlabs VMP signing live here.
+# Local env / secrets, such as EVS_ACCOUNT_NAME + EVS_PASSWD for Castlabs VMP signing.
 .env
 .env.*
 

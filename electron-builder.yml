@@ -39,11 +39,14 @@ electronFuses:
 afterPack: scripts/vmp-after-pack.js
 afterSign: scripts/vmp-after-sign.js
 
+# Where the auto-updater looks. Releases themselves are made by .github/workflows/release.yml,
+# which builds with `--publish never` and drafts the release itself; `releaseType` only matters
+# for a hand-run `--publish`, and a draft means nothing goes public without a person.
 publish:
   provider: github
   owner: AlirezaKJ
   repo: BetterSoundCloud
-  releaseType: release
+  releaseType: draft
 
 win:
   target:

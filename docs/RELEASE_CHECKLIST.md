@@ -6,30 +6,37 @@ every check here runs against that artifact, never against `npm run dev`.
 
 ## 1. Build and sign
 
-Windows, from a shell with your Castlabs EVS login current (`py -m castlabs_evs.account reauth` if
-it has lapsed — signing needs it, and it lapses):
+Set `version` in `package.json`, commit, then push a matching tag:
+
+```
+git tag v2.0.0-alpha.0
+git push origin v2.0.0-alpha.0
+```
+
+`.github/workflows/release.yml` builds Windows and Linux and drafts the release. In the run's log,
+the Windows job must show `[vmp] Signature verified.`, and both build jobs must show `PASS` for
+every fuse. The draft holds the installer (`…-setup.exe`), the portable build (`…-portable.exe`),
+the AppImage, `.deb` and `.rpm`, the update feeds (`latest.yml`, `latest-linux.yml`) and
+`SHA256SUMS.txt`. Download them from the draft.
+
+If the workflow cannot run, build Windows by hand, from a shell with your Castlabs EVS login current
+(`py -m castlabs_evs.account reauth` if it has lapsed — signing needs it, and it lapses):
 
 ```
 set STRICT_VMP_SIGNING=true
 npm run dist:win
-```
-
-`STRICT_VMP_SIGNING=true` makes the build fail if it cannot sign. Then confirm the signature:
-
-```
 py -m castlabs_evs.vmp verify-pkg release\win-unpacked
 ```
 
-It must say the signature is valid for `streaming`. The build writes the installer as
-`…-setup.exe` and the portable build as `…-portable.exe`; `latest.yml` describes the installer.
+`verify-pkg` must say the signature is valid for `streaming`.
 
 ## 2. The automated smoke check
 
 ```
-npm run smoke:packaged
+npm run smoke:packaged -- <path to the downloaded …-portable.exe>
 ```
 
-It launches the packed app on a brand-new profile (yours is never touched) and checks, in about a
+(With no path it uses `release/win-unpacked`, the output of a build by hand.) It launches the packed app on a brand-new profile (yours is never touched) and checks, in about a
 minute: the window and SoundCloud load; Widevine installs; the page sees nothing of ours; the user
 agent and its client hints do not name the app; every built-in theme, the Last.fm plugin and Discord
 presence load from inside the archive; themes, the background and Minimal navigation apply; our
@@ -52,7 +59,6 @@ when one is refused, write down what SoundCloud said rather than retrying.
       settings. v0.7.x kept its profile in `~/.config/bettersoundcloud` and v2 keeps it in
       `~/.config/BetterSoundCloud`; nothing is copied across, on purpose (see `app.setName` in
       `src/main/index.ts`).
-      The smoke check also runs against the portable build: `npm run smoke:packaged -- <its path>`.
 - [ ] Sign in from the fresh profile. No challenge, no "unusual activity".
 - [ ] Play ten tracks from a large playlist, **including one that greys out and skips on v0.7.1** —
       the only real test of the VMP signature (`requestMediaKeySystemAccess` succeeds even unsigned).
@@ -66,3 +72,9 @@ when one is refused, write down what SoundCloud said rather than retrying.
       `PLATFORM_SOFTWARE_VERIFIED` (stronger than `verify-pkg`). The app sends every page that is not
       SoundCloud to the system browser, so it cannot be opened inside the app; it needs a test-only
       way in first.
+
+## 4. Publish
+
+Edit the draft's notes: what changed, and anything above that the release notes must say. The
+workflow writes only the checksums and GitHub's list of merged changes. Then press Publish. If a
+check failed, delete the draft (and the tag, if it was pushed) instead, fix it, and tag again.
