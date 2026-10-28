@@ -55,16 +55,22 @@ when one is refused, write down what SoundCloud said rather than retrying.
 - [ ] Upgrade on Windows: on a machine where v0.7.x is installed and signed in, install v2 and launch
       it. It should open signed in, because it uses the same profile folder. Not yet seen on a real
       upgrade.
-- [ ] Taskbar on Windows: pin BetterSoundCloud from the Start Menu, quit it, start it from the pin.
-      There must be one taskbar button, not the pin plus a second one. (The app and the installer's
-      shortcuts share one app ID, `appId` in electron-builder.yml.)
+- [ ] Taskbar on Windows: pin BetterSoundCloud from the Start Menu, then let the update below restart
+      it. There must be one taskbar button, still pinned, not the pin plus a second one. (The app
+      sets the app ID the installer stamps on its shortcuts, `appId` in electron-builder.yml.) Pin
+      after installing, not before: running an installer by hand over an existing install removes
+      the pin, an update does not.
 - [ ] Updating, once the release is published (the updater reads published releases only): on a
-      machine with the previous version's installer build, start it and wait. Within a minute the
-      line under Settings → General → "Update automatically" says the new version is downloading,
-      then ready, and a notification says so. "Restart now" must bring the app back as the new
-      version (the same line then says "Up to date"), still signed in, and still playing a protected
-      track. Do the same with the previous AppImage on Linux. The portable build must say the version
-      is available and open its release page instead.
+      machine with the previous version's installer build, turn Windows' Do Not Disturb off, start
+      it, and leave Settings closed (no notification is sent while Settings is open, and Do Not
+      Disturb hides it). Within a minute a notification says the new version is ready, and the line
+      under Settings → General → "Update automatically" says so too. "Restart now" must bring the
+      app back as the new version (the same line then says "Up to date"), still signed in, and still
+      playing a protected track. Then
+      `py -m castlabs_evs.vmp verify-pkg "%LOCALAPPDATA%\Programs\BetterSoundCloud"` must still say
+      valid for `streaming`: Windows downloads only the changed blocks and rebuilds the installer
+      from them. Do the same with the previous AppImage on Linux. The portable build must say the
+      version is available and open its release page instead.
 - [ ] The release notes say that on Linux, people coming from v0.7.x start signed out and with default
       settings. v0.7.x kept its profile in `~/.config/bettersoundcloud` and v2 keeps it in
       `~/.config/BetterSoundCloud`; nothing is copied across, on purpose (see `app.setName` in

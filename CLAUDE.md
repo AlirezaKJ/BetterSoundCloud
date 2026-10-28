@@ -33,8 +33,9 @@ CLAUDE.md is worse than none, because it gets trusted.
   Windows and a separate one on Linux, where upgraders start signed out on purpose.
 - **On Windows the app's ID is `appId` from electron-builder.yml** (`com.alirezakj.bettersoundcloud`,
   `APP_ID` in `index.ts`, `.dev` appended in dev), set before the first window. The installer
-  stamps its shortcuts with the same ID; if they differ, a pinned shortcut and the running window
-  show as two taskbar buttons. `index.startup.test.ts` reads the yml to keep them equal. Never
+  stamps its shortcuts with the same ID, and notifications go out under it. Since the app sets one,
+  a different ID would split a pinned shortcut and the running window into two taskbar buttons
+  (with none set, Windows took the shortcut's: measured 2026-10-28). `index.startup.test.ts` reads the yml to keep them equal. Never
   change `appId`: it would also break pins, update continuity and macOS keychain grants.
 - **A stale `npm run dev` holds the single-instance lock.** A second one starts on port 5174 and
   its Electron exits silently, leaving the old main-process code running. Check for a listener on
@@ -861,4 +862,8 @@ Rules that hold this together:
   check (there is no publisher to check).
 - **Verified end to end on Linux** (2026-10-28): a 0.8.0 AppImage fed a local 0.8.1 feed checked,
   downloaded, showed the notification, and on "Restart now" came back as 0.8.1 on its own profile.
-  The Windows path is in docs/RELEASE_CHECKLIST.md.
+  **And on Windows** the same day: installers of 0.8.1 → 0.8.2 → 0.8.3 against a local feed
+  downloaded differentially (2.3 MB of 103 MB), installed silently, reopened with `--updated`,
+  still signed in, and kept a taskbar pin. Running an installer by hand removes the pin instead:
+  with `allowToChangeInstallationDirectory` on, electron-builder keeps shortcuts only on an update.
+  The per-release steps are in docs/RELEASE_CHECKLIST.md.
