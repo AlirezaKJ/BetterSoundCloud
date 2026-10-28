@@ -66,6 +66,11 @@ export const CH = {
   // settings renderer -> main. Whether this launch went on without Widevine.
   widevineSkippedGet: 'app:widevine-skipped-get',
 
+  // settings renderer -> main. The two buttons under Advanced: settings back to their defaults,
+  // and SoundCloud's cookies, storage and cache cleared (which signs the user out).
+  settingsReset: 'settings:reset',
+  siteDataClear: 'app:site-data-clear',
+
   // settings renderer <-> main. The updater: its status, and the one button that status offers.
   updateStatusGet: 'updates:status-get',
   updateStatusChanged: 'updates:status-changed',
@@ -209,6 +214,19 @@ export type ChromeApi = {
    * must say so. It can only change while the status view covers the page, so read once.
    */
   getWidevineSkipped(): Promise<boolean>
+
+  /**
+   * Put every schema setting back to its default, after the user confirmed it in the panel.
+   * Plugins, their settings and secrets, and the sign-in are not touched. The new values arrive
+   * through `onSettingsChanged`; this answers whether it happened. The settings view only.
+   */
+  resetSettings(): Promise<boolean>
+
+  /**
+   * Clear SoundCloud's cookies, site storage and HTTP cache, which signs the user out, then open
+   * SoundCloud again. Answers whether the clearing worked. The settings view only.
+   */
+  clearSiteData(): Promise<boolean>
 
   /**
    * What the updater is doing: idle, checking, up to date, a version available, downloading (with

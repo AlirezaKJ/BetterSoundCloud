@@ -581,6 +581,27 @@ things the user switches on that act on their behalf.
 - **The footer** holds "Open plugins folder" and the plain statement of what the separate process
   does and does not protect. The words may not promise more safety than the code provides.
 
+### Reset rows
+
+Settings → Advanced, after its ordinary rows (`src/renderer/settings/Reset.svelte`): **Reset
+settings** and **Clear cache and site data**. Buttons, not settings, and neither can be undone.
+
+- **The settings-row shape**: the name (Body) and what it does (Caption) on the left, one button on
+  the right whose label ends in an ellipsis ("Reset settings…", "Clear…"), because a question
+  comes before anything happens. The clearing row's caption says when to reach for it: SoundCloud
+  saying you've been blocked, or its page not loading.
+- **The question opens inside the row**, in the plugin rows' confirmation box: the question in Ink
+  at 600, then what it costs and **what it leaves alone** (plugins, Last.fm, the sign-in for a
+  reset; settings, plugins, Last.fm for clearing), then the action ("Reset settings", "Clear and
+  sign out", 600 weight) and Cancel. The opener is disabled while it is open; Escape closes the
+  question and only it.
+- **Focus moves to the question, not to its button**, so a second Enter right after the first
+  cannot reset or sign anyone out. The box takes no focus ring of its own; Tab reaches the
+  buttons, which keep theirs.
+- **Then one line in Ink** says what happened ("Done: every setting is back to its default.",
+  "Done. SoundCloud is opening again, signed out.") or that it failed and to try again. The
+  opener's label says "Resetting…" / "Clearing…" while main works.
+
 ### Theme rows
 
 Settings → Themes (`src/renderer/settings/Themes.svelte`). A single choice among files, so it is a

@@ -15,6 +15,7 @@
   import Plugins from './Plugins.svelte'
   import Themes from './Themes.svelte'
   import Background from './Background.svelte'
+  import Reset from './Reset.svelte'
 
   /*
    * The entire form is generated from the schema. Adding a setting means adding one
@@ -260,6 +261,10 @@
         {#each keysIn(active).filter((k) => !drawnElsewhere(k)) as key (key)}
           {@render settingRow(key)}
         {/each}
+        {#if active === 'advanced'}
+          <!-- Reset settings, and clear SoundCloud's data: buttons that ask first, not settings. -->
+          <Reset />
+        {/if}
       {/if}
     </main>
   </div>

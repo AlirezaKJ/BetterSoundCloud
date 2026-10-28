@@ -251,6 +251,7 @@ views:
 | `onPluginsChanged`                                    | subscribe   | pushed to the settings view while it is open (`broadcastPlugins`)                          |
 | `getSafeMode`                                         | invoke      | `fromSettingsUi`; `true` when started with `--safe-mode`                                   |
 | `getWidevineSkipped`                                  | invoke      | `fromSettingsUi`; `true` after "Continue without Widevine", until Widevine arrives         |
+| `resetSettings`, `clearSiteData`                      | invoke      | the settings view only (`fromSettingsView`); each answers whether it worked                |
 | `getPresenceStatus`, `retryPresence`                  | invoke/send | `fromSettingsUi`                                                                           |
 | `onPresenceStatus`                                    | subscribe   | pushed to the settings view while it is open (`broadcastPresenceStatus`)                   |
 | `getUpdateStatus`, `updateAction`                     | invoke/send | `fromSettingsUi`; the action must pass `isUpdateAction`                                    |
@@ -477,6 +478,14 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
   returns the authoritative snapshot (values come back clamped).
 - Secrets (Last.fm, tokens) never go in the settings store; they go through `main/secrets.ts`
   (`safeStorage`), which refuses rather than store them where there is no real encryption.
+- **Settings → Advanced ends with two buttons** (`Reset.svelte`, DESIGN.md "Reset rows"). **Reset
+  settings** is `settings.reset()`: schema values only, so plugins, their settings and secrets,
+  the sign-in, theme files and window state stay. **Clear cache and site data** is
+  `clearSiteData()` in index.ts: it loads `about:blank` first (SoundCloud's scripts, still
+  running, could write back what is being cleared — DataDome's cookie above all), clears every
+  storage type and the HTTP cache of the content view's session, taken by reference (§10), then
+  reopens the start page with the back/forward history dropped. It never opens SoundCloud while
+  Widevine is not ready. Both ask first, inside their row, and both are the settings view's only.
 
 ---
 

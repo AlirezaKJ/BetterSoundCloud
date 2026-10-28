@@ -78,6 +78,8 @@ const api: ChromeApi = {
 
   getSafeMode: () => ipcRenderer.invoke(CH.safeModeGet) as Promise<boolean>,
   getWidevineSkipped: () => ipcRenderer.invoke(CH.widevineSkippedGet) as Promise<boolean>,
+  resetSettings: () => ipcRenderer.invoke(CH.settingsReset) as Promise<boolean>,
+  clearSiteData: () => ipcRenderer.invoke(CH.siteDataClear) as Promise<boolean>,
 
   getUpdateStatus: () => ipcRenderer.invoke(CH.updateStatusGet) as Promise<UpdateStatus>,
   onUpdateStatus: (cb: (status: UpdateStatus) => void) => subscribe(CH.updateStatusChanged, cb),

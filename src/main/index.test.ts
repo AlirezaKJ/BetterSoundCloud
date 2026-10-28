@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => {
     createTray: vi.fn(),
     attachContextMenu: vi.fn(),
     setContentAppearance: vi.fn(),
+    settingsReset: vi.fn(),
     ipcOn: vi.fn(),
     ipcHandle: vi.fn()
   }
@@ -94,7 +95,11 @@ vi.mock('./blocker', () => ({
   setBlockingEnabled: vi.fn(),
   setAudioAdBlocking: vi.fn()
 }))
-vi.mock('./settings-store', () => ({ get: () => true }))
+vi.mock('./settings-store', () => ({
+  get: () => true,
+  getAll: () => ({}),
+  reset: mocks.settingsReset
+}))
 vi.mock('./themes', () => ({
   listThemes: () => [],
   findTheme: () => null,
@@ -349,6 +354,88 @@ describe('main window lifecycle', () => {
     // Widevine installs here; index.startup.test.ts covers going on without it.
     expect(get({ sender: shell.settings.webContents })).toBe(false)
     expect(get({ sender: shell.content.webContents })).toBeNull()
+  })
+
+  it('lets only the settings view reset the settings, and tells our views the result', async () => {
+    const { app } = await import('electron')
+    app.emit('activate')
+    const shell = mocks.createShell.mock.results.at(-1)!.value as ReturnType<typeof makeShell>
+    const reset = mocks.ipcHandle.mock.calls.find(
+      ([name]) => name === CH.settingsReset
+    )![1] as (event: unknown) => unknown
+
+    // Not even our own bar: it is the settings view that asked first.
+    expect(reset({ sender: shell.header.webContents })).toBe(false)
+    expect(reset({ sender: shell.content.webContents })).toBe(false)
+    expect(mocks.settingsReset).not.toHaveBeenCalled()
+
+    expect(reset({ sender: shell.settings.webContents })).toBe(true)
+    expect(mocks.settingsReset).toHaveBeenCalledOnce()
+    expect(shell.settings.webContents.send).toHaveBeenCalledWith(CH.settingsChanged, {})
+  })
+
+  describe('clearing cache and site data', () => {
+    /** The content view's session and navigation, recording what happens in what order. */
+    async function prepare() {
+      const { app } = await import('electron')
+      app.emit('activate')
+      const shell = mocks.createShell.mock.results.at(-1)!.value as ReturnType<typeof makeShell>
+      const order: string[] = []
+      /** A stand-in for an Electron call that resolves, noting that it ran. */
+      const step = (name: string) => () => {
+        order.push(name)
+        return Promise.resolve()
+      }
+      let arrived = (): void => undefined
+      const contents = Object.assign(shell.content.webContents, {
+        loadURL: vi.fn((url: string) => step(`load ${url}`)()),
+        session: {
+          clearStorageData: vi.fn(step('clear storage')),
+          clearCache: vi.fn(step('clear cache'))
+        },
+        navigationHistory: { clear: vi.fn() },
+        prependOnceListener: vi.fn((_event: string, listener: () => void) => {
+          arrived = listener
+        })
+      })
+      mocks.loadSoundCloud.mockImplementationOnce((_shell: unknown, url: string) => {
+        order.push(`open ${url}`)
+      })
+      const clear = mocks.ipcHandle.mock.calls.find(
+        ([name]) => name === CH.siteDataClear
+      )![1] as (event: unknown) => Promise<boolean>
+      return { shell, order, contents, clear, pageArrives: () => arrived() }
+    }
+
+    it('stops SoundCloud first, clears, then opens it again with no history', async () => {
+      const { shell, order, contents, clear, pageArrives } = await prepare()
+
+      expect(await clear({ sender: shell.header.webContents })).toBe(false)
+      expect(order).toEqual([])
+
+      expect(await clear({ sender: shell.settings.webContents })).toBe(true)
+      // The blank page first, so SoundCloud's scripts cannot write back what is being cleared.
+      expect(order).toEqual([
+        'load about:blank',
+        'clear storage',
+        'clear cache',
+        'open https://soundcloud.com/discover'
+      ])
+      // Every kind of storage, for every site: the sign-in and DataDome's cookie with it.
+      expect(contents.session.clearStorageData).toHaveBeenCalledWith()
+
+      expect(contents.navigationHistory.clear).not.toHaveBeenCalled()
+      pageArrives()
+      expect(contents.navigationHistory.clear).toHaveBeenCalledOnce()
+    })
+
+    it('says so when clearing fails, and still opens SoundCloud again', async () => {
+      const { shell, order, contents, clear } = await prepare()
+      contents.session.clearStorageData.mockRejectedValueOnce(new Error('disk full'))
+
+      expect(await clear({ sender: shell.settings.webContents })).toBe(false)
+      expect(order).toEqual(['load about:blank', 'open https://soundcloud.com/discover'])
+    })
   })
 
   it('lets only the settings panel read the updater and press its button', async () => {

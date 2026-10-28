@@ -76,7 +76,13 @@ installed somewhere other than the default folder, use that path instead.
 
 ### SoundCloud keeps blocking you: reset your profile
 
-Deleting the profile folder cleared the "you have been blocked" page for a user on
+Try this first, from inside the app: **Settings → Advanced → Clear cache and site data**. It signs
+you out and removes the cookies, stored data and cached files SoundCloud keeps on your computer,
+which is most of what deleting the profile folder does, but keeps your settings, plugins, Last.fm
+connection and Widevine. Then sign in again.
+
+If you are still blocked, reset the whole profile. Deleting the profile folder cleared the "you
+have been blocked" page for a user on
 [#97](https://github.com/AlirezaKJ/BetterSoundCloud/issues/97). It is not a guaranteed fix, and it
 costs you this: you are signed out, your settings and window size go back to their defaults, the
 themes and plugins you added and your Last.fm connection are gone, and Widevine downloads again

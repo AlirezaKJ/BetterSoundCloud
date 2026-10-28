@@ -776,6 +776,65 @@ function registerIpc(): void {
     broadcastSettings(next)
     return next
   })
+
+  /*
+   * The two buttons under Settings → Advanced. The settings view only, not our bar or the
+   * overlays: each undoes the user's own choices and cannot be taken back, and it is the view
+   * that asked them first.
+   */
+  const fromSettingsView = (e: Electron.IpcMainInvokeEvent): boolean =>
+    Boolean(shell?.settings) && e.sender === shell?.settings?.webContents
+
+  ipcMain.handle(CH.settingsReset, (e) => {
+    if (!fromSettingsView(e)) return false
+    settings.reset()
+    applyLiveSettings()
+    // After applying, for the same reason as the settingsSet handler above.
+    broadcastSettings(settings.getAll())
+    console.log('[settings] reset to defaults')
+    return true
+  })
+
+  ipcMain.handle(CH.siteDataClear, (e) => {
+    if (!shell || !fromSettingsView(e)) return false
+    return clearSiteData(shell)
+  })
+}
+
+/**
+ * "Clear cache and site data": every cookie, all site storage and the HTTP cache, which signs the
+ * user out of SoundCloud. The in-app form of deleting the profile folder, which cleared a "you
+ * have been blocked" page on #97, without losing settings, plugins, the Last.fm connection or
+ * Widevine (none of which are site data).
+ *
+ * SoundCloud's page is stopped first, by loading a blank one: still running, its scripts could
+ * write back what is being cleared — DataDome's keeps its own cookie, the one most worth losing.
+ * The page then opens again on the start page, signed out. Unless SoundCloud was not open
+ * (Widevine not ready), which clearing must not change.
+ */
+async function clearSiteData(target: Shell): Promise<boolean> {
+  const { webContents } = target.content
+  const soundCloudOpen = widevine.state === 'ready' || widevine.state === 'skipped'
+
+  let cleared = true
+  try {
+    if (soundCloudOpen) await webContents.loadURL('about:blank')
+    await webContents.session.clearStorageData()
+    await webContents.session.clearCache()
+    console.log('[settings] cleared cache and site data')
+  } catch (error) {
+    cleared = false
+    console.error('[settings] could not clear site data:', error)
+  }
+
+  if (soundCloudOpen && !webContents.isDestroyed()) {
+    // Back would otherwise lead to the blank page, then to pages from before signing out. Run
+    // ahead of window.ts's own listener, so the header's Back button reads the history after it
+    // is cleared.
+    webContents.prependOnceListener('did-navigate', () => webContents.navigationHistory.clear())
+    loadSoundCloud(target, startUrl(settings.get('general.startupUrl')))
+  }
+  return cleared
 }
 
 /**
