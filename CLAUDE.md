@@ -28,6 +28,14 @@ CLAUDE.md is worse than none, because it gets trusted.
 | `npx prettier --write <files>`              | Fix formatting before `check`                                                                                                  |
 
 - Dev runs from its own profile, `%APPDATA%/BetterSoundCloud (dev)`, set in `src/main/index.ts`.
+- **`start.sh` and `install_bettersoundcloud.sh` at the root are stand-ins, not tools.** v0.7.x's
+  Linux installer cloned the source and added a menu entry running `~/BetterSoundCloud/start.sh`,
+  which updates that copy from `main` on every launch; these two files say where the packages are
+  instead of letting those installs die silently, and they run no git and no npm. `npm start` is
+  `scripts/start.mjs` for the same reason: the built app through `electron-vite preview`, or with
+  nothing built, that message (or, for a developer, how to run from source). Do not delete them,
+  or turn them back into launchers, while v0.7.x installs may still pull `main` (docs/TODO.md,
+  Milestone 2).
 - **The installed app's profile folder is `<appData>/BetterSoundCloud`, from `app.setName`.** Never
   rename it: that signs every user out. It must run before anything resolves `userData`
   (`index.startup.test.ts` pins this). v0.7.x's lowercase `bettersoundcloud` is the same folder on
