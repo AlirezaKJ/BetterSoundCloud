@@ -52,9 +52,11 @@ when one is refused, write down what SoundCloud said rather than retrying.
 - [ ] Install the NSIS installer on a machine (or a Windows user) that has never run BetterSoundCloud.
       On a machine that has, run the portable build with `--user-data-dir=<an empty folder>` instead:
       v0.7.x and v2 share `%APPDATA%\BetterSoundCloud`, and a fresh profile is the point of the test.
-- [ ] Upgrade on Windows: on a machine where v0.7.x is installed and signed in, install v2 and launch
-      it. It should open signed in, because it uses the same profile folder. Not yet seen on a real
-      upgrade.
+- [ ] Upgrade on Windows: on a machine where v0.7.x is installed and signed in, from its Setup.exe or
+      its MSI, install this version and launch it. It should open signed in, because it uses the same
+      profile folder, and v0.7.x should be gone from Settings → Apps, with one BetterSoundCloud in
+      the Start Menu (build-resources/installer.nsh removes it; the MSI asks for admin approval).
+      The removal was measured 2026-10-29; signed in after a real upgrade is not yet seen.
 - [ ] Taskbar on Windows: pin BetterSoundCloud from the Start Menu, then let the update below restart
       it. There must be one taskbar button, still pinned, not the pin plus a second one. (The app
       sets the app ID the installer stamps on its shortcuts, `appId` in electron-builder.yml.) Pin

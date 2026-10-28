@@ -66,6 +66,9 @@ win:
 # latest.yml (which describes the installer, for auto-update) then pointed at the wrong file
 # (measured 2026-10-27).
 nsis:
+  # Removes BetterSoundCloud 0.7.x (Squirrel's Setup.exe or the MSI) once this version is
+  # installed, so the two do not sit side by side. The profile is never touched.
+  include: build-resources/installer.nsh
   oneClick: false
   allowToChangeInstallationDirectory: true
   perMachine: false

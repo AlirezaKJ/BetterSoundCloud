@@ -28,6 +28,11 @@ CLAUDE.md is worse than none, because it gets trusted.
 | `npx prettier --write <files>`              | Fix formatting before `check`                                                                                                  |
 
 - Dev runs from its own profile, `%APPDATA%/BetterSoundCloud (dev)`, set in `src/main/index.ts`.
+- **The Windows installer removes v0.7.x** (`build-resources/installer.nsh`, `nsis.include`): its
+  Squirrel Setup.exe install (per-user installs only) and its all-users MSI, after this version is
+  installed, then remakes the shortcuts Squirrel deletes by their shared name. It must never touch
+  the profile, `%APPDATA%\BetterSoundCloud`, which both versions share; `installer-script.test.ts`
+  holds it to that.
 - **`start.sh` and `install_bettersoundcloud.sh` at the root are stand-ins, not tools.** v0.7.x's
   Linux installer cloned the source and added a menu entry running `~/BetterSoundCloud/start.sh`,
   which updates that copy from `main` on every launch; these two files say where the packages are
