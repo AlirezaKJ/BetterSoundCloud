@@ -4,6 +4,7 @@ import {
   describeLoadFailure,
   describePageStatus,
   hidesPage,
+  installedWidevineVersion,
   isPageStatusAction,
   PAGE_STATUS_ACTIONS,
   retryDelay
@@ -61,11 +62,20 @@ describe('describePageStatus', () => {
     ).toEqual(['restart'])
   })
 
-  it('offers restart and quit when Widevine failed, and says why SoundCloud stays closed', () => {
+  it('offers restart, continuing without Widevine, and quit when Widevine failed', () => {
     const message = describePageStatus({ kind: 'setup-failed', detail: 'Update check error' })
-    expect(message.buttons.map((b) => b.action)).toEqual(['restart', 'quit'])
-    expect(message.body).toMatch(/silently skip/)
+    // Restart is the default: it is the fix. Continuing is for when the fix cannot work.
+    expect(message.buttons.map((b) => b.action)).toEqual(['restart', 'continue', 'quit'])
+    expect(message.buttons[1]?.label).toBe('Continue without Widevine')
     expect(message.detail).toBe('Update check error')
+  })
+
+  it('says plainly what continuing without Widevine costs, and that it keeps trying', () => {
+    // The button brings back the auto-skip bug on purpose, so nobody may press it unwarned. The
+    // promise to keep trying is kept by index.ts, which watches for the updater finishing late.
+    const { body } = describePageStatus({ kind: 'setup-failed', detail: 'x' })
+    expect(body).toMatch(/protected tracks will be greyed out and skip/)
+    expect(body).toMatch(/keeps trying, and SoundCloud opens by itself/)
   })
 
   it('disables Try again while a retry is in flight, so a double click is one request', () => {
@@ -161,6 +171,23 @@ describe('describeComponentsError', () => {
       ]
     })
     expect(describeComponentsError(error)).toBe('Update check error')
+  })
+
+  it('reads Widevine’s installed version out of components.status(), as measured', () => {
+    const id = 'oimompecagnajdejgnnjijobebaeigek'
+    const title = 'Widevine Content Decryption Module'
+    expect(
+      installedWidevineVersion({ [id]: { status: 'not-installed', title, version: null } }, id)
+    ).toBeNull()
+    expect(
+      installedWidevineVersion(
+        { [id]: { status: 'updated', title, version: '4.10.3112.0' } },
+        id
+      )
+    ).toBe('4.10.3112.0')
+    for (const status of [{}, null, 'x', { [id]: null }, { [id]: { version: '' } }]) {
+      expect(installedWidevineVersion(status, id)).toBeNull()
+    }
   })
 
   it('falls back to the message, and copes with rejections that are not errors at all', () => {

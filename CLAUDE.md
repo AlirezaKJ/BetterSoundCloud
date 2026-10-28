@@ -186,9 +186,15 @@ Rules that hold this together:
 for Widevine (`components.whenReady()`). `createShell` does not load SoundCloud; `loadSoundCloud`
 runs once Widevine is ready, because a page making EME calls before that gets no Widevine and its
 protected tracks skip. A view created before Widevine is ready does get it once it navigates
-(measured), which is what makes this order safe. If Widevine fails, SoundCloud is never loaded and
-the page status says why, with Restart — after one failure every later `whenReady()` returns the
-same rejection, so only a relaunch retries it. The window shows when the header paints, or after
+(measured), which is what makes this order safe. If Widevine fails, SoundCloud is not loaded and
+the page status says why, with Restart, Continue without Widevine and Quit. **Continuing is never
+automatic**: it brings back the auto-skip bug on purpose, for that launch only (nothing is saved),
+and Settings says so (`getWidevineSkipped`). After one failure every later `whenReady()` returns
+the same rejection, but Chromium's updater keeps retrying by itself, and a CDM it installs late
+works in the running app, in views made before and after (measured 2026-10-28). So
+`watchForLateWidevine` reads `components.status()` every 15s and, when Widevine arrives, opens
+SoundCloud from the failure screen or simply ends a launch that went on without it, with no
+reload. The window shows when the header paints, or after
 3s, a header load failure or a header crash, whichever is first (`showWhenChromeIsReady`): it must
 never stay invisible. A failure before any window exists gets `dialog.showErrorBox`.
 
@@ -244,6 +250,7 @@ views:
 | `pluginAction`, `openPluginsFolder`                   | send        | `fromSettingsUi`                                                                           |
 | `onPluginsChanged`                                    | subscribe   | pushed to the settings view while it is open (`broadcastPlugins`)                          |
 | `getSafeMode`                                         | invoke      | `fromSettingsUi`; `true` when started with `--safe-mode`                                   |
+| `getWidevineSkipped`                                  | invoke      | `fromSettingsUi`; `true` after "Continue without Widevine", until Widevine arrives         |
 | `getPresenceStatus`, `retryPresence`                  | invoke/send | `fromSettingsUi`                                                                           |
 | `onPresenceStatus`                                    | subscribe   | pushed to the settings view while it is open (`broadcastPresenceStatus`)                   |
 | `getUpdateStatus`, `updateAction`                     | invoke/send | `fromSettingsUi`; the action must pass `isUpdateAction`                                    |
@@ -520,7 +527,7 @@ Dev builds log to the terminal running `npm run dev`. Tags:
 | `[discord]`                                                                                      | Connected, what the card shows, Discord not running (once per outage), and any update Discord refused (all builds)                                              |
 | `[plugin:<id>]`, `[plugins]`                                                                     | A plugin's own log (warnings in every build), and the service's                                                                                                 |
 | `[updates]`                                                                                      | One line per change of the updater's state: checking, current, available/downloading/ready with versions and install kind, or why it failed (all builds)        |
-| `[widevine]`                                                                                     | How long the Widevine wait took, or why it failed                                                                                                               |
+| `[widevine]`                                                                                     | How long the Widevine wait took, or why it failed; then going on without it, or it arriving late (all builds)                                                   |
 | `[page-status]`                                                                                  | What the status view is saying (`load failed -106 ERR_INTERNET_DISCONNECTED`, `cleared`, …)                                                                     |
 | `[content]`, `[window]`                                                                          | A failed SoundCloud load; the window shown without its header                                                                                                   |
 | `[theme]`, `[background]`, `[lyrics]`, `[player]`, `[context-menu]`, `[blocker]`, `[ad-request]` | Their features                                                                                                                                                  |

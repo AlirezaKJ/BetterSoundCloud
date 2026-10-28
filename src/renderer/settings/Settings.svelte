@@ -39,6 +39,8 @@
   let active = $state<Section>('general')
   /** Started with `--safe-mode`: some settings below are not in force, so the panel says so. */
   let safeMode = $state(false)
+  /** "Continue without Widevine" was pressed at startup: protected tracks skip until a restart. */
+  let withoutWidevine = $state(false)
 
   const keysIn = (section: Section): SettingKey[] =>
     SETTING_KEYS.filter((k) => SETTINGS[k].section === section)
@@ -64,6 +66,7 @@
 
     void window.bsc.getSettings().then((s) => (values = s))
     void window.bsc.getSafeMode().then((on) => (safeMode = on))
+    void window.bsc.getWidevineSkipped().then((skipped) => (withoutWidevine = skipped))
     const stopWatching = window.bsc.onSettingsChanged((s) => {
       values = s
     })
@@ -222,10 +225,18 @@
     <main data-bsc-settings-content>
       {#if safeMode}
         <!-- On every section, because the settings it overrides live in three of them. -->
-        <p class="safe-mode" role="status" data-bsc-settings-safe-mode>
+        <p class="notice" role="status" data-bsc-settings-safe-mode>
           <strong>Safe mode is on.</strong> Hardware acceleration, ad blocking and your theme are
           off for this launch, whatever the settings below say. Nothing has been changed: quit and
           start BetterSoundCloud normally to use them again.
+        </p>
+      {/if}
+      {#if withoutWidevine}
+        <!-- So a track that greys out and skips now reads as expected, not as the old bug. -->
+        <p class="notice" role="status" data-bsc-settings-without-widevine>
+          <strong>Protected tracks won’t play yet.</strong> Widevine couldn’t be downloaded when BetterSoundCloud
+          started, and you continued without it, so tracks that need it are greyed out and skip. BetterSoundCloud
+          keeps trying in the background, and restarting it tries again straight away.
         </p>
       {/if}
       {#if active === 'plugins'}
@@ -393,8 +404,9 @@
     font-size: 14px;
   }
 
-  /* The status line's shape (DESIGN.md): the state in Ink at 600, the rest in Muted Ink. */
-  .safe-mode {
+  /* A launch notice (DESIGN.md): the status line's shape, the state in Ink at 600, the rest in
+     Muted Ink. */
+  .notice {
     margin: 0;
     padding: 0 0 12px;
     border-bottom: 1px solid var(--bsc-border);
@@ -403,7 +415,12 @@
     color: var(--bsc-text-secondary);
   }
 
-  .safe-mode strong {
+  /* Both at once (safe mode, and no Widevine): one hairline between them, as between rows. */
+  .notice + .notice {
+    padding-top: 12px;
+  }
+
+  .notice strong {
     font-weight: 600;
     color: var(--bsc-text-primary);
   }

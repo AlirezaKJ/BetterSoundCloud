@@ -77,6 +77,7 @@ const api: ChromeApi = {
   pageStatusAction: (action: PageStatusAction) => ipcRenderer.send(CH.pageStatusAction, action),
 
   getSafeMode: () => ipcRenderer.invoke(CH.safeModeGet) as Promise<boolean>,
+  getWidevineSkipped: () => ipcRenderer.invoke(CH.widevineSkippedGet) as Promise<boolean>,
 
   getUpdateStatus: () => ipcRenderer.invoke(CH.updateStatusGet) as Promise<UpdateStatus>,
   onUpdateStatus: (cb: (status: UpdateStatus) => void) => subscribe(CH.updateStatusChanged, cb),

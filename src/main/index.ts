@@ -42,7 +42,11 @@ import {
   runPageStatusAction,
   showPageStatus
 } from './page-status'
-import { describeComponentsError, isPageStatusAction } from '@shared/page-status'
+import {
+  describeComponentsError,
+  installedWidevineVersion,
+  isPageStatusAction
+} from '@shared/page-status'
 import type { PageStatus } from '@shared/page-status'
 import { createTray } from './tray'
 import { rememberLastPage, startUrl } from './start-page'
@@ -252,11 +256,16 @@ if (SAFE_MODE || !settings.get('advanced.hardwareAcceleration')) {
  *   - a view created BEFORE it resolves still gets Widevine once it navigates. That is what
  *     makes it safe to build the window first and hold back only the page.
  *
- * Without Widevine, SoundCloud is never loaded. Its protected tracks would grey out and skip,
- * which is indistinguishable from the bug v2 exists to fix.
+ * Without Widevine, SoundCloud is not loaded unless the user asks for it. Its protected tracks
+ * would grey out and skip, which is indistinguishable from the bug v2 exists to fix — so going on
+ * anyway is a button on the failure screen, never automatic (`continueWithoutWidevine`).
  */
 type Widevine =
-  { state: 'pending'; slow: boolean } | { state: 'ready' } | { state: 'failed'; detail: string }
+  | { state: 'pending'; slow: boolean }
+  | { state: 'ready' }
+  | { state: 'failed'; detail: string }
+  /** It failed, and the user chose "Continue without Widevine" for this launch. */
+  | { state: 'skipped'; detail: string }
 
 let widevine: Widevine = { state: 'pending', slow: false }
 
@@ -289,8 +298,40 @@ function waitForWidevine(): void {
       console.error(`[widevine] install failed after ${Date.now() - started}ms: ${detail}`)
       startUpdates()
       if (shell) showPageStatus(shell, { kind: 'setup-failed', detail })
+      watchForLateWidevine()
     }
   )
+}
+
+/** How often to look again for Widevine after a failed install. A local read, no network. */
+const LATE_WIDEVINE_CHECK_MS = 15_000
+
+/**
+ * After a failed install, notice when Chromium's updater finishes one by itself. `whenReady()`
+ * never says so — every later call returns the first rejection — but the updater keeps trying in
+ * the background, and the CDM it installs then works in this same process, in views made before
+ * the failure and after it (measured 2026-10-28: about 100s after the network came back). Until
+ * then this keeps looking, for as long as the app runs.
+ */
+function watchForLateWidevine(): void {
+  setTimeout(() => {
+    if (widevine.state !== 'failed' && widevine.state !== 'skipped') return
+    const version = installedWidevineVersion(components.status(), components.WIDEVINE_CDM_ID)
+    if (!version) {
+      watchForLateWidevine()
+      return
+    }
+
+    const wentOnWithout = widevine.state === 'skipped'
+    widevine = { state: 'ready' }
+    console.log(`[widevine] installed after all (${version}); protected tracks can play`)
+    // Gone on without it: SoundCloud is open already, and can use Widevine from now on.
+    if (wentOnWithout || !shell) return
+    if (shell.pageStatus?.kind === 'setup-failed') {
+      showPageStatus(shell, { kind: 'loading' })
+      loadSoundCloud(shell, startUrl(settings.get('general.startupUrl')))
+    }
+  }, LATE_WIDEVINE_CHECK_MS)
 }
 
 /**
@@ -307,6 +348,24 @@ function startUpdates(): void {
       if (shell && !shell.settings) toggleSettings(shell)
     }
   })
+}
+
+/**
+ * "Continue without Widevine", on "Couldn't set up playback": open SoundCloud anyway, for
+ * networks that block Google's component updater, where Restart can never succeed. Protected
+ * tracks then grey out and skip. For this launch only: nothing is saved, so the next launch tries
+ * Widevine again.
+ */
+function continueWithoutWidevine(target: Shell): void {
+  // Only from the screen that offers it, and only once.
+  if (widevine.state !== 'failed' || target.pageStatus?.kind !== 'setup-failed') return
+  widevine = { state: 'skipped', detail: widevine.detail }
+  // In every build: a skip report from someone who pressed this is not the old bug coming back.
+  console.warn(
+    `[widevine] continuing without it (${widevine.detail}); protected tracks will not play`
+  )
+  showPageStatus(target, { kind: 'loading' })
+  loadSoundCloud(target, startUrl(settings.get('general.startupUrl')))
 }
 
 /** What is holding up SoundCloud's first page right now. */
@@ -397,9 +456,10 @@ function showMainWindow(): void {
     attachPageStatus(next)
     applyLiveSettings()
 
-    // SoundCloud only once Widevine is ready (see `waitForWidevine`). A window opened after
-    // that — macOS reopening from the Dock — loads straight away.
-    if (widevine.state === 'ready') {
+    // SoundCloud only once Widevine is ready (see `waitForWidevine`), or once the user chose to go
+    // on without it. A window opened after that — macOS reopening from the Dock — loads straight
+    // away.
+    if (widevine.state === 'ready' || widevine.state === 'skipped') {
       loadSoundCloud(next, startUrl(settings.get('general.startupUrl')))
     } else if (widevine.state === 'failed') showPageStatus(next, startingStatus())
     noticeSlowStart(next, startingStatus)
@@ -530,11 +590,13 @@ function registerIpc(): void {
 
   /**
    * A button on the page-status view. Only that view may press them — Restart and Quit act on
-   * the whole app — and page-status.ts re-checks each against what is actually on screen.
+   * the whole app — and each is re-checked against what is actually on screen. Continuing
+   * without Widevine is decided here, where the Widevine state lives; the rest in page-status.ts.
    */
   ipcMain.on(CH.pageStatusAction, (e, action: unknown) => {
     if (!shell || e.sender !== shell.status?.webContents || !isPageStatusAction(action)) return
-    runPageStatusAction(shell, action)
+    if (action === 'continue') continueWithoutWidevine(shell)
+    else runPageStatusAction(shell, action)
   })
 
   /**
@@ -561,6 +623,10 @@ function registerIpc(): void {
 
   // So the settings panel can say safe mode is on, rather than show settings that are not in force.
   ipcMain.handle(CH.safeModeGet, (e) => (fromSettingsUi(e) ? SAFE_MODE : null))
+  // And whether this launch went on without Widevine, so skipping tracks are not a surprise.
+  ipcMain.handle(CH.widevineSkippedGet, (e) =>
+    fromSettingsUi(e) ? widevine.state === 'skipped' : null
+  )
 
   // The updater's line under "Update automatically", and its one button.
   ipcMain.handle(CH.updateStatusGet, (e) => (fromSettingsUi(e) ? getUpdateStatus() : null))

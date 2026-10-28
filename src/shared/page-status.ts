@@ -18,7 +18,7 @@ export type PageStatus =
   | { kind: 'setting-up'; slow: boolean }
   /** Widevine is ready and SoundCloud's first page has not arrived yet. */
   | { kind: 'loading' }
-  /** Widevine could not be installed, so SoundCloud is never loaded. */
+  /** Widevine could not be installed. SoundCloud stays closed unless the user goes on without it. */
   | { kind: 'setup-failed'; detail: string }
   /** SoundCloud's page did not load. `code` and `error` are Chromium's, e.g. -106 ERR_INTERNET_DISCONNECTED. */
   | { kind: 'load-failed'; code: number; error: string; retrying: boolean }
@@ -31,7 +31,14 @@ export type PageStatus =
  * The verbs the status view can send back. Main checks the current status before acting on
  * one, so a stale button press does nothing rather than something surprising.
  */
-export const PAGE_STATUS_ACTIONS = ['retry', 'reload', 'wait', 'restart', 'quit'] as const
+export const PAGE_STATUS_ACTIONS = [
+  'retry',
+  'reload',
+  'wait',
+  'restart',
+  'continue',
+  'quit'
+] as const
 export type PageStatusAction = (typeof PAGE_STATUS_ACTIONS)[number]
 
 export function isPageStatusAction(value: unknown): value is PageStatusAction {
@@ -69,6 +76,16 @@ const RESTART: StatusButton = {
   disabled: false
 }
 const QUIT: StatusButton = { action: 'quit', label: 'Quit', disabled: false }
+/**
+ * For networks that block Google's component updater (a firewall, a proxy, a region), where
+ * Restart can never succeed. It brings back the auto-skip bug on purpose, for this launch only,
+ * so the body above it must say so.
+ */
+const CONTINUE: StatusButton = {
+  action: 'continue',
+  label: 'Continue without Widevine',
+  disabled: false
+}
 const RELOAD: StatusButton = { action: 'reload', label: 'Reload', disabled: false }
 
 export function describePageStatus(status: PageStatus): StatusMessage {
@@ -101,10 +118,12 @@ export function describePageStatus(status: PageStatus): StatusMessage {
         title: 'Couldn’t set up playback',
         body:
           `BetterSoundCloud has to download ${WIDEVINE}, and the download failed. Check your ` +
-          'connection, then restart. SoundCloud stays closed until then, because without ' +
-          'Widevine some tracks would silently skip.',
+          'connection: BetterSoundCloud keeps trying, and SoundCloud opens by itself once the ' +
+          'download finishes. If your network blocks it, you can continue without Widevine, ' +
+          'but protected tracks will be greyed out and skip until it arrives.',
         detail: status.detail,
-        buttons: [RESTART, QUIT],
+        // Restart first: it is the fix. Continuing is the way on when the fix cannot work.
+        buttons: [RESTART, CONTINUE, QUIT],
         waiting: false
       }
 
@@ -306,6 +325,19 @@ export function describeComponentsError(error: unknown): string {
   }
 
   return messageOf(error) || 'Unknown error'
+}
+
+/**
+ * The Widevine version Castlabs' `components.status()` reports as installed, or null while there
+ * is none. `id` is Widevine's key in that record (`components.WIDEVINE_CDM_ID`). Measured after a
+ * failed install, 2026-10-28: the entry reads `{ status: 'not-installed', version: null }` until
+ * Chromium's updater finishes by itself, then `{ status: 'updated', version: '4.10.3112.0' }`.
+ */
+export function installedWidevineVersion(status: unknown, id: string): string | null {
+  if (typeof status !== 'object' || status === null) return null
+  const entry: unknown = (status as Record<string, unknown>)[id]
+  if (typeof entry !== 'object' || entry === null || !('version' in entry)) return null
+  return typeof entry.version === 'string' && entry.version !== '' ? entry.version : null
 }
 
 function messageOf(value: unknown): string {

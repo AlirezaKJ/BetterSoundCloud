@@ -338,6 +338,19 @@ describe('main window lifecycle', () => {
     expect(get({ sender: shell.content.webContents })).toBeNull()
   })
 
+  it('tells the settings panel whether this launch went on without Widevine, and nothing else', async () => {
+    const { app } = await import('electron')
+    app.emit('activate')
+    const shell = mocks.createShell.mock.results.at(-1)!.value as ReturnType<typeof makeShell>
+    const get = mocks.ipcHandle.mock.calls.find(
+      ([name]) => name === CH.widevineSkippedGet
+    )![1] as (event: unknown) => unknown
+
+    // Widevine installs here; index.startup.test.ts covers going on without it.
+    expect(get({ sender: shell.settings.webContents })).toBe(false)
+    expect(get({ sender: shell.content.webContents })).toBeNull()
+  })
+
   it('lets only the settings panel read the updater and press its button', async () => {
     const { app } = await import('electron')
     const updater = await import('./updater')

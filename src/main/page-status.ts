@@ -183,15 +183,21 @@ export function runPageStatusAction(shell: Shell, action: PageStatusAction): voi
       return
 
     case 'restart':
-      // Widevine's install cannot be retried in-process: after one failure, every later
-      // `components.whenReady()` returns that same rejection, even once the network is back
-      // (measured 2026-10-27). A fresh launch is the retry.
+      // `components.whenReady()` cannot be asked again: after one failure, every later call
+      // returns that same rejection, even once the network is back (measured 2026-10-27). A fresh
+      // launch is the quickest retry. Chromium's updater also retries by itself, which index.ts
+      // watches for (`watchForLateWidevine`), but on its own schedule.
       if (status.kind === 'setup-failed' || status.kind === 'setting-up') {
         // Not `app.relaunch()` directly: on Linux it brought nothing back, both from an
         // inherited CHROME_DESKTOP and from inside an AppImage (relaunch.ts says why).
         relaunchAfterQuit()
         app.quit()
       }
+      return
+
+    case 'continue':
+      // index.ts's (`continueWithoutWidevine`), not this file's: going on without Widevine
+      // changes what this launch is, and the Widevine state lives there.
       return
 
     case 'quit':

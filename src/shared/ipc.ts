@@ -63,6 +63,8 @@ export const CH = {
 
   // settings renderer -> main. Whether this launch is in safe mode (`--safe-mode`).
   safeModeGet: 'app:safe-mode-get',
+  // settings renderer -> main. Whether this launch went on without Widevine.
+  widevineSkippedGet: 'app:widevine-skipped-get',
 
   // settings renderer <-> main. The updater: its status, and the one button that status offers.
   updateStatusGet: 'updates:status-get',
@@ -200,6 +202,13 @@ export type ChromeApi = {
    * Fixed for the life of the app, so read once.
    */
   getSafeMode(): Promise<boolean>
+
+  /**
+   * Whether the user pressed "Continue without Widevine" on "Couldn’t set up playback" this
+   * launch: protected tracks grey out and skip until the app restarts, and the settings panel
+   * must say so. It can only change while the status view covers the page, so read once.
+   */
+  getWidevineSkipped(): Promise<boolean>
 
   /**
    * What the updater is doing: idle, checking, up to date, a version available, downloading (with

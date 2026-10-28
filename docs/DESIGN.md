@@ -391,6 +391,11 @@ content area (`src/renderer/status`); every word comes from `describePageStatus`
   progress says so in its label ("Trying again…") and goes to Ghost Ink.
 - **Voice:** name the problem, then the way forward, in plain words. No exclamation marks, no
   "Oops". Promise an automatic retry only where one happens — a test pins that.
+- **"Couldn't set up playback"** has three buttons: Restart BetterSoundCloud (the default, since it
+  is the fix), Continue without Widevine, and Quit. Continuing brings back the auto-skip bug on
+  purpose, so the body says what it costs, in the symptom the user would see ("greyed out and
+  skip"), before anyone can press it. It also says SoundCloud opens by itself once the download
+  finishes, which it does.
 
 ### Scrollbars
 
@@ -516,6 +521,18 @@ panel must say so rather than show controls that silently do nothing.
   separates it from the first row. `role="status"`, `data-bsc-settings-safe-mode`.
 - **No colour, no icon, no button.** It is information, not an alarm, and leaving safe mode means
   quitting and starting normally, which no button here can do better.
+
+### The without-Widevine notice
+
+After "Continue without Widevine", protected tracks grey out and skip, which is exactly what the
+old bug looked like. Settings says why, so a skipping track reads as expected rather than as a
+regression.
+
+- **The safe-mode notice's shape, in the same place**: "Protected tracks won't play yet." in Ink at
+  600, then why, that the app keeps trying, and that restarting tries at once, in Muted Ink.
+  `role="status"`, `data-bsc-settings-without-widevine`. With both notices showing, they stack,
+  separated by one hairline like rows.
+- **It goes when Widevine arrives**, read each time Settings opens. No colour, no icon, no button.
 
 ### The update line
 

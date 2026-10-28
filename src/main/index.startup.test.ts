@@ -2,6 +2,7 @@ import { EventEmitter } from 'node:events'
 import { readFileSync } from 'node:fs'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { app } from 'electron'
+import { CH } from '@shared/ipc'
 import type { PageStatus } from '@shared/page-status'
 import type * as IdentityModule from '@shared/identity'
 
@@ -13,6 +14,9 @@ import type * as IdentityModule from '@shared/identity'
 
 const mocks = vi.hoisted(() => ({
   whenWidevineReady: vi.fn<() => Promise<unknown>>(),
+  componentsStatus: vi.fn((): unknown => ({})),
+  ipcOn: vi.fn(),
+  ipcHandle: vi.fn(),
   createShell: vi.fn(),
   loadSoundCloud: vi.fn(),
   startUrl: vi.fn((_choice: unknown) => 'https://soundcloud.com/discover'),
@@ -49,9 +53,13 @@ vi.mock('electron', async () => {
       whenReady: () => Promise.resolve(),
       quit: mocks.quit
     }),
-    components: { whenReady: mocks.whenWidevineReady },
+    components: {
+      whenReady: mocks.whenWidevineReady,
+      status: mocks.componentsStatus,
+      WIDEVINE_CDM_ID: 'widevine-id'
+    },
     dialog: { showErrorBox: mocks.showErrorBox },
-    ipcMain: { on: vi.fn(), handle: vi.fn() },
+    ipcMain: { on: mocks.ipcOn, handle: mocks.ipcHandle },
     nativeTheme: {}
   }
 })
@@ -144,23 +152,36 @@ vi.mock('./updater', () => ({
   runUpdateAction: vi.fn()
 }))
 
+type FakeView = { webContents: { isDestroyed: () => boolean; close: () => void } }
+
 type FakeShell = {
   window: EventEmitter
-  header: unknown
-  content: unknown
+  header: FakeView
+  content: FakeView
+  /** The page-status view, which page-status.ts would create. Tests put one in by hand. */
+  status: FakeView | null
   pageStatus: PageStatus | null
 }
 
-function makeShell(): FakeShell {
-  const view = () => ({
+function makeView() {
+  return {
     webContents: {
       isDestroyed: () => false,
       close: vi.fn(),
       setZoomFactor: vi.fn(),
       on: vi.fn()
     }
-  })
-  return { window: new EventEmitter(), header: view(), content: view(), pageStatus: null }
+  }
+}
+
+function makeShell(): FakeShell {
+  return {
+    window: new EventEmitter(),
+    header: makeView(),
+    content: makeView(),
+    status: null,
+    pageStatus: null
+  }
 }
 
 /** A promise the test settles by hand, standing in for `components.whenReady()`. */
@@ -192,6 +213,7 @@ beforeEach(() => {
   app.removeAllListeners()
   // Every setting reads as `true` unless a test says otherwise.
   mocks.settingsGet.mockImplementation(() => true)
+  mocks.componentsStatus.mockReturnValue({})
   mocks.createShell.mockImplementation(makeShell)
   // What page-status.ts does with it, as far as index.ts can tell: the shell remembers it.
   mocks.showPageStatus.mockImplementation((shell: FakeShell, status: PageStatus) => {
@@ -357,9 +379,7 @@ describe('startup and Widevine', () => {
 
     expect(mocks.startUrl).toHaveBeenCalledWith('lastVisited')
     expect(mocks.loadSoundCloud).toHaveBeenCalledWith(shell, 'https://soundcloud.com/a/b')
-    expect(mocks.rememberLastPage).toHaveBeenCalledWith(
-      (shell.content as { webContents: unknown }).webContents
-    )
+    expect(mocks.rememberLastPage).toHaveBeenCalledWith(shell.content.webContents)
   })
 
   it('starts the updater only once Widevine has settled, either way', async () => {
@@ -397,6 +417,117 @@ describe('startup and Widevine', () => {
     expect(mocks.showErrorBox).toHaveBeenCalledWith(
       'BetterSoundCloud couldn’t start',
       expect.stringContaining('renderer files missing')
+    )
+  })
+})
+
+describe('when Widevine cannot be installed', () => {
+  // `components.status()` before and after Chromium's updater finishes by itself, as measured.
+  const NOT_YET = {
+    'widevine-id': { status: 'not-installed', title: 'Widevine', version: null }
+  }
+  const INSTALLED = {
+    'widevine-id': { status: 'updated', title: 'Widevine', version: '4.10.3112.0' }
+  }
+
+  /** Start with the install failing, and the failure screen up. */
+  async function startFailed(): Promise<FakeShell> {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    mocks.componentsStatus.mockReturnValue(NOT_YET)
+    mocks.whenWidevineReady.mockRejectedValue(
+      Object.assign(new Error('x'), { errors: [{ message: 'Update check error' }] })
+    )
+    const shell = await start()
+    await settle()
+    shell.status = makeView()
+    return shell
+  }
+
+  /** The handler the newest copy of index.ts registered, since a test may start it twice. */
+  function handler(method: 'on' | 'handle', channel: string) {
+    const registered = method === 'on' ? mocks.ipcOn : mocks.ipcHandle
+    return registered.mock.calls.filter(([name]) => name === channel).at(-1)![1] as (
+      event: unknown,
+      ...args: unknown[]
+    ) => unknown
+  }
+  const press = (shell: FakeShell, action: string) =>
+    handler('on', CH.pageStatusAction)({ sender: shell.status?.webContents }, action)
+  const settingsSaysSkipped = (shell: FakeShell) =>
+    handler('handle', CH.widevineSkippedGet)({ sender: shell.header.webContents })
+
+  it('opens SoundCloud when the user goes on without it, for this launch only', async () => {
+    const shell = await startFailed()
+    expect(shell.pageStatus?.kind).toBe('setup-failed')
+    expect(settingsSaysSkipped(shell)).toBe(false)
+
+    press(shell, 'continue')
+    expect(mocks.loadSoundCloud).toHaveBeenCalledWith(shell, 'https://soundcloud.com/discover')
+    expect(shell.pageStatus).toEqual({ kind: 'loading' })
+    // The settings panel says so, and nothing is written: the next launch tries Widevine again.
+    expect(settingsSaysSkipped(shell)).toBe(true)
+    expect(mocks.settingsSet).not.toHaveBeenCalled()
+
+    // A second press, arriving late from the status view, opens nothing twice.
+    press(shell, 'continue')
+    expect(mocks.loadSoundCloud).toHaveBeenCalledOnce()
+  })
+
+  it('is only offered from the failure screen', async () => {
+    const widevine = deferred()
+    mocks.whenWidevineReady.mockReturnValue(widevine.promise)
+    const shell = await start()
+    shell.status = makeView()
+    mocks.showPageStatus(shell, { kind: 'setting-up', slow: true })
+
+    press(shell, 'continue')
+    expect(mocks.loadSoundCloud).not.toHaveBeenCalled()
+    // And only from the status view itself.
+    const failed = await startFailed()
+    handler('on', CH.pageStatusAction)({ sender: failed.header.webContents }, 'continue')
+    expect(mocks.loadSoundCloud).not.toHaveBeenCalled()
+  })
+
+  it('opens SoundCloud by itself when the updater installs Widevine late', async () => {
+    const shell = await startFailed()
+    vi.advanceTimersByTime(15_000)
+    expect(mocks.loadSoundCloud).not.toHaveBeenCalled()
+
+    mocks.componentsStatus.mockReturnValue(INSTALLED)
+    vi.advanceTimersByTime(15_000)
+    expect(mocks.loadSoundCloud).toHaveBeenCalledWith(shell, 'https://soundcloud.com/discover')
+    expect(shell.pageStatus).toEqual({ kind: 'loading' })
+
+    // Then it stops looking.
+    mocks.componentsStatus.mockClear()
+    vi.advanceTimersByTime(60_000)
+    expect(mocks.componentsStatus).not.toHaveBeenCalled()
+  })
+
+  it('after going on without it, a late install ends the notice without reloading', async () => {
+    const shell = await startFailed()
+    press(shell, 'continue')
+
+    mocks.componentsStatus.mockReturnValue(INSTALLED)
+    vi.advanceTimersByTime(15_000)
+    expect(settingsSaysSkipped(shell)).toBe(false)
+    // The page is open already and can use Widevine now (measured); reloading would only stop
+    // whatever is playing.
+    expect(mocks.loadSoundCloud).toHaveBeenCalledOnce()
+  })
+
+  it('loads SoundCloud in a reopened window once the user went on without it', async () => {
+    // macOS keeps the app running with no window; reopening from the Dock builds a new one.
+    const shell = await startFailed()
+    press(shell, 'continue')
+    shell.window.emit('closed')
+
+    app.emit('activate')
+    const reopened = mocks.createShell.mock.results.at(-1)!.value as FakeShell
+    expect(reopened).not.toBe(shell)
+    expect(mocks.loadSoundCloud).toHaveBeenLastCalledWith(
+      reopened,
+      'https://soundcloud.com/discover'
     )
   })
 })
