@@ -33,6 +33,7 @@ const api: ChromeApi = {
   back: () => ipcRenderer.send(CH.navBack),
   forward: () => ipcRenderer.send(CH.navForward),
   reload: () => ipcRenderer.send(CH.navReload),
+  stop: () => ipcRenderer.send(CH.navStop),
   toggleSettings: () => ipcRenderer.send(CH.settingsToggle),
   toggleMenuBar: () => ipcRenderer.send(CH.menuBarToggle),
   closeSettings: () => ipcRenderer.send(CH.settingsClose),
@@ -113,3 +114,30 @@ const api: ChromeApi = {
 }
 
 contextBridge.exposeInMainWorld('bsc', api)
+
+/*
+ * F6 moved keyboard focus into this view (main/focus-cycle.ts). Put it on a control, with its ring
+ * drawn, so the user sees where it went: the control this view last had focused, else the one it
+ * marks `data-bsc-focus-first`, else its first. Here rather than in each view, so every view of
+ * ours gets it with no code of its own.
+ *
+ * `focusVisible`, because a plain focus() draws no ring in a view last used with the mouse
+ * (measured 2026-10-29, Chromium 150), and showing where focus went is the whole point. Our
+ * TypeScript does not know the option yet, hence the cast.
+ */
+const FOCUSABLE =
+  'button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), ' +
+  'a[href], [tabindex]:not([tabindex="-1"])'
+
+function focusTarget(): HTMLElement | null {
+  const current = document.activeElement
+  if (current instanceof HTMLElement && current !== document.body) return current
+  const marked = document.querySelector<HTMLElement>('[data-bsc-focus-first]')
+  if (marked) return marked
+  const all = [...document.querySelectorAll<HTMLElement>(FOCUSABLE)]
+  return all.find((element) => element.getClientRects().length > 0) ?? null
+}
+
+ipcRenderer.on(CH.focusArrived, () => {
+  focusTarget()?.focus({ focusVisible: true } as FocusOptions)
+})

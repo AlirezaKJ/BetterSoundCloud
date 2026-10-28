@@ -358,6 +358,22 @@ describe('main window lifecycle', () => {
     expect(get({ sender: shell.content.webContents })).toBeNull()
   })
 
+  it('lets only our chrome stop SoundCloud’s page loading', async () => {
+    const { app } = await import('electron')
+    app.emit('activate')
+    const shell = mocks.createShell.mock.results.at(-1)!.value as ReturnType<typeof makeShell>
+    const stop = vi.fn()
+    Object.assign(shell.content.webContents, { stop })
+    const handler = mocks.ipcOn.mock.calls.find(([name]) => name === CH.navStop)![1] as (
+      event: unknown
+    ) => void
+
+    handler({ sender: shell.content.webContents })
+    expect(stop).not.toHaveBeenCalled()
+    handler({ sender: shell.header.webContents })
+    expect(stop).toHaveBeenCalledOnce()
+  })
+
   it('lets only the settings view reset the settings, and tells our views the result', async () => {
     const { app } = await import('electron')
     app.emit('activate')

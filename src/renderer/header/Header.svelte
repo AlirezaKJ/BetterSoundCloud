@@ -3,7 +3,7 @@
   import type { NavState, WindowState } from '@shared/ipc'
   import WindowControls from '../lib/WindowControls.svelte'
 
-  let nav = $state<NavState>({ canGoBack: false, canGoForward: false })
+  let nav = $state<NavState>({ canGoBack: false, canGoForward: false, loading: false })
   let win = $state<WindowState>({ maximized: false, focused: true })
 
   onMount(() => {
@@ -28,6 +28,7 @@
 -->
 <header
   data-bsc-header
+  data-loading={nav.loading}
   class:macos={window.bsc.platform === 'darwin'}
   class:unfocused={!win.focused}
 >
@@ -48,13 +49,31 @@
     >
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
     </button>
-    <button title="Reload" aria-label="Reload" onclick={() => window.bsc.reload()}>
+    <!--
+      Reload, or Stop while SoundCloud's page loads, as in a browser. One button that changes
+      rather than two that swap: a keyboard user who pressed Reload keeps focus on it.
+    -->
+    <button
+      data-bsc-header-reload
+      title={nav.loading ? 'Stop' : 'Reload'}
+      aria-label={nav.loading ? 'Stop loading' : 'Reload'}
+      onclick={() => (nav.loading ? window.bsc.stop() : window.bsc.reload())}
+    >
       <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M20 11a8 8 0 1 0-2.3 5.7" />
-        <path d="M20 5v6h-6" />
+        {#if nav.loading}
+          <path d="M7 7l10 10M17 7 7 17" />
+        {:else}
+          <path d="M20 11a8 8 0 1 0-2.3 5.7" />
+          <path d="M20 5v6h-6" />
+        {/if}
       </svg>
     </button>
   </div>
+
+  {#if nav.loading}
+    <!-- The page-status wait line, run along this bar's own bottom hairline. -->
+    <div class="loading" aria-hidden="true" data-bsc-header-loading><span></span></div>
+  {/if}
 
   <div class="title" data-bsc-header-title>BetterSoundCloud</div>
 
@@ -163,7 +182,7 @@
   }
 
   button:focus-visible {
-    outline: 2px solid var(--bsc-accent);
+    outline: 2px solid var(--bsc-focus);
     outline-offset: -2px;
   }
 
@@ -175,5 +194,49 @@
     stroke-width: 1.6;
     stroke-linecap: round;
     stroke-linejoin: round;
+  }
+
+  /*
+   * While the page loads, the wait line from the page-status surface (DESIGN.md "Motion") crosses
+   * the bar along its bottom hairline: 2px of Muted Ink, never the accent, the same 1.4s and the
+   * same curve. The outer span is the bar's width and carries the segment at its left edge, so the
+   * crossing is a transform of the whole width rather than a guess at it.
+   */
+  .loading {
+    position: absolute;
+    inset: auto 0 -1px;
+    height: 2px;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .loading span {
+    position: absolute;
+    inset: 0;
+    animation: cross 1.4s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+  }
+
+  .loading span::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 12%;
+    background: var(--bsc-text-secondary);
+  }
+
+  @keyframes cross {
+    from {
+      transform: translateX(-12%);
+    }
+    to {
+      transform: translateX(100%);
+    }
+  }
+
+  /* A still segment would read as a stuck bar; the Stop glyph says it on its own. */
+  @media (prefers-reduced-motion: reduce) {
+    .loading {
+      display: none;
+    }
   }
 </style>

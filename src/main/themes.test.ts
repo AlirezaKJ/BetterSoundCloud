@@ -322,6 +322,12 @@ describe.each(SHIPPED)('the shipped theme %s', (file) => {
       const ratio = contrast(tokens.get(token) ?? '', background)
       expect(ratio, `${token} on --bsc-bg-primary`).toBeGreaterThanOrEqual(floor)
     }
+    // The focus ring: the theme's own `--bsc-focus`, or its accent when it sets none.
+    const focus = tokens.get('--bsc-focus') ?? tokens.get('--bsc-accent') ?? ''
+    expect(
+      contrast(focus, background),
+      'focus ring on --bsc-bg-primary'
+    ).toBeGreaterThanOrEqual(3)
   })
 })
 
@@ -386,9 +392,52 @@ describe('our design tokens', () => {
     const tokens = readFileSync(join(import.meta.dirname, '../renderer/tokens.css'), 'utf8')
     const rules = tokens.replace(/\/\*[\s\S]*?\*\//g, '')
     expect(rules).not.toMatch(/(^|[\s}])(html)?:root\s*\{/)
-    expect(rules.match(/:where\(:root\)\s*\{/g)).toHaveLength(2)
+    // The light defaults, the dark ones, and the forced-colours (contrast theme) ones.
+    expect(rules.match(/:where\(:root\)\s*\{/g)).toHaveLength(3)
+  })
+
+  it('show the focus ring and the text at WCAG AA in both light and dark', () => {
+    const light = tokenBlock(':where(:root) {')
+    const dark = new Map([...light, ...tokenBlock('@media (prefers-color-scheme: dark)')])
+    for (const [mode, set] of [
+      ['light', light],
+      ['dark', dark]
+    ] as const) {
+      const background = set.get('--bsc-bg-primary') ?? ''
+      // `--bsc-focus` is `var(--bsc-accent)` by default: the ring is the accent.
+      expect(
+        contrast(set.get('--bsc-accent') ?? '', background),
+        `accent, ${mode}`
+      ).toBeGreaterThanOrEqual(3)
+      expect(
+        contrast(set.get('--bsc-text-primary') ?? '', background),
+        `text, ${mode}`
+      ).toBeGreaterThanOrEqual(7)
+      expect(
+        contrast(set.get('--bsc-text-secondary') ?? '', background),
+        `muted, ${mode}`
+      ).toBeGreaterThanOrEqual(4.5)
+    }
+    expect(light.get('--bsc-focus')).toBe('var(--bsc-accent)')
+  })
+
+  it('give way to the system’s colours in a contrast theme, focus ring included', () => {
+    const forced = tokenBlock('@media (forced-colors: active)')
+    expect(forced.get('--bsc-focus')).toBe('Highlight')
+    expect(forced.get('--bsc-text-primary')).toBe('CanvasText')
+    expect(forced.get('--bsc-bg-primary')).toBe('Canvas')
   })
 })
+
+/** The tokens tokens.css declares in the block that starts at `start`, up to its first `}`. */
+function tokenBlock(start: string): Map<string, string> {
+  const css = readFileSync(join(import.meta.dirname, '../renderer/tokens.css'), 'utf8').replace(
+    /\/\*[\s\S]*?\*\//g,
+    ''
+  )
+  const from = css.indexOf(start)
+  return chromeTokens(css.slice(from, css.indexOf('}', from)))
+}
 
 /** The `--bsc-*: value` pairs in a chrome section. */
 function chromeTokens(chrome: string): Map<string, string> {

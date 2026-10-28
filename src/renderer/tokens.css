@@ -24,7 +24,18 @@
   --bsc-text-primary: #1a1a1a;
   --bsc-text-secondary: #5c5c5c;
   --bsc-text-disabled: #a8a8a8;
-  --bsc-accent: #f50;
+  /*
+   * SoundCloud's orange, deepened one step for light backgrounds: #f50 itself is 2.86:1 on
+   * --bsc-bg-primary here, under the 3:1 a focus ring, a tick or an "on" state needs (WCAG 2.2 AA,
+   * measured 2026-10-29). Dark mode keeps #f50, which is 5.8:1 there.
+   */
+  --bsc-accent: #e64d00;
+  /*
+   * The keyboard focus ring, on every control we draw. It follows the accent, so a theme that
+   * recolours the accent recolours focus with it; a theme whose accent cannot stand 3:1 against
+   * --bsc-bg-primary sets this one apart, rather than erase the only sign of where the keyboard is.
+   */
+  --bsc-focus: var(--bsc-accent);
   --bsc-border: rgb(0 0 0 / 12%);
   --bsc-danger: #d33;
 
@@ -43,7 +54,30 @@
     --bsc-text-primary: #f2f2f2;
     --bsc-text-secondary: #a0a0a0;
     --bsc-text-disabled: #5c5c5c;
+    --bsc-accent: #f50;
     --bsc-border: rgb(255 255 255 / 14%);
+  }
+}
+
+/*
+ * Forced colours: Windows contrast themes, and any system that imposes its own palette. The system
+ * replaces our colours whatever we write; naming its colours here keeps what we draw with a
+ * background, a border or an outline — the focus ring, hairlines, the wait line, the accent's
+ * states — in the user's chosen colours instead of letting them sink into Canvas. Hover washes and
+ * the close button's red go: in a contrast theme, focus shows where you are, hover does not.
+ */
+@media (forced-colors: active) {
+  :where(:root) {
+    --bsc-bg-primary: Canvas;
+    --bsc-bg-secondary: Canvas;
+    --bsc-bg-hover: transparent;
+    --bsc-text-primary: CanvasText;
+    --bsc-text-secondary: CanvasText;
+    --bsc-text-disabled: GrayText;
+    --bsc-accent: Highlight;
+    --bsc-focus: Highlight;
+    --bsc-border: CanvasText;
+    --bsc-danger: transparent;
   }
 }
 

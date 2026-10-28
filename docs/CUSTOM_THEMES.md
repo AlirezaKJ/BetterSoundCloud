@@ -91,6 +91,21 @@ Keep them readable — our windows are held to WCAG AA: primary text at least 7:
 `--bsc-bg-primary`, secondary at least 4.5:1, the accent at least 3:1. The accent marks state (focus,
 selection, "on"); a theme that makes it match the background erases the only keyboard focus ring.
 
+The keyboard focus ring has a token of its own, **`--bsc-focus`**. It follows `--bsc-accent`, so
+you rarely need it; set it when your accent is meant to be quiet, so the ring still stands out at
+3:1 against `--bsc-bg-primary`:
+
+```css
+/* @target chrome */
+:root {
+  --bsc-accent: #6d6d6d; /* a muted accent, by design */
+  --bsc-focus: #f0b400; /* but focus must still be seen */
+}
+```
+
+In a Windows contrast theme (forced colours), the system's colours replace every token, yours
+included, and the ring becomes the system's highlight colour. Nothing to do on your side.
+
 A plain `:root` is enough: our defaults are declared with `:where(:root)`, which has no specificity,
 so any theme's `:root` beats them. Anything else is different: a theme's CSS is inserted into our
 windows ahead of their own stylesheets, so to restyle an element beyond the tokens you need either a

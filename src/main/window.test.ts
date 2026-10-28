@@ -112,3 +112,20 @@ describe('startup never leaves an invisible window', () => {
     expect(functionBody('loadSoundCloud')).toContain('content.webContents.loadURL(url)')
   })
 })
+
+describe('the bar and keyboard focus', () => {
+  it('tells the bar when SoundCloud’s page itself is loading, so Reload can become Stop', () => {
+    const body = functionBody('wireStateEvents')
+    // The main frame only: the sign-in box is a frame of its own and is not "the page loading".
+    expect(body).toContain('isLoadingMainFrame()')
+    for (const event of ['did-start-loading', 'did-stop-loading']) {
+      expect(body).toContain(`'${event}'`)
+    }
+  })
+
+  it('hands keyboard focus back when settings close, instead of dropping it', () => {
+    // Removing the focused view left focus nowhere: the next key did nothing at all.
+    expect(functionBody('toggleSettings')).toContain('shell.settingsOpener =')
+    expect(functionBody('closeSettings')).toMatch(/back\.focus\(\)/)
+  })
+})

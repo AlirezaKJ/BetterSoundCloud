@@ -50,6 +50,7 @@ import {
 import type { PageStatus } from '@shared/page-status'
 import { createTray } from './tray'
 import { rememberLastPage, startUrl } from './start-page'
+import { watchFocusKeys } from './focus-cycle'
 import {
   attachContextMenu,
   hideContextMenu,
@@ -386,6 +387,8 @@ if (!app.requestSingleInstanceLock()) {
       // fully off from the first request — never half-applied mid-load. Safe mode never
       // loads it, so no filter can touch a single request.
       if (!SAFE_MODE) loadBlockerEngine()
+      // Before the first view exists, so every view takes part in F6 from its first key.
+      watchFocusKeys(() => shell)
       showMainWindow()
       createTray(showMainWindow)
       // Plugins belong to the app, not the window, and none of them needs SoundCloud's page.
@@ -544,6 +547,10 @@ function registerIpc(): void {
 
   ipcMain.on(CH.navReload, (e) => {
     if (fromChrome(e)) shell?.content.webContents.reload()
+  })
+
+  ipcMain.on(CH.navStop, (e) => {
+    if (fromChrome(e)) shell?.content.webContents.stop()
   })
 
   /**

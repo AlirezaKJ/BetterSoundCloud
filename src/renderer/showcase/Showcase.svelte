@@ -565,7 +565,7 @@
   }
 
   .close:focus-visible {
-    outline: 2px solid var(--bsc-accent);
+    outline: 2px solid var(--bsc-focus);
     outline-offset: -2px;
   }
 

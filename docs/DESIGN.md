@@ -9,7 +9,8 @@ colors:
   text-secondary: '#5c5c5c'
   text-disabled: '#a8a8a8'
   border: 'rgb(0 0 0 / 12%)'
-  accent: '#f50'
+  accent: '#e64d00'
+  focus: 'var(--bsc-accent)'
   danger: '#d33'
   scrim: 'rgb(0 0 0 / 45%)'
 typography:
@@ -124,10 +125,15 @@ frontmatter above records the light default.
 
 ### Primary
 
-- **SoundCloud Orange** (`#f50`): The accent, inherited from the host application rather than
-  invented for this one. It signals kinship — this is a SoundCloud client, not a separate
-  product wearing SoundCloud as a data source. It appears on focus rings and the checkbox tick
-  and nowhere else. Unchanged between light and dark.
+- **SoundCloud Orange** (`#e64d00` / `#f50`): The accent, inherited from the host application
+  rather than invented for this one. It signals kinship — this is a SoundCloud client, not a
+  separate product wearing SoundCloud as a data source. It appears on focus rings, the checkbox
+  tick and "on" states, and nowhere else. Dark mode uses SoundCloud's own `#f50` (5.8:1 on Shell
+  Grey); light mode deepens it one step, because `#f50` is only 2.86:1 on `#f2f2f2`, under the 3:1
+  a focus ring or a state mark needs (measured 2026-10-29, pinned by a test). SoundCloud's page
+  keeps its own orange either way.
+- **Focus** (`--bsc-focus`): the keyboard focus ring. The accent, unless a theme sets it apart:
+  a theme whose accent is meant to be quiet must still show where the keyboard is, at 3:1.
 
 ### Neutral
 
@@ -299,7 +305,11 @@ Chrome buttons are the signature component and set the tone for everything else.
 - **Rest:** fully transparent background, glyph inheriting the current text colour. Invisible
   until sought.
 - **Hover:** the Hover Wash alpha fills the rounded rect. Nothing moves, nothing scales.
-- **Focus:** a 2px SoundCloud Orange outline, inset by 2px so it never clips against a neighbour.
+- **Focus:** a 2px outline in `--bsc-focus` (the accent), inset by 2px so it never clips against
+  a neighbour.
+- **Reload becomes Stop** while SoundCloud's page itself loads: the same button, its glyph a
+  cross and its label "Stop loading", so keyboard focus survives the change. A move inside the
+  page, or a frame within it such as the sign-in box, is not "loading".
 - **Disabled:** glyph drops to Ghost Ink; no hover response. Used for back/forward when there is
   no history.
 - **Close, hover:** the one exception — the field fills Danger Red and the glyph turns white.
@@ -656,6 +666,37 @@ that it is not. It is square-ended (no third radius), never the accent (waiting 
 and under `prefers-reduced-motion` it is removed rather than frozen, since a still segment reads
 as a stuck bar. The words carry the meaning on their own.
 
+**The same wait line runs along the bar** while SoundCloud's page loads: 2px at the bar's bottom
+edge, over its hairline, the segment 12% of the bar's width, the same 1.4s and curve. It is the
+same pattern in a second place, not a second motion: a frameless window has no spinner of its
+own, and a reload otherwise looks like nothing happening. Reduced motion removes it; the Stop
+glyph says it alone.
+
+### Keyboard between views
+
+Each part of the window is its own view, and Tab never leaves the one it is in. **F6** moves focus
+to the next part, **Shift+F6** back, as in a browser: the bar (or the window buttons over
+SoundCloud's header while the bar is hidden), SoundCloud's page (or the status standing in for
+it), the lyrics pane, the player buttons — whichever are there. While Settings is open, F6 moves
+only between Settings and the bar.
+
+- **Landing in one of our views draws the ring**: on the control it last had, the one it marks
+  `data-bsc-focus-first` (Settings: the section showing), or its first. `focus({ focusVisible:
+true })`, because a view last used with the mouse draws no ring for a plain `focus()`.
+- **Landing on SoundCloud's page only focuses it**; Tab then goes through the page's own controls.
+- **Closing Settings gives focus back** to where it came from, usually the bar's Settings button.
+- **Settings → Shortcuts lists both keys**, as two rows with key chips: Field White behind a
+  Hairline, 6px radius, the system font at 12px.
+
+### Forced colours
+
+In a Windows contrast theme the system's colours replace ours. `tokens.css` maps every token to
+a system colour there (Canvas, CanvasText, Highlight, GrayText), so what is drawn with a
+background, a border or an outline keeps the user's colours rather than sinking into Canvas: the
+focus ring is Highlight, hairlines and key chips CanvasText, disabled controls GrayText. Hover
+washes and the close button's red go to transparent. In a contrast theme, focus shows where you
+are; hover does not.
+
 ## Do's and Don'ts
 
 ### Do:
@@ -666,8 +707,9 @@ as a stuck bar. The words carry the meaning on their own.
 - **Do** separate surfaces with 1px Hairline borders and the single tonal step, not with shadow.
 - **Do** pair the scrim and the Overlay shadow whenever something takes over input, and use
   neither otherwise.
-- **Do** give every new control a visible focus state (2px accent outline, `outline-offset: -2px`)
-  and full keyboard operability — the product targets WCAG 2.2 AA for its own chrome.
+- **Do** give every new control a visible focus state (2px `--bsc-focus` outline,
+  `outline-offset: -2px`) and full keyboard operability — the product targets WCAG 2.2 AA for its
+  own chrome, and a new view takes part in F6 by itself.
 - **Do** render an unbuilt capability as a disabled control with the **NOT IMPLEMENTED YET**
   badge rather than hiding it or letting it appear functional.
 - **Do** expose stable `data-bsc-*` attributes on themable regions, and treat `tokens.css` plus

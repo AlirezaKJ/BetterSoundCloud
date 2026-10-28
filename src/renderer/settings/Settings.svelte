@@ -217,7 +217,12 @@
 
     <nav data-bsc-settings-nav>
       {#each SECTIONS as section (section)}
-        <button class:active={active === section} onclick={() => (active = section)}>
+        <!-- F6 into the panel lands on the section showing, not on the scrim behind it. -->
+        <button
+          class:active={active === section}
+          data-bsc-focus-first={active === section ? '' : undefined}
+          onclick={() => (active = section)}
+        >
           {SECTION_LABELS[section]}
         </button>
       {/each}
@@ -264,6 +269,25 @@
         {#if active === 'advanced'}
           <!-- Reset settings, and clear SoundCloud's data: buttons that ask first, not settings. -->
           <Reset />
+        {/if}
+        {#if active === 'shortcuts'}
+          <!-- Keys built into the window (main/focus-cycle.ts). Not settings, so not schema rows,
+               but listed where people look for keys. -->
+          <div class="row" data-bsc-settings-key="next-part">
+            <div class="label">
+              <p class="name">Move focus to the next part of the window</p>
+              <p class="help">
+                From the top bar to SoundCloud’s page, then the lyrics pane and the player
+                buttons when they are open. With Settings open, between Settings and the top
+                bar.
+              </p>
+            </div>
+            <div class="control"><kbd>F6</kbd></div>
+          </div>
+          <div class="row" data-bsc-settings-key="previous-part">
+            <div class="label"><p class="name">Move focus back</p></div>
+            <div class="control keys"><kbd>Shift</kbd> <kbd>F6</kbd></div>
+          </div>
         {/if}
       {/if}
     </main>
@@ -405,8 +429,33 @@
     min-width: 0;
   }
 
-  label {
+  label,
+  .name {
     font-size: 14px;
+  }
+
+  .name {
+    margin: 0;
+  }
+
+  /* A key, as printed on it: a field's surface and hairline, in the system font like the rest. */
+  kbd {
+    display: inline-block;
+    min-width: 26px;
+    padding: 2px 6px;
+    border: 1px solid var(--bsc-border);
+    border-radius: var(--bsc-radius);
+    background: var(--bsc-bg-secondary);
+    color: var(--bsc-text-primary);
+    font: inherit;
+    font-size: 12px;
+    line-height: 1.4;
+    text-align: center;
+  }
+
+  .keys {
+    display: flex;
+    gap: 4px;
   }
 
   /* A launch notice (DESIGN.md): the status line's shape, the state in Ink at 600, the rest in

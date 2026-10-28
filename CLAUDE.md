@@ -114,6 +114,7 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CU
 | `main/updater.ts`                  | The auto-updater over electron-updater: when to check, download and install, the notification, `getUpdateStatus` for settings (§20)                                |
 | `main/relaunch.ts`                 | `relaunchAfterQuit()`: every restart, so a relaunched copy can start on Linux and from an AppImage (§1)                                                            |
 | `main/go-to-url.ts`                | `resolveGoToUrl()` for the menu's "Go to URL" prompt                                                                                                               |
+| `main/focus-cycle.ts`              | F6 / Shift+F6 in every view (`watchFocusKeys`, read in `before-input-event`), moving focus between the bar, the page and our panels                                |
 | `main/start-page.ts`               | "On startup, open": `startUrl()` for the first load, `rememberLastPage()` keeps `<userData>/last-page.json` for "Where you left off"                               |
 | `main/plugins.ts`                  | The plugin service: finds plugins, records approvals, runs each in its own process, answers its calls (§16)                                                        |
 | `main/plugin-host.ts`              | The entry point of a plugin's own utility process: relays messages, makes its https requests                                                                       |
@@ -132,6 +133,7 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CU
 | `shared/page-theme.ts`      | `PageTheme`, `detectPageTheme()`, `overlayTheme()` (a theme's `@mode` beats SoundCloud's setting)                                       |
 | `shared/context-menu.ts`    | `ContextMenuRequest`, `CONTEXT_MENU_ACTIONS`, `cleanUrl`, `shortUrl`, `elide`                                                           |
 | `shared/start-page.ts`      | `START_PAGE_URLS`, `startPageUrl()`, `pageToRemember()` (only soundcloud.com pages; never `/logout` or a sign-in step)                  |
+| `shared/focus-cycle.ts`     | `focusCycle()`, `nextFocusArea()`: the order F6 moves through                                                                           |
 | `shared/presence.ts`        | `Activity`, `buildActivity()` (the Discord card), `sameActivity()`, `PRESENCE_LOGO`                                                     |
 | `shared/lyrics.ts`          | `LyricsState`, `parseLrc()`, `currentLineIndex()`, `playbackPosition()`, `lyricsQueries()`, `bestMatch()`                               |
 | `shared/lyric-clock.ts`     | `lyricClock()`: which lyric line is being sung, one timer per line, for the pane and the showcase                                       |
@@ -225,7 +227,7 @@ views:
 | ----------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------ |
 | `platform`                                            | value       | —                                                                                          |
 | `minimize`, `maximizeToggle`, `close`                 | send        | `fromChrome` = header, embedded                                                            |
-| `back`, `forward`, `reload`                           | send        | `fromChrome`                                                                               |
+| `back`, `forward`, `reload`, `stop`                   | send        | `fromChrome`; `stop` while `NavState.loading` (the main frame is loading)                  |
 | `toggleSettings`, `toggleMenuBar`                     | send        | `fromChrome`                                                                               |
 | `closeSettings`                                       | send        | the settings view only                                                                     |
 | `getSettings`, `setSetting`, `listThemes`             | invoke      | `fromSettingsUi` = header, embedded, settings                                              |
@@ -253,6 +255,7 @@ views:
 | `pluginAction`, `openPluginsFolder`                   | send        | `fromSettingsUi`                                                                           |
 | `onPluginsChanged`                                    | subscribe   | pushed to the settings view while it is open (`broadcastPlugins`)                          |
 | `getSafeMode`                                         | invoke      | `fromSettingsUi`; `true` when started with `--safe-mode`                                   |
+| (no method) `CH.focusArrived`                         | pushed      | to the view F6 moved focus into; the chrome preload itself puts focus on a control         |
 | `getWidevineSkipped`                                  | invoke      | `fromSettingsUi`; `true` after "Continue without Widevine", until Widevine arrives         |
 | `resetSettings`, `clearSiteData`                      | invoke      | the settings view only (`fromSettingsView`); each answers whether it worked                |
 | `getPresenceStatus`, `retryPresence`                  | invoke/send | `fromSettingsUi`                                                                           |
@@ -355,10 +358,20 @@ Each view is `src/renderer/<entry>/{index.html, main.ts, <Name>.svelte}`.
   (`0 12px 40px rgb(0 0 0 / 35%), 0 2px 8px rgb(0 0 0 / 20%)`), only on things that float and take
   input; dialogs add the scrim `rgb(0 0 0 / 45%)`, transient menus do not.
 - Chrome buttons: 30×26, transparent at rest, `--bsc-bg-hover` wash on hover, no transition,
-  `cursor: default`. Focus: `outline: 2px solid var(--bsc-accent); outline-offset: -2px`.
+  `cursor: default`. Focus: `outline: 2px solid var(--bsc-focus); outline-offset: -2px`, never
+  the accent directly: `--bsc-focus` follows it, and a theme with a quiet accent sets it apart.
 - Icons: 24-unit viewBox drawn at 15×15, `fill: none`, `stroke: currentcolor`, stroke-width 1.6,
   round caps and joins.
-- The accent `#f50` marks state (focus, selected, on), never decoration.
+- The accent (`#f50` in dark, `#e64d00` in light, where `#f50` is under 3:1) marks state (focus,
+  selected, on), never decoration. Tests hold the defaults and every bundled theme's accent and
+  focus ring to 3:1 against `--bsc-bg-primary`.
+- **Forced colours** (Windows contrast themes): `tokens.css` maps every token to a system colour,
+  so draw with tokens and it keeps working. A literal colour sinks into Canvas there.
+- **Keyboard between views is F6 / Shift+F6** (`main/focus-cycle.ts`, order in
+  `shared/focus-cycle.ts`): bar → page → lyrics → player, or bar ↔ Settings while it is open. A new
+  view gets it for free (`web-contents-created`); it lands on the control the view last had, the
+  one marked `data-bsc-focus-first`, or its first, with the ring drawn by the preload
+  (`focusArrived`). A new view with its own focus order adds itself to `focusCycle`/`viewFor`.
 - Motion: dialogs 180ms fly (14px) + fade with `cubicOut`; menus 100ms fade-in, no exit.
   `prefers-reduced-motion` sets durations to 0.
 - The 32px bar never grows; new affordances go in settings or an overlay.

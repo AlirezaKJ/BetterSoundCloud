@@ -1,6 +1,6 @@
 import { join } from 'node:path'
 import { BaseWindow, WebContentsView, nativeTheme } from 'electron'
-import type { BrowserWindow } from 'electron'
+import type { BrowserWindow, WebContents } from 'electron'
 import windowStateKeeper from 'electron-window-state'
 import { hardenSession, routeNewWindowsToBrowser } from './session'
 import { attachDiagnostics } from './diagnostics'
@@ -59,6 +59,8 @@ export type Shell = {
    * launches never open.
    */
   settings: WebContentsView | null
+  /** Where keyboard focus was when settings opened, so closing them hands it back there. */
+  settingsOpener: WebContents | null
   /**
    * The window buttons drawn over SoundCloud's own header. Exists only while the
    * BetterSoundCloud bar is hidden. See `setContentAppearance`.
@@ -262,6 +264,7 @@ export function createShell(identity: Identity): Shell {
     header,
     content,
     settings: null,
+    settingsOpener: null,
     embedded: null,
     player: null,
     contextMenu: null,
@@ -475,6 +478,12 @@ export function toggleSettings(shell: Shell): void {
     return
   }
 
+  // The bar's Settings button, the window buttons over SoundCloud's header, or the page (the
+  // right-click menu's Settings lands here, its own view already gone).
+  shell.settingsOpener =
+    [shell.header, shell.embedded, shell.content].find((v) => v?.webContents.isFocused())
+      ?.webContents ?? null
+
   const view = new WebContentsView({
     webPreferences: {
       preload: join(import.meta.dirname, '../preload/chrome.cjs'),
@@ -517,11 +526,21 @@ export function closeSettings(shell: Shell): void {
   const view = shell.settings
   if (!view) return
 
+  const hadFocus = !view.webContents.isDestroyed() && view.webContents.isFocused()
+  const opener = shell.settingsOpener
   shell.settings = null
+  shell.settingsOpener = null
   shell.window.contentView.removeChildView(view)
   // Destroy rather than keep it hidden: a settings panel is opened rarely and briefly,
   // so holding a renderer process for the rest of the session is the wrong trade.
   view.webContents.close()
+
+  // Keyboard focus was in the panel just removed. Hand it back to where it came from (that view
+  // remembers which control it was), or to the page, so the next key lands somewhere.
+  if (hadFocus && shell.window.isFocused()) {
+    const back = opener && !opener.isDestroyed() ? opener : shell.content.webContents
+    back.focus()
+  }
 }
 
 /*
@@ -1049,7 +1068,10 @@ function wireStateEvents(shell: Shell): void {
   const sendNav = (): void => {
     const state: NavState = {
       canGoBack: content.webContents.navigationHistory.canGoBack(),
-      canGoForward: content.webContents.navigationHistory.canGoForward()
+      canGoForward: content.webContents.navigationHistory.canGoForward(),
+      // The main frame only: SoundCloud's page loads frames of its own (the sign-in box, embeds)
+      // that are not "the page is loading" to the person looking at it.
+      loading: content.webContents.isLoadingMainFrame()
     }
     if (!header.webContents.isDestroyed()) header.webContents.send(CH.navStateChanged, state)
   }
@@ -1078,6 +1100,10 @@ function wireStateEvents(shell: Shell): void {
 
   content.webContents.on('did-navigate', sendNav)
   content.webContents.on('did-navigate-in-page', sendNav)
+  // Reload turns into Stop while the page loads, and back: the bar's only sign that anything
+  // is happening, in a frameless window that has no spinner of its own.
+  content.webContents.on('did-start-loading', sendNav)
+  content.webContents.on('did-stop-loading', sendNav)
   header.webContents.on('did-finish-load', () => {
     sendNav()
     sendWindow()

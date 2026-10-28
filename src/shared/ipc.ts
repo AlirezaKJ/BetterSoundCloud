@@ -18,6 +18,7 @@ export const CH = {
   navBack: 'nav:back',
   navForward: 'nav:forward',
   navReload: 'nav:reload',
+  navStop: 'nav:stop',
   settingsToggle: 'settings:toggle',
   menuBarToggle: 'window:menu-bar-toggle',
   settingsClose: 'settings:close',
@@ -56,6 +57,10 @@ export const CH = {
   // main -> every view of ours on each change, and a one-off read when a view opens.
   nowPlayingChanged: 'now-playing:changed',
   nowPlayingGet: 'now-playing:get',
+
+  // main -> any of our views. F6 moved keyboard focus into it (main/focus-cycle.ts); the preload
+  // puts it on a control with its ring drawn. Not on `window.bsc`: no view has anything to add.
+  focusArrived: 'view:focus-arrived',
 
   // main -> the page-status view (src/renderer/status), then its buttons -> main.
   pageStatusChanged: 'page-status:changed',
@@ -112,6 +117,11 @@ export type PluginsResult = { plugins: PluginView[]; error: string }
 export type NavState = {
   canGoBack: boolean
   canGoForward: boolean
+  /**
+   * SoundCloud's page itself is loading: a full load (startup, Reload, Back to another document),
+   * not a move inside the page, and not a frame within it such as the sign-in box.
+   */
+  loading: boolean
 }
 
 export type WindowState = {
@@ -128,6 +138,8 @@ export type ChromeApi = {
   back(): void
   forward(): void
   reload(): void
+  /** Stop SoundCloud's page loading: the reload button, while `NavState.loading` is true. */
+  stop(): void
   toggleSettings(): void
   /** Swap between the 32px strip and the controls drawn inside SoundCloud’s header. */
   toggleMenuBar(): void
