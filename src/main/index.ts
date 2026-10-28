@@ -45,6 +45,7 @@ import {
 import { describeComponentsError, isPageStatusAction } from '@shared/page-status'
 import type { PageStatus } from '@shared/page-status'
 import { createTray } from './tray'
+import { rememberLastPage, startUrl } from './start-page'
 import {
   attachContextMenu,
   hideContextMenu,
@@ -279,7 +280,7 @@ function waitForWidevine(): void {
       startUpdates()
       if (!shell) return
       if (shell.pageStatus?.kind === 'setting-up') showPageStatus(shell, { kind: 'loading' })
-      loadSoundCloud(shell)
+      loadSoundCloud(shell, startUrl(settings.get('general.startupUrl')))
     },
     (error: unknown) => {
       clearTimeout(slow)
@@ -372,6 +373,8 @@ function showMainWindow(): void {
     // redesign), that is still the truth rather than the last track hanging around forever.
     next.content.webContents.on('did-navigate', () => setNowPlaying(null))
     next.content.webContents.on('render-process-gone', () => setNowPlaying(null))
+    // Where the user goes, for "Where you left off" at the next launch.
+    rememberLastPage(next.content.webContents)
     next.window.once('closed', () => {
       if (shell === next) shell = null
       setNowPlaying(null)
@@ -396,8 +399,9 @@ function showMainWindow(): void {
 
     // SoundCloud only once Widevine is ready (see `waitForWidevine`). A window opened after
     // that — macOS reopening from the Dock — loads straight away.
-    if (widevine.state === 'ready') loadSoundCloud(next)
-    else if (widevine.state === 'failed') showPageStatus(next, startingStatus())
+    if (widevine.state === 'ready') {
+      loadSoundCloud(next, startUrl(settings.get('general.startupUrl')))
+    } else if (widevine.state === 'failed') showPageStatus(next, startingStatus())
     noticeSlowStart(next, startingStatus)
     return
   }

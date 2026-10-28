@@ -98,16 +98,27 @@ export type SettingDef =
       readonly kind: 'enum'
       readonly default: string
       readonly options: readonly string[]
+      /** What the panel shows for each option. A dropdown it draws must name every one (pinned). */
+      readonly labels?: Readonly<Record<string, string>>
     })
 
 export const SETTINGS = {
+  // Where each choice goes, and which pages "Where you left off" may reopen: src/shared/start-page.ts.
+  // `stream` keeps SoundCloud's old name for its Feed: renaming a stored value would need a
+  // settings-version step, for nothing.
   'general.startupUrl': {
     kind: 'enum',
     default: 'discover',
     options: ['discover', 'stream', 'library', 'lastVisited'],
+    labels: {
+      discover: 'Home',
+      stream: 'Feed',
+      library: 'Library',
+      lastVisited: 'Where you left off'
+    },
     label: 'On startup, open',
     section: 'general',
-    wired: false
+    help: 'Where you left off reopens the SoundCloud page you last had open.'
   },
   'general.minimizeToTray': {
     kind: 'boolean',
@@ -144,6 +155,7 @@ export const SETTINGS = {
     kind: 'enum',
     default: 'system',
     options: ['system', 'light', 'dark'],
+    labels: { system: 'System', light: 'Light', dark: 'Dark' },
     label: 'Appearance',
     section: 'appearance',
     help:

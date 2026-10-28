@@ -1,6 +1,7 @@
 import { EventEmitter } from 'node:events'
 import { readFileSync } from 'node:fs'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { app } from 'electron'
 import type { PageStatus } from '@shared/page-status'
 import type * as IdentityModule from '@shared/identity'
 
@@ -14,6 +15,8 @@ const mocks = vi.hoisted(() => ({
   whenWidevineReady: vi.fn<() => Promise<unknown>>(),
   createShell: vi.fn(),
   loadSoundCloud: vi.fn(),
+  startUrl: vi.fn((_choice: unknown) => 'https://soundcloud.com/discover'),
+  rememberLastPage: vi.fn(),
   showPageStatus: vi.fn(),
   noticeSlowStart: vi.fn(),
   showErrorBox: vi.fn(),
@@ -22,7 +25,7 @@ const mocks = vi.hoisted(() => ({
   setAppUserModelId: vi.fn(),
   startUpdater: vi.fn(),
   requestSingleInstanceLock: vi.fn(() => true),
-  settingsGet: vi.fn(() => true),
+  settingsGet: vi.fn((_key: string): unknown => true),
   settingsSet: vi.fn(),
   disableHardwareAcceleration: vi.fn(),
   loadBlockerEngine: vi.fn(),
@@ -90,6 +93,10 @@ vi.mock('./page-status', () => ({
   showPageStatus: mocks.showPageStatus
 }))
 vi.mock('./tray', () => ({ createTray: vi.fn() }))
+vi.mock('./start-page', () => ({
+  startUrl: mocks.startUrl,
+  rememberLastPage: mocks.rememberLastPage
+}))
 vi.mock('./context-menu', () => ({
   attachContextMenu: vi.fn(),
   hideContextMenu: vi.fn(),
@@ -180,6 +187,11 @@ const settle = () => new Promise<void>((resolve) => setImmediate(resolve))
 
 beforeEach(() => {
   vi.clearAllMocks()
+  // Every test imports a fresh index.ts onto this same fake `app`; the last copy's listeners
+  // would otherwise pile up past Node's limit of ten and warn.
+  app.removeAllListeners()
+  // Every setting reads as `true` unless a test says otherwise.
+  mocks.settingsGet.mockImplementation(() => true)
   mocks.createShell.mockImplementation(makeShell)
   // What page-status.ts does with it, as far as index.ts can tell: the shell remembers it.
   mocks.showPageStatus.mockImplementation((shell: FakeShell, status: PageStatus) => {
@@ -292,7 +304,7 @@ describe('startup and Widevine', () => {
     widevine.resolve([])
     await settle()
 
-    expect(mocks.loadSoundCloud).toHaveBeenCalledWith(shell)
+    expect(mocks.loadSoundCloud).toHaveBeenCalledWith(shell, 'https://soundcloud.com/discover')
     // The status on screen moves on to the page itself.
     expect(shell.pageStatus).toEqual({ kind: 'loading' })
     expect(current()).toEqual({ kind: 'loading' })
@@ -330,8 +342,24 @@ describe('startup and Widevine', () => {
 
     widevine.resolve([])
     await settle()
-    expect(mocks.loadSoundCloud).toHaveBeenCalledWith(shell)
+    expect(mocks.loadSoundCloud).toHaveBeenCalledWith(shell, 'https://soundcloud.com/discover')
     expect(shell.pageStatus).toEqual({ kind: 'loading' })
+  })
+
+  it('opens the page "On startup, open" names, and remembers where the user goes', async () => {
+    mocks.settingsGet.mockImplementation((key) =>
+      key === 'general.startupUrl' ? 'lastVisited' : true
+    )
+    mocks.startUrl.mockReturnValueOnce('https://soundcloud.com/a/b')
+    mocks.whenWidevineReady.mockResolvedValue([])
+    const shell = await start()
+    await settle()
+
+    expect(mocks.startUrl).toHaveBeenCalledWith('lastVisited')
+    expect(mocks.loadSoundCloud).toHaveBeenCalledWith(shell, 'https://soundcloud.com/a/b')
+    expect(mocks.rememberLastPage).toHaveBeenCalledWith(
+      (shell.content as { webContents: unknown }).webContents
+    )
   })
 
   it('starts the updater only once Widevine has settled, either way', async () => {

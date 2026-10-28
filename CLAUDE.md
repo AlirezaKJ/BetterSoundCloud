@@ -114,6 +114,7 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CU
 | `main/updater.ts`                  | The auto-updater over electron-updater: when to check, download and install, the notification, `getUpdateStatus` for settings (§20)                                |
 | `main/relaunch.ts`                 | `relaunchAfterQuit()`: every restart, so a relaunched copy can start on Linux and from an AppImage (§1)                                                            |
 | `main/go-to-url.ts`                | `resolveGoToUrl()` for the menu's "Go to URL" prompt                                                                                                               |
+| `main/start-page.ts`               | "On startup, open": `startUrl()` for the first load, `rememberLastPage()` keeps `<userData>/last-page.json` for "Where you left off"                               |
 | `main/plugins.ts`                  | The plugin service: finds plugins, records approvals, runs each in its own process, answers its calls (§16)                                                        |
 | `main/plugin-host.ts`              | The entry point of a plugin's own utility process: relays messages, makes its https requests                                                                       |
 | `main/plugin-sandbox.ts`           | `runPlugin()`: the `vm` context and the `bsc` API. No Electron, so it is tested directly                                                                           |
@@ -130,6 +131,7 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CU
 | `shared/now-playing.ts`     | `PlayerReading`, `NowPlaying`, `readNowPlaying()` and its cleaners                                                                      |
 | `shared/page-theme.ts`      | `PageTheme`, `detectPageTheme()`, `overlayTheme()` (a theme's `@mode` beats SoundCloud's setting)                                       |
 | `shared/context-menu.ts`    | `ContextMenuRequest`, `CONTEXT_MENU_ACTIONS`, `cleanUrl`, `shortUrl`, `elide`                                                           |
+| `shared/start-page.ts`      | `START_PAGE_URLS`, `startPageUrl()`, `pageToRemember()` (only soundcloud.com pages; never `/logout` or a sign-in step)                  |
 | `shared/presence.ts`        | `Activity`, `buildActivity()` (the Discord card), `sameActivity()`, `PRESENCE_LOGO`                                                     |
 | `shared/lyrics.ts`          | `LyricsState`, `parseLrc()`, `currentLineIndex()`, `playbackPosition()`, `lyricsQueries()`, `bestMatch()`                               |
 | `shared/lyric-clock.ts`     | `lyricClock()`: which lyric line is being sung, one timer per line, for the pane and the showcase                                       |
@@ -438,7 +440,9 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
 `src/shared/settings-schema.ts` is the single source of truth. **Adding a setting is one entry in
 `SETTINGS`** — the type, the settings form, defaults and validation all follow.
 
-- Kinds: `boolean`, `number` (`min`, `max`, `step`), `enum` (`options`), `string`.
+- Kinds: `boolean`, `number` (`min`, `max`, `step`), `enum` (`options`, `labels`), `string`. An
+  enum drawn as an ordinary row must label every option, or the dropdown shows raw values
+  (pinned).
 - `wired: false` while nothing reads the setting yet; the panel shows it disabled with "Not
   implemented yet". When you make main read it, remove `wired: false` and update the pinned list
   in `settings-schema.test.ts`.

@@ -9,7 +9,7 @@
     SETTING_KEYS,
     APPLIES_NOTES
   } from '@shared/settings-schema'
-  import type { Section, SettingKey, Settings } from '@shared/settings-schema'
+  import type { Section, SettingDef, SettingKey, Settings } from '@shared/settings-schema'
   import DiscordStatus from './DiscordStatus.svelte'
   import UpdateStatus from './UpdateStatus.svelte'
   import Plugins from './Plugins.svelte'
@@ -45,6 +45,12 @@
 
   /** Drawn by its own component (`drawnBy` in the schema), so it gets no ordinary row. */
   const drawnElsewhere = (key: SettingKey): boolean => 'drawnBy' in SETTINGS[key]
+
+  /** How a dropdown option reads: its label from the schema, which every drawn option has. */
+  const optionLabel = (key: SettingKey, option: string): string => {
+    const def: SettingDef = SETTINGS[key]
+    return (def.kind === 'enum' && def.labels?.[option]) || option
+  }
 
   onMount(() => {
     open = true
@@ -155,7 +161,7 @@
             onchange={(e) => update(key, e.currentTarget.value)}
           >
             {#each def.options as option (option)}
-              <option value={option}>{option}</option>
+              <option value={option}>{optionLabel(key, option)}</option>
             {/each}
           </select>
         {:else}

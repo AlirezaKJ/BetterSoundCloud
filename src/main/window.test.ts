@@ -109,6 +109,6 @@ describe('startup never leaves an invisible window', () => {
     // Loading it here again would bring back either the wait before any window (#96) or
     // protected tracks that silently skip.
     expect(functionBody('createShell')).not.toMatch(/content\.webContents\.loadURL/)
-    expect(functionBody('loadSoundCloud')).toContain('loadURL(START_URL)')
+    expect(functionBody('loadSoundCloud')).toContain('content.webContents.loadURL(url)')
   })
 })

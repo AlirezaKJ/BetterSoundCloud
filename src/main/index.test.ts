@@ -71,6 +71,11 @@ vi.mock('./background', () => ({
   pictureThumbnail: () => null
 }))
 vi.mock('./tray', () => ({ createTray: mocks.createTray }))
+// The real one reads and writes a file in the profile, and needs a real webContents.
+vi.mock('./start-page', () => ({
+  startUrl: () => 'https://soundcloud.com/discover',
+  rememberLastPage: vi.fn()
+}))
 vi.mock('./page-status', () => ({
   attachPageStatus: vi.fn(),
   noticeSlowStart: vi.fn(),

@@ -21,6 +21,7 @@ import { setLyricsWanted } from './lyrics'
 import { contentCssOf, coverCss } from '@shared/themes'
 import { overlayTheme } from '@shared/page-theme'
 import type { PageTheme } from '@shared/page-theme'
+import { START_PAGE_URLS } from '@shared/start-page'
 import { hidesPage } from '@shared/page-status'
 import type { PageStatus } from '@shared/page-status'
 import type { Identity } from '@shared/identity'
@@ -30,7 +31,8 @@ import type { NavState, WindowState } from '@shared/ipc'
 
 export const HEADER_HEIGHT = 32
 
-export const START_URL = 'https://soundcloud.com/discover'
+/** Where a load falls back to when it has nowhere better to go: SoundCloud's Home. */
+export const START_URL = START_PAGE_URLS.discover
 
 /**
  * How long to wait for our own chrome before showing the window anyway. A normal launch paints
@@ -413,10 +415,13 @@ export function createShell(identity: Identity): Shell {
   return shell
 }
 
-/** Start SoundCloud in the content view. Only once Widevine is ready — see index.ts. */
-export function loadSoundCloud(shell: Shell): void {
+/**
+ * Start SoundCloud in the content view, on `url`: index.ts works it out from the "On startup,
+ * open" setting (start-page.ts). Only once Widevine is ready — see index.ts.
+ */
+export function loadSoundCloud(shell: Shell, url: string): void {
   // The promise rejects when the load fails; page-status.ts handles that from `did-fail-load`.
-  shell.content.webContents.loadURL(START_URL).catch(() => undefined)
+  shell.content.webContents.loadURL(url).catch(() => undefined)
 }
 
 /**

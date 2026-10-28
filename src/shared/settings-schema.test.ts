@@ -69,8 +69,20 @@ describe('schema integrity', () => {
       'appearance.zoomFactor',
       'discord.enabled',
       'discord.showWhenPaused',
-      'general.checkForUpdates'
+      'general.checkForUpdates',
+      'general.startupUrl'
     ])
+  })
+
+  it('names every option of a dropdown the panel draws', () => {
+    // The panel falls back to the raw value, so a missing label shows "lastVisited" in a menu.
+    for (const key of SETTING_KEYS) {
+      const def: SettingDef = SETTINGS[key]
+      if (def.kind !== 'enum' || def.drawnBy) continue
+      for (const option of def.options) {
+        expect(def.labels?.[option], `${key}: ${option}`).toBeTruthy()
+      }
+    }
   })
 
   it('ships the ad blocker off by default', () => {
