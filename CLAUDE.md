@@ -1,7 +1,8 @@
 # CLAUDE.md
 
 BetterSoundCloud v2: a desktop client that wraps soundcloud.com in Electron and adds what a
-browser tab cannot. This branch (`rewrite`) is a full rewrite; v0.7.x lives on `main`.
+browser tab cannot. This branch (`rewrite`) is a full rewrite; v0.7.x lives on `main` until the
+merge, and for good on `legacy/0.7.x` (V0.7.1 plus its later build fixes, without PR #103).
 The two bugs the rewrite exists to fix: DRM tracks that grey out and auto-skip (fixed by VMP
 signing), and "unusual activity" blocks on sign-in, like and follow (still open).
 
@@ -30,6 +31,11 @@ CLAUDE.md is worse than none, because it gets trusted.
   rename it: that signs every user out. It must run before anything resolves `userData`
   (`index.startup.test.ts` pins this). v0.7.x's lowercase `bettersoundcloud` is the same folder on
   Windows and a separate one on Linux, where upgraders start signed out on purpose.
+- **On Windows the app's ID is `appId` from electron-builder.yml** (`com.alirezakj.bettersoundcloud`,
+  `APP_ID` in `index.ts`, `.dev` appended in dev), set before the first window. The installer
+  stamps its shortcuts with the same ID; if they differ, a pinned shortcut and the running window
+  show as two taskbar buttons. `index.startup.test.ts` reads the yml to keep them equal. Never
+  change `appId`: it would also break pins, update continuity and macOS keychain grants.
 - **A stale `npm run dev` holds the single-instance lock.** A second one starts on port 5174 and
   its Electron exits silently, leaving the old main-process code running. Check for a listener on
   5173 and running `electron.exe` processes before assuming a build is live.
@@ -38,8 +44,10 @@ CLAUDE.md is worse than none, because it gets trusted.
 - **On Linux the Castlabs build dies at startup whenever `CHROME_DESKTOP` is set**, to any value
   (castlabs/electron-releases#165, measured 2026-10-28). Dev clears it in `electron.vite.config.ts`;
   a packaged build started from a VS Code/Orca terminal needs `env -u CHROME_DESKTOP`. Electron
-  sets it itself as the app starts, so **every `app.relaunch()` must first run
-  `delete process.env['CHROME_DESKTOP']`** (`page-status.ts` does), or the new copy never starts.
+  sets it itself as the app starts, so a relaunched copy inherits it and dies. **Never call
+  `app.relaunch()` directly: every restart goes through `relaunchAfterQuit()` (`main/relaunch.ts`)**,
+  which drops the variable and, in an AppImage, starts the new copy from a system shell — Electron's
+  relaunch helper runs off the AppImage's mount, which vanishes when the app exits (measured).
 - **`--safe-mode`** (`SAFE_MODE` in `index.ts`) turns off, for that launch only, hardware
   acceleration, both ad blockers (the engine is never loaded) and the theme. It writes no setting,
   and the settings panel says it is on (`getSafeMode`). Read the theme through `selectedTheme()`,
@@ -102,6 +110,8 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CU
 | `main/blocker.ts` + `net-rules.ts` | Ad/tracker blocking and the never-filter allowlist                                                                                                                 |
 | `main/diagnostics.ts`              | Dev-only network and page-error log, `whoAnswered()` (SoundCloud vs DataDome)                                                                                      |
 | `main/tray.ts`                     | Tray icon and menu (playback items disabled until playback control exists)                                                                                         |
+| `main/updater.ts`                  | The auto-updater over electron-updater: when to check, download and install, the notification, `getUpdateStatus` for settings (§20)                                |
+| `main/relaunch.ts`                 | `relaunchAfterQuit()`: every restart, so a relaunched copy can start on Linux and from an AppImage (§1)                                                            |
 | `main/go-to-url.ts`                | `resolveGoToUrl()` for the menu's "Go to URL" prompt                                                                                                               |
 | `main/plugins.ts`                  | The plugin service: finds plugins, records approvals, runs each in its own process, answers its calls (§16)                                                        |
 | `main/plugin-host.ts`              | The entry point of a plugin's own utility process: relays messages, makes its https requests                                                                       |
@@ -128,6 +138,7 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CU
 | `shared/identity.ts`        | `Identity`, `buildUserAgent()`, `leaksAppIdentity()`, `pageLanguages()`, `acceptLanguages()`                                            |
 | `shared/plugins.ts`         | `readManifest()`, permissions, `readHostMessage()`, `callAllowed()`, `PluginView`                                                       |
 | `shared/plugin-api.ts`      | `PluginApi`: the `bsc` object a plugin gets. The contract, for code and for docs                                                        |
+| `shared/updates.ts`         | `installKind()`, `updateReach()`, `UpdateStatus`, `describeUpdateStatus()` (every word of the update line), `readUpdateError()`         |
 
 ---
 
@@ -232,6 +243,8 @@ views:
 | `getSafeMode`                                         | invoke      | `fromSettingsUi`; `true` when started with `--safe-mode`                                   |
 | `getPresenceStatus`, `retryPresence`                  | invoke/send | `fromSettingsUi`                                                                           |
 | `onPresenceStatus`                                    | subscribe   | pushed to the settings view while it is open (`broadcastPresenceStatus`)                   |
+| `getUpdateStatus`, `updateAction`                     | invoke/send | `fromSettingsUi`; the action must pass `isUpdateAction`                                    |
+| `onUpdateStatus`                                      | subscribe   | pushed to the settings view while it is open (`broadcastUpdateStatus`)                     |
 
 Every `on…` returns an unsubscribe function. A new view that needs one of the gated methods must
 be added to that sender check, and to the matching broadcast list if it needs pushes.
@@ -443,7 +456,9 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
 - `statusFrom: 'discord'` puts a live line under the control saying whether the feature behind
   it is working right now (`renderer/settings/DiscordStatus.svelte`, words from
   `describePresenceStatus`). Use it wherever a ticked box can be true while the feature cannot
-  work — the panel must not show a control that silently does nothing.
+  work — the panel must not show a control that silently does nothing. `statusFrom: 'updates'`
+  is the updater's line, with its one button (`UpdateStatus.svelte`, words from
+  `describeUpdateStatus`, §20).
 - Main reads with `settings.get(key)` / `getAll()`; writes go through `settings.set`, which
   coerces. Live effects are applied in `applyLiveSettings()` in `index.ts`.
 - Renderers read with `getSettings()` + `onSettingsChanged()` and write with `setSetting()`, which
@@ -499,6 +514,7 @@ Dev builds log to the terminal running `npm run dev`. Tags:
 | `[now-playing]`                                                                                  | Track, play/pause and like changes                                                                                                                              |
 | `[discord]`                                                                                      | Connected, what the card shows, Discord not running (once per outage), and any update Discord refused (all builds)                                              |
 | `[plugin:<id>]`, `[plugins]`                                                                     | A plugin's own log (warnings in every build), and the service's                                                                                                 |
+| `[updates]`                                                                                      | One line per change of the updater's state: checking, current, available/downloading/ready with versions and install kind, or why it failed (all builds)        |
 | `[widevine]`                                                                                     | How long the Widevine wait took, or why it failed                                                                                                               |
 | `[page-status]`                                                                                  | What the status view is saying (`load failed -106 ERR_INTERNET_DISCONNECTED`, `cleared`, …)                                                                     |
 | `[content]`, `[window]`                                                                          | A failed SoundCloud load; the window shown without its header                                                                                                   |
@@ -534,8 +550,8 @@ context menu have the shortcut; embedded and player do not).
   - pin structure with source-scanning tests (`content.test.ts`, `window.test.ts`);
   - or mock `electron` and the main modules, as `index.test.ts` does for startup, the window
     lifecycle and the now-playing IPC path.
-- Anything that loads `index.ts` must mock `./presence`: the real one connects to the Discord app
-  on whatever machine runs the tests. `discord-ipc.test.ts` instead runs a fake Discord on a real
+- Anything that loads `index.ts` must mock `./presence` and `./updater`: the real ones connect to
+  the Discord app and to GitHub from whatever machine runs the tests. `discord-ipc.test.ts` instead runs a fake Discord on a real
   local pipe, so the bytes on the wire are tested as sent.
 - Plugins are tested three ways: `plugin-sandbox.test.ts` runs small scripts in the real sandbox;
   `lastfm-plugin.test.ts` runs the shipped Last.fm plugin against a fake Last.fm; `plugins.test.ts`
@@ -801,3 +817,48 @@ Rules that hold this together:
   "Seek from the showcase and the lyrics pane".
 - **The close button and the cursor hide** 2.5s after the pointer stops (a `setTimeout` reset on
   pointer movement, not polling) and come back on any movement or key; keyboard focus keeps them.
+
+---
+
+## 20. Updates
+
+```
+Widevine settles (ready or failed) --startUpdates()--> main/updater.ts startUpdater()
+  10s later, then every 12h while "Update automatically" is on (general.checkForUpdates):
+  electron-updater checks latest.yml / latest-linux.yml on GitHub Releases
+    install reach (Windows setup .exe, AppImage): download in the background --> ready
+    tell reach (portable .exe, .deb, .rpm): available, with a link to the release page
+  ready / told --> one system notification per version (none while Settings is open)
+  --CH.updateStatusChanged--> renderer/settings/UpdateStatus.svelte (the line under the setting)
+"Restart now" --CH.updateAction 'install'--> quitAndInstall; installs on quit while the setting is on
+```
+
+Rules that hold this together:
+
+- **What a copy can do depends on how it was installed** (`installKind`, `updateReach` in
+  `src/shared/updates.ts`): the Windows installer and the AppImage update themselves; the portable
+  build cannot replace itself, and the .deb/.rpm would install as root with signature checks off
+  (ours are unsigned), so those three only say a new version exists and link to it; a copy run from
+  source, an unpacked folder, Nix or a distro build does nothing. Decided by the maintainer
+  2026-10-28. `electron-updater` is never even loaded where the reach is `none`.
+- **We decide when to download** (`autoDownload` off): at once while the setting is on, on
+  "Download and install" while it is off. Off means nothing automatic at all — no checks, no
+  download, no install on quit. "Check now" works either way.
+- **Never before Widevine has settled**, so a first launch's Widevine download has the line to
+  itself. A failed Widevine install still starts the updater: an update may be the fix.
+- **A newest release without `latest.yml` is "up to date", not an error** (`readUpdateError`):
+  every release before 0.8.0 is one, and so is the current newest public release until 0.8.0 is
+  published. electron-updater's own codes are matched, not its messages.
+- **The words are pure and tested** (`describeUpdateStatus`, `updateNotification`): a status line
+  in DESIGN.md's voice with exactly one button, and the percentage in tabular figures.
+- **Installing restarts through `relaunchAfterQuit`** (§1). On an AppImage, electron-updater's own
+  force-run started the new copy before the old one quit, so it found the single-instance lock held
+  and exited; the updater only swaps the file and `relaunch.ts` starts the new one after this copy
+  has exited, with the same arguments and none of its open files. Windows' installer waits for the
+  app to close and opens the new version itself.
+- **Every download is checked against the feed's sha512**, so a Windows differential download is
+  byte-identical to the VMP-signed installer. Unsigned builds skip electron-updater's publisher
+  check (there is no publisher to check).
+- **Verified end to end on Linux** (2026-10-28): a 0.8.0 AppImage fed a local 0.8.1 feed checked,
+  downloaded, showed the notification, and on "Restart now" came back as 0.8.1 on its own profile.
+  The Windows path is in docs/RELEASE_CHECKLIST.md.

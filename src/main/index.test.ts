@@ -20,6 +20,8 @@ vi.mock('electron', async () => {
   return {
     app: Object.assign(new EventEmitter(), {
       setName: vi.fn(),
+      // Called on Windows only, so it must exist for these tests to run there too.
+      setAppUserModelId: vi.fn(),
       setPath: vi.fn(),
       getPath: () => '/tmp',
       // The values measured on the development machine, so the identity test below
@@ -112,6 +114,14 @@ vi.mock('./presence', () => ({
   getPresenceStatus: () => ({ state: 'off' }),
   onPresenceStatusChange: vi.fn(),
   retryPresenceNow: vi.fn()
+}))
+// The real one reads electron-updater and would schedule checks against GitHub.
+vi.mock('./updater', () => ({
+  startUpdater: vi.fn(),
+  setAutoUpdate: vi.fn(),
+  getUpdateStatus: () => ({ state: 'idle', current: '0.8.0', auto: true, kind: 'installer' }),
+  onUpdateStatusChange: vi.fn(),
+  runUpdateAction: vi.fn()
 }))
 
 function makeShell() {
@@ -321,6 +331,31 @@ describe('main window lifecycle', () => {
     // These tests start without `--safe-mode`; index.startup.test.ts covers what it turns off.
     expect(get({ sender: shell.settings.webContents })).toBe(false)
     expect(get({ sender: shell.content.webContents })).toBeNull()
+  })
+
+  it('lets only the settings panel read the updater and press its button', async () => {
+    const { app } = await import('electron')
+    const updater = await import('./updater')
+    app.emit('activate')
+    const shell = mocks.createShell.mock.results.at(-1)!.value as ReturnType<typeof makeShell>
+    const handlerFor = (method: 'on' | 'handle', channel: string) => {
+      const registered = method === 'on' ? mocks.ipcOn : mocks.ipcHandle
+      return registered.mock.calls.find(([name]) => name === channel)![1] as (
+        event: unknown,
+        ...args: unknown[]
+      ) => unknown
+    }
+
+    const get = handlerFor('handle', CH.updateStatusGet)
+    expect(get({ sender: shell.settings.webContents })).toMatchObject({ state: 'idle' })
+    expect(get({ sender: shell.content.webContents })).toBeNull()
+
+    const act = handlerFor('on', CH.updateAction)
+    act({ sender: shell.content.webContents }, 'install')
+    act({ sender: shell.settings.webContents }, 'format-disk')
+    expect(updater.runUpdateAction).not.toHaveBeenCalled()
+    act({ sender: shell.settings.webContents }, 'check')
+    expect(updater.runUpdateAction).toHaveBeenCalledWith('check')
   })
 
   it('lets only the settings panel list, switch and configure plugins', async () => {

@@ -81,6 +81,15 @@ import {
 } from './presence'
 import type { PresenceStatus } from '@shared/presence'
 import {
+  getUpdateStatus,
+  onUpdateStatusChange,
+  runUpdateAction,
+  setAutoUpdate,
+  startUpdater
+} from './updater'
+import { isUpdateAction } from '@shared/updates'
+import type { UpdateStatus } from '@shared/updates'
+import {
   listPlugins,
   onPluginsChange,
   openPluginsFolder,
@@ -144,6 +153,21 @@ app.userAgentFallback = USER_AGENT
  * fix that cleared blocks on #97.
  */
 app.setName('BetterSoundCloud')
+
+/*
+ * Windows ties a running window to its taskbar pin and Start Menu shortcut by this ID, and the
+ * installer stamps those shortcuts with `appId` from electron-builder.yml. Without the same ID
+ * here, Electron uses its own default, `electron.app.BetterSoundCloud` (Electron 43's
+ * application_info_win.cc), so Windows treats the pin and the running window as two apps: a
+ * second taskbar button, and no owner for jump lists or notifications. It must be set before
+ * the first window; index.startup.test.ts keeps it equal to the builder's appId. Dev gets an ID
+ * of its own, so a dev window never groups with the installed app's pin. Windows only: the
+ * method does not exist elsewhere.
+ */
+const APP_ID = 'com.alirezakj.bettersoundcloud'
+if (process.platform === 'win32') {
+  app.setAppUserModelId(isDev ? `${APP_ID}.dev` : APP_ID)
+}
 
 // Printed in dev so the identity is verifiable at a glance without opening DevTools.
 // The two lines must agree: whatever Chromium major is reported, the UA must claim the
@@ -252,6 +276,7 @@ function waitForWidevine(): void {
       clearTimeout(slow)
       widevine = { state: 'ready' }
       if (isDev) console.log(`[widevine] ready after ${Date.now() - started}ms`)
+      startUpdates()
       if (!shell) return
       if (shell.pageStatus?.kind === 'setting-up') showPageStatus(shell, { kind: 'loading' })
       loadSoundCloud(shell)
@@ -261,9 +286,26 @@ function waitForWidevine(): void {
       const detail = describeComponentsError(error)
       widevine = { state: 'failed', detail }
       console.error(`[widevine] install failed after ${Date.now() - started}ms: ${detail}`)
+      startUpdates()
       if (shell) showPageStatus(shell, { kind: 'setup-failed', detail })
     }
   )
+}
+
+/**
+ * The updater starts once Widevine has settled either way: never before, so a first launch's
+ * Widevine download has the line to itself. A failed Widevine install does not stop it — an
+ * update may be the fix.
+ */
+function startUpdates(): void {
+  startUpdater({
+    auto: settings.get('general.checkForUpdates'),
+    isSettingsOpen: () => Boolean(shell?.settings),
+    showSettings: () => {
+      showMainWindow()
+      if (shell && !shell.settings) toggleSettings(shell)
+    }
+  })
 }
 
 /** What is holding up SoundCloud's first page right now. */
@@ -516,6 +558,13 @@ function registerIpc(): void {
   // So the settings panel can say safe mode is on, rather than show settings that are not in force.
   ipcMain.handle(CH.safeModeGet, (e) => (fromSettingsUi(e) ? SAFE_MODE : null))
 
+  // The updater's line under "Update automatically", and its one button.
+  ipcMain.handle(CH.updateStatusGet, (e) => (fromSettingsUi(e) ? getUpdateStatus() : null))
+  ipcMain.on(CH.updateAction, (e, action: unknown) => {
+    if (fromSettingsUi(e) && isUpdateAction(action)) runUpdateAction(action)
+  })
+  onUpdateStatusChange(broadcastUpdateStatus)
+
   // Whether Discord presence is working, for the line under its toggle in settings.
   ipcMain.handle(CH.presenceStatusGet, (e) => (fromSettingsUi(e) ? getPresenceStatus() : null))
   ipcMain.on(CH.presenceRetry, (e) => {
@@ -741,6 +790,13 @@ function broadcastPlugins(): void {
 }
 
 /** The settings panel is the one view that shows it, and only while it is open. */
+function broadcastUpdateStatus(status: UpdateStatus): void {
+  const view = shell?.settings
+  if (view && !view.webContents.isDestroyed()) {
+    view.webContents.send(CH.updateStatusChanged, status)
+  }
+}
+
 function broadcastPresenceStatus(status: PresenceStatus): void {
   const view = shell?.settings
   if (view && !view.webContents.isDestroyed()) {
@@ -818,6 +874,8 @@ function applyLiveSettings(): void {
     enabled: settings.get('discord.enabled'),
     showWhenPaused: settings.get('discord.showWhenPaused')
   })
+  // App-wide too. Before the updater starts this only records the choice.
+  setAutoUpdate(settings.get('general.checkForUpdates'))
 
   applyChromeTheme()
 

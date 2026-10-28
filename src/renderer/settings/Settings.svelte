@@ -11,6 +11,7 @@
   } from '@shared/settings-schema'
   import type { Section, SettingKey, Settings } from '@shared/settings-schema'
   import DiscordStatus from './DiscordStatus.svelte'
+  import UpdateStatus from './UpdateStatus.svelte'
   import Plugins from './Plugins.svelte'
   import Themes from './Themes.svelte'
   import Background from './Background.svelte'
@@ -123,6 +124,7 @@
           whose answer can change on its own — Discord being opened or closed, say.
         -->
         {#if 'statusFrom' in def && def.statusFrom === 'discord'}<DiscordStatus />{/if}
+        {#if 'statusFrom' in def && def.statusFrom === 'updates'}<UpdateStatus />{/if}
       </div>
 
       <div class="control">

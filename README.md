@@ -3,7 +3,8 @@
 A desktop client for SoundCloud — Discord Rich Presence, Last.fm scrobbling, themes,
 plugins, synced lyrics.
 
-> **This branch is the v2 rewrite.** v0.7.x lives on `main`. The rewrite exists to fix two
+> **This branch is the v2 rewrite.** v0.7.x lives on `main` until the merge, and for good on
+> [`legacy/0.7.x`](https://github.com/AlirezaKJ/BetterSoundCloud/tree/legacy/0.7.x). The rewrite exists to fix two
 > things that make the current release unusable for many people: tracks that grey out and
 > auto-skip, and "we detected unusual activity" blocks on sign-in, liking and following.
 

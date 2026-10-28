@@ -8,6 +8,7 @@ import { isDev } from './env'
 import { closeShowcase, enableDevToolsShortcut, rendererUrl, START_URL } from './window'
 import type { Shell } from './window'
 import { themeChromeView } from './chrome-theme'
+import { relaunchAfterQuit } from './relaunch'
 
 /**
  * The page-status surface: a view of our own over the content area that says what is going
@@ -186,12 +187,9 @@ export function runPageStatusAction(shell: Shell, action: PageStatusAction): voi
       // `components.whenReady()` returns that same rejection, even once the network is back
       // (measured 2026-10-27). A fresh launch is the retry.
       if (status.kind === 'setup-failed' || status.kind === 'setting-up') {
-        // Electron sets CHROME_DESKTOP in this process as it starts, the relaunched copy
-        // inherits it, and the Castlabs build dies at startup on Linux whenever it is set, to
-        // any value: Restart closed the app and nothing came back (measured 2026-10-28,
-        // castlabs/electron-releases#165). The variable means nothing to the new copy.
-        delete process.env['CHROME_DESKTOP']
-        app.relaunch()
+        // Not `app.relaunch()` directly: on Linux it brought nothing back, both from an
+        // inherited CHROME_DESKTOP and from inside an AppImage (relaunch.ts says why).
+        relaunchAfterQuit()
         app.quit()
       }
       return

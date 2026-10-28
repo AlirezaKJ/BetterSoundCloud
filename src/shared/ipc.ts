@@ -7,6 +7,7 @@ import type { PageStatus, PageStatusAction } from './page-status'
 import type { PresenceStatus } from './presence'
 import type { PluginView } from './plugins'
 import type { LyricsState } from './lyrics'
+import type { UpdateAction, UpdateStatus } from './updates'
 
 /** Every IPC channel name, in one place. Strings are never written inline. */
 export const CH = {
@@ -62,6 +63,11 @@ export const CH = {
 
   // settings renderer -> main. Whether this launch is in safe mode (`--safe-mode`).
   safeModeGet: 'app:safe-mode-get',
+
+  // settings renderer <-> main. The updater: its status, and the one button that status offers.
+  updateStatusGet: 'updates:status-get',
+  updateStatusChanged: 'updates:status-changed',
+  updateAction: 'updates:action',
 
   // settings renderer <-> main. Whether Discord presence is working, and "Try now".
   presenceStatusGet: 'presence:status-get',
@@ -194,6 +200,17 @@ export type ChromeApi = {
    * Fixed for the life of the app, so read once.
    */
   getSafeMode(): Promise<boolean>
+
+  /**
+   * What the updater is doing: idle, checking, up to date, a version available, downloading (with
+   * a percentage), ready to install, or failed and why — plus the running version, the setting and
+   * how this copy was installed. Read once, then follow `onUpdateStatus`; it changes on each step,
+   * and about once a second while downloading.
+   */
+  getUpdateStatus(): Promise<UpdateStatus>
+  onUpdateStatus(cb: (status: UpdateStatus) => void): () => void
+  /** Check now, download, restart to install, or open the release page. */
+  updateAction(action: UpdateAction): void
 
   /**
    * Whether Discord presence is working — off, looking for Discord, connected (and what the card

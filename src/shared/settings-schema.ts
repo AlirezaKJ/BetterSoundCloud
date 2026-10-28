@@ -69,10 +69,12 @@ type Base = {
   /**
    * A live line under the control saying whether the feature behind it is actually working,
    * when that can change without the setting changing. `discord`: whether the Discord app is
-   * running and connected. A ticked box over a feature that cannot work right now is a control
-   * that silently does nothing — the line is how the panel says so.
+   * running and connected. `updates`: what the updater is doing, with its one button (check,
+   * download, restart to install, open the download page). A ticked box over a feature that
+   * cannot work right now is a control that silently does nothing — the line is how the panel
+   * says so.
    */
-  readonly statusFrom?: 'discord'
+  readonly statusFrom?: 'discord' | 'updates'
   /**
    * Drawn by its own component in the settings panel instead of as an ordinary row, because a
    * plain control would not do: `themes` is the theme list (Themes.svelte), `background` the
@@ -115,13 +117,17 @@ export const SETTINGS = {
     help: 'The tray exists; this still needs a quitting flag so tray Quit is not swallowed.',
     wired: false
   },
+  // The key keeps its old name so stored values carry over; it now governs downloading and
+  // installing as well as checking (main/updater.ts).
   'general.checkForUpdates': {
     kind: 'boolean',
     default: true,
-    label: 'Check for updates automatically',
+    label: 'Update automatically',
     section: 'general',
-    help: 'Disabled automatically when installed from a distro package or Nix.',
-    wired: false
+    statusFrom: 'updates',
+    help:
+      'Downloads new versions from GitHub in the background and installs them when you quit. ' +
+      'Off, nothing is checked or downloaded until you ask.'
   },
 
   'appearance.zoomFactor': {

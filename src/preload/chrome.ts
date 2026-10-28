@@ -10,6 +10,7 @@ import type { PageStatus, PageStatusAction } from '@shared/page-status'
 import type { PresenceStatus } from '@shared/presence'
 import type { PluginView } from '@shared/plugins'
 import type { LyricsState } from '@shared/lyrics'
+import type { UpdateAction, UpdateStatus } from '@shared/updates'
 
 /**
  * Preload for OUR OWN chrome (header, settings, the overlays, the right-click menu). This
@@ -76,6 +77,10 @@ const api: ChromeApi = {
   pageStatusAction: (action: PageStatusAction) => ipcRenderer.send(CH.pageStatusAction, action),
 
   getSafeMode: () => ipcRenderer.invoke(CH.safeModeGet) as Promise<boolean>,
+
+  getUpdateStatus: () => ipcRenderer.invoke(CH.updateStatusGet) as Promise<UpdateStatus>,
+  onUpdateStatus: (cb: (status: UpdateStatus) => void) => subscribe(CH.updateStatusChanged, cb),
+  updateAction: (action: UpdateAction) => ipcRenderer.send(CH.updateAction, action),
 
   getPresenceStatus: () => ipcRenderer.invoke(CH.presenceStatusGet) as Promise<PresenceStatus>,
   onPresenceStatus: (cb: (status: PresenceStatus) => void) =>

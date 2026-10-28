@@ -1,4 +1,5 @@
 import { EventEmitter } from 'node:events'
+import { readFileSync } from 'node:fs'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import type { PageStatus } from '@shared/page-status'
 import type * as IdentityModule from '@shared/identity'
@@ -18,6 +19,8 @@ const mocks = vi.hoisted(() => ({
   showErrorBox: vi.fn(),
   quit: vi.fn(),
   setName: vi.fn(),
+  setAppUserModelId: vi.fn(),
+  startUpdater: vi.fn(),
   requestSingleInstanceLock: vi.fn(() => true),
   settingsGet: vi.fn(() => true),
   settingsSet: vi.fn(),
@@ -33,6 +36,7 @@ vi.mock('electron', async () => {
   return {
     app: Object.assign(new EventEmitter(), {
       setName: mocks.setName,
+      setAppUserModelId: mocks.setAppUserModelId,
       setPath: vi.fn(),
       getPath: () => '/tmp',
       getLocale: () => 'en-US',
@@ -125,6 +129,13 @@ vi.mock('./presence', () => ({
   onPresenceStatusChange: vi.fn(),
   retryPresenceNow: vi.fn()
 }))
+vi.mock('./updater', () => ({
+  startUpdater: mocks.startUpdater,
+  setAutoUpdate: vi.fn(),
+  getUpdateStatus: () => ({ state: 'idle', current: '0.8.0', auto: true, kind: 'installer' }),
+  onUpdateStatusChange: vi.fn(),
+  runUpdateAction: vi.fn()
+}))
 
 type FakeShell = {
   window: EventEmitter
@@ -192,6 +203,40 @@ describe('the profile folder', () => {
     const named = mocks.setName.mock.invocationCallOrder[0]!
     expect(named).toBeLessThan(mocks.settingsGet.mock.invocationCallOrder[0]!)
     expect(named).toBeLessThan(mocks.requestSingleInstanceLock.mock.invocationCallOrder[0]!)
+  })
+})
+
+describe('the Windows app ID', () => {
+  const realPlatform = process.platform
+  const onPlatform = (platform: NodeJS.Platform): void => {
+    Object.defineProperty(process, 'platform', { value: platform, configurable: true })
+  }
+
+  afterEach(() => {
+    onPlatform(realPlatform)
+  })
+
+  it('is the installer’s appId, set before the first window', async () => {
+    // The installer stamps the Start Menu and desktop shortcuts with this ID. If the two
+    // differ, Windows shows a pinned shortcut and the running window as two apps.
+    const appId = /^appId:\s*(\S+)\s*$/m.exec(readFileSync('electron-builder.yml', 'utf8'))?.[1]
+    onPlatform('win32')
+    mocks.whenWidevineReady.mockReturnValue(new Promise(() => undefined))
+    await start()
+
+    expect(mocks.setAppUserModelId).toHaveBeenCalledOnce()
+    expect(mocks.setAppUserModelId).toHaveBeenCalledWith(appId)
+    expect(mocks.setAppUserModelId.mock.invocationCallOrder[0]!).toBeLessThan(
+      mocks.createShell.mock.invocationCallOrder[0]!
+    )
+  })
+
+  it('is left alone elsewhere, where the method does not exist', async () => {
+    onPlatform('linux')
+    mocks.whenWidevineReady.mockReturnValue(new Promise(() => undefined))
+    await start()
+
+    expect(mocks.setAppUserModelId).not.toHaveBeenCalled()
   })
 })
 
@@ -287,6 +332,29 @@ describe('startup and Widevine', () => {
     await settle()
     expect(mocks.loadSoundCloud).toHaveBeenCalledWith(shell)
     expect(shell.pageStatus).toEqual({ kind: 'loading' })
+  })
+
+  it('starts the updater only once Widevine has settled, either way', async () => {
+    const ready = deferred()
+    mocks.whenWidevineReady.mockReturnValue(ready.promise)
+    await start()
+    expect(mocks.startUpdater).not.toHaveBeenCalled()
+
+    ready.resolve([])
+    await settle()
+    expect(mocks.startUpdater).toHaveBeenCalledOnce()
+    expect(mocks.startUpdater).toHaveBeenCalledWith(expect.objectContaining({ auto: true }))
+
+    // A failed Widevine install does not stop it: an update may be the fix.
+    mocks.startUpdater.mockClear()
+    const failed = deferred()
+    mocks.whenWidevineReady.mockReturnValue(failed.promise)
+    await start()
+    failed.reject(
+      Object.assign(new Error('x'), { errors: [{ message: 'Update check error' }] })
+    )
+    await settle()
+    expect(mocks.startUpdater).toHaveBeenCalledOnce()
   })
 
   it('reports a startup failure in a native box before quitting, never silently', async () => {

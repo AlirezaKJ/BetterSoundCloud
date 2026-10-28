@@ -55,6 +55,16 @@ when one is refused, write down what SoundCloud said rather than retrying.
 - [ ] Upgrade on Windows: on a machine where v0.7.x is installed and signed in, install v2 and launch
       it. It should open signed in, because it uses the same profile folder. Not yet seen on a real
       upgrade.
+- [ ] Taskbar on Windows: pin BetterSoundCloud from the Start Menu, quit it, start it from the pin.
+      There must be one taskbar button, not the pin plus a second one. (The app and the installer's
+      shortcuts share one app ID, `appId` in electron-builder.yml.)
+- [ ] Updating, once the release is published (the updater reads published releases only): on a
+      machine with the previous version's installer build, start it and wait. Within a minute the
+      line under Settings → General → "Update automatically" says the new version is downloading,
+      then ready, and a notification says so. "Restart now" must bring the app back as the new
+      version (the same line then says "Up to date"), still signed in, and still playing a protected
+      track. Do the same with the previous AppImage on Linux. The portable build must say the version
+      is available and open its release page instead.
 - [ ] The release notes say that on Linux, people coming from v0.7.x start signed out and with default
       settings. v0.7.x kept its profile in `~/.config/bettersoundcloud` and v2 keeps it in
       `~/.config/BetterSoundCloud`; nothing is copied across, on purpose (see `app.setName` in

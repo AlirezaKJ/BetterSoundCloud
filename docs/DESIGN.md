@@ -517,6 +517,27 @@ panel must say so rather than show controls that silently do nothing.
 - **No colour, no icon, no button.** It is information, not an alarm, and leaving safe mode means
   quitting and starting normally, which no button here can do better.
 
+### The update line
+
+The status line under "Update automatically" in General (`UpdateStatus.svelte`, words from
+`describeUpdateStatus`), and the model for any status line that carries an action.
+
+- **The status line's shape**, with **one button at most**: the Prompt's button at 13px, naming
+  its action — "Check now", "Download and install", "Restart now", "Open download page", "Try
+  again". Busy states (checking, downloading) offer none.
+- **The state names the version**: "Up to date. 0.8.0 is the newest version.", "0.8.1 is
+  available. You have 0.8.0.", "0.8.1 is ready. Restart now, or it installs the next time you
+  quit." Support replies ask for the version; the line already says it.
+- **Progress is words, not a bar**: "Downloading 0.8.1… 42%". The lead ends in an ellipsis, as
+  "Checking…" does, so the number reads as part of it, and the line uses tabular figures so it does
+  not shift as the number changes.
+- **A failure is a problem line in Ink** ("You seem to be offline."), with "Try again".
+- **A copy that cannot install itself says how to get the update** ("This portable copy can't
+  replace itself, so download the new one.") and offers the download page instead of installing.
+- **Outside the panel, one system notification per version**, and only when there is something to
+  do: an update ready, or one this copy can only be told about. None while the panel is open.
+  Clicking it opens Settings.
+
 ### Plugin rows
 
 Settings → Plugins (`src/renderer/settings/Plugins.svelte`), and the model for any list of

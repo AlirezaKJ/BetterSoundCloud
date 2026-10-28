@@ -87,8 +87,11 @@ credentials. v2's stated goal is to carry all of it.
   timing nudge; looked up only while the pane is open
 - A full-screen showcase of what is playing: the artwork, title and progress on a colour taken
   from the artwork, with the line being sung
+- Updates from GitHub Releases: the Windows installer and the AppImage download in the background
+  and install on restart or quit, with one notification per version; the portable build, .deb and
+  .rpm say a new version exists and link to it. One switch turns it all off
 
-**Not yet built:** downloader, i18n, proxy, webhooks, auto-updater. Settings
+**Not yet built:** downloader, i18n, proxy, webhooks. Settings
 whose feature is missing render disabled and labelled rather than lying. Full backlog:
 [TODO.md](TODO.md).
 

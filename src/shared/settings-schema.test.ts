@@ -68,7 +68,8 @@ describe('schema integrity', () => {
       'appearance.theme',
       'appearance.zoomFactor',
       'discord.enabled',
-      'discord.showWhenPaused'
+      'discord.showWhenPaused',
+      'general.checkForUpdates'
     ])
   })
 
