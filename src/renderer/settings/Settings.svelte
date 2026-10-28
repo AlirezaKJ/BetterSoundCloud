@@ -36,6 +36,8 @@
   let open = $state(false)
   let values = $state<Settings | null>(null)
   let active = $state<Section>('general')
+  /** Started with `--safe-mode`: some settings below are not in force, so the panel says so. */
+  let safeMode = $state(false)
 
   const keysIn = (section: Section): SettingKey[] =>
     SETTING_KEYS.filter((k) => SETTINGS[k].section === section)
@@ -54,6 +56,7 @@
     window.addEventListener('keydown', onKey)
 
     void window.bsc.getSettings().then((s) => (values = s))
+    void window.bsc.getSafeMode().then((on) => (safeMode = on))
     const stopWatching = window.bsc.onSettingsChanged((s) => {
       values = s
     })
@@ -209,6 +212,14 @@
     </nav>
 
     <main data-bsc-settings-content>
+      {#if safeMode}
+        <!-- On every section, because the settings it overrides live in three of them. -->
+        <p class="safe-mode" role="status" data-bsc-settings-safe-mode>
+          <strong>Safe mode is on.</strong> Hardware acceleration, ad blocking and your theme are
+          off for this launch, whatever the settings below say. Nothing has been changed: quit and
+          start BetterSoundCloud normally to use them again.
+        </p>
+      {/if}
       {#if active === 'plugins'}
         <!-- Not schema-driven: plugins are found on disk, so their rows are too. -->
         <Plugins />
@@ -372,6 +383,21 @@
 
   label {
     font-size: 14px;
+  }
+
+  /* The status line's shape (DESIGN.md): the state in Ink at 600, the rest in Muted Ink. */
+  .safe-mode {
+    margin: 0;
+    padding: 0 0 12px;
+    border-bottom: 1px solid var(--bsc-border);
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--bsc-text-secondary);
+  }
+
+  .safe-mode strong {
+    font-weight: 600;
+    color: var(--bsc-text-primary);
   }
 
   .help {

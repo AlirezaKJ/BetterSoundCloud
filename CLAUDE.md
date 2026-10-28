@@ -40,6 +40,11 @@ CLAUDE.md is worse than none, because it gets trusted.
   a packaged build started from a VS Code/Orca terminal needs `env -u CHROME_DESKTOP`. Electron
   sets it itself as the app starts, so **every `app.relaunch()` must first run
   `delete process.env['CHROME_DESKTOP']`** (`page-status.ts` does), or the new copy never starts.
+- **`--safe-mode`** (`SAFE_MODE` in `index.ts`) turns off, for that launch only, hardware
+  acceleration, both ad blockers (the engine is never loaded) and the theme. It writes no setting,
+  and the settings panel says it is on (`getSafeMode`). Read the theme through `selectedTheme()`,
+  never `settings.get('appearance.theme')`, or safe mode stops covering it. Plugins still run: they
+  cannot touch the window or SoundCloud's page. Users find it in the README's Troubleshooting.
 - **Releases are built by `.github/workflows/release.yml`**, on a pushed tag `v<version>` that
   must match `package.json`: Windows VMP-signed (repository secrets `EVS_ACCOUNT_NAME`,
   `EVS_PASSWD`) and Linux, fuses checked by `scripts/verify-fuses.mjs`, all into a draft release.
@@ -224,6 +229,7 @@ views:
 | `listPlugins`, `setPluginEnabled`, `setPluginSetting` | invoke      | `fromSettingsUi`; the two setters answer `{ plugins, error }`                              |
 | `pluginAction`, `openPluginsFolder`                   | send        | `fromSettingsUi`                                                                           |
 | `onPluginsChanged`                                    | subscribe   | pushed to the settings view while it is open (`broadcastPlugins`)                          |
+| `getSafeMode`                                         | invoke      | `fromSettingsUi`; `true` when started with `--safe-mode`                                   |
 | `getPresenceStatus`, `retryPresence`                  | invoke/send | `fromSettingsUi`                                                                           |
 | `onPresenceStatus`                                    | subscribe   | pushed to the settings view while it is open (`broadcastPresenceStatus`)                   |
 

@@ -60,6 +60,9 @@ export const CH = {
   pageStatusChanged: 'page-status:changed',
   pageStatusAction: 'page-status:action',
 
+  // settings renderer -> main. Whether this launch is in safe mode (`--safe-mode`).
+  safeModeGet: 'app:safe-mode-get',
+
   // settings renderer <-> main. Whether Discord presence is working, and "Try now".
   presenceStatusGet: 'presence:status-get',
   presenceStatusChanged: 'presence:status-changed',
@@ -184,6 +187,13 @@ export type ChromeApi = {
   onPageStatus(cb: (status: PageStatus) => void): () => void
   /** One of that view's buttons. Main checks it against the current status before acting. */
   pageStatusAction(action: PageStatusAction): void
+
+  /**
+   * Whether the app was started with `--safe-mode`: hardware acceleration, ad blocking and the
+   * theme are off for this launch whatever the settings say, and the settings panel must say so.
+   * Fixed for the life of the app, so read once.
+   */
+  getSafeMode(): Promise<boolean>
 
   /**
    * Whether Discord presence is working — off, looking for Discord, connected (and what the card

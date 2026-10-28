@@ -310,6 +310,19 @@ describe('main window lifecycle', () => {
     expect(presence.retryPresenceNow).toHaveBeenCalledOnce()
   })
 
+  it('tells the settings panel whether this is safe mode, and nothing on the page', async () => {
+    const { app } = await import('electron')
+    app.emit('activate')
+    const shell = mocks.createShell.mock.results.at(-1)!.value as ReturnType<typeof makeShell>
+    const get = mocks.ipcHandle.mock.calls.find(([name]) => name === CH.safeModeGet)![1] as (
+      event: unknown
+    ) => unknown
+
+    // These tests start without `--safe-mode`; index.startup.test.ts covers what it turns off.
+    expect(get({ sender: shell.settings.webContents })).toBe(false)
+    expect(get({ sender: shell.content.webContents })).toBeNull()
+  })
+
   it('lets only the settings panel list, switch and configure plugins', async () => {
     const { app } = await import('electron')
     const plugins = await import('./plugins')

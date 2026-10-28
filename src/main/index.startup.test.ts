@@ -19,7 +19,13 @@ const mocks = vi.hoisted(() => ({
   quit: vi.fn(),
   setName: vi.fn(),
   requestSingleInstanceLock: vi.fn(() => true),
-  settingsGet: vi.fn(() => true)
+  settingsGet: vi.fn(() => true),
+  settingsSet: vi.fn(),
+  disableHardwareAcceleration: vi.fn(),
+  loadBlockerEngine: vi.fn(),
+  setBlockingEnabled: vi.fn(),
+  setAudioAdBlocking: vi.fn(),
+  setContentAppearance: vi.fn()
 }))
 
 vi.mock('electron', async () => {
@@ -32,6 +38,7 @@ vi.mock('electron', async () => {
       getLocale: () => 'en-US',
       getPreferredSystemLanguages: () => ['en-US'],
       requestSingleInstanceLock: mocks.requestSingleInstanceLock,
+      disableHardwareAcceleration: mocks.disableHardwareAcceleration,
       whenReady: () => Promise.resolve(),
       quit: mocks.quit
     }),
@@ -51,7 +58,7 @@ vi.mock('./window', () => ({
   loadSoundCloud: mocks.loadSoundCloud,
   toggleSettings: vi.fn(),
   closeSettings: vi.fn(),
-  setContentAppearance: vi.fn(),
+  setContentAppearance: mocks.setContentAppearance,
   setPageTheme: vi.fn(),
   setContentCover: vi.fn(),
   setContentPicture: vi.fn(),
@@ -86,13 +93,14 @@ vi.mock('./context-menu', () => ({
   goToUrlFromMenu: vi.fn()
 }))
 vi.mock('./blocker', () => ({
-  loadBlockerEngine: vi.fn(),
+  loadBlockerEngine: mocks.loadBlockerEngine,
   isBlockerAvailable: () => true,
-  setBlockingEnabled: vi.fn(),
-  setAudioAdBlocking: vi.fn()
+  setBlockingEnabled: mocks.setBlockingEnabled,
+  setAudioAdBlocking: mocks.setAudioAdBlocking
 }))
-vi.mock('./settings-store', () => ({ get: mocks.settingsGet }))
+vi.mock('./settings-store', () => ({ get: mocks.settingsGet, set: mocks.settingsSet }))
 vi.mock('./themes', () => ({
+  NO_THEME: 'vanilla',
   listThemes: () => [],
   findTheme: () => null,
   copyThemeToUserFolder: vi.fn(),
@@ -184,6 +192,40 @@ describe('the profile folder', () => {
     const named = mocks.setName.mock.invocationCallOrder[0]!
     expect(named).toBeLessThan(mocks.settingsGet.mock.invocationCallOrder[0]!)
     expect(named).toBeLessThan(mocks.requestSingleInstanceLock.mock.invocationCallOrder[0]!)
+  })
+})
+
+describe('safe mode', () => {
+  afterEach(() => {
+    process.argv = process.argv.filter((arg) => arg !== '--safe-mode')
+  })
+
+  it('turns off hardware acceleration, ad blocking and the theme, and saves nothing', async () => {
+    process.argv.push('--safe-mode')
+    mocks.whenWidevineReady.mockReturnValue(new Promise(() => undefined))
+    await start()
+
+    // The settings mock answers true to everything, so each of these is safe mode's doing.
+    expect(mocks.disableHardwareAcceleration).toHaveBeenCalledOnce()
+    expect(mocks.loadBlockerEngine).not.toHaveBeenCalled()
+    expect(mocks.setBlockingEnabled).toHaveBeenLastCalledWith(false)
+    expect(mocks.setAudioAdBlocking).toHaveBeenLastCalledWith(false)
+    expect(mocks.setContentAppearance).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.objectContaining({ theme: 'vanilla' })
+    )
+    // Without the engine, the blocker's own correction would have saved `adBlocker: false`.
+    expect(mocks.settingsSet).not.toHaveBeenCalled()
+  })
+
+  it('leaves all of that to the settings without the flag', async () => {
+    mocks.whenWidevineReady.mockReturnValue(new Promise(() => undefined))
+    await start()
+
+    expect(mocks.disableHardwareAcceleration).not.toHaveBeenCalled()
+    expect(mocks.loadBlockerEngine).toHaveBeenCalledOnce()
+    expect(mocks.setBlockingEnabled).toHaveBeenLastCalledWith(true)
+    expect(mocks.setAudioAdBlocking).toHaveBeenLastCalledWith(true)
   })
 })
 

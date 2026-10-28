@@ -53,6 +53,43 @@ terminal, start it with `env -u CHROME_DESKTOP bettersoundcloud` (or
 variable itself as the app starts, so the app clears it before restarting itself
 (`src/main/page-status.ts`).
 
+## Troubleshooting
+
+### The window is blank or broken: start in safe mode
+
+Quit BetterSoundCloud first (a second copy only brings the running one forward), then start it
+with `--safe-mode`:
+
+| System              | Command                                                                                            |
+| ------------------- | -------------------------------------------------------------------------------------------------- |
+| Windows (installer) | Press Win+R, then `"%LOCALAPPDATA%\Programs\BetterSoundCloud\BetterSoundCloud.exe" --safe-mode`    |
+| Windows (portable)  | From a command prompt in its folder: `BetterSoundCloud-<version>-win-x64-portable.exe --safe-mode` |
+| Linux (deb, rpm)    | `bettersoundcloud --safe-mode`                                                                     |
+| Linux (AppImage)    | `./BetterSoundCloud-<version>-linux-x86_64.AppImage --safe-mode`                                   |
+
+For that launch only, safe mode turns off hardware acceleration (the usual cause of a blank
+window), ad blocking and your theme. It changes no setting, and Settings says it is on. If the app
+works in safe mode, one of those three is the cause: in Settings, switch one of them off
+(Hardware acceleration first), then quit and start normally, and repeat until it works. If you
+installed somewhere other than the default folder, use that path instead.
+
+### SoundCloud keeps blocking you: reset your profile
+
+Deleting the profile folder cleared the "you have been blocked" page for a user on
+[#97](https://github.com/AlirezaKJ/BetterSoundCloud/issues/97). It is not a guaranteed fix, and it
+costs you this: you are signed out, your settings and window size go back to their defaults, the
+themes and plugins you added and your Last.fm connection are gone, and Widevine downloads again
+on the next start. Quit the app, then **rename** the folder (for example to `BetterSoundCloud.old`)
+rather than deleting it, so you can copy your themes and plugins back:
+
+| System  | Profile folder                                                                           |
+| ------- | ---------------------------------------------------------------------------------------- |
+| Windows | `%APPDATA%\BetterSoundCloud`                                                             |
+| macOS   | `~/Library/Application Support/BetterSoundCloud`                                         |
+| Linux   | `~/.config/BetterSoundCloud` (a lowercase `bettersoundcloud` folder is v0.7.x's, unused) |
+
+Uninstalling does not remove it, so reinstalling alone changes nothing.
+
 ## Scripts
 
 | Command                                          | What it does                                               |

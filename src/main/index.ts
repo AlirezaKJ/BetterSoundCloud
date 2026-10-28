@@ -65,6 +65,7 @@ import {
   copyThemeToUserFolder,
   findTheme,
   listThemes,
+  NO_THEME,
   openThemeFile,
   openThemesFolder,
   watchUserThemes
@@ -97,6 +98,19 @@ let quitting = false
 app.on('before-quit', () => {
   quitting = true
 })
+
+/*
+ * Safe mode, for an app that opens to a blank or broken window: `--safe-mode` on the command line
+ * turns off, for this launch only, the three settings that can do that. Hardware acceleration (the
+ * usual cause of a blank window), ad blocking (a filter can break SoundCloud's page) and the theme
+ * (a user's theme is CSS that can hide the page, or our own bar). Nothing is written to the
+ * settings, and the settings panel says safe mode is on. Plugins still run: each is its own
+ * process, and none can touch the window or SoundCloud's page (CLAUDE.md §16).
+ */
+const SAFE_MODE = process.argv.includes('--safe-mode')
+if (SAFE_MODE) {
+  console.log('[bsc] safe mode: hardware acceleration, ad blocking and the theme are off')
+}
 
 /*
  * ORDER MATTERS IN THIS FILE.
@@ -193,7 +207,7 @@ if (process.env['ELECTRON_RENDERER_URL']) {
   app.setPath('userData', join(app.getPath('appData'), 'BetterSoundCloud (dev)'))
 }
 
-if (!settings.get('advanced.hardwareAcceleration')) {
+if (SAFE_MODE || !settings.get('advanced.hardwareAcceleration')) {
   app.disableHardwareAcceleration()
 }
 
@@ -267,8 +281,9 @@ if (!app.requestSingleInstanceLock()) {
     .then(() => {
       registerIpc()
       // Synchronous, and before any view exists, so blocking is either fully on or
-      // fully off from the first request — never half-applied mid-load.
-      loadBlockerEngine()
+      // fully off from the first request — never half-applied mid-load. Safe mode never
+      // loads it, so no filter can touch a single request.
+      if (!SAFE_MODE) loadBlockerEngine()
       showMainWindow()
       createTray(showMainWindow)
       // Plugins belong to the app, not the window, and none of them needs SoundCloud's page.
@@ -498,6 +513,9 @@ function registerIpc(): void {
 
   ipcMain.handle(CH.settingsGetAll, (e) => (fromSettingsUi(e) ? settings.getAll() : null))
 
+  // So the settings panel can say safe mode is on, rather than show settings that are not in force.
+  ipcMain.handle(CH.safeModeGet, (e) => (fromSettingsUi(e) ? SAFE_MODE : null))
+
   // Whether Discord presence is working, for the line under its toggle in settings.
   ipcMain.handle(CH.presenceStatusGet, (e) => (fromSettingsUi(e) ? getPresenceStatus() : null))
   ipcMain.on(CH.presenceRetry, (e) => {
@@ -653,6 +671,14 @@ function registerIpc(): void {
  * being overwritten by the snapshot the user's click produced.
  */
 function applyBlocking(): void {
+  if (SAFE_MODE) {
+    // Off without touching the settings. The correction below would write `adBlocker: false`,
+    // because safe mode never loaded the engine.
+    setAudioAdBlocking(false)
+    setBlockingEnabled(false)
+    return
+  }
+
   // Audio ads first, and unconditionally: this one needs no engine, so it is never turned
   // off on our own initiative the way the filter-list blocker below can be.
   setAudioAdBlocking(settings.get('advanced.blockAudioAds'))
@@ -774,9 +800,14 @@ function themeSummaries(): ThemeSummary[] {
   )
 }
 
+/** The theme to apply: the setting, or none at all in safe mode. Read through here, never directly. */
+function selectedTheme(): string {
+  return SAFE_MODE ? NO_THEME : settings.get('appearance.theme')
+}
+
 /** The selected theme's `chrome` sections, into every view of ours that takes them. */
 function applyChromeTheme(): void {
-  const theme = findTheme(settings.get('appearance.theme'))
+  const theme = findTheme(selectedTheme())
   setChromeTheme((kind) => (theme ? chromeCssFor(theme.sections, kind) : ''))
 }
 
@@ -799,7 +830,7 @@ function applyLiveSettings(): void {
   setContentAppearance(shell, {
     hideMenuBar: settings.get('appearance.hideMenuBar'),
     fullWidth: settings.get('appearance.fullWidthLayout'),
-    theme: settings.get('appearance.theme'),
+    theme: selectedTheme(),
     minimalNavigation: settings.get('appearance.minimalNavigation'),
     background: backgroundOptions(),
     playerButtons: settings.get('appearance.playerButtons')
@@ -810,7 +841,7 @@ function applyLiveSettings(): void {
 
 /** What the Background shows: the setting, unless the selected theme needs one (`@background`). */
 function currentBackground(): 'none' | 'artwork' | 'picture' {
-  const theme = findTheme(settings.get('appearance.theme'))
+  const theme = findTheme(selectedTheme())
   return backgroundSource(
     settings.get('appearance.background'),
     theme?.needsBackground ?? false

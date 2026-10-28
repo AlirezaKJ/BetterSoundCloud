@@ -504,6 +504,19 @@ running (`statusFrom: 'discord'` in the schema, `src/renderer/settings/DiscordSt
   milliseconds and the press would otherwise look like it did nothing.
 - Switched off, it shows nothing: the unticked box already says so.
 
+### The safe-mode notice
+
+When the app was started with `--safe-mode`, some settings on screen are not in force: hardware
+acceleration, ad blocking and the theme are off for that launch whatever the controls show. The
+panel must say so rather than show controls that silently do nothing.
+
+- **At the top of the content column, on every section**, since the settings it overrides live in
+  three of them. The status line's shape at Caption size: "Safe mode is on." in Ink at 600, then
+  what is off, that nothing was changed, and how to leave it, in Muted Ink. A hairline below
+  separates it from the first row. `role="status"`, `data-bsc-settings-safe-mode`.
+- **No colour, no icon, no button.** It is information, not an alarm, and leaving safe mode means
+  quitting and starting normally, which no button here can do better.
+
 ### Plugin rows
 
 Settings → Plugins (`src/renderer/settings/Plugins.svelte`), and the model for any list of

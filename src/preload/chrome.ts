@@ -75,6 +75,8 @@ const api: ChromeApi = {
   onPageStatus: (cb: (status: PageStatus) => void) => subscribe(CH.pageStatusChanged, cb),
   pageStatusAction: (action: PageStatusAction) => ipcRenderer.send(CH.pageStatusAction, action),
 
+  getSafeMode: () => ipcRenderer.invoke(CH.safeModeGet) as Promise<boolean>,
+
   getPresenceStatus: () => ipcRenderer.invoke(CH.presenceStatusGet) as Promise<PresenceStatus>,
   onPresenceStatus: (cb: (status: PresenceStatus) => void) =>
     subscribe(CH.presenceStatusChanged, cb),
