@@ -303,6 +303,21 @@ describe('buttons', () => {
     expect(mocks.relaunch).toHaveBeenCalledOnce()
     expect(mocks.quit).toHaveBeenCalledOnce()
   })
+
+  it('restart without the CHROME_DESKTOP that kills the new copy on Linux', () => {
+    // Electron sets it while starting; the Castlabs build then dies before running any code.
+    process.env['CHROME_DESKTOP'] = 'bettersoundcloud.desktop'
+    let atRelaunch: string | undefined = 'not called'
+    mocks.relaunch.mockImplementationOnce(() => {
+      atRelaunch = process.env['CHROME_DESKTOP']
+    })
+
+    const shell = makeShell()
+    showPageStatus(shell as never, { kind: 'setup-failed', detail: 'Update check error' })
+    press(shell, 'restart')
+
+    expect(atRelaunch).toBeUndefined()
+  })
 })
 
 describe('the view', () => {

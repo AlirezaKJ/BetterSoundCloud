@@ -35,6 +35,11 @@ CLAUDE.md is worse than none, because it gets trusted.
   5173 and running `electron.exe` processes before assuming a build is live.
 - `npm install` needs `allow-git=root` (in `.npmrc`) because Electron comes from the Castlabs
   GitHub release (Widevine build). `postinstall` fetches the binary.
+- **On Linux the Castlabs build dies at startup whenever `CHROME_DESKTOP` is set**, to any value
+  (castlabs/electron-releases#165, measured 2026-10-28). Dev clears it in `electron.vite.config.ts`;
+  a packaged build started from a VS Code/Orca terminal needs `env -u CHROME_DESKTOP`. Electron
+  sets it itself as the app starts, so **every `app.relaunch()` must first run
+  `delete process.env['CHROME_DESKTOP']`** (`page-status.ts` does), or the new copy never starts.
 - **Releases are built by `.github/workflows/release.yml`**, on a pushed tag `v<version>` that
   must match `package.json`: Windows VMP-signed (repository secrets `EVS_ACCOUNT_NAME`,
   `EVS_PASSWD`) and Linux, fuses checked by `scripts/verify-fuses.mjs`, all into a draft release.

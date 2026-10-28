@@ -186,6 +186,11 @@ export function runPageStatusAction(shell: Shell, action: PageStatusAction): voi
       // `components.whenReady()` returns that same rejection, even once the network is back
       // (measured 2026-10-27). A fresh launch is the retry.
       if (status.kind === 'setup-failed' || status.kind === 'setting-up') {
+        // Electron sets CHROME_DESKTOP in this process as it starts, the relaunched copy
+        // inherits it, and the Castlabs build dies at startup on Linux whenever it is set, to
+        // any value: Restart closed the app and nothing came back (measured 2026-10-28,
+        // castlabs/electron-releases#165). The variable means nothing to the new copy.
+        delete process.env['CHROME_DESKTOP']
         app.relaunch()
         app.quit()
       }

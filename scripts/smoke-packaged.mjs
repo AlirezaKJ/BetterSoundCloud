@@ -203,8 +203,17 @@ try {
   check('the lyrics pane opens', lyrics !== null)
   if (lyrics) {
     await wait(500)
+    // Two fifths of a narrow window, at most 360px (fitLyricsPane in window.ts). A tiling window
+    // manager picks the window's size itself, so work out what the pane should be from the window
+    // the header spans: Hyprland tiled it at 820px and the pane was rightly 328 (2026-10-28).
+    const windowWidth = await header.run('window.innerWidth')
+    const expected = Math.round(Math.min(360, windowWidth * 0.4))
     const size = await lyrics.run('[window.innerWidth, window.innerHeight]')
-    check('…as a 360px column beside the page', size?.[0] === 360, `${size?.[0]}×${size?.[1]}`)
+    check(
+      `…as a ${expected}px column beside the page`,
+      size?.[0] === expected,
+      `${size?.[0]}×${size?.[1]} in a ${windowWidth}px window`
+    )
     check(
       '…saying nothing is playing',
       (await lyrics.run('window.bsc.getLyrics().then((s) => s.state)')) === 'idle'

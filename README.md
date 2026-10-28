@@ -45,6 +45,14 @@ Orca can crash in `zygote_host_impl_linux.cc` before the app runs
 ([Castlabs #165](https://github.com/castlabs/electron-releases/issues/165)). For direct
 Electron launches, use `env -u CHROME_DESKTOP node_modules/.bin/electron .`.
 
+The installed app has the same limit: **launched from a terminal inside VS Code, Orca or
+another Electron app, the AppImage, `.deb` and `.rpm` builds exit at once** (any value of
+`CHROME_DESKTOP` does it). Launching from the app menu or dock is unaffected. From such a
+terminal, start it with `env -u CHROME_DESKTOP bettersoundcloud` (or
+`env -u CHROME_DESKTOP ./BetterSoundCloud-<version>-linux-x86_64.AppImage`). Electron sets the
+variable itself as the app starts, so the app clears it before restarting itself
+(`src/main/page-status.ts`).
+
 ## Scripts
 
 | Command                                          | What it does                                               |
