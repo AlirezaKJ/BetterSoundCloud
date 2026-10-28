@@ -19,7 +19,7 @@
     "dev": "electron-vite dev",
     "start": "electron-vite preview",
     "build": "npm run check && electron-vite build",
-    "check": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.preload.json && tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.plugins.json && svelte-check --tsconfig tsconfig.web.json && eslint . && prettier --check .",
+    "check": "node scripts/verify-electron.mjs && tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.preload.json && tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.plugins.json && svelte-check --tsconfig tsconfig.web.json && eslint . && prettier --check .",
     "lint": "eslint . --fix",
     "format": "prettier --write .",
     "test": "vitest run",

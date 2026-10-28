@@ -88,6 +88,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # A release must ship the Electron package.json names: checked against GitHub's tag too.
+      - run: node scripts/verify-electron.mjs --remote
       - run: npm run check
       - run: npm test
 

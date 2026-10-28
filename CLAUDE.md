@@ -14,17 +14,18 @@ CLAUDE.md is worse than none, because it gets trusted.
 
 ## 1. Commands
 
-| Command                        | What it does                                                                                                    |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------- |
-| `npm run dev`                  | electron-vite dev server, renderer HMR. Main and preload do NOT hot-reload — restart after changing them        |
-| `npm run check`                | `tsc` ×4 (node, preload, web, plugins) + `svelte-check` + ESLint + Prettier check. Run before calling work done |
-| `npm test`                     | Vitest, once                                                                                                    |
-| `npm run build`                | `check` then `electron-vite build` into `out/`                                                                  |
-| `npm run pack`                 | Unpacked app into `release/`                                                                                    |
-| `npm run dist:win` etc.        | Installers. Release builds need `STRICT_VMP_SIGNING=true` (see README)                                          |
-| `npm run smoke:packaged`       | Launch the packed app on a fresh profile and check it through our views (docs/RELEASE_CHECKLIST.md)             |
-| `npm run blocker:build`        | Recompile `resources/engine.bin` + `engine.meta.json`; commit both                                              |
-| `npx prettier --write <files>` | Fix formatting before `check`                                                                                   |
+| Command                                     | What it does                                                                                                                   |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `npm run dev`                               | electron-vite dev server, renderer HMR. Main and preload do NOT hot-reload — restart after changing them                       |
+| `npm run check`                             | The Electron pin check, `tsc` ×4 (node, preload, web, plugins), `svelte-check`, ESLint, Prettier. Run before calling work done |
+| `node scripts/verify-electron.mjs --remote` | The pin check plus GitHub: the lockfile's commit is the one the Castlabs tag points at. CI and the release workflow run it     |
+| `npm test`                                  | Vitest, once                                                                                                                   |
+| `npm run build`                             | `check` then `electron-vite build` into `out/`                                                                                 |
+| `npm run pack`                              | Unpacked app into `release/`                                                                                                   |
+| `npm run dist:win` etc.                     | Installers. Release builds need `STRICT_VMP_SIGNING=true` (see README)                                                         |
+| `npm run smoke:packaged`                    | Launch the packed app on a fresh profile and check it through our views (docs/RELEASE_CHECKLIST.md)                            |
+| `npm run blocker:build`                     | Recompile `resources/engine.bin` + `engine.meta.json`; commit both                                                             |
+| `npx prettier --write <files>`              | Fix formatting before `check`                                                                                                  |
 
 - Dev runs from its own profile, `%APPDATA%/BetterSoundCloud (dev)`, set in `src/main/index.ts`.
 - **The installed app's profile folder is `<appData>/BetterSoundCloud`, from `app.setName`.** Never
@@ -86,7 +87,8 @@ src/renderer/   Svelte 5. One folder per view, each with index.html + main.ts + 
 src/shared/     Pure TypeScript shared by main, preload and renderer. No Electron, no DOM.
 resources/      Shipped at runtime: engine.bin (ad blocker), themes/, plugins/, minimal-nav.css,
                 soundcloud-palette-{dark,light}.css (§17), icon.png
-scripts/        Blocker engine build, VMP signing hooks, the packaged smoke check, the fuse check
+scripts/        Blocker engine build, VMP signing hooks, the packaged smoke check, the fuse check,
+                the Electron pin check (verify-electron.mjs)
 docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CUSTOM_PLUGINS.md
 ```
 
@@ -277,6 +279,10 @@ be added to that sender check, and to the matching broadcast list if it needs pu
    pattern.
 6. `index.test.ts` mocks views' `webContents` (`isDestroyed`, `close`, `setZoomFactor`, `on`,
    `send`). Calling a new `webContents` method from `index.ts` means adding it to that mock.
+7. `ipc-channels.test.ts` reads main and both preloads and fails until both ends exist: a channel
+   a view sends with no handler, a handler nothing calls, a push nobody listens for, a second
+   handler, or a `CH` entry nothing uses. Name channels as `CH.x` (never a variable) so it sees
+   them.
 
 ---
 
@@ -584,7 +590,9 @@ context menu have the shortcut; embedded and player do not).
 - Vitest runs in **node**, over `src/**/*.test.ts`. Anything that imports Electron at runtime
   cannot be loaded, so:
   - put logic in pure modules (`src/shared/*`, `content-css.ts`, `net-rules.ts`, …) and test those;
-  - pin structure with source-scanning tests (`content.test.ts`, `window.test.ts`);
+  - pin structure with source-scanning tests (`content.test.ts`, `window.test.ts`,
+    `ipc-channels.test.ts`), which live in `src/main`: `src/shared` is type-checked without Node,
+    so a test there cannot read files;
   - or mock `electron` and the main modules, as `index.test.ts` does for startup, the window
     lifecycle and the now-playing IPC path.
 - Anything that loads `index.ts` must mock `./presence` and `./updater`: the real ones connect to

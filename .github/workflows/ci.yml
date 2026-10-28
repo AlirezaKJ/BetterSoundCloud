@@ -24,6 +24,9 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # The Electron installed is the Castlabs build package.json names, and the lockfile's commit
+      # is the one GitHub's tag points at (`npm run check` repeats the offline half).
+      - run: node scripts/verify-electron.mjs --remote
       - run: npm run check
       - run: npm test
 
