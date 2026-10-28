@@ -155,7 +155,7 @@ vi.mock('./updater', () => ({
 type FakeView = { webContents: { isDestroyed: () => boolean; close: () => void } }
 
 type FakeShell = {
-  window: EventEmitter
+  window: EventEmitter & { hide: () => void }
   header: FakeView
   content: FakeView
   /** The page-status view, which page-status.ts would create. Tests put one in by hand. */
@@ -176,7 +176,7 @@ function makeView() {
 
 function makeShell(): FakeShell {
   return {
-    window: new EventEmitter(),
+    window: Object.assign(new EventEmitter(), { hide: vi.fn() }),
     header: makeView(),
     content: makeView(),
     status: null,
@@ -529,5 +529,47 @@ describe('when Widevine cannot be installed', () => {
       reopened,
       'https://soundcloud.com/discover'
     )
+  })
+})
+
+describe('closing the window', () => {
+  /** Start, with "Minimize to tray on close" set to `minimize`. */
+  async function startWith(minimize: boolean): Promise<FakeShell> {
+    mocks.settingsGet.mockImplementation((key) =>
+      key === 'general.minimizeToTray' ? minimize : true
+    )
+    mocks.whenWidevineReady.mockReturnValue(new Promise(() => undefined))
+    return start()
+  }
+  const close = (shell: FakeShell) => {
+    const preventDefault = vi.fn()
+    shell.window.emit('close', { preventDefault })
+    return preventDefault
+  }
+
+  it('keeps the app running in the tray when "Minimize to tray on close" is on', async () => {
+    const shell = await startWith(true)
+    expect(close(shell)).toHaveBeenCalledOnce()
+    expect(shell.window.hide).toHaveBeenCalledOnce()
+  })
+
+  it('closes as before when it is off, except on macOS, where closing never quits', async () => {
+    const shell = await startWith(false)
+    const darwin = process.platform === 'darwin'
+    expect(close(shell)).toHaveBeenCalledTimes(darwin ? 1 : 0)
+    expect(shell.window.hide).toHaveBeenCalledTimes(darwin ? 1 : 0)
+  })
+
+  it('still quits for real from the tray menu, and when Windows shuts down', async () => {
+    // Quit in the tray menu is `app.quit()`, which sends `before-quit` first.
+    let shell = await startWith(true)
+    app.emit('before-quit')
+    expect(close(shell)).not.toHaveBeenCalled()
+
+    // A Windows shutdown or log-off sends no `before-quit`, only the window's `session-end`.
+    shell = await startWith(true)
+    shell.window.emit('session-end')
+    expect(close(shell)).not.toHaveBeenCalled()
+    expect(shell.window.hide).not.toHaveBeenCalled()
   })
 })

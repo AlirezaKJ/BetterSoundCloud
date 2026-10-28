@@ -412,6 +412,16 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
 
+/**
+ * Whether closing the window leaves the app running, and playing. Always on macOS, as for every
+ * Mac app (the Dock brings it back). Elsewhere only with "Minimize to tray on close": there the
+ * tray icon is the way back, with Quit in its menu, and starting the app again also brings the
+ * window back, for desktops that show no tray at all.
+ */
+function keepsRunningWhenClosed(): boolean {
+  return process.platform === 'darwin' || settings.get('general.minimizeToTray')
+}
+
 /** Recreate a closed window, or raise the existing one, from every entry point. */
 function showMainWindow(): void {
   if (!shell) {
@@ -419,13 +429,17 @@ function showMainWindow(): void {
     shell = next
     if (isDev) checkPageLanguages(next.header, browserIdentity().languages)
     next.window.on('close', (event) => {
-      if (process.platform === 'darwin' && !quitting) {
-        // Keep SoundCloud's renderer (and its audio) alive until the user quits. Leave the
-        // showcase first: a hidden window left full screen keeps its own Space on macOS.
-        event.preventDefault()
-        closeShowcase(next)
-        next.window.hide()
-      }
+      if (quitting || !keepsRunningWhenClosed()) return
+      // Keep SoundCloud's renderer (and its audio) alive until the user quits. Leave the
+      // showcase first: a hidden window left full screen keeps its own Space on macOS.
+      event.preventDefault()
+      closeShowcase(next)
+      next.window.hide()
+    })
+    // Windows sends no `before-quit` when it shuts down or logs off, so this says the same:
+    // closing now is the end, not a trip to the tray.
+    next.window.on('session-end', () => {
+      quitting = true
     })
     // A full page load stops playback, and the new page reports again once its player bar
     // is drawn. Until then nothing is playing — and if the bar never turns up (a SoundCloud

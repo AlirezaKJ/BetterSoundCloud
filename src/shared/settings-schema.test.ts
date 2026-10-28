@@ -70,6 +70,7 @@ describe('schema integrity', () => {
       'discord.enabled',
       'discord.showWhenPaused',
       'general.checkForUpdates',
+      'general.minimizeToTray',
       'general.startupUrl'
     ])
   })

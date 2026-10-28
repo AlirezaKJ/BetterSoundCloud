@@ -120,13 +120,17 @@ export const SETTINGS = {
     section: 'general',
     help: 'Where you left off reopens the SoundCloud page you last had open.'
   },
+  // Read when the window closes (`keepsRunningWhenClosed` in index.ts), so it applies at once.
   'general.minimizeToTray': {
     kind: 'boolean',
     default: false,
     label: 'Minimize to tray on close',
     section: 'general',
-    help: 'The tray exists; this still needs a quitting flag so tray Quit is not swallowed.',
-    wired: false
+    help:
+      'Closing the window keeps BetterSoundCloud running, and playing, in the system tray: ' +
+      'click its icon to bring the window back, or choose Quit from its menu. Where there is ' +
+      'no tray icon, as on some Linux desktops, open BetterSoundCloud again instead. On macOS ' +
+      'the app always keeps running when its window closes.'
   },
   // The key keeps its old name so stored values carry over; it now governs downloading and
   // installing as well as checking (main/updater.ts).

@@ -209,11 +209,13 @@ describe('main window lifecycle', () => {
     expect(current.window.focus).toHaveBeenCalledOnce()
     expect(mocks.createTray).toHaveBeenCalledOnce()
 
-    // Closing on macOS keeps the same renderer alive for background playback.
+    // Closing keeps the same renderer alive for background playback: always on macOS, and
+    // elsewhere with "Minimize to tray on close", which this file's settings read as on.
+    // index.startup.test.ts covers it switched off.
     const preventDefault = vi.fn()
     current.window.emit('close', { preventDefault })
-    expect(preventDefault).toHaveBeenCalledTimes(process.platform === 'darwin' ? 1 : 0)
-    expect(current.window.hide).toHaveBeenCalledTimes(process.platform === 'darwin' ? 1 : 0)
+    expect(preventDefault).toHaveBeenCalledOnce()
+    expect(current.window.hide).toHaveBeenCalledOnce()
     expect(current.content.webContents.close).not.toHaveBeenCalled()
     app.emit('activate')
     expect(mocks.createShell).toHaveBeenCalledTimes(4)

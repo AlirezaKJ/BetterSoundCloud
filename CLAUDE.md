@@ -180,7 +180,10 @@ Rules that hold this together:
   that is still there, like settings.
 - `BaseWindow` does not own its views: the `closed` handler in `index.ts` closes each view's
   `webContents` explicitly. A new view goes in that list.
-- On macOS, closing hides the window to keep playback alive; Quit really quits.
+- Closing hides the window, keeping playback alive, on macOS always and elsewhere while "Minimize
+  to tray on close" is on (`keepsRunningWhenClosed` in index.ts); the tray icon, or starting the
+  app again, brings it back. Quit (the tray menu, so `before-quit`) really quits, and so does a
+  Windows shutdown or log-off, which sends no `before-quit`, only the window's `session-end`.
 
 **Startup order** (`index.ts`): IPC, the ad-block engine, then the window — and only then the wait
 for Widevine (`components.whenReady()`). `createShell` does not load SoundCloud; `loadSoundCloud`
