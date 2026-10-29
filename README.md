@@ -6,6 +6,16 @@ SoundCloud on your desktop, in a window of its own. BetterSoundCloud runs SoundC
 
 It is not made by SoundCloud.
 
+![BetterSoundCloud with the Dark Cloud theme, playing "BIRDS OF A FEATHER" with its synced lyrics open beside the page](docs/media/hero.webp)
+
+<a href="https://www.star-history.com/#AlirezaKJ/BetterSoundCloud&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=AlirezaKJ/BetterSoundCloud&type=Date&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=AlirezaKJ/BetterSoundCloud&type=Date" />
+    <img alt="BetterSoundCloud GitHub stars over time" src="https://api.star-history.com/svg?repos=AlirezaKJ/BetterSoundCloud&type=Date" />
+  </picture>
+</a>
+
 ## Download
 
 Get the latest version from the
@@ -111,6 +121,32 @@ installed Node.js for you (in `~/.nvm`), remove it only if nothing else of yours
 - **You choose what opens at startup**: Home, Feed, Library, or where you left off. Closing the
   window can keep it playing in the tray instead of quitting.
 - **Keyboard**: F6 moves between the bar at the top, SoundCloud's page and the lyrics pane.
+
+### What it looks like
+
+**Protected tracks play.** On the left, 0.7.x: every track of the album stays at 0:00 and skips
+to the next. On the right, 0.8.0 plays the same track.
+
+![0.7.x and 0.8.0 side by side on Deftones' album "private music": 0.7.x skips every track at 0:00, while 0.8.0 plays "my mind is a mountain"](docs/media/protected-tracks.webp)
+
+**Synced lyrics**, in a pane beside the page or full screen with the artwork.
+
+<p>
+  <img src="docs/media/lyrics-pane.webp" width="49%" alt="The lyrics pane beside a track page, with the line being sung in bold" />
+  <img src="docs/media/showcase.webp" width="49%" alt="The full-screen view: the artwork, the title and the line being sung, on a colour taken from the artwork" />
+</p>
+
+**Themes.** The built-in themes on the Library page, and a theme file being edited: the app
+changes as soon as the file is saved.
+
+<p>
+  <img src="docs/media/themes.webp" width="49%" alt="The Library page switching between the built-in themes" />
+  <img src="docs/media/live-theme-edit.webp" width="49%" alt="A theme file open in a code editor beside the app; saving a new colour turns the header and the play bar navy" />
+</p>
+
+**Discord Rich Presence** shows what you are playing on your Discord profile.
+
+<img src="docs/media/discord-card.webp" width="404" alt="Discord's card: Listening to BetterSoundCloud, Espresso by Sabrina Carpenter, with its progress bar" />
 
 ### Not back yet
 

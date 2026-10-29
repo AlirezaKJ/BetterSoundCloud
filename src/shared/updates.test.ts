@@ -16,6 +16,7 @@ const facts = (over: Partial<InstallFacts>): InstallFacts => ({
   portableDir: undefined,
   appImage: undefined,
   packageType: null,
+  updateConfig: true,
   ...over
 })
 
@@ -43,6 +44,8 @@ describe('installKind', () => {
     // An unpacked folder, a Nix build, a distro's own package (pacman writes its own type).
     expect(installKind(facts({}))).toBe('other')
     expect(installKind(facts({ packageType: 'pacman' }))).toBe('other')
+    // A Windows folder from `electron-builder --dir`: no update file, so nothing to update.
+    expect(installKind(facts({ platform: 'win32', updateConfig: false }))).toBe('other')
   })
 
   it('trusts the AppImage runtime over a package-type file', () => {

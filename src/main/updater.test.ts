@@ -1,3 +1,6 @@
+import { mkdtempSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import type { UpdateStatus } from '@shared/updates'
 
@@ -85,12 +88,16 @@ vi.mock('./relaunch', () => ({ relaunchAfterQuit: mocks.relaunch }))
 
 const realPlatform = process.platform
 const ENV_KEYS = ['APPIMAGE', 'PORTABLE_EXECUTABLE_DIR', 'CHROME_DESKTOP'] as const
+// An installed copy's resources folder: the Windows installer writes app-update.yml there.
+const RESOURCES = mkdtempSync(join(tmpdir(), 'bsc-updater-test-'))
+writeFileSync(join(RESOURCES, 'app-update.yml'), 'provider: github\n')
 
 async function load(
   platform: NodeJS.Platform,
   env: Partial<Record<(typeof ENV_KEYS)[number], string>>
 ) {
   Object.defineProperty(process, 'platform', { value: platform, configurable: true })
+  Object.defineProperty(process, 'resourcesPath', { value: RESOURCES, configurable: true })
   for (const key of ENV_KEYS) delete process.env[key]
   Object.assign(process.env, env)
   vi.resetModules()

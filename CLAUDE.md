@@ -103,7 +103,8 @@ resources/      Shipped at runtime: engine.bin (ad blocker), themes/, plugins/, 
                 soundcloud-palette-{dark,light}.css (§17), icon.png
 scripts/        Blocker engine build, VMP signing hooks, the packaged smoke check, the fuse check,
                 the Electron pin check (verify-electron.mjs), the backlog page (todo-overview.mjs)
-docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CUSTOM_PLUGINS.md
+docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CUSTOM_PLUGINS.md,
+                media/ (the README's pictures and animated WebP clips)
 ```
 
 ### Key main-process files
@@ -457,7 +458,9 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
 
 - `NowPlaying` = `{ title, artist, url, artwork, elapsed, duration, playing, liked }`. `url` is the
   track page with no query; `artwork` is the 500×500 sndcdn image; `elapsed`/`duration` are whole
-  seconds; empty string or 0 when unreadable. `null` means nothing is loaded.
+  seconds; empty string or 0 when unreadable. `null` means nothing is loaded. `url` is empty for
+  now: SoundCloud's player bar links the track as `/undefined/<slug>`, which `trackUrl` refuses
+  (seen 2026-10-29; finding another source is in docs/TODO.md, Milestone 7).
 - It updates about once a second while a track plays (the clock ticks). Seeks show up as jumps in
   `elapsed`; there is no separate seek event.
 - It resets to `null` on a full page load (`did-navigate`), a renderer crash, and window close.
@@ -664,7 +667,8 @@ context menu have the shortcut; embedded and player do not).
 - `docs/DESIGN.md` — the full design system. `docs/PRODUCT.md` — users, purpose, principles.
 - `README.md` — for users: downloads, upgrading from 0.7.x, what is new and what is not back yet,
   known issues, troubleshooting. Its feature lists are promises: change them in the same change as
-  the feature. `CONTRIBUTING.md` — building from source, the rules a pull request is checked
+  the feature, and its pictures (`docs/media/`, "What it looks like") must show the app as it is:
+  re-record one when a change makes it wrong. `CONTRIBUTING.md` — building from source, the rules a pull request is checked
   against, VMP signing and the release workflow.
 - `CHANGELOG.md` — each version's entry is its release notes, pasted onto the GitHub release. A
   change users will notice adds a line to the next version's entry in the same change.
@@ -904,7 +908,10 @@ Rules that hold this together:
   build cannot replace itself, and the .deb/.rpm would install as root with signature checks off
   (ours are unsigned), so those three only say a new version exists and link to it; a copy run from
   source, an unpacked folder, Nix or a distro build does nothing. Decided by the maintainer
-  2026-10-28. `electron-updater` is never even loaded where the reach is `none`.
+  2026-10-28. `electron-updater` is never even loaded where the reach is `none`. On Windows an
+  installed copy is told from an unpacked folder by `resources/app-update.yml`, which
+  electron-builder writes for the installer and not for `--dir` (`hasUpdateConfig`): without the
+  check, a `--dir` folder took itself for an installed copy and its updater failed (2026-10-29).
 - **We decide when to download** (`autoDownload` off): at once while the setting is on, on
   "Download and install" while it is off. Off means nothing automatic at all — no checks, no
   download, no install on quit. "Check now" works either way.

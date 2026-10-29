@@ -98,6 +98,6 @@ workflow wrote, and change "(not released yet)" in its heading to the date. Add 
 the release notes must say and the entry does not yet. The workflow writes only the checksums and
 GitHub's list of merged changes. Read the README against
 the release too: its download table, "What's new", "Not back yet" and "Known issues" must be true
-of the version being published, since the Discord card's button sends people there. Then press
+of the version being published: it is the project's front page on GitHub. Then press
 Publish. If a check failed, delete the draft (and the tag, if it was pushed) instead, fix it, and
 tag again.

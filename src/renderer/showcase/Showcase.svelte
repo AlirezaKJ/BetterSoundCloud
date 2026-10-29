@@ -386,8 +386,12 @@
 
   h1 {
     display: -webkit-box;
-    /* Pulled up by the line's leading, so the capitals start level with the sleeve's top edge. */
-    margin: -0.08em 0 0;
+    /* Pulled up by the line's leading, so the capitals start level with the sleeve's top edge.
+       The bottom padding is room for the last line's descenders, which a line height this tight
+       pushes out of the box, where overflow cut them off ("Blinding Lights" lost the tails of its
+       g's, seen 2026-10-29); the negative margin gives the space back to the layout. */
+    margin: -0.08em 0 -0.16em;
+    padding-bottom: 0.16em;
     overflow: hidden;
     font-size: var(--title);
     font-weight: 600;

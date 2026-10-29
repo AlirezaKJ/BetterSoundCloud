@@ -218,9 +218,9 @@ describe is not in 0.8.0: see its "Not back yet"._
 - SCI Feature: Added Theme And Plugins Setting Button To Play Controls Bar
 - SCI Feature: Replaced Default Browser Scrollbar
 - Added Go To Url Option To Right Click Menu
-- Updated DiscordRPC Download Link To [This](https://bsc.alirezakj.com)
+- Updated DiscordRPC Download Link To [This](https://bsc.akjstud.io/)
 - Updated Plugin Retrieving From raw.githubusercontent.com To jsdelivr.com For A Better Load
-- Created A Custom Page For BetterSoundCloud At: [bsc.alirezakj.com](https://bsc.alirezakj.com)
+- Created A Custom Page For BetterSoundCloud At: bsc.alirezakj.com (now [bsc.akjstud.io](https://bsc.akjstud.io/))
 
 ## 0.3.0 (2023-01-26)
 

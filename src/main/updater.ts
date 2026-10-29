@@ -68,9 +68,19 @@ function currentKind(): InstallKind {
     isPackaged: app.isPackaged,
     portableDir: process.env['PORTABLE_EXECUTABLE_DIR'],
     appImage: process.env['APPIMAGE'],
-    packageType: readPackageType()
+    packageType: readPackageType(),
+    updateConfig: hasUpdateConfig()
   })
   return kind
+}
+
+/** electron-builder writes this file when it builds the Windows installer, and not with `--dir`. */
+function hasUpdateConfig(): boolean {
+  try {
+    return existsSync(join(process.resourcesPath, 'app-update.yml'))
+  } catch {
+    return false
+  }
 }
 
 /** electron-builder writes `deb` or `rpm` into this file in those packages, and nowhere else. */

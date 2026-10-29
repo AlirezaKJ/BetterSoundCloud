@@ -230,6 +230,11 @@
 <style>
   .pane {
     display: grid;
+    /* minmax(0, …): an auto column grows to its widest unwrapped child. The credit line, which
+       truncates itself, still counts at full length, so a long one ("STAY (with Justin Bieber)"
+       by The Kid LAROI/Justin Bieber) widened the pane past the window and cut every line off
+       (seen 2026-10-29). */
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto 1fr auto;
     height: 100vh;
     /* The pane's edge against SoundCloud's page: the system's Hairline, nothing heavier. */

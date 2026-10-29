@@ -32,11 +32,20 @@ export type InstallFacts = {
   appImage: string | undefined
   /** `resources/package-type`, which electron-builder writes into the .deb and .rpm only. */
   packageType: string | null
+  /**
+   * Whether `resources/app-update.yml` exists. electron-builder writes it when it builds the
+   * Windows installer; a folder from `electron-builder --dir` has none, and was taken for an
+   * installed copy until 2026-10-29, so its updater failed on the missing file (ENOENT).
+   */
+  updateConfig: boolean
 }
 
 export function installKind(facts: InstallFacts): InstallKind {
   if (!facts.isPackaged) return 'source'
-  if (facts.platform === 'win32') return facts.portableDir ? 'portable' : 'installer'
+  if (facts.platform === 'win32') {
+    if (facts.portableDir) return 'portable'
+    return facts.updateConfig ? 'installer' : 'other'
+  }
   if (facts.platform === 'darwin') return 'mac'
   if (facts.platform === 'linux') {
     if (facts.appImage) return 'appimage'

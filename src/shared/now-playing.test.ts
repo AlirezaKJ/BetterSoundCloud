@@ -111,6 +111,16 @@ describe('trackUrl', () => {
     expect(trackUrl('/forss/flickermood')).toBe('')
   })
 
+  it('drops a link SoundCloud built from a missing value', () => {
+    // Its player bar linked a real track like this, seen 2026-10-29.
+    expect(trackUrl('https://soundcloud.com/undefined/blinding-lights')).toBe('')
+    expect(trackUrl('https://soundcloud.com/theweeknd/null')).toBe('')
+    // A word that merely contains one is a real name.
+    expect(trackUrl('https://soundcloud.com/nullsleep/undefined-love')).toBe(
+      'https://soundcloud.com/nullsleep/undefined-love'
+    )
+  })
+
   it('refuses an absurdly long link rather than parsing it', () => {
     expect(trackUrl('https://soundcloud.com/' + 'a'.repeat(5000))).toBe('')
   })

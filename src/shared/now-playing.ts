@@ -107,11 +107,16 @@ export function isSoundCloudUrl(raw: string): boolean {
 
 /**
  * The track's page, without the `?in=…` query SoundCloud adds to say where it was played
- * from — that describes the listening, not the track. '' for anything not on soundcloud.com.
+ * from — that describes the listening, not the track. '' for anything not on soundcloud.com,
+ * and for a link SoundCloud built from a missing value: its player bar linked Blinding Lights
+ * to `/undefined/blinding-lights` (seen 2026-10-29), a page that does not exist, which the
+ * Discord card's "Listen on SoundCloud" button would then have opened.
  */
 export function trackUrl(value: unknown): string {
   const url = parseHttpsUrl(value)
   if (!url || !isOnHost(url, 'soundcloud.com')) return ''
+  const segments = url.pathname.split('/')
+  if (segments.includes('undefined') || segments.includes('null')) return ''
   url.search = ''
   url.hash = ''
   return url.toString()
