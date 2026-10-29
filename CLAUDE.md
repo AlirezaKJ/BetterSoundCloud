@@ -666,6 +666,8 @@ context menu have the shortcut; embedded and player do not).
   known issues, troubleshooting. Its feature lists are promises: change them in the same change as
   the feature. `CONTRIBUTING.md` — building from source, the rules a pull request is checked
   against, VMP signing and the release workflow.
+- `CHANGELOG.md` — each version's entry is its release notes, pasted onto the GitHub release. A
+  change users will notice adds a line to the next version's entry in the same change.
 - `docs/RELEASE_CHECKLIST.md` — what to check before every tag, automated and by hand.
 - Themes: `docs/CUSTOM_THEMES.md` is the authors' guide. See §17.
 
