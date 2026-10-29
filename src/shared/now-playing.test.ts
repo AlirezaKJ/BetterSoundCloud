@@ -5,6 +5,7 @@ import {
   clockToSeconds,
   isSoundCloudUrl,
   readNowPlaying,
+  trackLink,
   trackUrl
 } from './now-playing'
 import type { PlayerReading } from './now-playing'
@@ -15,6 +16,8 @@ const READING: PlayerReading = {
   artworkLabel: 'Flickermood',
   artist: 'Forss',
   href: 'https://soundcloud.com/forss/flickermood?in=forss/sets/soulhack',
+  artworkHref: 'https://soundcloud.com/forss/flickermood?in=forss/sets/soulhack',
+  uploaderHref: 'https://soundcloud.com/forss',
   artworkStyle: 'url("https://i1.sndcdn.com/artworks-000000000001-abcdef-t50x50.jpg")',
   elapsed: '1:05',
   duration: '3:33',
@@ -43,6 +46,8 @@ describe('readNowPlaying', () => {
       artworkLabel: '',
       artist: '',
       href: '',
+      artworkHref: '',
+      uploaderHref: '',
       artworkStyle: '',
       elapsed: '',
       duration: '',
@@ -123,6 +128,56 @@ describe('trackUrl', () => {
 
   it('refuses an absurdly long link rather than parsing it', () => {
     expect(trackUrl('https://soundcloud.com/' + 'a'.repeat(5000))).toBe('')
+  })
+})
+
+describe('trackLink', () => {
+  const links = (href: string, artworkHref: string, uploaderHref: string) =>
+    trackLink({ ...READING, href, artworkHref, uploaderHref })
+
+  it('takes the title’s link while it is sound', () => {
+    expect(trackLink({ ...READING })).toBe('https://soundcloud.com/forss/flickermood')
+  })
+
+  it('falls back to the artwork’s link', () => {
+    expect(
+      links(
+        'https://soundcloud.com/undefined/flickermood',
+        'https://soundcloud.com/forss/flickermood',
+        ''
+      )
+    ).toBe('https://soundcloud.com/forss/flickermood')
+  })
+
+  it('puts the uploader back into a link that lost it', () => {
+    // As SoundCloud's player bar linked a real track on 2026-10-29.
+    const broken = 'https://soundcloud.com/undefined/blinding-lights?in=x'
+    expect(links(broken, broken, 'https://soundcloud.com/theweeknd')).toBe(
+      'https://soundcloud.com/theweeknd/blinding-lights'
+    )
+    // A private track's secret part comes along.
+    expect(
+      links('https://soundcloud.com/null/demo/s-AbC123', '', 'https://soundcloud.com/forss')
+    ).toBe('https://soundcloud.com/forss/demo/s-AbC123')
+  })
+
+  it('joins nothing it cannot vouch for', () => {
+    const broken = 'https://soundcloud.com/undefined/blinding-lights'
+    // The uploader's link broken too, or not a profile page.
+    expect(links(broken, '', 'https://soundcloud.com/undefined')).toBe('')
+    expect(links(broken, '', 'https://soundcloud.com/theweeknd/tracks')).toBe('')
+    expect(links(broken, '', 'https://example.com/theweeknd')).toBe('')
+    expect(links(broken, '', 'http://soundcloud.com/theweeknd')).toBe('')
+    // A link that is wrong some other way than a missing uploader.
+    expect(links('https://soundcloud.com/undefined', '', 'https://soundcloud.com/a')).toBe('')
+    expect(links('https://example.com/undefined/x', '', 'https://soundcloud.com/a')).toBe('')
+    expect(links('https://soundcloud.com/undefined/null', '', 'https://soundcloud.com/a')).toBe(
+      ''
+    )
+    expect(
+      links('https://soundcloud.com/undefined/a%20b', '', 'https://soundcloud.com/a')
+    ).toBe('')
+    expect(links('', '', 'https://soundcloud.com/theweeknd')).toBe('')
   })
 })
 

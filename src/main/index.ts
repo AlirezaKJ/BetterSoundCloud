@@ -78,7 +78,7 @@ import {
 } from './themes'
 import { isSoundCloudUrl, readNowPlaying } from '@shared/now-playing'
 import type { NowPlaying } from '@shared/now-playing'
-import { getNowPlaying, onNowPlayingChange, setNowPlaying } from './now-playing'
+import { getNowPlaying, logTrackLinks, onNowPlayingChange, setNowPlaying } from './now-playing'
 import {
   getPresenceStatus,
   onPresenceStatusChange,
@@ -606,7 +606,9 @@ function registerIpc(): void {
   }
 
   ipcMain.on(CH.trackUpdate, (e, reading: unknown) => {
-    if (fromSoundCloudPage(e)) setNowPlaying(readNowPlaying(reading))
+    if (!fromSoundCloudPage(e)) return
+    logTrackLinks(reading)
+    setNowPlaying(readNowPlaying(reading))
   })
 
   /**

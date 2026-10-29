@@ -458,9 +458,10 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
 
 - `NowPlaying` = `{ title, artist, url, artwork, elapsed, duration, playing, liked }`. `url` is the
   track page with no query; `artwork` is the 500×500 sndcdn image; `elapsed`/`duration` are whole
-  seconds; empty string or 0 when unreadable. `null` means nothing is loaded. `url` is empty for
-  now: SoundCloud's player bar links the track as `/undefined/<slug>`, which `trackUrl` refuses
-  (seen 2026-10-29; finding another source is in docs/TODO.md, Milestone 7).
+  seconds; empty string or 0 when unreadable. `null` means nothing is loaded. `url` comes from
+  the title's link, else the artwork's, else the uploader's page joined to the rest of the
+  title's (`trackLink`): SoundCloud once linked a track as `/undefined/<slug>` (2026-10-29),
+  which `trackUrl` refuses rather than send the Discord card to a page that does not exist.
 - It updates about once a second while a track plays (the clock ticks). Seeks show up as jumps in
   `elapsed`; there is no separate seek event.
 - It resets to `null` on a full page load (`did-navigate`), a renderer crash, and window close.
@@ -571,7 +572,7 @@ Dev builds log to the terminal running `npm run dev`. Tags:
 | `[net]`                                                                                          | A failed request: status, method, layer (`stream`/`licence`/`api`/`auth`/`other`), URL, and who answered (`from SoundCloud: server am/2`, `from CloudFront`, …) |
 | `[datadome]`                                                                                     | `blocked …` — SoundCloud's bot check refused a request; `challenge shown` — a captcha page loaded                                                               |
 | `[page]`                                                                                         | A console error from SoundCloud's page                                                                                                                          |
-| `[now-playing]`                                                                                  | Track, play/pause and like changes                                                                                                                              |
+| `[now-playing]`                                                                                  | Track, play/pause and like changes; the player bar's three links when the title's is broken                                                                     |
 | `[discord]`                                                                                      | Connected, what the card shows, Discord not running (once per outage), and any update Discord refused (all builds)                                              |
 | `[plugin:<id>]`, `[plugins]`                                                                     | A plugin's own log (warnings in every build), and the service's                                                                                                 |
 | `[updates]`                                                                                      | One line per change of the updater's state: checking, current, available/downloading/ready with versions and install kind, or why it failed (all builds)        |

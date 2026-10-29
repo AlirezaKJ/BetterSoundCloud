@@ -1,3 +1,4 @@
+import { cleanText, trackUrl } from '@shared/now-playing'
 import type { NowPlaying } from '@shared/now-playing'
 import { isDev } from './env'
 
@@ -43,6 +44,25 @@ export function setNowPlaying(next: NowPlaying | null): void {
       console.error('[now-playing] listener failed:', error)
     }
   }
+}
+
+let lastLinks = ''
+
+/**
+ * In dev, the player bar's three links as the page wrote them, once, whenever the title's is
+ * not a sound track link. The track's address is then chosen from the other two (`trackLink`);
+ * SoundCloud broke it once, `/undefined/blinding-lights` on 2026-10-29, and this line shows
+ * whether that choice still holds the next time.
+ */
+export function logTrackLinks(reading: unknown): void {
+  if (!isDev || typeof reading !== 'object' || reading === null) return
+  const raw = reading as Record<string, unknown>
+  if (trackUrl(raw['href'])) return
+  const link = (key: string): string => cleanText(raw[key], 300) || '-'
+  const line = `title ${link('href')} · artwork ${link('artworkHref')} · uploader ${link('uploaderHref')}`
+  if (line === lastLinks) return
+  lastLinks = line
+  console.log(`[now-playing] broken title link: ${line}`)
 }
 
 /**

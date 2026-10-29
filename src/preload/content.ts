@@ -205,6 +205,10 @@ function readPlayer(bar: Element): PlayerReading {
   const hasClass = (selector: string, className: string): boolean =>
     bar.querySelector(selector)?.classList.contains(className) ?? false
 
+  // A link's resolved `href`; '' for an element that is not a link.
+  const href = (selector: string): string =>
+    bar.querySelector<HTMLAnchorElement>(selector)?.href ?? ''
+
   const titleLink = bar.querySelector<HTMLAnchorElement>(PLAYER_BAR.titleLink)
   const artwork = bar.querySelector<HTMLElement>(PLAYER_BAR.artwork)
 
@@ -212,7 +216,9 @@ function readPlayer(bar: Element): PlayerReading {
     title: titleLink?.getAttribute('title') ?? '',
     artworkLabel: artwork?.getAttribute('aria-label') ?? '',
     artist: text(PLAYER_BAR.artist),
-    href: titleLink?.href ?? '',
+    href: href(PLAYER_BAR.titleLink),
+    artworkHref: href(PLAYER_BAR.artworkLink),
+    uploaderHref: href(PLAYER_BAR.artist),
     artworkStyle: artwork?.style.backgroundImage ?? '',
     elapsed: text(PLAYER_BAR.elapsed),
     duration: text(PLAYER_BAR.duration),

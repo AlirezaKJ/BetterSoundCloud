@@ -264,6 +264,8 @@ describe('main window lifecycle', () => {
       artworkLabel: '',
       artist: 'Ali Sorena',
       href: 'https://soundcloud.com/first-programmer/birahe',
+      artworkHref: 'https://soundcloud.com/first-programmer/birahe',
+      uploaderHref: 'https://soundcloud.com/first-programmer',
       artworkStyle: '',
       elapsed: '1:20',
       duration: '3:08',

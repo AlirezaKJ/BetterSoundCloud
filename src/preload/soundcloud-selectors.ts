@@ -23,7 +23,10 @@ export const PLAYER_BAR = {
 
   /** Its `title` attribute is the track title, and its `href` is the track's page. */
   titleLink: '.playbackSoundBadge__titleLink',
+  /** The uploader's name, a link whose `href` is the uploader's page. */
   artist: '.playbackSoundBadge__lightLink',
+  /** The artwork's link, to the track's page like the title's. */
+  artworkLink: '.playbackSoundBadge__avatar',
   /** A span whose inline `background-image` is the artwork, and whose `aria-label` is the title. */
   artwork: '.playbackSoundBadge__avatar .image__lightOutline span',
 

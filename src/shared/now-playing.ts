@@ -22,6 +22,10 @@ export type PlayerReading = {
   artist: string
   /** The title link's resolved `href`. */
   href: string
+  /** The artwork link's resolved `href`, the track's page too. */
+  artworkHref: string
+  /** The uploader name's resolved `href`, the uploader's page. */
+  uploaderHref: string
   /** The artwork's inline `background-image`, e.g. `url("https://i1.sndcdn.com/…-t50x50.jpg")`. */
   artworkStyle: string
   /** The visible clock text, e.g. `1:05`. */
@@ -70,7 +74,7 @@ export function readNowPlaying(input: unknown): NowPlaying | null {
   return {
     title,
     artist: cleanText(raw['artist'], MAX_ARTIST),
-    url: trackUrl(raw['href']),
+    url: trackLink(raw),
     artwork: artworkUrl(raw['artworkStyle']),
     elapsed: clockToSeconds(raw['elapsed']),
     duration: clockToSeconds(raw['duration']),
@@ -120,6 +124,50 @@ export function trackUrl(value: unknown): string {
   url.search = ''
   url.hash = ''
   return url.toString()
+}
+
+/**
+ * The track's page, from the best of the player bar's three links: the title's, then the
+ * artwork's, and when both are broken, the uploader's page joined to the rest of the title's.
+ *
+ * The title's link is almost always sound. Once, on 2026-10-29, it was
+ * `/undefined/blinding-lights`, which `trackUrl` refuses, and the Discord card lost its
+ * "Listen on SoundCloud" button with it. On 2026-10-30, across 27 readings of about 20 tracks,
+ * the artwork's link was always the title's and the uploader's link always the first part of
+ * it, so those two stand in for it. The dev log prints all three when the title's is broken.
+ */
+export function trackLink(raw: Record<string, unknown>): string {
+  return (
+    trackUrl(raw['href']) ||
+    trackUrl(raw['artworkHref']) ||
+    joinUploader(raw['uploaderHref'], raw['href'])
+  )
+}
+
+/** A SoundCloud permalink: what its user and track addresses are made of. */
+const PERMALINK = /^[A-Za-z0-9_-]+$/
+
+/**
+ * `https://soundcloud.com/<uploader>/<the rest>`, from a track link missing only its first
+ * part (`/undefined/blinding-lights`) and the uploader's own link (`/theweeknd`). '' unless
+ * both are plain soundcloud.com addresses made of permalinks.
+ */
+function joinUploader(uploaderHref: unknown, brokenHref: unknown): string {
+  const uploader = parseHttpsUrl(uploaderHref)
+  const broken = parseHttpsUrl(brokenHref)
+  if (!uploader || !broken) return ''
+  if (!isOnHost(uploader, 'soundcloud.com') || !isOnHost(broken, 'soundcloud.com')) return ''
+
+  const user = uploader.pathname.split('/').filter(Boolean)
+  const [first, ...rest] = broken.pathname.split('/').filter(Boolean)
+  if (user.length !== 1 || (first !== 'undefined' && first !== 'null') || rest.length === 0) {
+    return ''
+  }
+  const parts = [...user, ...rest]
+  const sound = parts.every(
+    (part) => PERMALINK.test(part) && part !== 'undefined' && part !== 'null'
+  )
+  return sound ? `https://soundcloud.com/${parts.join('/')}` : ''
 }
 
 /**
