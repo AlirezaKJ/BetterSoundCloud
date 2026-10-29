@@ -28,7 +28,8 @@
     "dist:win": "npm run build && electron-builder --win",
     "dist:mac": "npm run build && electron-builder --mac",
     "dist:linux": "npm run build && electron-builder --linux",
-    "smoke:packaged": "node scripts/smoke-packaged.mjs"
+    "smoke:packaged": "node scripts/smoke-packaged.mjs",
+    "todo": "node scripts/todo-overview.mjs --open"
   },
   "dependencies": {
     "@ghostery/adblocker": "2.18.2",

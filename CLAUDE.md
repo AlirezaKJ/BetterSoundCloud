@@ -25,6 +25,7 @@ CLAUDE.md is worse than none, because it gets trusted.
 | `npm run dist:win` etc.                     | Installers. Release builds need `STRICT_VMP_SIGNING=true` (see README)                                                         |
 | `npm run smoke:packaged`                    | Launch the packed app on a fresh profile and check it through our views (docs/RELEASE_CHECKLIST.md)                            |
 | `npm run blocker:build`                     | Recompile `resources/engine.bin` + `engine.meta.json`; commit both                                                             |
+| `npm run todo`                              | `docs/TODO.md` as a page to read at a glance (`docs/todo-overview.html`, gitignored, rebuilt on every run) and open it         |
 | `npx prettier --write <files>`              | Fix formatting before `check`                                                                                                  |
 
 - Dev runs from its own profile, `%APPDATA%/BetterSoundCloud (dev)`, set in `src/main/index.ts`.
@@ -101,7 +102,7 @@ src/shared/     Pure TypeScript shared by main, preload and renderer. No Electro
 resources/      Shipped at runtime: engine.bin (ad blocker), themes/, plugins/, minimal-nav.css,
                 soundcloud-palette-{dark,light}.css (§17), icon.png
 scripts/        Blocker engine build, VMP signing hooks, the packaged smoke check, the fuse check,
-                the Electron pin check (verify-electron.mjs)
+                the Electron pin check (verify-electron.mjs), the backlog page (todo-overview.mjs)
 docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CUSTOM_PLUGINS.md
 ```
 

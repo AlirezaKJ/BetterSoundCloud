@@ -23,3 +23,6 @@ Thumbs.db
 # resources/engine.bin and IS committed; an unanchored `engine.bin` here silently swallowed
 # it, so the file appeared to build fine and shipped missing.
 /engine.bin
+
+# Generated from docs/TODO.md by `npm run todo`; rebuilt on demand, so never stale in git.
+/docs/todo-overview.html
