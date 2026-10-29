@@ -94,5 +94,8 @@ when one is refused, write down what SoundCloud said rather than retrying.
 ## 4. Publish
 
 Edit the draft's notes: what changed, and anything above that the release notes must say. The
-workflow writes only the checksums and GitHub's list of merged changes. Then press Publish. If a
-check failed, delete the draft (and the tag, if it was pushed) instead, fix it, and tag again.
+workflow writes only the checksums and GitHub's list of merged changes. Read the README against
+the release too: its download table, "What's new", "Not back yet" and "Known issues" must be true
+of the version being published, since the Discord card's button sends people there. Then press
+Publish. If a check failed, delete the draft (and the tag, if it was pushed) instead, fix it, and
+tag again.

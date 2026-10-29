@@ -22,7 +22,7 @@ CLAUDE.md is worse than none, because it gets trusted.
 | `npm test`                                  | Vitest, once                                                                                                                   |
 | `npm run build`                             | `check` then `electron-vite build` into `out/`                                                                                 |
 | `npm run pack`                              | Unpacked app into `release/`                                                                                                   |
-| `npm run dist:win` etc.                     | Installers. Release builds need `STRICT_VMP_SIGNING=true` (see README)                                                         |
+| `npm run dist:win` etc.                     | Installers. Release builds need `STRICT_VMP_SIGNING=true` (see CONTRIBUTING.md)                                                |
 | `npm run smoke:packaged`                    | Launch the packed app on a fresh profile and check it through our views (docs/RELEASE_CHECKLIST.md)                            |
 | `npm run blocker:build`                     | Recompile `resources/engine.bin` + `engine.meta.json`; commit both                                                             |
 | `npm run todo`                              | `docs/TODO.md` as a page to read at a glance (`docs/todo-overview.html`, gitignored, rebuilt on every run) and open it         |
@@ -662,7 +662,10 @@ context menu have the shortcut; embedded and player do not).
 - `docs/TODO.md` — the working backlog: milestones in order, "Open decisions" (maintainer's call;
   do not invent answers), "Explicitly declined" (do not re-propose).
 - `docs/DESIGN.md` — the full design system. `docs/PRODUCT.md` — users, purpose, principles.
-- `README.md` — setup, VMP signing for release builds, platform notes.
+- `README.md` — for users: downloads, upgrading from 0.7.x, what is new and what is not back yet,
+  known issues, troubleshooting. Its feature lists are promises: change them in the same change as
+  the feature. `CONTRIBUTING.md` — building from source, the rules a pull request is checked
+  against, VMP signing and the release workflow.
 - `docs/RELEASE_CHECKLIST.md` — what to check before every tag, automated and by hand.
 - Themes: `docs/CUSTOM_THEMES.md` is the authors' guide. See §17.
 
