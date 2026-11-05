@@ -1,3 +1,28 @@
-node_modules
+node_modules/
 out/
-result
+dist/
+release/
+*.log
+npm-debug.log*
+
+# Local env / secrets, such as EVS_ACCOUNT_NAME + EVS_PASSWD for Castlabs VMP signing.
+.env
+.env.*
+
+# The v0.7.x community login workaround. Never commit a live session dump.
+cookies.json
+
+# Editors / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# Anchored to the root ON PURPOSE. The shipped ad-blocking engine lives at
+# resources/engine.bin and IS committed; an unanchored `engine.bin` here silently swallowed
+# it, so the file appeared to build fine and shipped missing.
+/engine.bin
+
+# Generated from docs/TODO.md by `npm run todo`; rebuilt on demand, so never stale in git.
+/docs/todo-overview.html

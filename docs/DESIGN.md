@@ -1,0 +1,735 @@
+---
+name: BetterSoundCloud
+description: The quiet frame around SoundCloud — a 32px chrome that holds someone else's app without competing with it.
+colors:
+  bg-primary: '#f2f2f2'
+  bg-secondary: '#ffffff'
+  bg-hover: 'rgb(0 0 0 / 8%)'
+  text-primary: '#1a1a1a'
+  text-secondary: '#5c5c5c'
+  text-disabled: '#a8a8a8'
+  border: 'rgb(0 0 0 / 12%)'
+  accent: '#e64d00'
+  focus: 'var(--bsc-accent)'
+  danger: '#d33'
+  scrim: 'rgb(0 0 0 / 45%)'
+typography:
+  title:
+    fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
+    fontSize: '15px'
+    fontWeight: 600
+  body:
+    fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
+    fontSize: '14px'
+    fontWeight: 400
+  label:
+    fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
+    fontSize: '13px'
+    fontWeight: 400
+  caption:
+    fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
+    fontSize: '12px'
+    fontWeight: 400
+    lineHeight: 1.4
+  overline:
+    fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
+    fontSize: '11px'
+    fontWeight: 600
+    letterSpacing: '0.03em'
+rounded:
+  sm: '6px'
+  md: '10px'
+spacing:
+  xs: '4px'
+  sm: '8px'
+  md: '12px'
+  lg: '16px'
+  xl: '20px'
+components:
+  button-chrome:
+    backgroundColor: 'transparent'
+    textColor: '{colors.text-primary}'
+    rounded: '{rounded.sm}'
+    width: '30px'
+    height: '26px'
+  button-chrome-hover:
+    backgroundColor: '{colors.bg-hover}'
+  button-chrome-disabled:
+    textColor: '{colors.text-disabled}'
+  button-close-hover:
+    backgroundColor: '{colors.danger}'
+    textColor: '#ffffff'
+  nav-item:
+    backgroundColor: 'transparent'
+    textColor: '{colors.text-secondary}'
+    typography: '{typography.label}'
+    rounded: '{rounded.sm}'
+    padding: '8px 10px'
+  nav-item-active:
+    backgroundColor: '{colors.bg-hover}'
+    textColor: '{colors.text-primary}'
+  field:
+    backgroundColor: '{colors.bg-secondary}'
+    textColor: '{colors.text-primary}'
+    typography: '{typography.label}'
+    rounded: '{rounded.sm}'
+    padding: '6px 8px'
+  panel:
+    backgroundColor: '{colors.bg-primary}'
+    rounded: '{rounded.md}'
+    width: '760px'
+    height: '560px'
+---
+
+# Design System: BetterSoundCloud
+
+## Overview
+
+**Creative North Star: "The Quiet Frame"**
+
+BetterSoundCloud is a frame around someone else's picture. SoundCloud's own web app renders
+every piece of music UI — the player, the waveforms, the artwork, the navigation — inside a
+content view that this design system deliberately never touches. What we own is a 32px strip
+along the top, a settings panel that floats over it, and future overlays. That is the entire
+canvas, and the frame's job is to hold the picture without competing with it.
+
+This produces a system that is almost aggressively restrained. There is no display type, no
+hero, no imagery, no gradient, and no decorative colour anywhere. Controls are transparent
+until you hover them. The largest text in the product is 15px, outside two named exceptions
+for content read at a distance: lyric lines, and the full-screen showcase. The accent appears only where
+something is focused, selected, or on. A user should be able to look at this app all day and
+never notice the chrome — and then find every control exactly where they left it the moment
+they reach for one.
+
+The restraint is architectural before it is aesthetic. Our chrome lives outside SoundCloud's
+document precisely so their releases cannot break it, and that same separation is why the frame
+must not imitate their surface language: two competing music UIs stacked in one window would
+read as a skin, not a client. Depth follows the same logic — surfaces are flat and separated by
+hairline borders, and a shadow appears only when something floats above the app and takes over
+input.
+
+**Key Characteristics:**
+
+- One 32px chrome strip; nothing else is permanently on screen
+- Flat at rest — borders separate, shadows signal modality
+- Two radii, two shadows, one type family, one accent
+- Controls invisible until hovered; icons are 15px stroked outlines
+- Every colour defined twice, light and dark, and never hard-coded outside the token file
+- Honesty rendered visually: unbuilt features appear disabled and labelled, never functional-looking
+
+## Colors
+
+A neutral grey system carrying a single inherited accent. Every token is defined twice — a
+light default on `:root` and a dark override under `prefers-color-scheme: dark` — and the
+frontmatter above records the light default.
+
+### Primary
+
+- **SoundCloud Orange** (`#e64d00` / `#f50`): The accent, inherited from the host application
+  rather than invented for this one. It signals kinship — this is a SoundCloud client, not a
+  separate product wearing SoundCloud as a data source. It appears on focus rings, the checkbox
+  tick and "on" states, and nowhere else. Dark mode uses SoundCloud's own `#f50` (5.8:1 on Shell
+  Grey); light mode deepens it one step, because `#f50` is only 2.86:1 on `#f2f2f2`, under the 3:1
+  a focus ring or a state mark needs (measured 2026-10-29, pinned by a test). SoundCloud's page
+  keeps its own orange either way.
+- **Focus** (`--bsc-focus`): the keyboard focus ring. The accent, unless a theme sets it apart:
+  a theme whose accent is meant to be quiet must still show where the keyboard is, at 3:1.
+
+### Neutral
+
+The greys carry the entire interface. Each pair is light / dark.
+
+- **Shell Grey** (`#f2f2f2` / `#121212`): The chrome background and the settings panel body.
+  The surface the user actually looks at.
+- **Field White** (`#ffffff` / `#1c1c1c`): One step of separation from the shell, used for
+  inputs and selects so a control reads as inset rather than painted on.
+- **Ink** (`#1a1a1a` / `#f2f2f2`): Primary text and active icon strokes.
+- **Muted Ink** (`#5c5c5c` / `#a0a0a0`): Secondary text — help copy, the window title, inactive
+  navigation items.
+- **Ghost Ink** (`#a8a8a8` / `#5c5c5c`): Disabled controls and the "Not implemented yet" note.
+  Note the pair inverts: what is muted in light is disabled in dark and vice versa.
+- **Hairline** (`rgb(0 0 0 / 12%)` / `rgb(255 255 255 / 14%)`): Every divider and control
+  border. Alpha, not solid, so it works over any surface.
+- **Hover Wash** (`rgb(0 0 0 / 8%)` / `rgb(255 255 255 / 10%)`): The only hover treatment in the
+  system. Alpha for the same reason.
+
+### Tertiary
+
+- **Danger Red** (`#d33`): Reserved entirely for the close button's hover state, where it turns
+  a red field with white glyph. It is the one moment of saturated colour in the product, and it
+  is a warning, not decoration.
+- **Scrim** (`rgb(0 0 0 / 45%)`): Dims SoundCloud behind the settings panel. Not a surface —
+  a modality signal.
+
+### Named Rules
+
+**The Borrowed Accent Rule.** The accent is SoundCloud's, not ours. It marks state — focused,
+selected, on — and never decorates. If orange appears somewhere that is not a state, remove it.
+
+**The Two-Mode Rule.** Every colour exists twice and is consumed only through a
+`--bsc-*` custom property. A literal hex outside `tokens.css` is a bug: it will be correct in
+one mode and wrong in the other. The single sanctioned exception is `#fff` on the danger hover,
+which must stay white in both modes.
+
+## Typography
+
+**Display Font:** none. This system has no display tier.
+**Body Font:** the platform UI stack — `system-ui, -apple-system, 'Segoe UI', Roboto,
+'Helvetica Neue', Arial, sans-serif`
+**Label/Mono Font:** none.
+
+**Character:** Deliberately anonymous. The chrome uses whatever the operating system uses, so it
+reads as part of the window rather than as branded material. A webfont here would be both a
+personality the frame should not have and a runtime network load the renderer's CSP forbids.
+
+### Hierarchy
+
+- **Title** (600, 15px): The settings panel heading. The largest text in the entire product.
+- **Body** (400, 14px): Setting names — the primary reading size in the panel.
+- **Label** (400, 13px): Navigation items, inputs, selects. The dense working tier.
+- **Caption** (400, 12px, line-height 1.4): Help text under a setting, and the window title in
+  the chrome strip (500 weight there). Always Muted Ink.
+- **Overline** (600, 11px, +0.03em, uppercase): One use only — the "Not implemented yet" badge.
+
+### Named Rules
+
+**The 15px Ceiling Rule.** Nothing in BetterSoundCloud's own UI is larger than 15px. The frame
+has no headlines because the frame has nothing to announce. If a surface seems to need display
+type, it probably belongs to SoundCloud's view, not ours.
+
+**The Lyrics Exception** (approved 2026-10-28). One tier sits above the ceiling: **lyric lines, 20px,
+line-height 1.4**, in the lyrics pane only. Lyrics are not chrome; they are the content of that
+pane, read from arm's length while the listener's attention is elsewhere. Everything around them —
+the pane's title, its captions, its buttons — keeps the 15px ceiling. The exception does not
+transfer: no other surface may use it.
+
+**The Showcase Exception** (approved 2026-10-28). The full-screen showcase is read from across a
+room, so its **title block and lyric lines** go past the ceiling, sized from the screen (the smaller
+of `vw` and `vh`, so wide and tall screens keep one proportion): the track title
+`clamp(28px, min(3.2vw, 5.6vh), 64px)` at 600, line-height 1.06, −0.02em; the uploader beneath it,
+part of the same block, `clamp(16px, min(1.3vw, 2.3vh), 26px)` in Muted Ink; lyric lines
+`clamp(22px, min(2.2vw, 3.9vh), 44px)` at 600, line-height 1.22. Everything else there — the clock,
+the hint, the credit, the close button — keeps the 15px ceiling. Like the Lyrics Exception, it does
+not transfer.
+
+**The System Stack Rule.** No webfonts, ever. The chrome inherits the OS UI font so it belongs
+to the window; the CSP on every renderer blocks remote font loads regardless.
+
+## Layout
+
+Two independent surfaces, never one page.
+
+**The chrome strip** is a fixed 32px row: a flex line of `[back · forward · reload]`, a centred
+elided title that takes the remaining space, and `[settings · minimize · maximize · close]` on
+the right. It is a window drag region, and every interactive child opts back out with
+`-webkit-app-region: no-drag`. It does not scroll, wrap, or change height at any window size.
+
+**The settings panel** is a centred card, `min(760px, 100% − 48px)` by
+`min(560px, 100% − 48px)`, laid out as a two-column grid — a 160px navigation rail beside a
+scrolling content column — with a header row spanning both. Only the content column scrolls; the
+card itself never does.
+
+Spacing is an observed rhythm rather than an enforced scale: 2px between adjacent chrome
+buttons, 4px in the chrome flex line, 8–12px inside controls, 16–20px for panel padding, and a
+48px minimum breathing margin around the floating card. Setting rows are 12px vertical padding
+separated by hairlines, with the last row's border removed.
+
+### Named Rules
+
+**The 32px Rule.** The chrome is 32px and never grows. Every new affordance either fits in that
+strip, moves into settings, or becomes an overlay. Growing the frame steals from the picture.
+
+## Elevation & Depth
+
+**Flat at rest. Depth means modality.**
+
+Surfaces do not float. Separation is done with 1px hairline borders and a single tonal step
+between the shell and field colours — nothing in the chrome or the panel body carries a shadow.
+
+A shadow appears in exactly one circumstance: something has floated above the application and
+taken over input. Today that is the settings panel, the right-click menu, the Go to URL
+prompt and the "not responding" dialog; tomorrow it is any dialog or overlay. The page-status
+surface is deliberately not on that list: when it stands in for SoundCloud's page it IS the
+page, so it is flat. For a dialog, two things arrive together — a
+scrim dimming everything behind, and a two-layer shadow under the floating surface. A
+transient popup — the context menu — gets the shadow alone: it takes input, but any click
+dismisses it, and dimming the page for something that brief would read as noise.
+
+### Shadow Vocabulary
+
+- **Overlay** (`box-shadow: 0 12px 40px rgb(0 0 0 / 35%), 0 2px 8px rgb(0 0 0 / 20%)`): The only
+  shadow in the system. A wide ambient layer for separation from the page beneath, plus a tight
+  contact layer so the card's edge stays crisp. Paired with the scrim on dialogs; alone on the
+  context menu.
+
+### Named Rules
+
+**The Modality Rule.** Shadow is not decoration and not hierarchy — it means "this has taken
+over input". A surface that does not block interaction does not get a shadow. If you reach for
+elevation to make something look important, use a border and a tonal step instead.
+
+**The Transient Rule.** The scrim marks a dialog, something the user has to finish or cancel.
+A popup that any click closes — a menu — floats without one. If a surface needs a scrim to be
+understood, it is a dialog and should behave like one.
+
+## Shapes
+
+Rectangles with two radii and nothing else.
+
+- **6px** on every control: chrome buttons, navigation items, inputs, selects, the panel's close
+  button. Enough to read as a soft target, not enough to read as a pill.
+- **10px** on the surfaces that float: the settings card, the context menu and the Go to URL
+  prompt. The menu's 10px is its 6px item radius plus its 4px padding, so the corners are
+  concentric rather than a third number.
+
+There are no pills, no circles, no asymmetric corners, no clipping shapes, and no decorative
+geometry anywhere. Borders are always 1px and always the Hairline alpha token.
+
+Icons are a matched family: 24-unit viewBox rendered at 15×15, `fill: none`, `stroke:
+currentcolor`, 1.6 stroke width (1.8 on the panel's close button), round caps and joins. They
+inherit colour from their button, which is what makes a single hover rule cover both the field
+and the glyph.
+
+### Named Rules
+
+**The Two Radii Rule.** 6px for anything you interact with, 10px for anything that floats. A
+third radius is a new concept — justify it or drop it.
+
+## Components
+
+### Buttons
+
+Chrome buttons are the signature component and set the tone for everything else.
+
+- **Shape:** softly rounded (6px), 30×26px — deliberately small, sized for a 32px strip.
+- **Rest:** fully transparent background, glyph inheriting the current text colour. Invisible
+  until sought.
+- **Hover:** the Hover Wash alpha fills the rounded rect. Nothing moves, nothing scales.
+- **Focus:** a 2px outline in `--bsc-focus` (the accent), inset by 2px so it never clips against
+  a neighbour.
+- **Reload becomes Stop** while SoundCloud's page itself loads: the same button, its glyph a
+  cross and its label "Stop loading", so keyboard focus survives the change. A move inside the
+  page, or a frame within it such as the sign-in box, is not "loading".
+- **Disabled:** glyph drops to Ghost Ink; no hover response. Used for back/forward when there is
+  no history.
+- **Close, hover:** the one exception — the field fills Danger Red and the glyph turns white.
+- **Cursor:** `default`, not `pointer`. These are window chrome, not web links.
+
+### Navigation
+
+The settings rail — a vertical stack of section buttons, 2px apart.
+
+- **Rest:** transparent, Muted Ink, 13px, left-aligned, 8px × 10px padding, 6px radius.
+- **Hover:** Hover Wash.
+- **Active:** Hover Wash plus Ink text at 600 weight. Weight, not colour, carries selection.
+- Labels are written out, never derived from a key. Capitalising identifiers produced "Lastfm";
+  the section list now stores real names.
+
+### Inputs / Fields
+
+- **Style:** Field White background, 1px Hairline border, 6px radius, 6px × 8px padding, 13px
+  text, 140px minimum width so a row of controls aligns down the right edge.
+- **Checkbox:** 16×16 native control with `accent-color` set to SoundCloud Orange — the second
+  and last place the accent appears.
+- **Disabled:** 50% opacity and a `not-allowed` cursor, paired with the Overline badge in the
+  label column.
+
+### Cards / Containers
+
+- **Corner Style:** 10px.
+- **Background:** Shell Grey, opaque, over a scrimmed page.
+- **Border:** 1px Hairline, in addition to the shadow — the border is what keeps the edge legible
+  in dark mode where the shadow largely disappears.
+- **Internal Padding:** 10–16px in the header row, 16px × 20px in the content column.
+- **Shadow Strategy:** the Overlay shadow, per Elevation & Depth.
+
+### Context Menu
+
+The right-click menu over SoundCloud's page. It lives in its own transparent view
+(`src/renderer/context-menu`), so nothing here is a node in their document.
+
+- **Surface:** Shell Grey, 1px Hairline, 10px radius, the Overlay shadow, no scrim. 4px inner
+  padding, 208–320px wide, and it scrolls rather than clips when a window is shorter than it.
+- **Placement:** top-left corner at the cursor; flipped to the other side of the cursor when it
+  would run off an edge, never clamped so that it covers the click.
+- **Note row:** one Caption line above the items, Muted Ink, ellipsized, saying which link,
+  image or quoted text the menu is about — so "Copy link" says which link. Absent in a text
+  field, where the field is the context.
+- **Items:** 28px rows, 13px Ink label, a 15px outline glyph in Muted Ink on a 16px column, 6px
+  radius. One highlight — the Hover Wash — driven by state, so the mouse and the keyboard can
+  never show two. Keyboard focus adds the 2px accent outline on top. Disabled items drop to
+  Ghost Ink and are skipped by the arrow keys. Separators are 1px Hairline with 4px × 8px
+  margins.
+- **Only items that can act appear.** "Copy clean link" is listed only when the link carries
+  something to strip; "Inspect element" only in dev builds; Cut/Paste only in a text field.
+- **Motion:** a 100ms fade with a 4px rise on open, none on close — a menu that lingers after a
+  click reads as slow. Reduced motion removes the fade.
+- **Cursor:** `default`, as on every chrome control.
+
+### Prompt
+
+The Go to URL prompt, and the model for any small dialog that asks for one thing.
+
+- A 460px card at `top: 96px`, centred, 16px padding, the Overlay shadow, and — because it is a
+  dialog — the scrim. It enters with the settings panel's 180ms fly.
+- A Body-size label, then one Field with the accent caret and a transparent "Go" button
+  beside it, then a Caption help line beneath that doubles as the error line. Errors are
+  written in Ink, not red, and say what to try; the field's text is reselected so the next
+  attempt overwrites it.
+
+### Page status
+
+What the app says while SoundCloud's page cannot be shown: Widevine setting up, the first page
+loading, a failed load, a crash, Widevine failing, a hang. It lives in its own view over the
+content area (`src/renderer/status`); every word comes from `describePageStatus` in
+`src/shared/page-status.ts`, so the wording is tested rather than scattered through markup.
+
+- **It only appears when there is something to say.** A launch whose first page arrives within a
+  second shows nothing extra; that is every normal launch.
+- **Standing in for the page** (every status but a hang): an opaque Shell Grey surface, flat, no
+  shadow and no scrim — nothing is floating, there is simply no page behind it. One left-aligned
+  column, `min(440px, 100%)`, sitting a little above centre. Our own 32px bar comes back while it
+  shows, so the window can always be moved and closed.
+- **Over the page** (a hang only): the Prompt's dialog — 460px card at `top: 96px`, scrim, the
+  Overlay shadow, the 180ms fly. The frozen page stays visible behind it, because it may recover.
+- **Content, top to bottom:** a Title, one Body paragraph in Muted Ink, an optional Caption
+  detail line (the Chromium error code or the Widevine reason, selectable so it can be pasted
+  into a bug report), the wait line when something is in progress, then the buttons.
+- **Buttons:** the Prompt's "Go" button, 6px radius, Hairline border, 13px. The first one is the
+  default and sits one tonal step forward on Field White; it holds focus, so Enter does the
+  expected thing. Emphasis comes from the neutrals, never the accent. A button whose action is in
+  progress says so in its label ("Trying again…") and goes to Ghost Ink.
+- **Voice:** name the problem, then the way forward, in plain words. No exclamation marks, no
+  "Oops". Promise an automatic retry only where one happens — a test pins that.
+- **"Couldn't set up playback"** has three buttons: Restart BetterSoundCloud (the default, since it
+  is the fix), Continue without Widevine, and Quit. Continuing brings back the auto-skip bug on
+  purpose, so the body says what it costs, in the symptom the user would see ("greyed out and
+  skip"), before anyone can press it. It also says SoundCloud opens by itself once the download
+  finishes, which it does.
+
+### Scrollbars
+
+One treatment across both surfaces — our own panels and the SoundCloud view.
+
+- **Width:** 2px (Chrome's default is 15px, which reads as a grey slab down the side of the
+  page and collides with the window buttons drawn over SoundCloud's header).
+- **Track and corner:** fully transparent. Only the thumb is ever visible.
+- **Thumb:** 4px radius. `--bsc-text-disabled` in our own UI; mid-grey alpha
+  (`rgb(128 128 128 / 40%)`) on SoundCloud's page, because our tokens do not exist on their
+  origin and their theme may be either light or dark.
+- **Hover and active:** the accent. This is the one place the accent appears outside focus
+  and selection, and it still obeys the Borrowed Accent Rule — grabbing a scrollbar is a
+  state, not decoration.
+
+### Lyrics pane
+
+Synced lyrics, docked at the right of SoundCloud's page (`src/renderer/lyrics`), from under its
+header to above its play bar, so SoundCloud stays usable beside it and its player stays reachable
+below. 360px wide, never more than two fifths of the window.
+
+- **Flat, because it does not take over input**: Shell Grey, one 1px Hairline down its left edge,
+  no shadow, no scrim. It is a pane, not a dialog.
+- **Header**: the track's title (Title, 15px 600, ellipsized), the uploader in Caption beneath, and
+  the settings panel's close button (Danger Red on hover).
+- **Lines**: the Lyrics Exception's 20px. Every line is Muted Ink; the line being sung is Ink at 600. Weight and ink carry it — no accent, no bar, no glow, no scale. Colour changes over 160ms
+  ease-out; nothing else moves but the scroll. The current line rests a third of the way down,
+  reached with a smooth scroll. A pause between lines is a 24px Hairline rest that widens to 48px
+  while current — never a glyph. Lines fade out under the header and footer (a 20px / 28px mask)
+  rather than being cut.
+- **Scrolling by hand** stops the following and shows "Back to the current line", the Prompt's
+  button, bottom right of the lines; a new track resumes following.
+- **Footer**: for timed lyrics, a "Timing" row — two chrome buttons (chevrons, "Earlier" /
+  "Later", half a second each) around the offset in Caption tabular figures ("On time", "−1.0 s");
+  then the credit, one Caption line: "From LRCLIB · “Track” by Artist", whose tooltip says what is
+  sent to lrclib.net and when.
+- **Every other state is words, left-aligned at the top**: Body for what happened, Caption for what
+  it means — "Looking up lyrics…" (with the page-status wait line), "Instrumental.", "No lyrics
+  found." (saying what was searched), "Couldn’t reach LRCLIB." (with "Try again"), "Nothing is
+  playing." Untimed lyrics are shown in Ink, under one Caption line saying they will not follow the
+  song.
+- **Keyboard**: focused on open, so Escape closes it; the lines are a focusable region so they can
+  be scrolled by keyboard; arrow keys and paging stop the following like the wheel does.
+- **Reduced motion**: no smooth scroll, no colour transition, no wait line.
+
+The player-bar lyrics button is pressed while the pane is open, and turns the accent — the one
+state that button has. The showcase button beside it has no pressed state: the showcase covers it
+while open.
+
+### Showcase
+
+The playing track as a record sleeve, over the whole screen (`src/renderer/showcase`): the
+artwork as a square print on the left; its title, uploader and progress beside it like liner notes,
+capitals level with the sleeve's top edge; the line being sung below them, resting on the sleeve's
+bottom edge. On a tall screen the sleeve sits above the notes, at their width.
+
+- **One flat colour behind it, taken from the artwork**: the hue that holds the most colour,
+  deepened until Ink reads at 7:1 (AAA, for across a room). No blur, no gradient, no glow — the
+  anti-reference stands; this is a colour, not the artwork smeared. The colour changes with the
+  track over 900ms, so it is felt rather than seen. Before the artwork arrives, and for a sleeve
+  with hardly any colour, it is dark Shell Grey or the sleeve's own grey. Its inks are computed
+  for that colour and checked: Ink 7:1, Muted Ink 4.5:1; the showcase is always deep, in either
+  mode, and follows no theme.
+- **The sleeve**: square corners (a print has none), flat, with a hairline of Ink at 12% so a dark
+  sleeve keeps its edge; empty while it loads or when there is none, at Ink 5%. A new artwork fades
+  in over 320ms.
+- **Progress** is a 2px rule, Ink over a faint track, with no knob — nothing here can seek. It
+  glides through each second rather than stepping. The clock beside it is 15px tabular figures,
+  elapsed in Ink and the length in Muted Ink; "Paused" in Muted Ink before it while paused.
+- **Lyrics**: every line at the same 600 weight, so nothing re-wraps as the song moves; the current
+  line is Ink, the ones to come Muted Ink, fading out below. The authored moment of the surface is
+  the line change: the column moves up over 560ms ease-out (expo-like) as the sung line fades away.
+  A pause between lines is a 2px rest that doubles in length while current — never a glyph. Only
+  timed lyrics show; untimed or missing lyrics leave the space empty, and the pane is where to read
+  them.
+- **The only controls are at the corners**: "Press Esc to leave" and the settings close button at
+  the top right, the "Lyrics from LRCLIB" credit at the bottom left. They fade (240ms) 2.5s after
+  the pointer stops, with the cursor, and return on any movement or key; keyboard focus keeps them.
+- **Nothing playing**: the empty sleeve, "Nothing is playing" at the title size in Muted Ink, and
+  one line saying what to do.
+- **Reduced motion**: no colour change, line movement, fade or glide; everything jumps.
+
+### Signature Component: the pending setting
+
+A setting whose feature does not exist yet renders as a full row — label, help text, and a real
+control — with the control disabled and an Overline badge reading **NOT IMPLEMENTED YET** beneath
+the help text. The label drops to Ghost Ink.
+
+This exists because the settings schema is written ahead of the features, and a toggle that
+silently does nothing is worse than one that admits it. It is the clearest visual expression of
+the product's voice, and it should be reused for any capability that ships its shape before its
+behaviour.
+
+### The status line
+
+The pending setting's sibling. Where that one says a feature does not exist yet, this one says
+whether a feature that does exist is working right now — for settings whose answer can change
+without the setting changing. Today that is Discord presence, which needs the Discord app to be
+running (`statusFrom: 'discord'` in the schema, `src/renderer/settings/DiscordStatus.svelte`).
+
+- **Under the help text**, in the label column: one Caption line. The state comes first, in two
+  or three words of Ink at 600 ("Connected", "Discord isn’t running"), then a full stop and the
+  rest of the sentence in Muted Ink — what it means, or what to do.
+- **Words, not a dot.** There are no circles in this system, and the accent marks focus and
+  selection, not health. A glance catches the bold state; the sentence carries the meaning.
+- **"Connected" is proof, not a claim:** it says what Discord is showing ("Showing “Birahe” by
+  Ali Sorena."), or why it shows nothing (paused, or nothing playing).
+- **A problem gets its own line in Ink**, never red — Danger Red belongs to the close button.
+- **"Try now"** appears only where trying again can change the answer: the Prompt's button at
+  13px. A press holds "Looking for Discord…" for 600ms, because the real attempt fails in
+  milliseconds and the press would otherwise look like it did nothing.
+- Switched off, it shows nothing: the unticked box already says so.
+
+### The safe-mode notice
+
+When the app was started with `--safe-mode`, some settings on screen are not in force: hardware
+acceleration, ad blocking and the theme are off for that launch whatever the controls show. The
+panel must say so rather than show controls that silently do nothing.
+
+- **At the top of the content column, on every section**, since the settings it overrides live in
+  three of them. The status line's shape at Caption size: "Safe mode is on." in Ink at 600, then
+  what is off, that nothing was changed, and how to leave it, in Muted Ink. A hairline below
+  separates it from the first row. `role="status"`, `data-bsc-settings-safe-mode`.
+- **No colour, no icon, no button.** It is information, not an alarm, and leaving safe mode means
+  quitting and starting normally, which no button here can do better.
+
+### The without-Widevine notice
+
+After "Continue without Widevine", protected tracks grey out and skip, which is exactly what the
+old bug looked like. Settings says why, so a skipping track reads as expected rather than as a
+regression.
+
+- **The safe-mode notice's shape, in the same place**: "Protected tracks won't play yet." in Ink at
+  600, then why, that the app keeps trying, and that restarting tries at once, in Muted Ink.
+  `role="status"`, `data-bsc-settings-without-widevine`. With both notices showing, they stack,
+  separated by one hairline like rows.
+- **It goes when Widevine arrives**, read each time Settings opens. No colour, no icon, no button.
+
+### The update line
+
+The status line under "Update automatically" in General (`UpdateStatus.svelte`, words from
+`describeUpdateStatus`), and the model for any status line that carries an action.
+
+- **The status line's shape**, with **one button at most**: the Prompt's button at 13px, naming
+  its action — "Check now", "Download and install", "Restart now", "Open download page", "Try
+  again". Busy states (checking, downloading) offer none.
+- **The state names the version**: "Up to date. 0.8.0 is the newest version.", "0.8.1 is
+  available. You have 0.8.0.", "0.8.1 is ready. Restart now, or it installs the next time you
+  quit." Support replies ask for the version; the line already says it.
+- **Progress is words, not a bar**: "Downloading 0.8.1… 42%". The lead ends in an ellipsis, as
+  "Checking…" does, so the number reads as part of it, and the line uses tabular figures so it does
+  not shift as the number changes.
+- **A failure is a problem line in Ink** ("You seem to be offline."), with "Try again".
+- **A copy that cannot install itself says how to get the update** ("This portable copy can't
+  replace itself, so download the new one.") and offers the download page instead of installing.
+- **Outside the panel, one system notification per version**, and only when there is something to
+  do: an update ready, or one this copy can only be told about. None while the panel is open.
+  Clicking it opens Settings.
+
+### Plugin rows
+
+Settings → Plugins (`src/renderer/settings/Plugins.svelte`), and the model for any list of
+things the user switches on that act on their behalf.
+
+- **One row per plugin**, the settings-row shape: a label column and the checkbox on the right.
+  Down the label column: the name (Body), a Caption meta line ("Built in · 1.0.0 · Author" or
+  "From your plugins folder · …"), the description, then **what it can do** — one permission per
+  line, each after a 6×1px dash in currentcolor, the system's hairline as a list mark instead of
+  a bullet glyph or a circle.
+- **Its status line and buttons** come next, in the status-line pattern above; the plugin writes
+  them itself. With nothing of its own to say, the row says the state: Starting…, Stopped (with
+  why), Paused (needs approval), Can’t be turned on, Can’t load.
+- **Its own settings**, while it is on, sit set in under a 1px Hairline rule on the left, as
+  compact rows of their own — so they read as belonging to that plugin and not to the panel.
+- **A plugin that cannot work is still listed**, label in Ghost Ink, checkbox disabled, with the
+  reason. Hiding it would leave the user wondering where their folder went.
+- **Asking first.** Ticking a plugin from the user's folder does not tick it: a confirmation opens
+  inside that row — Field White behind a Hairline, 6px radius, inset rather than floating — with
+  the permissions again in Ink at 13px, one honest sentence about trust, and **Turn on** / Cancel.
+  Not a dialog on top of the settings dialog: the question belongs to the row. Escape closes it
+  and only it. **Turn on** is the default, at 600 weight, because inside a Field White box the
+  tonal step that marks a default elsewhere disappears.
+- **The footer** holds "Open plugins folder" and the plain statement of what the separate process
+  does and does not protect. The words may not promise more safety than the code provides.
+
+### Reset rows
+
+Settings → Advanced, after its ordinary rows (`src/renderer/settings/Reset.svelte`): **Reset
+settings** and **Clear cache and site data**. Buttons, not settings, and neither can be undone.
+
+- **The settings-row shape**: the name (Body) and what it does (Caption) on the left, one button on
+  the right whose label ends in an ellipsis ("Reset settings…", "Clear…"), because a question
+  comes before anything happens. The clearing row's caption says when to reach for it: SoundCloud
+  saying you've been blocked, or its page not loading.
+- **The question opens inside the row**, in the plugin rows' confirmation box: the question in Ink
+  at 600, then what it costs and **what it leaves alone** (plugins, Last.fm, the sign-in for a
+  reset; settings, plugins, Last.fm for clearing), then the action ("Reset settings", "Clear and
+  sign out", 600 weight) and Cancel. The opener is disabled while it is open; Escape closes the
+  question and only it.
+- **Focus moves to the question, not to its button**, so a second Enter right after the first
+  cannot reset or sign anyone out. The box takes no focus ring of its own; Tab reaches the
+  buttons, which keep theirs.
+- **Then one line in Ink** says what happened ("Done: every setting is back to its default.",
+  "Done. SoundCloud is opening again, signed out.") or that it failed and to try again. The
+  opener's label says "Resetting…" / "Clearing…" while main works.
+
+### Theme rows
+
+Settings → Themes (`src/renderer/settings/Themes.svelte`). A single choice among files, so it is a
+radio group, and the arrow keys move through it.
+
+- **The section's switches come first**, as ordinary settings rows drawn by `Settings.svelte`
+  (`appearance.minimalNavigation`, which works with any theme). A switch that is part of no theme
+  sits above the list, and a Label-size heading, "Theme", in the secondary ink names the list
+  under it (it is also the radio group's accessible name), so the switch never reads as one of the
+  choices.
+- **The Background group comes next** (`Background.svelte`): a "Background" heading like the
+  theme list's, one Caption line saying where it shows, a radio group — None, the playing track's
+  artwork, a picture of your own — and two sliders, Blur and Strength, each with its value in
+  tabular figures at the right. The sliders are disabled while None is chosen. The picture row
+  carries a 120×68 preview behind a Hairline at the control radius, and "Choose a picture…" /
+  "Choose another picture…". Choosing a picture also selects it. While the selected theme needs a
+  background (Glassmorphism), None is disabled and its caption says why, and the choice shown as on
+  is the one in effect — the artwork — not the stored None.
+- **"None" heads the list**, always: no theme on top of SoundCloud's own look. It is a choice, not
+  an absence.
+- **One row per theme**, the settings-row shape with the radio on the right: the name (Body; 600
+  when chosen — weight carries selection, the accent stays on the radio), a Caption meta line
+  ("Built in · 2.0.0 · Author", "Yours", "Yours — your copy of a built-in theme"), the
+  description, then **swatches**: up to five 14px square chips of the theme's `@preview` colours,
+  each behind a 1px Hairline so a near-white or near-black chip still shows. Square because neither
+  of the system's two radii suits a 14px chip, and a third would be a new concept.
+- **The chosen row carries its one action**, so the list stays quiet: "Make an editable copy" for a
+  built-in theme, "Open file" for one of yours, each with a Caption line saying that saved changes
+  show at once.
+- **A missing theme says so** in Ink below the list, rather than silently falling back.
+- **The footer** holds "Open themes folder" and one honest sentence: themes are CSS and cannot run
+  code, but a picture loaded from the internet on SoundCloud's page tells that site you use it.
+
+A theme may recolour our windows through the `--bsc-*` tokens. That is the point of the token API,
+and it is also how a theme can break the one thing the accent is for: a theme's accent must still
+show the focus ring. The authors' guide says so; the shipped themes meet 3:1.
+
+### Motion
+
+One motion pattern, used only for modality. The settings panel enters with a 180ms
+`cubic-bezier` ease-out — a 14px upward fly paired with a fade — while the scrim fades in over
+the same duration. Exit reverses it. `prefers-reduced-motion: reduce` sets the duration to 0
+rather than substituting a different animation.
+
+Everything else is instant. Hover states have no transition; the wash appears on the frame it is
+needed.
+
+**The one exception is the wait line** on the page-status surface: a 120×2px Hairline track with
+a Muted Ink segment crossing it every 1.4s, shown only while something is in progress. A message
+that does not change for twenty seconds reads as frozen, and this is the cheapest honest proof
+that it is not. It is square-ended (no third radius), never the accent (waiting is not a state),
+and under `prefers-reduced-motion` it is removed rather than frozen, since a still segment reads
+as a stuck bar. The words carry the meaning on their own.
+
+**The same wait line runs along the bar** while SoundCloud's page loads: 2px at the bar's bottom
+edge, over its hairline, the segment 12% of the bar's width, the same 1.4s and curve. It is the
+same pattern in a second place, not a second motion: a frameless window has no spinner of its
+own, and a reload otherwise looks like nothing happening. Reduced motion removes it; the Stop
+glyph says it alone.
+
+### Keyboard between views
+
+Each part of the window is its own view, and Tab never leaves the one it is in. **F6** moves focus
+to the next part, **Shift+F6** back, as in a browser: the bar (or the window buttons over
+SoundCloud's header while the bar is hidden), SoundCloud's page (or the status standing in for
+it), the lyrics pane, the player buttons — whichever are there. While Settings is open, F6 moves
+only between Settings and the bar.
+
+- **Landing in one of our views draws the ring**: on the control it last had, the one it marks
+  `data-bsc-focus-first` (Settings: the section showing), or its first. `focus({ focusVisible:
+true })`, because a view last used with the mouse draws no ring for a plain `focus()`.
+- **Landing on SoundCloud's page only focuses it**; Tab then goes through the page's own controls.
+- **Closing Settings gives focus back** to where it came from, usually the bar's Settings button.
+- **Settings → Shortcuts lists both keys**, as two rows with key chips: Field White behind a
+  Hairline, 6px radius, the system font at 12px.
+
+### Forced colours
+
+In a Windows contrast theme the system's colours replace ours. `tokens.css` maps every token to
+a system colour there (Canvas, CanvasText, Highlight, GrayText), so what is drawn with a
+background, a border or an outline keeps the user's colours rather than sinking into Canvas: the
+focus ring is Highlight, hairlines and key chips CanvasText, disabled controls GrayText. Hover
+washes and the close button's red go to transparent. In a contrast theme, focus shows where you
+are; hover does not.
+
+## Do's and Don'ts
+
+### Do:
+
+- **Do** consume colour through `--bsc-*` custom properties, so every surface works in both modes.
+- **Do** keep the accent to state only — focus rings and selection. Its rarity is what makes it
+  legible.
+- **Do** separate surfaces with 1px Hairline borders and the single tonal step, not with shadow.
+- **Do** pair the scrim and the Overlay shadow whenever something takes over input, and use
+  neither otherwise.
+- **Do** give every new control a visible focus state (2px `--bsc-focus` outline,
+  `outline-offset: -2px`) and full keyboard operability — the product targets WCAG 2.2 AA for its
+  own chrome, and a new view takes part in F6 by itself.
+- **Do** render an unbuilt capability as a disabled control with the **NOT IMPLEMENTED YET**
+  badge rather than hiding it or letting it appear functional.
+- **Do** expose stable `data-bsc-*` attributes on themable regions, and treat `tokens.css` plus
+  those attributes as the versioned public API for user themes.
+
+### Don't:
+
+- **Don't** target Svelte's generated hash classes (`.s-050uw8y64xWw`) from a theme. They change
+  every build. That is what the `data-bsc-*` attributes exist for.
+- **Don't** build a generic Electron dashboard — Material-style cards, elevation for its own
+  sake, an icon rail, dense chrome competing with the content it wraps. Confirmed anti-reference.
+- **Don't** adopt consumer music-app surface language — gradient heroes, artwork bleeding into
+  blurred backgrounds, oversized transport controls. SoundCloud already renders all of that one
+  layer below; duplicating it makes the client a skin. Confirmed anti-reference.
+- **Don't** use glassmorphism, backdrop blur, glow, or saturated gradients. They read as a theme
+  rather than a tool and destroy legibility in a 32px strip. Confirmed anti-reference.
+- **Don't** introduce a webfont. The CSP blocks remote loads, and the OS stack is the point.
+- **Don't** add a third radius, a second shadow, or a second accent without retiring one first.
+- **Don't** exceed 15px type in BetterSoundCloud's own UI, outside the Lyrics and Showcase
+  Exceptions.
+- **Don't** grow the chrome past 32px. New affordances go into settings or an overlay.
+- **Don't** style SoundCloud's page from a component stylesheet. Page-level appearance is
+  CSS-only through `insertCSS`, and no node may be added to their document.

@@ -1,0 +1,127 @@
+/*
+ * The theming public API.
+ *
+ * These custom properties and the `data-bsc-*` attributes in the markup are the
+ * versioned contract that user themes target. Svelte's generated hash classes
+ * (`.s-AbC123`) change between builds and must never be targeted by a theme — that is
+ * documented for theme authors in docs/CUSTOM_THEMES.md.
+ *
+ * Svelte scopes CSS in the ordinary document rather than a shadow root, so a user
+ * theme's `[data-bsc-header] { background: ... }` still matches. That property is the
+ * reason Svelte was chosen over Lit.
+ *
+ * The defaults are declared on `:where(:root)`, which has no specificity, so a theme's plain
+ * `:root { --bsc-accent: … }` always wins. It has to be that way round: a theme reaches our views
+ * through `insertCSS`, and Chromium puts inserted sheets BEFORE the document's own in the cascade,
+ * so at equal specificity these defaults would win and every theme would be ignored (measured,
+ * 2026-10-27: Hover's green accent never showed until this changed).
+ */
+
+:where(:root) {
+  --bsc-bg-primary: #f2f2f2;
+  --bsc-bg-secondary: #ffffff;
+  --bsc-bg-hover: rgb(0 0 0 / 8%);
+  --bsc-text-primary: #1a1a1a;
+  --bsc-text-secondary: #5c5c5c;
+  --bsc-text-disabled: #a8a8a8;
+  /*
+   * SoundCloud's orange, deepened one step for light backgrounds: #f50 itself is 2.86:1 on
+   * --bsc-bg-primary here, under the 3:1 a focus ring, a tick or an "on" state needs (WCAG 2.2 AA,
+   * measured 2026-10-29). Dark mode keeps #f50, which is 5.8:1 there.
+   */
+  --bsc-accent: #e64d00;
+  /*
+   * The keyboard focus ring, on every control we draw. It follows the accent, so a theme that
+   * recolours the accent recolours focus with it; a theme whose accent cannot stand 3:1 against
+   * --bsc-bg-primary sets this one apart, rather than erase the only sign of where the keyboard is.
+   */
+  --bsc-focus: var(--bsc-accent);
+  --bsc-border: rgb(0 0 0 / 12%);
+  --bsc-danger: #d33;
+
+  --bsc-header-bg: var(--bsc-bg-primary);
+  --bsc-header-height: 32px;
+
+  --bsc-radius: 6px;
+  --bsc-font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :where(:root) {
+    --bsc-bg-primary: #121212;
+    --bsc-bg-secondary: #1c1c1c;
+    --bsc-bg-hover: rgb(255 255 255 / 10%);
+    --bsc-text-primary: #f2f2f2;
+    --bsc-text-secondary: #a0a0a0;
+    --bsc-text-disabled: #5c5c5c;
+    --bsc-accent: #f50;
+    --bsc-border: rgb(255 255 255 / 14%);
+  }
+}
+
+/*
+ * Forced colours: Windows contrast themes, and any system that imposes its own palette. The system
+ * replaces our colours whatever we write; naming its colours here keeps what we draw with a
+ * background, a border or an outline — the focus ring, hairlines, the wait line, the accent's
+ * states — in the user's chosen colours instead of letting them sink into Canvas. Hover washes and
+ * the close button's red go: in a contrast theme, focus shows where you are, hover does not.
+ */
+@media (forced-colors: active) {
+  :where(:root) {
+    --bsc-bg-primary: Canvas;
+    --bsc-bg-secondary: Canvas;
+    --bsc-bg-hover: transparent;
+    --bsc-text-primary: CanvasText;
+    --bsc-text-secondary: CanvasText;
+    --bsc-text-disabled: GrayText;
+    --bsc-accent: Highlight;
+    --bsc-focus: Highlight;
+    --bsc-border: CanvasText;
+    --bsc-danger: transparent;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--bsc-font);
+  color: var(--bsc-text-primary);
+  background: var(--bsc-bg-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * One scrollbar language across the whole product: our own panels and the SoundCloud view
+ * get the same 8px transparent-track treatment. The matching rule for SoundCloud's page is
+ * injected from `applyContentCss` in src/main/window.ts, using literal colours because our
+ * tokens do not exist on their origin.
+ *
+ * Neutral at rest, accent while grabbed — the accent marks a state rather than decorating,
+ * per the Borrowed Accent Rule.
+ */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background: var(--bsc-text-disabled);
+}
+
+::-webkit-scrollbar-thumb:hover,
+::-webkit-scrollbar-thumb:active {
+  background: var(--bsc-accent);
+}

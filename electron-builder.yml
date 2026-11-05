@@ -1,0 +1,108 @@
+appId: com.alirezakj.bettersoundcloud
+productName: BetterSoundCloud
+copyright: Copyright © 2023-2026 Alireza Karimi Jafari
+
+directories:
+  output: release
+  buildResources: build-resources
+
+files:
+  - out/**/*
+  - resources/**/*
+  - package.json
+  - '!node_modules/electron/**/*'
+
+# Take the Castlabs Widevine build straight out of node_modules rather than a download
+# mirror. `npm install github:castlabs/electron-releases#vXX+wvcus` has already put it
+# there; pointing at it cannot mis-resolve, works offline, and is immune to the v27
+# rename of `electronDownload` -> `electronGet`.
+electronDist: node_modules/electron/dist
+
+# Ported from the v0.7.x forge.config.js FusesPlugin. These run during packing, i.e.
+# BEFORE the afterPack/afterSign hooks below — which is the required order, because
+# flipping a fuse mutates the very bytes a VMP signature covers.
+electronFuses:
+  # Fuse edits invalidate the prebuilt signature; local Apple Silicon builds need a new one.
+  resetAdHocDarwinSignature: true
+  runAsNode: false
+  enableCookieEncryption: true
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false
+  enableEmbeddedAsarIntegrityValidation: true
+  onlyLoadAppFromAsar: true
+
+# Castlabs is explicit that the ordering differs by platform:
+#   macOS  -> VMP sign BEFORE code signing  (afterPack)
+#   Windows-> VMP sign AFTER  code signing  (afterSign)
+# Two small wrapper files, each one obviously named for the platform it handles. Both
+# call signPackage() in scripts/vmp-sign.js.
+afterPack: scripts/vmp-after-pack.js
+afterSign: scripts/vmp-after-sign.js
+
+# Where the auto-updater looks. Releases themselves are made by .github/workflows/release.yml,
+# which builds with `--publish never` and drafts the release itself; `releaseType` only matters
+# for a hand-run `--publish`, and a draft means nothing goes public without a person.
+publish:
+  provider: github
+  owner: AlirezaKJ
+  repo: BetterSoundCloud
+  releaseType: draft
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+  # A ready-made .ico (16 to 256px, converted once from resources/icon.png) rather than the PNG:
+  # electron-builder's PNG-to-ICO tool writes the file and then crashes on exit (0xC0000005,
+  # Node 24, electron-builder 26.15.3, measured 2026-10-27), failing every Windows build. If
+  # icon.png changes, regenerate this from it.
+  icon: build-resources/icon.ico
+  artifactName: BetterSoundCloud-${version}-win-${arch}.${ext}
+
+# The installer and the portable build are both .exe files, so each needs its own name: with
+# one shared name the portable build, written second, silently replaced the installer, and
+# latest.yml (which describes the installer, for auto-update) then pointed at the wrong file
+# (measured 2026-10-27).
+nsis:
+  # Removes BetterSoundCloud 0.7.x (Squirrel's Setup.exe or the MSI) once this version is
+  # installed, so the two do not sit side by side. The profile is never touched.
+  include: build-resources/installer.nsh
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  perMachine: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  artifactName: BetterSoundCloud-${version}-win-${arch}-setup.${ext}
+
+portable:
+  artifactName: BetterSoundCloud-${version}-win-${arch}-portable.${ext}
+
+mac:
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+  icon: resources/icon.icns
+  category: public.app-category.music
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build-resources/entitlements.mac.plist
+  entitlementsInherit: build-resources/entitlements.mac.inherit.plist
+  artifactName: BetterSoundCloud-${version}-mac-${arch}.${ext}
+
+linux:
+  target:
+    - AppImage
+    - deb
+    - rpm
+  icon: resources/icon.png
+  category: AudioVideo
+  executableName: bettersoundcloud
+  synopsis: A desktop client for SoundCloud
+  artifactName: BetterSoundCloud-${version}-linux-${arch}.${ext}
+  desktop:
+    entry:
+      Name: BetterSoundCloud
+      Categories: AudioVideo;Audio;Music;
+      StartupWMClass: BetterSoundCloud

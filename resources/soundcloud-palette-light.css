@@ -1,0 +1,134 @@
+/*
+ * SoundCloud's own light-mode colours, for a page that is in its dark mode.
+ *
+ * The mirror image of soundcloud-palette-dark.css, for a theme that says `@mode light`: under it
+ * SoundCloud's dark mode looks exactly like its light one, which is what the theme was written
+ * for. BetterSoundCloud adds this file before the theme; the theme still wins.
+ *
+ * `body.theme-dark` because SoundCloud marks its dark mode with that class on <body>. The element
+ * selector gives this one more point of specificity than SoundCloud's own `.theme-dark` rule,
+ * which it has to beat: a stylesheet inserted by the app cascades BEFORE the page's own at equal
+ * specificity.
+ *
+ * Measured on soundcloud.com on 2026-10-27, from its `.theme-light, :root` rule: the 111 variables
+ * whose value differs between the two modes.
+ */
+body.theme-dark {
+  --surface-color: #fff;
+  --surface-rgb: 255, 255, 255;
+  --primary-color: #121212;
+  --primary-rgb: 18, 18, 18;
+  --secondary-color: #666;
+  --secondary-rgb: 102, 102, 102;
+  --highlight-color: #f3f3f3;
+  --highlight-rgb: 243, 243, 243;
+  --link-color: #044dd2;
+  --link-rgb: 4, 77, 210;
+  --overlay-color: rgba(18, 18, 18, 0.4);
+  --overlay-rgb: 18, 18, 18, 0.4;
+  --imageBorder-color: rgba(18, 18, 18, 0.15);
+  --imageBorder-rgb: 18, 18, 18, 0.15;
+  --artist-color: #5a45fd;
+  --artist-rgb: 90, 69, 253;
+  --artist-pro-color: #6f5b37;
+  --artist-pro-rgb: 111, 91, 55;
+  --artist-surface-color: #eee8fe;
+  --artist-surface-rgb: 238, 232, 254;
+  --artist-pro-surface-color: #f4eedf;
+  --artist-pro-surface-rgb: 244, 238, 223;
+  --support-bg-color: #558b2f;
+  --support-bg-rgb: 85, 139, 47;
+  --support-text-color: #fff;
+  --support-text-rgb: 255, 255, 255;
+  --support-hover-bg-color: rgba(85, 139, 47, 0.24);
+  --support-hover-bg-rgb: 85, 139, 47, 0.24;
+  --background-surface-color: #fff;
+  --background-highlight-color: #f3f3f3;
+  --font-primary-color: #121212;
+  --font-secondary-color: #666;
+  --font-link-color: #044dd2;
+  --button-primary-background-color: #121212;
+  --button-primary-font-color: #fff;
+  --button-primary-hover-font-color: hsla(0, 0%, 100%, 0.4);
+  --button-primary-disabled-background-color: #121212;
+  --button-primary-disabled-font-color: #fff;
+  --button-primary-selected-background-color: #f3f3f3;
+  --button-primary-selected-font-color: #121212;
+  --button-primary-selected-hover-font-color: rgba(18, 18, 18, 0.4);
+  --button-primary-selected-active-background-color: #f3f3f3;
+  --button-primary-selected-active-font-color: #121212;
+  --button-primary-loading-background-color: #121212;
+  --button-primary-loading-font-color: hsla(0, 0%, 100%, 0.6);
+  --button-primary-loading-icon-color: #fff;
+  --button-primary-active-background-color: #121212;
+  --button-primary-active-font-color: #fff;
+  --button-secondary-background-color: #f3f3f3;
+  --button-secondary-font-color: #121212;
+  --button-secondary-hover-font-color: rgba(18, 18, 18, 0.4);
+  --button-secondary-disabled-background-color: #f3f3f3;
+  --button-secondary-disabled-font-color: #121212;
+  --button-secondary-selected-background-color: #f3f3f3;
+  --button-secondary-selected-active-background-color: #f3f3f3;
+  --button-secondary-loading-background-color: #f3f3f3;
+  --button-secondary-loading-font-color: rgba(18, 18, 18, 0.6);
+  --button-secondary-loading-icon-color: #121212;
+  --button-secondary-active-background-color: #f3f3f3;
+  --button-secondary-active-font-color: #121212;
+  --button-tertiary-background-color: #fff;
+  --button-tertiary-font-color: #121212;
+  --button-tertiary-hover-font-color: rgba(18, 18, 18, 0.4);
+  --button-tertiary-disabled-background-color: #fff;
+  --button-tertiary-disabled-font-color: #121212;
+  --button-tertiary-selected-background-color: #fff;
+  --button-tertiary-selected-active-background-color: #fff;
+  --button-tertiary-loading-background-color: #fff;
+  --button-tertiary-loading-font-color: rgba(18, 18, 18, 0.6);
+  --button-tertiary-loading-icon-color: #121212;
+  --button-tertiary-active-background-color: #fff;
+  --button-tertiary-active-font-color: #121212;
+  --overlay-default-color: rgba(18, 18, 18, 0.4);
+  --link-standard-color: #044dd2;
+  --link-standard-focus-box-shadow: 0 0 0 2px #044dd2;
+  --link-standard-active-color: rgba(4, 77, 210, 0.6);
+  --link-standard-hover-color: #044dd2;
+  --link-standard-disabled-color: rgba(4, 77, 210, 0.6);
+  --link-primary-color: #121212;
+  --link-primary-focus-box-shadow: 0 0 0 2px #044dd2;
+  --link-primary-disabled-color: rgba(18, 18, 18, 0.6);
+  --link-primary-active-color: rgba(18, 18, 18, 0.6);
+  --link-primary-hover-color: rgba(18, 18, 18, 0.4);
+  --link-secondary-color: #666;
+  --link-secondary-focus-box-shadow: 0 0 0 2px #044dd2;
+  --link-secondary-disabled-color: hsla(0, 0%, 40%, 0.6);
+  --link-secondary-active-color: hsla(0, 0%, 40%, 0.6);
+  --link-secondary-hover-color: hsla(0, 0%, 40%, 0.4);
+  --tag-focused-box-shadow: 0 0 0 2px #044dd2 inset;
+  --tag-default-background-color: #f3f3f3;
+  --tag-default-font-color: #121212;
+  --tag-default-font-hover-color: rgba(18, 18, 18, 0.4);
+  --tag-selected-background-color: #121212;
+  --tag-selected-font-color: #fff;
+  --tag-selected-font-hover-color: hsla(0, 0%, 100%, 0.4);
+  --input-default-background-color: #f3f3f3;
+  --input-default-font-color: #121212;
+  --input-placeholder-background-color: #f3f3f3;
+  --input-placeholder-font-color: #666;
+  --input-focused-background-color: #f3f3f3;
+  --input-focused-border-color: #666;
+  --input-focused-font-color: #121212;
+  --input-invalid-background-color: #f3f3f3;
+  --input-disabled-background-color: rgba(18, 18, 18, 0.15);
+  --input-disabled-font-color: #121212;
+  --toggle-on-handle-color: #fff;
+  --toggle-on-handle-hover-color: hsla(0, 0%, 100%, 0.4);
+  --toggle-off-body-color: #666;
+  --toggle-off-body-hover-color: #666;
+  --toggle-off-handle-color: #fff;
+  --toggle-off-handle-hover-color: hsla(0, 0%, 100%, 0.4);
+}
+
+/* SoundCloud's footer logo is white artwork that it inverts in light mode. */
+html body.theme-dark .footer__logoCloud,
+html body.theme-dark .footer__logoWordmark {
+  filter: invert(1);
+}

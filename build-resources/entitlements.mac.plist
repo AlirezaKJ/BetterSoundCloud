@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Hardened-runtime entitlements for the main macOS app bundle.
+
+  All three are required by Electron + the Castlabs Widevine CDM:
+    allow-jit                        V8 compiles JavaScript at runtime.
+    allow-unsigned-executable-memory V8's older codegen paths need it.
+    disable-library-validation       The Widevine CDM is a dylib Apple did not sign,
+                                     so without this the hardened runtime refuses to
+                                     load it and DRM playback fails on macOS only.
+
+  network.client is needed because the app talks to soundcloud.com, Discord IPC and
+  the Last.fm API.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "https://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>com.apple.security.cs.allow-jit</key>
+    <true />
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <true />
+    <key>com.apple.security.cs.disable-library-validation</key>
+    <true />
+    <key>com.apple.security.network.client</key>
+    <true />
+  </dict>
+</plist>

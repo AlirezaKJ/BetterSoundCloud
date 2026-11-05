@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main, rewrite]
+  pull_request:
+
+permissions:
+  contents: read
+
+# Cancel superseded runs on the same ref.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Typecheck, lint, test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # The Electron installed is the Castlabs build package.json names, and the lockfile's commit
+      # is the one GitHub's tag points at (`npm run check` repeats the offline half).
+      - run: node scripts/verify-electron.mjs --remote
+      - run: npm run check
+      - run: npm test
+
+  build:
+    name: Build (${{ matrix.os }})
+    needs: check
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      # Unsigned on CI — VMP signing needs EVS credentials and belongs to release.yml.
+      # STRICT_VMP_SIGNING is deliberately unset here so scripts/vmp-sign.js
+      # warns and continues. It is set to `true` in the release workflow, where a build that
+      # cannot be signed MUST fail rather than silently ship a client that cannot play
+      # DRM tracks. That fail-open default is why soundcloud-rpc's shipped binaries
+      # cannot be assumed signed either.
+      - run: npm run pack

@@ -1,0 +1,332 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-02T00:00:00.000Z",
+  "title": "Design System: BetterSoundCloud",
+  "extensions": {
+    "colorMeta": {
+      "accent": {
+        "role": "primary",
+        "displayName": "SoundCloud Orange",
+        "canonical": "#f50",
+        "tonalRamp": [
+          "#331100",
+          "#5c1f00",
+          "#8a2f00",
+          "#b83e00",
+          "#e64d00",
+          "#ff5500",
+          "#ff8547",
+          "#ffc7a8"
+        ]
+      },
+      "bg-primary": {
+        "role": "neutral",
+        "displayName": "Shell Grey",
+        "canonical": "#f2f2f2",
+        "darkValue": "#121212",
+        "tonalRamp": [
+          "#121212",
+          "#1c1c1c",
+          "#2e2e2e",
+          "#4a4a4a",
+          "#7a7a7a",
+          "#a8a8a8",
+          "#d6d6d6",
+          "#f2f2f2"
+        ]
+      },
+      "bg-secondary": {
+        "role": "neutral",
+        "displayName": "Field White",
+        "canonical": "#ffffff",
+        "darkValue": "#1c1c1c",
+        "tonalRamp": [
+          "#1c1c1c",
+          "#2a2a2a",
+          "#3d3d3d",
+          "#5c5c5c",
+          "#8a8a8a",
+          "#bdbdbd",
+          "#e8e8e8",
+          "#ffffff"
+        ]
+      },
+      "text-primary": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#1a1a1a",
+        "darkValue": "#f2f2f2",
+        "tonalRamp": [
+          "#000000",
+          "#1a1a1a",
+          "#333333",
+          "#4d4d4d",
+          "#808080",
+          "#b3b3b3",
+          "#e0e0e0",
+          "#ffffff"
+        ]
+      },
+      "text-secondary": {
+        "role": "neutral",
+        "displayName": "Muted Ink",
+        "canonical": "#5c5c5c",
+        "darkValue": "#a0a0a0",
+        "tonalRamp": [
+          "#1f1f1f",
+          "#333333",
+          "#474747",
+          "#5c5c5c",
+          "#858585",
+          "#a0a0a0",
+          "#c9c9c9",
+          "#ebebeb"
+        ]
+      },
+      "text-disabled": {
+        "role": "neutral",
+        "displayName": "Ghost Ink",
+        "canonical": "#a8a8a8",
+        "darkValue": "#5c5c5c",
+        "tonalRamp": [
+          "#2e2e2e",
+          "#454545",
+          "#5c5c5c",
+          "#7a7a7a",
+          "#a8a8a8",
+          "#c4c4c4",
+          "#dedede",
+          "#f5f5f5"
+        ]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "rgb(0 0 0 / 12%)",
+        "darkValue": "rgb(255 255 255 / 14%)",
+        "note": "Alpha rather than solid so one token works over any surface."
+      },
+      "bg-hover": {
+        "role": "neutral",
+        "displayName": "Hover Wash",
+        "canonical": "rgb(0 0 0 / 8%)",
+        "darkValue": "rgb(255 255 255 / 10%)",
+        "note": "The only hover treatment in the system."
+      },
+      "danger": {
+        "role": "tertiary",
+        "displayName": "Danger Red",
+        "canonical": "#d33",
+        "tonalRamp": [
+          "#330b0b",
+          "#5c1414",
+          "#8a1e1e",
+          "#b82828",
+          "#dd3333",
+          "#e65c5c",
+          "#f09999",
+          "#fad6d6"
+        ]
+      },
+      "scrim": {
+        "role": "tertiary",
+        "displayName": "Scrim",
+        "canonical": "rgb(0 0 0 / 45%)",
+        "note": "Dims SoundCloud behind a modal surface. Always paired with the Overlay shadow."
+      }
+    },
+    "typographyMeta": {
+      "title": {
+        "displayName": "Title",
+        "purpose": "Settings panel heading. The largest text in the entire product."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Setting names — the primary reading size in the panel."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Navigation items, inputs and selects. The dense working tier."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Help text under a setting, and the window title in the chrome strip."
+      },
+      "overline": {
+        "displayName": "Overline",
+        "purpose": "One use only: the NOT IMPLEMENTED YET badge on a pending setting."
+      }
+    },
+    "shadows": [
+      {
+        "name": "overlay",
+        "value": "0 12px 40px rgb(0 0 0 / 35%), 0 2px 8px rgb(0 0 0 / 20%)",
+        "purpose": "The only shadow in the system. A wide ambient layer plus a tight contact layer, used exclusively when a surface floats above the app and takes over input. Always paired with the scrim."
+      }
+    ],
+    "motion": [
+      {
+        "name": "overlay-enter",
+        "value": "180ms cubic-bezier(0.33, 1, 0.68, 1)",
+        "purpose": "Settings panel entrance: 14px upward fly plus fade, with the scrim fading over the same duration. Exit reverses it."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "0ms",
+        "purpose": "Under prefers-reduced-motion: reduce the duration collapses to zero rather than substituting a different animation."
+      },
+      {
+        "name": "hover",
+        "value": "none",
+        "purpose": "Hover states are instant. The wash appears on the frame it is needed; no transition."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "panel-min",
+        "value": "808px",
+        "purpose": "Below this window width the settings card stops being 760px wide and falls back to 100% - 48px."
+      },
+      {
+        "name": "window-min",
+        "value": "800px",
+        "purpose": "Minimum window width enforced by BaseWindow; the chrome is not designed below it."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Chrome Button",
+      "kind": "button",
+      "refersTo": "button-chrome",
+      "description": "The signature control. Transparent until hovered, 30x26px, sized for a 32px strip.",
+      "html": "<button class=\"ds-btn-chrome\" title=\"Settings\" aria-label=\"Settings\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"3.1\"/><path d=\"M19.1 14.4a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.56 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.56-1.1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.56 1.03z\"/></svg></button>",
+      "css": ".ds-btn-chrome { display: grid; place-items: center; width: 30px; height: 26px; padding: 0; border: 0; border-radius: var(--bsc-radius, 6px); background: transparent; color: var(--bsc-text-primary, #1a1a1a); cursor: default; } .ds-btn-chrome:hover:not(:disabled) { background: var(--bsc-bg-hover, rgb(0 0 0 / 8%)); } .ds-btn-chrome:disabled { color: var(--bsc-text-disabled, #a8a8a8); } .ds-btn-chrome:focus-visible { outline: 2px solid var(--bsc-accent, #f50); outline-offset: -2px; } .ds-btn-chrome svg { width: 15px; height: 15px; fill: none; stroke: currentcolor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }"
+    },
+    {
+      "name": "Close Button",
+      "kind": "button",
+      "refersTo": "button-close-hover",
+      "description": "The one saturated moment in the product: hover fills Danger Red with a white glyph.",
+      "html": "<button class=\"ds-btn-close\" title=\"Close\" aria-label=\"Close\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M7 7l10 10M17 7 7 17\"/></svg></button>",
+      "css": ".ds-btn-close { display: grid; place-items: center; width: 30px; height: 26px; padding: 0; border: 0; border-radius: var(--bsc-radius, 6px); background: transparent; color: var(--bsc-text-primary, #1a1a1a); cursor: default; } .ds-btn-close:hover { background: var(--bsc-danger, #d33); color: #fff; } .ds-btn-close:focus-visible { outline: 2px solid var(--bsc-accent, #f50); outline-offset: -2px; } .ds-btn-close svg { width: 15px; height: 15px; fill: none; stroke: currentcolor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }"
+    },
+    {
+      "name": "Navigation Item",
+      "kind": "nav",
+      "refersTo": "nav-item",
+      "description": "Settings rail item. Selection is carried by weight and ink, not by colour.",
+      "html": "<nav class=\"ds-nav\"><button class=\"ds-nav-item ds-nav-item--active\">General</button><button class=\"ds-nav-item\">Appearance</button><button class=\"ds-nav-item\">Last.fm</button></nav>",
+      "css": ".ds-nav { display: flex; flex-direction: column; gap: 2px; width: 160px; padding: 12px 8px; border-right: 1px solid var(--bsc-border, rgb(0 0 0 / 12%)); } .ds-nav-item { padding: 8px 10px; border: 0; border-radius: var(--bsc-radius, 6px); background: transparent; color: var(--bsc-text-secondary, #5c5c5c); font: inherit; font-size: 13px; text-align: left; cursor: pointer; } .ds-nav-item:hover { background: var(--bsc-bg-hover, rgb(0 0 0 / 8%)); } .ds-nav-item--active { background: var(--bsc-bg-hover, rgb(0 0 0 / 8%)); color: var(--bsc-text-primary, #1a1a1a); font-weight: 600; } .ds-nav-item:focus-visible { outline: 2px solid var(--bsc-accent, #f50); outline-offset: -2px; }"
+    },
+    {
+      "name": "Field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Text input and select. Field White on Shell Grey so the control reads as inset.",
+      "html": "<select class=\"ds-field\"><option>system</option><option>light</option><option>dark</option></select>",
+      "css": ".ds-field { min-width: 140px; padding: 6px 8px; border: 1px solid var(--bsc-border, rgb(0 0 0 / 12%)); border-radius: var(--bsc-radius, 6px); background: var(--bsc-bg-secondary, #fff); color: var(--bsc-text-primary, #1a1a1a); font: inherit; font-size: 13px; } .ds-field:focus-visible { outline: 2px solid var(--bsc-accent, #f50); outline-offset: -2px; } .ds-field:disabled { opacity: 0.5; cursor: not-allowed; }"
+    },
+    {
+      "name": "Checkbox",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Native 16px control with accent-color set to SoundCloud Orange — the second and last place the accent appears.",
+      "html": "<input class=\"ds-checkbox\" type=\"checkbox\" checked aria-label=\"Hardware acceleration\" />",
+      "css": ".ds-checkbox { width: 16px; height: 16px; accent-color: var(--bsc-accent, #f50); } .ds-checkbox:disabled { opacity: 0.5; cursor: not-allowed; } .ds-checkbox:focus-visible { outline: 2px solid var(--bsc-accent, #f50); outline-offset: 2px; }"
+    },
+    {
+      "name": "Pending Setting Row",
+      "kind": "custom",
+      "refersTo": "field",
+      "description": "Signature component. A capability whose feature does not exist yet renders complete but disabled, with an explicit badge. The product's voice made visual.",
+      "html": "<div class=\"ds-row ds-row--pending\"><div class=\"ds-row-label\"><label class=\"ds-label\">Minimize to tray on close</label><p class=\"ds-help\">Needs a tray icon, which does not exist yet.</p><p class=\"ds-pending\">Not implemented yet</p></div><div class=\"ds-row-control\"><input type=\"checkbox\" class=\"ds-checkbox\" disabled /></div></div>",
+      "css": ".ds-row { display: flex; align-items: flex-start; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--bsc-border, rgb(0 0 0 / 12%)); } .ds-row-label { flex: 1; min-width: 0; } .ds-label { font-size: 14px; color: var(--bsc-text-primary, #1a1a1a); } .ds-row--pending .ds-label { color: var(--bsc-text-disabled, #a8a8a8); } .ds-help { margin: 4px 0 0; font-size: 12px; line-height: 1.4; color: var(--bsc-text-secondary, #5c5c5c); } .ds-pending { margin: 4px 0 0; font-size: 11px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; color: var(--bsc-text-disabled, #a8a8a8); } .ds-row-control { flex: 0 0 auto; } .ds-checkbox { width: 16px; height: 16px; accent-color: var(--bsc-accent, #f50); } .ds-checkbox:disabled { opacity: 0.5; cursor: not-allowed; }"
+    },
+    {
+      "name": "Chrome Strip",
+      "kind": "nav",
+      "refersTo": "button-chrome",
+      "description": "The entire permanent UI of the product: a 32px drag region with navigation left, elided title centre, window controls right.",
+      "html": "<header class=\"ds-chrome\"><div class=\"ds-chrome-group\"><button class=\"ds-btn-chrome\" disabled aria-label=\"Back\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M15 5 8 12l7 7\"/></svg></button><button class=\"ds-btn-chrome\" aria-label=\"Forward\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m9 5 7 7-7 7\"/></svg></button></div><div class=\"ds-chrome-title\">BetterSoundCloud</div><div class=\"ds-chrome-group\"><button class=\"ds-btn-chrome\" aria-label=\"Minimize\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M6 12h12\"/></svg></button><button class=\"ds-btn-close\" aria-label=\"Close\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M7 7l10 10M17 7 7 17\"/></svg></button></div></header>",
+      "css": ".ds-chrome { display: flex; align-items: center; gap: 4px; height: 32px; padding: 0 2px 0 6px; background: var(--bsc-header-bg, #f2f2f2); border-bottom: 1px solid var(--bsc-border, rgb(0 0 0 / 12%)); user-select: none; } .ds-chrome-group { display: flex; align-items: center; gap: 2px; } .ds-chrome-title { flex: 1; text-align: center; font-size: 12px; font-weight: 500; color: var(--bsc-text-secondary, #5c5c5c); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; } .ds-btn-chrome { display: grid; place-items: center; width: 30px; height: 26px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--bsc-text-primary, #1a1a1a); cursor: default; } .ds-btn-chrome:hover:not(:disabled) { background: var(--bsc-bg-hover, rgb(0 0 0 / 8%)); } .ds-btn-chrome:disabled { color: var(--bsc-text-disabled, #a8a8a8); } .ds-btn-close { display: grid; place-items: center; width: 30px; height: 26px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--bsc-text-primary, #1a1a1a); cursor: default; } .ds-btn-close:hover { background: var(--bsc-danger, #d33); color: #fff; } .ds-chrome svg { width: 15px; height: 15px; fill: none; stroke: currentcolor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }"
+    },
+    {
+      "name": "Overlay Card",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "The only surface in the system that floats. Scrim plus two-layer shadow arrive together as one modality signal.",
+      "html": "<div class=\"ds-overlay\"><div class=\"ds-card\"><div class=\"ds-card-header\"><h1 class=\"ds-card-title\">Settings</h1></div><div class=\"ds-card-body\">Flat at rest. Depth means modality.</div></div></div>",
+      "css": ".ds-overlay { position: relative; display: grid; place-items: center; min-height: 260px; padding: 24px; background: var(--bsc-scrim, rgb(0 0 0 / 45%)); } .ds-card { width: min(420px, 100%); overflow: hidden; border: 1px solid var(--bsc-border, rgb(0 0 0 / 12%)); border-radius: 10px; background: var(--bsc-bg-primary, #f2f2f2); box-shadow: 0 12px 40px rgb(0 0 0 / 35%), 0 2px 8px rgb(0 0 0 / 20%); } .ds-card-header { padding: 10px 12px 10px 16px; border-bottom: 1px solid var(--bsc-border, rgb(0 0 0 / 12%)); } .ds-card-title { margin: 0; font-size: 15px; font-weight: 600; color: var(--bsc-text-primary, #1a1a1a); } .ds-card-body { padding: 16px 20px; font-size: 14px; color: var(--bsc-text-secondary, #5c5c5c); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quiet Frame",
+    "overview": "BetterSoundCloud is a frame around someone else's picture. SoundCloud's own web app renders every piece of music UI — the player, the waveforms, the artwork, the navigation — inside a content view that this design system deliberately never touches. What we own is a 32px strip along the top, a settings panel that floats over it, and future overlays. That is the entire canvas, and the frame's job is to hold the picture without competing with it.\n\nThis produces a system that is almost aggressively restrained. There is no display type, no hero, no imagery, no gradient, and no decorative colour anywhere. Controls are transparent until you hover them. The largest text in the product is 15px. The accent appears only where something is focused, selected, or on. A user should be able to look at this app all day and never notice the chrome — and then find every control exactly where they left it the moment they reach for one.\n\nThe restraint is architectural before it is aesthetic. Our chrome lives outside SoundCloud's document precisely so their releases cannot break it, and that same separation is why the frame must not imitate their surface language: two competing music UIs stacked in one window would read as a skin, not a client. Depth follows the same logic — surfaces are flat and separated by hairline borders, and a shadow appears only when something floats above the app and takes over input.",
+    "keyCharacteristics": [
+      "One 32px chrome strip; nothing else is permanently on screen",
+      "Flat at rest — borders separate, shadows signal modality",
+      "Two radii, two shadows, one type family, one accent",
+      "Controls invisible until hovered; icons are 15px stroked outlines",
+      "Every colour defined twice, light and dark, and never hard-coded outside the token file",
+      "Honesty rendered visually: unbuilt features appear disabled and labelled, never functional-looking"
+    ],
+    "rules": [
+      {
+        "name": "The Borrowed Accent Rule",
+        "body": "The accent is SoundCloud's, not ours. It marks state — focused, selected, on — and never decorates. If orange appears somewhere that is not a state, remove it.",
+        "section": "colors"
+      },
+      {
+        "name": "The Two-Mode Rule",
+        "body": "Every colour exists twice and is consumed only through a --bsc-* custom property. A literal hex outside tokens.css is a bug: it will be correct in one mode and wrong in the other. The single sanctioned exception is #fff on the danger hover, which must stay white in both modes.",
+        "section": "colors"
+      },
+      {
+        "name": "The 15px Ceiling Rule",
+        "body": "Nothing in BetterSoundCloud's own UI is larger than 15px. The frame has no headlines because the frame has nothing to announce. If a surface seems to need display type, it probably belongs to SoundCloud's view, not ours.",
+        "section": "typography"
+      },
+      {
+        "name": "The System Stack Rule",
+        "body": "No webfonts, ever. The chrome inherits the OS UI font so it belongs to the window; the CSP on every renderer blocks remote font loads regardless.",
+        "section": "typography"
+      },
+      {
+        "name": "The 32px Rule",
+        "body": "The chrome is 32px and never grows. Every new affordance either fits in that strip, moves into settings, or becomes an overlay. Growing the frame steals from the picture.",
+        "section": "layout"
+      },
+      {
+        "name": "The Modality Rule",
+        "body": "Shadow is not decoration and not hierarchy — it means 'this has taken over input'. A surface that does not block interaction does not get a shadow. If you reach for elevation to make something look important, use a border and a tonal step instead.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Two Radii Rule",
+        "body": "6px for anything you interact with, 10px for anything that floats. A third radius is a new concept — justify it or drop it.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "Do consume colour through --bsc-* custom properties, so every surface works in both modes.",
+      "Do keep the accent to state only — focus rings and selection. Its rarity is what makes it legible.",
+      "Do separate surfaces with 1px Hairline borders and the single tonal step, not with shadow.",
+      "Do pair the scrim and the Overlay shadow whenever something takes over input, and use neither otherwise.",
+      "Do give every new control a visible focus state (2px accent outline, outline-offset: -2px) and full keyboard operability — the product targets WCAG 2.2 AA for its own chrome.",
+      "Do render an unbuilt capability as a disabled control with the NOT IMPLEMENTED YET badge rather than hiding it or letting it appear functional.",
+      "Do expose stable data-bsc-* attributes on themable regions, and treat tokens.css plus those attributes as the versioned public API for user themes."
+    ],
+    "donts": [
+      "Don't target Svelte's generated hash classes (.s-050uw8y64xWw) from a theme. They change every build. That is what the data-bsc-* attributes exist for.",
+      "Don't build a generic Electron dashboard — Material-style cards, elevation for its own sake, an icon rail, dense chrome competing with the content it wraps. Confirmed anti-reference.",
+      "Don't adopt consumer music-app surface language — gradient heroes, artwork bleeding into blurred backgrounds, oversized transport controls. SoundCloud already renders all of that one layer below; duplicating it makes the client a skin. Confirmed anti-reference.",
+      "Don't use glassmorphism, backdrop blur, glow, or saturated gradients. They read as a theme rather than a tool and destroy legibility in a 32px strip. Confirmed anti-reference.",
+      "Don't introduce a webfont. The CSP blocks remote loads, and the OS stack is the point.",
+      "Don't add a third radius, a second shadow, or a second accent without retiring one first.",
+      "Don't exceed 15px type in BetterSoundCloud's own UI.",
+      "Don't grow the chrome past 32px. New affordances go into settings or an overlay.",
+      "Don't style SoundCloud's page from a component stylesheet. Page-level appearance is CSS-only through insertCSS, and no node may be added to their document."
+    ]
+  }
+}

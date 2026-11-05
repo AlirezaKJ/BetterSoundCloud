@@ -1,0 +1,14 @@
+{
+  // Type-checks the bundled plugins: plain JavaScript, checked through their JSDoc against the
+  // plugin API (src/shared/plugin-api.ts) and the sandbox's globals (resources/plugins/sandbox.d.ts).
+  // No Node and no DOM types on purpose: a plugin gets neither, and the check should say so.
+  "extends": "./tsconfig.base.json",
+  "include": ["resources/plugins/**/*.js", "resources/plugins/sandbox.d.ts"],
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "lib": ["ES2023"],
+    "types": []
+  }
+}

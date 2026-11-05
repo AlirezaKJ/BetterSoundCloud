@@ -1,0 +1,456 @@
+/**
+ * The single source of truth for settings.
+ *
+ * Every setting is defined exactly once, here. The TypeScript type, the settings form,
+ * the persisted defaults and the validation all derive from this object. v0.7.x defined
+ * each setting in four places — markup in `app/index.html`, a `dbResolve` in
+ * `settings.js`, a `dbSetItem` in `updateLS()`, and a `querySelector` + listener in
+ * `ui.js` — and they drifted.
+ *
+ * Adding a setting means adding one entry here and nothing else.
+ */
+
+export const SECTIONS = [
+  'general',
+  'appearance',
+  'themes',
+  'discord',
+  'plugins',
+  'shortcuts',
+  'advanced'
+] as const
+
+export type Section = (typeof SECTIONS)[number]
+
+/**
+ * How each section is written in the UI. Capitalising the key gave "Lastfm", and no
+ * amount of CSS fixes a name that has a full stop in the middle of it.
+ */
+export const SECTION_LABELS: Record<Section, string> = {
+  general: 'General',
+  appearance: 'Appearance',
+  themes: 'Themes',
+  discord: 'Discord',
+  plugins: 'Plugins',
+  shortcuts: 'Shortcuts',
+  advanced: 'Advanced'
+}
+
+/** Rendered under a control whose effect is not immediate. */
+export const APPLIES_NOTES = {
+  reload: 'Applies to the next page load — reload SoundCloud to see it now.',
+  restart: 'Takes effect after restarting BetterSoundCloud.'
+} as const
+
+type Base = {
+  readonly label: string
+  readonly section: Section
+  /** Shown under the control in the settings UI. */
+  readonly help?: string
+  /**
+   * Set to `false` while the feature behind a setting does not exist yet. The settings
+   * panel renders those disabled with a "not implemented yet" note instead of offering a
+   * control that silently does nothing. Omit it once the setting is actually read
+   * somewhere — an omitted `wired` means the setting works.
+   *
+   * This exists because the schema is written ahead of the features. Without it, the
+   * release meant to restore trust would ship eight toggles that do nothing.
+   */
+  readonly wired?: false
+  /**
+   * When the effect lands, if not immediately. Omitted means immediate.
+   *
+   * Most settings apply live: the main process reads them per request or re-injects CSS
+   * into the open document. A few cannot. Saying so in the schema rather than in prose
+   * keeps the claim next to the setting and testable — see the guard in the test that
+   * forbids hand-typed "requires a restart" help strings.
+   */
+  readonly applies?: 'reload' | 'restart'
+  /**
+   * A live line under the control saying whether the feature behind it is actually working,
+   * when that can change without the setting changing. `discord`: whether the Discord app is
+   * running and connected. `updates`: what the updater is doing, with its one button (check,
+   * download, restart to install, open the download page). A ticked box over a feature that
+   * cannot work right now is a control that silently does nothing — the line is how the panel
+   * says so.
+   */
+  readonly statusFrom?: 'discord' | 'updates'
+  /**
+   * Drawn by its own component in the settings panel instead of as an ordinary row, because a
+   * plain control would not do: `themes` is the theme list (Themes.svelte), `background` the
+   * background picker with its preview (Background.svelte). The value is still stored, coerced
+   * and defaulted from this schema like every other setting.
+   */
+  readonly drawnBy?: 'themes' | 'background'
+}
+
+export type SettingDef =
+  | (Base & { readonly kind: 'boolean'; readonly default: boolean })
+  | (Base & {
+      readonly kind: 'number'
+      readonly default: number
+      readonly min: number
+      readonly max: number
+      readonly step?: number
+    })
+  | (Base & { readonly kind: 'string'; readonly default: string })
+  | (Base & {
+      readonly kind: 'enum'
+      readonly default: string
+      readonly options: readonly string[]
+      /** What the panel shows for each option. A dropdown it draws must name every one (pinned). */
+      readonly labels?: Readonly<Record<string, string>>
+    })
+
+export const SETTINGS = {
+  // Where each choice goes, and which pages "Where you left off" may reopen: src/shared/start-page.ts.
+  // `stream` keeps SoundCloud's old name for its Feed: renaming a stored value would need a
+  // settings-version step, for nothing.
+  'general.startupUrl': {
+    kind: 'enum',
+    default: 'discover',
+    options: ['discover', 'stream', 'library', 'lastVisited'],
+    labels: {
+      discover: 'Home',
+      stream: 'Feed',
+      library: 'Library',
+      lastVisited: 'Where you left off'
+    },
+    label: 'On startup, open',
+    section: 'general',
+    help: 'Where you left off reopens the SoundCloud page you last had open.'
+  },
+  // Read when the window closes (`keepsRunningWhenClosed` in index.ts), so it applies at once.
+  'general.minimizeToTray': {
+    kind: 'boolean',
+    default: false,
+    label: 'Minimize to tray on close',
+    section: 'general',
+    help:
+      'Closing the window keeps BetterSoundCloud running, and playing, in the system tray: ' +
+      'click its icon to bring the window back, or choose Quit from its menu. Where there is ' +
+      'no tray icon, as on some Linux desktops, open BetterSoundCloud again instead. On macOS ' +
+      'the app always keeps running when its window closes.'
+  },
+  // The key keeps its old name so stored values carry over; it now governs downloading and
+  // installing as well as checking (main/updater.ts).
+  'general.checkForUpdates': {
+    kind: 'boolean',
+    default: true,
+    label: 'Update automatically',
+    section: 'general',
+    statusFrom: 'updates',
+    help:
+      'Downloads new versions from GitHub in the background and installs them when you quit. ' +
+      'Off, nothing is checked or downloaded until you ask.'
+  },
+
+  'appearance.zoomFactor': {
+    kind: 'number',
+    default: 100,
+    min: 10,
+    max: 500,
+    step: 5,
+    label: 'Zoom',
+    section: 'appearance',
+    help: 'Percent.'
+  },
+  'appearance.colorScheme': {
+    kind: 'enum',
+    default: 'system',
+    options: ['system', 'light', 'dark'],
+    labels: { system: 'System', light: 'Light', dark: 'Dark' },
+    label: 'Appearance',
+    section: 'appearance',
+    help:
+      'Applies to BetterSoundCloud’s own chrome, and to SoundCloud’s page wherever it ' +
+      'follows the system light or dark preference.'
+  },
+  'appearance.hideMenuBar': {
+    kind: 'boolean',
+    default: false,
+    label: 'Hide the BetterSoundCloud bar',
+    section: 'appearance',
+    help:
+      'Gives the whole window to SoundCloud and moves the window buttons into its own ' +
+      'header. Toggle it from the expand button at either end — the top bar, or ' +
+      'SoundCloud’s header once it is hidden.'
+  },
+  'appearance.fullWidthLayout': {
+    kind: 'boolean',
+    default: true,
+    label: 'Stretch the SoundCloud bars',
+    section: 'appearance',
+    help:
+      'SoundCloud centres its top menu and bottom player at 1240px. This stretches those ' +
+      'two bars to the window width. Page content keeps its own layout.'
+  },
+  // On by default since the lyrics button works (2026-10-28). The full-screen button is not
+  // built yet and is drawn disabled, saying so. Independent of `hideMenuBar`: that setting owns
+  // the header overlay because that overlay carries the only way back, which has nothing to do
+  // with the player.
+  'appearance.playerButtons': {
+    kind: 'boolean',
+    default: true,
+    label: 'Show extra buttons in the player bar',
+    section: 'appearance',
+    help:
+      'Adds a lyrics button to the right of SoundCloud’s play controls, and a full-screen ' +
+      'button that is not built yet. Lyrics are also in the right-click menu.'
+  },
+
+  // Not a theme: it goes on top of whichever theme is selected, so it can be combined with any
+  // of them. It was a theme until 2026-10-27; `upgradeValues` moves old choices onto it.
+  'appearance.minimalNavigation': {
+    kind: 'boolean',
+    default: false,
+    label: 'Minimal navigation',
+    section: 'themes',
+    help:
+      'Shows Home, Feed and Library in SoundCloud’s header as icons and hides the upsells ' +
+      'beside them, so the header carries the same links in about half the width. Works with ' +
+      'every theme.'
+  },
+
+  // v0.7.x's "Custom Background" (its custombg plugin), done without touching SoundCloud's page:
+  // one CSS layer under the page, drawn by `backgroundCss` in content-css.ts. `artwork` is the
+  // track that is playing, `picture` one the user chose (stored by main/background.ts).
+  'appearance.background': {
+    kind: 'enum',
+    default: 'none',
+    options: ['none', 'artwork', 'picture'],
+    label: 'Background',
+    section: 'themes',
+    drawnBy: 'background',
+    help:
+      'A picture behind SoundCloud’s page, blurred and faded into the page colour. It shows ' +
+      'through everywhere except the header, the player and your theme’s own panels.'
+  },
+  'appearance.backgroundBlur': {
+    kind: 'number',
+    default: 24,
+    min: 0,
+    max: 40,
+    step: 1,
+    label: 'Blur',
+    section: 'themes',
+    drawnBy: 'background'
+  },
+  // 25% by default, measured: at 40% a light picture washed out the grey secondary text of the
+  // darker themes (Nocturnal, PostMorphic) on SoundCloud's discover page.
+  'appearance.backgroundStrength': {
+    kind: 'number',
+    default: 25,
+    min: 5,
+    max: 100,
+    step: 5,
+    label: 'Strength',
+    section: 'themes',
+    drawnBy: 'background',
+    help: 'How much of the picture shows: a faint tint at 5%, full colour at 100%.'
+  },
+
+  // `string`, not `enum`, on purpose: `coerce` validates an enum against a fixed list, and a
+  // theme id is a filename the user invents. Validation happens where it can be true — the
+  // theme loader falls back to no theme when the selected file is gone.
+  'appearance.theme': {
+    kind: 'string',
+    default: 'vanilla',
+    label: 'Theme',
+    // Its own section, drawn by Themes.svelte rather than as a schema row: a theme is a
+    // choice among files on disk, each with a description and swatches, not one dropdown.
+    section: 'themes',
+    drawnBy: 'themes',
+    help:
+      'Restyles SoundCloud’s page. Drop a .css file in the themes folder in your ' +
+      'BetterSoundCloud data directory to add your own.'
+  },
+
+  'discord.enabled': {
+    kind: 'boolean',
+    default: true,
+    label: 'Discord Rich Presence',
+    section: 'discord',
+    statusFrom: 'discord',
+    help:
+      'Shows the track you’re playing on your Discord profile. Needs the Discord desktop app ' +
+      'running on this computer.'
+  },
+  'discord.showWhenPaused': {
+    kind: 'boolean',
+    default: false,
+    label: 'Keep showing presence while paused',
+    section: 'discord',
+    help: 'When this is off, your Discord status clears as soon as you pause.'
+  },
+
+  'shortcuts.mediaKeys': {
+    kind: 'boolean',
+    default: true,
+    label: 'Respond to media keys',
+    section: 'shortcuts',
+    help:
+      'Will be handled by SoundCloud’s own Media Session handlers — BetterSoundCloud ' +
+      'will not synthesise clicks on the player.',
+    wired: false
+  },
+
+  // On by default, unlike the filter-list blocker below. This one is a single request to a
+  // single known endpoint — it needs no engine, no downloaded list and no network fetch, and
+  // it cannot touch sign-in or playback. Blocking it lands on a path SoundCloud's own client
+  // already handles: its `parse()` returns `{ is_malformed: true }` when the response has no
+  // `promoted` key.
+  'advanced.blockAudioAds': {
+    kind: 'boolean',
+    default: true,
+    label: 'Skip the audio ads between tracks',
+    section: 'advanced',
+    help:
+      'Blocks the request SoundCloud makes when an audio ad is due, so the ad never loads. ' +
+      'Works on its own — the filter-list blocker below does not need to be on. Takes effect ' +
+      'from the next ad; one already playing will finish.'
+  },
+
+  // Off by default, deliberately. v0.7.x fetched 14 filter lists at every launch inside a
+  // `dom-ready` handler with no `await` and no `catch`, so whether blocking was active varied
+  // run to run — which is why the sign-in reports could not be reproduced. v2 ships a
+  // prebuilt engine and never filters SoundCloud's own hosts, but the sign-in cluster is
+  // still open, so this stays opt-in until it is closed.
+  'advanced.adBlocker': {
+    kind: 'boolean',
+    default: false,
+    label: 'Block other ads and trackers',
+    section: 'advanced',
+    // `reload`, unlike the audio-ad setting above. This one governs scripts rather than one
+    // endpoint: switching it ON cannot unload trackers the page has already run, and
+    // switching it OFF cannot fetch back what was blocked earlier in the document's life —
+    // so a page that loaded while blocking was on stays degraded until it is reloaded. That
+    // OFF direction is the one users hit, because turning the blocker off is exactly what
+    // someone does when a page looks broken.
+    applies: 'reload',
+    help:
+      'Blocks display ads and third-party tracking scripts using filter lists. Sign-in, ' +
+      'anti-bot checks and playback are never filtered. Audio ads have their own setting above.'
+  },
+
+  'advanced.hardwareAcceleration': {
+    kind: 'boolean',
+    default: true,
+    label: 'Hardware acceleration',
+    section: 'advanced',
+    applies: 'restart',
+    help:
+      'Lets the GPU decode audio and draw the page. Turn it off only if you see visual ' +
+      'glitches or the window renders blank.'
+  }
+} as const satisfies Record<string, SettingDef>
+
+export type SettingKey = keyof typeof SETTINGS
+
+/*
+ * ─────────────────────────────────────────────────────────────────────────────
+ * You do not need to read or change anything below to add a setting.
+ * Add an entry to SETTINGS above and you are done — the type, the settings form
+ * and the validation all follow automatically.
+ *
+ * The two types below are what makes that true. They are the only clever code in
+ * this file, and they are worth it: the alternative is hand-writing the `Settings`
+ * type as well, which means every new setting is two edits in two places that can
+ * drift apart. Avoiding exactly that is why this file exists — v0.7.x defined each
+ * setting in four places and they did drift.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+/**
+ * Maps one schema entry to the type of its value:
+ *   { kind: 'boolean' }                      -> boolean
+ *   { kind: 'number' }                       -> number
+ *   { kind: 'enum', options: ['a', 'b'] }    -> 'a' | 'b'
+ *   { kind: 'string' }                       -> string
+ */
+type ValueOf<Def> = Def extends { kind: 'boolean' }
+  ? boolean
+  : Def extends { kind: 'number' }
+    ? number
+    : Def extends { kind: 'enum'; options: readonly (infer Option)[] }
+      ? Option
+      : Def extends { kind: 'string' }
+        ? string
+        : never
+
+/**
+ * The settings object, with one correctly-typed property per entry in SETTINGS.
+ * `-readonly` strips the `as const` readonly markers so settings stay assignable.
+ */
+export type Settings = {
+  -readonly [K in SettingKey]: ValueOf<(typeof SETTINGS)[K]>
+}
+
+export const SETTING_KEYS = Object.keys(SETTINGS) as SettingKey[]
+
+export function defaults(): Settings {
+  const out = {} as Record<string, unknown>
+  for (const key of SETTING_KEYS) out[key] = SETTINGS[key].default
+  return out as Settings
+}
+
+/**
+ * Coerce an untrusted value to a valid one for `key`, falling back to the default.
+ * Used on both sides of IPC — the renderer must not be trusted to have validated,
+ * and a hand-edited config file must not be able to poison the app.
+ */
+export function coerce<K extends SettingKey>(key: K, value: unknown): Settings[K] {
+  const def: SettingDef = SETTINGS[key]
+
+  switch (def.kind) {
+    case 'boolean':
+      return (typeof value === 'boolean' ? value : def.default) as Settings[K]
+
+    case 'number': {
+      const n = typeof value === 'number' && Number.isFinite(value) ? value : def.default
+      return Math.min(def.max, Math.max(def.min, n)) as Settings[K]
+    }
+
+    case 'enum':
+      return (
+        typeof value === 'string' && def.options.includes(value) ? value : def.default
+      ) as Settings[K]
+
+    case 'string':
+      return (typeof value === 'string' ? value : def.default) as Settings[K]
+  }
+}
+
+export function coerceAll(input: Partial<Record<string, unknown>>): Settings {
+  const out = {} as Record<string, unknown>
+  for (const key of SETTING_KEYS) out[key] = coerce(key, input[key])
+  return out as Settings
+}
+
+/** The version `upgradeValues` brings stored settings up to. */
+export const SETTINGS_VERSION = 2
+
+/**
+ * Carry stored values forward from an older settings version, one step per version, oldest
+ * first. Pure, so every step is tested; the store calls it once, then saves the result with
+ * the new version so it never runs twice.
+ *
+ * 1 -> 2 (2026-10-27): Minimal navigation stopped being a theme and became a switch that works
+ * with any theme. Someone who had chosen it as their theme gets no theme plus the switch on,
+ * which is exactly the page they had.
+ */
+export function upgradeValues(
+  from: number,
+  values: Partial<Record<string, unknown>>
+): Partial<Record<string, unknown>> {
+  const next = { ...values }
+  if (from < 2 && next['appearance.theme'] === 'minimal-nav') {
+    next['appearance.theme'] = 'vanilla'
+    next['appearance.minimalNavigation'] = true
+  }
+  return next
+}
+
+export function isSettingKey(value: unknown): value is SettingKey {
+  return typeof value === 'string' && Object.prototype.hasOwnProperty.call(SETTINGS, value)
+}

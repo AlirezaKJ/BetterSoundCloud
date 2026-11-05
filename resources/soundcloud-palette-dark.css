@@ -1,0 +1,139 @@
+/*
+ * SoundCloud's own dark-mode colours, for a page that is in its light mode.
+ *
+ * A theme that says `@mode dark` was made for SoundCloud's dark mode. SoundCloud's light and dark
+ * modes differ only in the colour variables below — every text colour, background and icon on the
+ * page is drawn from them; the icons are inline SVGs filled with `currentColor` — so putting the
+ * dark values back underneath the theme makes the light mode look exactly like the dark one the
+ * theme was written for. BetterSoundCloud adds this file before the theme; the theme still wins.
+ *
+ * `body.theme-light` because SoundCloud marks its light mode with that class on <body>, and so
+ * this applies only while the page is light (in dark mode SoundCloud's own values are already
+ * these). The element selector also gives it one more point of specificity than SoundCloud's
+ * own `.theme-light` rule, which it has to beat: a stylesheet inserted by the app cascades
+ * BEFORE the page's own at equal specificity.
+ *
+ * Measured on soundcloud.com on 2026-10-27, from its `.theme-dark` rule: the 111 variables whose
+ * value differs between the two modes. The other variables in that rule are the same in both.
+ * If SoundCloud changes its palette, this goes slightly stale, never broken.
+ */
+body.theme-light {
+  --surface-color: #121212;
+  --surface-rgb: 18, 18, 18;
+  --primary-color: #fff;
+  --primary-rgb: 255, 255, 255;
+  --secondary-color: #999;
+  --secondary-rgb: 153, 153, 153;
+  --highlight-color: #303030;
+  --highlight-rgb: 48, 48, 48;
+  --link-color: #699fff;
+  --link-rgb: 105, 159, 255;
+  --overlay-color: hsla(0, 0%, 100%, 0.4);
+  --overlay-rgb: 255, 255, 255, 0.4;
+  --imageBorder-color: hsla(0, 0%, 100%, 0.15);
+  --imageBorder-rgb: 255, 255, 255, 0.15;
+  --artist-color: #eee8fe;
+  --artist-rgb: 238, 232, 254;
+  --artist-pro-color: #f4eedf;
+  --artist-pro-rgb: 244, 238, 223;
+  --artist-surface-color: #5a45fd;
+  --artist-surface-rgb: 90, 69, 253;
+  --artist-pro-surface-color: #6f5b37;
+  --artist-pro-surface-rgb: 111, 91, 55;
+  --support-bg-color: #aed581;
+  --support-bg-rgb: 174, 213, 129;
+  --support-text-color: #33691e;
+  --support-text-rgb: 51, 105, 30;
+  --support-hover-bg-color: #dcedc8;
+  --support-hover-bg-rgb: 220, 237, 200;
+  --background-surface-color: #121212;
+  --background-highlight-color: #303030;
+  --font-primary-color: #fff;
+  --font-secondary-color: #999;
+  --font-link-color: #699fff;
+  --button-primary-background-color: #fff;
+  --button-primary-font-color: #121212;
+  --button-primary-hover-font-color: rgba(18, 18, 18, 0.4);
+  --button-primary-disabled-background-color: #fff;
+  --button-primary-disabled-font-color: #121212;
+  --button-primary-selected-background-color: #303030;
+  --button-primary-selected-font-color: #fff;
+  --button-primary-selected-hover-font-color: hsla(0, 0%, 100%, 0.4);
+  --button-primary-selected-active-background-color: #303030;
+  --button-primary-selected-active-font-color: #fff;
+  --button-primary-loading-background-color: #fff;
+  --button-primary-loading-font-color: rgba(18, 18, 18, 0.6);
+  --button-primary-loading-icon-color: #121212;
+  --button-primary-active-background-color: #fff;
+  --button-primary-active-font-color: #121212;
+  --button-secondary-background-color: #303030;
+  --button-secondary-font-color: #fff;
+  --button-secondary-hover-font-color: hsla(0, 0%, 100%, 0.4);
+  --button-secondary-disabled-background-color: #303030;
+  --button-secondary-disabled-font-color: #fff;
+  --button-secondary-selected-background-color: #303030;
+  --button-secondary-selected-active-background-color: #303030;
+  --button-secondary-loading-background-color: #303030;
+  --button-secondary-loading-font-color: hsla(0, 0%, 100%, 0.6);
+  --button-secondary-loading-icon-color: #fff;
+  --button-secondary-active-background-color: #303030;
+  --button-secondary-active-font-color: #fff;
+  --button-tertiary-background-color: #121212;
+  --button-tertiary-font-color: #fff;
+  --button-tertiary-hover-font-color: hsla(0, 0%, 100%, 0.4);
+  --button-tertiary-disabled-background-color: #121212;
+  --button-tertiary-disabled-font-color: #fff;
+  --button-tertiary-selected-background-color: #121212;
+  --button-tertiary-selected-active-background-color: #121212;
+  --button-tertiary-loading-background-color: #121212;
+  --button-tertiary-loading-font-color: hsla(0, 0%, 100%, 0.6);
+  --button-tertiary-loading-icon-color: #fff;
+  --button-tertiary-active-background-color: #121212;
+  --button-tertiary-active-font-color: #fff;
+  --overlay-default-color: hsla(0, 0%, 100%, 0.4);
+  --link-standard-color: #699fff;
+  --link-standard-focus-box-shadow: 0 0 0 2px #699fff;
+  --link-standard-active-color: rgba(105, 159, 255, 0.6);
+  --link-standard-hover-color: #699fff;
+  --link-standard-disabled-color: rgba(105, 159, 255, 0.6);
+  --link-primary-color: #fff;
+  --link-primary-focus-box-shadow: 0 0 0 2px #699fff;
+  --link-primary-disabled-color: hsla(0, 0%, 100%, 0.6);
+  --link-primary-active-color: hsla(0, 0%, 100%, 0.6);
+  --link-primary-hover-color: hsla(0, 0%, 100%, 0.4);
+  --link-secondary-color: #999;
+  --link-secondary-focus-box-shadow: 0 0 0 2px #699fff;
+  --link-secondary-disabled-color: hsla(0, 0%, 60%, 0.6);
+  --link-secondary-active-color: hsla(0, 0%, 60%, 0.6);
+  --link-secondary-hover-color: hsla(0, 0%, 60%, 0.4);
+  --tag-focused-box-shadow: 0 0 0 2px #699fff inset;
+  --tag-default-background-color: #303030;
+  --tag-default-font-color: #fff;
+  --tag-default-font-hover-color: hsla(0, 0%, 100%, 0.4);
+  --tag-selected-background-color: #fff;
+  --tag-selected-font-color: #121212;
+  --tag-selected-font-hover-color: rgba(18, 18, 18, 0.4);
+  --input-default-background-color: #303030;
+  --input-default-font-color: #fff;
+  --input-placeholder-background-color: #303030;
+  --input-placeholder-font-color: #999;
+  --input-focused-background-color: #303030;
+  --input-focused-border-color: #999;
+  --input-focused-font-color: #fff;
+  --input-invalid-background-color: #303030;
+  --input-disabled-background-color: hsla(0, 0%, 100%, 0.15);
+  --input-disabled-font-color: #fff;
+  --toggle-on-handle-color: #121212;
+  --toggle-on-handle-hover-color: rgba(18, 18, 18, 0.4);
+  --toggle-off-body-color: #999;
+  --toggle-off-body-hover-color: #999;
+  --toggle-off-handle-color: #121212;
+  --toggle-off-handle-hover-color: rgba(18, 18, 18, 0.4);
+}
+
+/* SoundCloud inverts its footer logo in light mode, to make the white artwork dark. On the dark
+   colours above it must stay white. */
+html body.theme-light .footer__logoCloud,
+html body.theme-light .footer__logoWordmark {
+  filter: none;
+}
