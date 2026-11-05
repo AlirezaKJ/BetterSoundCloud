@@ -2,10 +2,11 @@
 
 Each version's entry is also its release notes on GitHub.
 
-## 0.8.0 (not released yet)
+## 0.8.0 (2026-11-05)
 
-BetterSoundCloud rebuilt from scratch. The headline: **the tracks that greyed out and skipped in
-0.7.x play now**
+### BetterSoundCloud rebuilt from scratch.
+
+The tracks that greyed out and skipped in 0.7.x play now
 ([#95](https://github.com/AlirezaKJ/BetterSoundCloud/issues/95),
 [#105](https://github.com/AlirezaKJ/BetterSoundCloud/issues/105)). Part of SoundCloud's catalogue
 uses Widevine copy protection, and 0.8.0 is signed for it.
@@ -62,6 +63,7 @@ in the [README](https://github.com/AlirezaKJ/BetterSoundCloud#download).
 - **On startup, open** Home, Feed, Library, or where you left off. **Minimize to tray on close**
   keeps it playing with the window closed.
 - **F6** moves keyboard focus between the bar at the top, SoundCloud's page and the lyrics pane.
+- Fix macOS window behavior, native controls and packaging by @droptablemustafa in https://github.com/AlirezaKJ/BetterSoundCloud/pull/118
 
 ### Not back yet
 

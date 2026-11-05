@@ -15,8 +15,8 @@ name: Release
 on:
   push:
     tags: ['v*']
-  # Only offered once this file is on the default branch (a GitHub rule). Until `rewrite` is merged,
-  # release by pushing a tag.
+  # A run by hand from the Actions tab. GitHub offers it only for workflows on the default branch,
+  # which this one is from 0.8.0. Pushing a tag is still the usual way.
   workflow_dispatch:
 
 permissions:

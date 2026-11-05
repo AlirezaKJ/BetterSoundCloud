@@ -1,8 +1,9 @@
 # CLAUDE.md
 
 BetterSoundCloud v2: a desktop client that wraps soundcloud.com in Electron and adds what a
-browser tab cannot. This branch (`rewrite`) is a full rewrite; v0.7.x lives on `main` until the
-merge, and for good on `legacy/0.7.x` (V0.7.1 plus its later build fixes, without PR #103).
+browser tab cannot. It is a full rewrite, released as 0.8.0 and on `main` since 2026-11-05
+(merged from `rewrite`); v0.7.x lives on for good on `legacy/0.7.x` (V0.7.1 plus its later build
+fixes, without PR #103).
 The two bugs the rewrite exists to fix: DRM tracks that grey out and auto-skip (fixed by VMP
 signing), and "unusual activity" blocks on sign-in, like and follow (still open).
 
