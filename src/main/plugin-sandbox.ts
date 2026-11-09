@@ -218,6 +218,11 @@ export async function runPlugin(start: PluginStart, bridge: Bridge): Promise<Run
         // Main shapes and checks the list (readAudioFilters); a refusal comes back as a rejection.
         await bridge.call('audio.set', [filters])
       },
+      setPitch: async (semitones: number) => {
+        requirePermission('audio', 'bsc.audio.setPitch')
+        // Main checks it is a number and keeps it within an octave (readAudioPitch).
+        await bridge.call('audio.setPitch', [semitones])
+      },
       clear: async () => {
         requirePermission('audio', 'bsc.audio.clear')
         await bridge.call('audio.clear', [])

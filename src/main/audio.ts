@@ -5,6 +5,7 @@ import { CH } from '@shared/ipc'
 import {
   AUDIO_LIMITS,
   NOT_STARVED,
+  combinePitch,
   describeAudioStop,
   headroomDb,
   isFlat,
@@ -32,10 +33,11 @@ import { isDev } from './env'
  *
  * HOW. A hidden view of ours (renderer/audio, never shown, never in the window) captures the
  * content view's own audio output — `getMediaSourceId` and `chromeMediaSource: 'tab'`, the
- * machinery browser equaliser extensions use — runs it through the plugins' filters and plays the
- * result. While the capture runs, Chromium plays the content view only into it; when the capture
- * ends, the content view plays normally again. Measured 2026-11-09 in this Electron: the capture
- * carries Widevine-encrypted audio, and adds about 0.1 s.
+ * machinery browser equaliser extensions use — shifts its pitch if a plugin asks, runs it through
+ * the plugins' filters and plays the result. While the capture runs, Chromium plays the content
+ * view only into it; when the capture ends, the content view plays normally again. Measured
+ * 2026-11-09 in this Electron: the capture carries Widevine-encrypted audio, and adds about 0.1 s;
+ * the pitch shifter adds its own 0.08 s while it runs.
  *
  * WHY IT CANNOT BREAK SOUNDCLOUD. The app never mutes SoundCloud: the capture does, and only
  * while it lives, so every way this can fail — the audio view crashing, the capture failing to
@@ -45,7 +47,9 @@ import { isDev } from './env'
  *
  * STEPPING ASIDE. A failure that would only repeat — the capture refused, the view crashing
  * twice, SoundCloud playing while the capture hears nothing — stops the engine until nothing is
- * asking for it any more: turning the plugin off and on tries again.
+ * asking for it any more: turning the plugin off and on tries again. A pitch shifter that cannot
+ * start stops it only until nothing asks for a shift, so turning Pitch off is enough for the
+ * Equaliser to work again.
  */
 
 /** What the engine needs to run: the view to capture, and how to make a view of ours. */
@@ -65,6 +69,8 @@ let safeMode = false
 let target: AudioTarget | null = null
 /** Each plugin's filters, by plugin id. Applied in id order, so the order never shuffles. */
 const chains = new Map<string, AudioFilter[]>()
+/** Each plugin's key shift in semitones, by plugin id. They add up. */
+const pitches = new Map<string, number>()
 let view: WebContentsView | null = null
 let viewReady = false
 /** Good for one capture; a new view needs a new one. */
@@ -118,9 +124,18 @@ export function setAudioFilters(owner: string, filters: readonly AudioFilter[]):
   reconcile()
 }
 
-/** A plugin stopped, or asked for nothing: its filters go. */
-export function clearAudioFilters(owner: string): void {
-  if (chains.delete(owner)) reconcile()
+/** A plugin's key shift, already shaped by `readAudioPitch`. 0 removes it. */
+export function setAudioPitch(owner: string, semitones: number): void {
+  if (semitones === 0) pitches.delete(owner)
+  else pitches.set(owner, semitones)
+  reconcile()
+}
+
+/** A plugin stopped, or asked for nothing: its filters and its shift go. */
+export function clearAudio(owner: string): void {
+  const hadFilters = chains.delete(owner)
+  const hadPitch = pitches.delete(owner)
+  if (hadFilters || hadPitch) reconcile()
 }
 
 export function getAudioStatus(): AudioStatus {
@@ -150,6 +165,9 @@ export function handleAudioReport(report: AudioReport): void {
     case 'failed':
       stepAside('capture-failed', report.message)
       return
+    case 'pitch-failed':
+      stepAside('pitch-failed', report.message)
+      return
     case 'ended':
       // The content view's renderer went away, for one; capture it again from a fresh view.
       endings += 1
@@ -177,7 +195,10 @@ function combinedFilters(): AudioFilter[] {
 /** Make the engine match what is asked of it. Safe to call at any time, as often as wanted. */
 function reconcile(): void {
   const filters = combinedFilters()
-  if (filters.length === 0 || isFlat(filters)) {
+  const pitch = combinePitch(pitches.values())
+  // The shifter failing says nothing about the rest: once nothing asks for a shift, try again.
+  if (latched?.reason === 'pitch-failed' && pitch === 0) latched = null
+  if (pitch === 0 && (filters.length === 0 || isFlat(filters))) {
     // Nothing is asked: forget any earlier failure, so asking again tries again.
     latched = null
     crashes = 0
@@ -249,7 +270,12 @@ function sendConfig(): void {
     }
   }
   const filters = combinedFilters()
-  const config: AudioConfig = { sourceId, filters, preampDb: -headroomDb(filters) }
+  const config: AudioConfig = {
+    sourceId,
+    pitch: combinePitch(pitches.values()),
+    filters,
+    preampDb: -headroomDb(filters)
+  }
   view.webContents.send(CH.audioConfigure, config)
 }
 
@@ -320,6 +346,7 @@ function statusFor(state: AudioEngineState): AudioStatus {
 export function resetAudioEngineForTests(): void {
   destroyView()
   chains.clear()
+  pitches.clear()
   listeners.clear()
   engine = { state: 'off' }
   latched = null

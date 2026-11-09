@@ -4,8 +4,9 @@
  * and the settings panel all compute the same thing, and tested.
  *
  * The engine never touches SoundCloud's page. A hidden view of ours captures the content view's
- * own audio output, runs it through these filters and plays the result; while the capture runs,
- * Chromium plays the content view only into it (src/main/audio.ts).
+ * own audio output, shifts its pitch if a plugin asks, runs it through these filters and plays
+ * the result; while the capture runs, Chromium plays the content view only into it
+ * (src/main/audio.ts).
  */
 
 export type AudioFilterType = 'lowshelf' | 'peaking' | 'highshelf'
@@ -31,7 +32,9 @@ export const AUDIO_LIMITS = {
   /** From one plugin. */
   maxFilters: 16,
   /** From every plugin together. */
-  maxChain: 32
+  maxChain: 32,
+  /** Semitones up or down: an octave. From one plugin, and from every plugin added together. */
+  maxPitch: 12
 } as const
 
 const TYPES: readonly AudioFilterType[] = ['lowshelf', 'peaking', 'highshelf']
@@ -58,6 +61,27 @@ export function readAudioFilters(raw: unknown): AudioFilter[] | null {
     })
   }
   return filters
+}
+
+/**
+ * A plugin's pitch shift, from `bsc.audio.setPitch`: semitones, finite, within an octave either
+ * way, to the cent. Null when it is not a number at all.
+ */
+export function readAudioPitch(raw: unknown): number | null {
+  if (!isNumber(raw)) return null
+  return roundCents(clamp(raw, -AUDIO_LIMITS.maxPitch, AUDIO_LIMITS.maxPitch))
+}
+
+/** Every plugin's shifts add up, within an octave either way. 0 is no shift at all. */
+export function combinePitch(shifts: Iterable<number>): number {
+  let total = 0
+  for (const shift of shifts) total += shift
+  return roundCents(clamp(total, -AUDIO_LIMITS.maxPitch, AUDIO_LIMITS.maxPitch))
+}
+
+/** A hundredth of a semitone (a cent) is finer than anyone hears; it also turns -0 into 0. */
+function roundCents(semitones: number): number {
+  return Math.round(semitones * 100) / 100 || 0
 }
 
 /** Below this a filter changes nothing anyone can hear, so it is as good as absent. */
@@ -179,6 +203,11 @@ function coefficients(
 export type AudioConfig = {
   /** From `getMediaSourceId`: good for one capture, within ten seconds. */
   readonly sourceId: string
+  /**
+   * Semitones to shift everything by, before the filters, so an equaliser shapes the sound as it
+   * is heard: a bass boost stays on the bass after the key moves. 0 for none.
+   */
+  readonly pitch: number
   readonly filters: readonly AudioFilter[]
   /** dB, 0 or below. */
   readonly preampDb: number
@@ -186,10 +215,12 @@ export type AudioConfig = {
 
 /** What the audio view tells main. Its renderer is ours, but it is checked like any message. */
 export type AudioReport =
-  /** The capture is running and its sound is playing. */
+  /** The capture is running and its sound is playing, through the pitch shifter if asked. */
   | { kind: 'running' }
   /** The capture could not start. */
   | { kind: 'failed'; message: string }
+  /** The pitch shifter could not start (its WebAssembly refused, for one). */
+  | { kind: 'pitch-failed'; message: string }
   /** The capture stopped by itself — the content view's renderer went away, for one. */
   | { kind: 'ended' }
   /** The capture went digitally silent (exact zeros), or stopped being. */
@@ -204,8 +235,9 @@ export function readAudioReport(raw: unknown): AudioReport | null {
     case 'ended':
       return { kind: 'ended' }
     case 'failed':
+    case 'pitch-failed':
       return {
-        kind: 'failed',
+        kind: report['kind'],
         message:
           typeof report['message'] === 'string' && report['message'].trim()
             ? report['message'].trim().slice(0, 120)
@@ -224,7 +256,8 @@ export function readAudioReport(raw: unknown): AudioReport | null {
  * ── What the engine says about itself ─────────────────────────────────────────────────────
  */
 
-export type AudioStopReason = 'safe-mode' | 'capture-failed' | 'no-sound' | 'crashed'
+export type AudioStopReason =
+  'safe-mode' | 'capture-failed' | 'pitch-failed' | 'no-sound' | 'crashed'
 
 /** The engine's state, as plugins with the `audio` permission are told it. */
 export type AudioEngineState =
@@ -243,6 +276,10 @@ export function describeAudioStop(reason: AudioStopReason, detail = ''): string 
       return 'Off while BetterSoundCloud runs in safe mode. SoundCloud plays as normal.'
     case 'capture-failed':
       return `Couldn’t take SoundCloud’s sound${detail ? ` (${detail})` : ''}, so SoundCloud plays as normal. ${tryAgain}`
+    case 'pitch-failed':
+      // Every plugin with the permission reads this, so it names Pitch rather than "this plugin":
+      // turning Pitch off is also what lets the Equaliser work again (main/audio.ts, reconcile).
+      return `The pitch shifter couldn’t start${detail ? ` (${detail})` : ''}, so SoundCloud plays as normal. Turn Pitch off and on to try again.`
     case 'no-sound':
       return `No sound reached it from SoundCloud, so it stepped aside and SoundCloud plays as normal. ${tryAgain}`
     case 'crashed':

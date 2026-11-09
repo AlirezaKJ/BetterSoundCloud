@@ -19,13 +19,14 @@ import type {
   PluginView
 } from '@shared/plugins'
 import type { PluginAction, PluginStatus } from '@shared/plugin-api'
-import { readAudioFilters } from '@shared/audio'
+import { readAudioFilters, readAudioPitch } from '@shared/audio'
 import { getNowPlaying, onNowPlayingChange } from './now-playing'
 import {
-  clearAudioFilters,
+  clearAudio,
   getAudioStatus,
   onAudioStatusChange,
-  setAudioFilters
+  setAudioFilters,
+  setAudioPitch
 } from './audio'
 import { deleteSecret, getSecret, setSecret } from './secrets'
 import { openInBrowser } from './session'
@@ -301,7 +302,7 @@ function start(plugin: Found): void {
 
 function stop(id: string): void {
   // Whatever it was doing to the sound ends with it, whether or not it says goodbye.
-  clearAudioFilters(id)
+  clearAudio(id)
   const runtime = runtimes.get(id)
   if (!runtime) return
   if (runtime.startTimer) clearTimeout(runtime.startTimer)
@@ -427,8 +428,16 @@ async function answer(
       setAudioFilters(id, filters)
       return null
     }
+    case 'audio.setPitch': {
+      const semitones = readAudioPitch(args[0])
+      if (semitones === null) {
+        throw new Error('bsc.audio.setPitch takes a number of semitones, from −12 to 12')
+      }
+      setAudioPitch(id, semitones)
+      return null
+    }
     case 'audio.clear':
-      clearAudioFilters(id)
+      clearAudio(id)
       return null
   }
 }
@@ -436,7 +445,7 @@ async function answer(
 function exited(plugin: Found, runtime: Runtime, code: number): void {
   runtime.child = null
   // A crashed or failed plugin leaves the sound as SoundCloud plays it.
-  clearAudioFilters(plugin.manifest?.id ?? plugin.folder)
+  clearAudio(plugin.manifest?.id ?? plugin.folder)
   if (runtime.startTimer) clearTimeout(runtime.startTimer)
   if (runtime.stopping) return
 
@@ -474,9 +483,24 @@ function fail(runtime: Runtime, problem: string): void {
  * ── Finding and describing ─────────────────────────────────────────────────────────────────
  */
 
+/**
+ * The order Settings lists the built-in plugins in: Last.fm, then the sound plugins. A built-in
+ * missing from this list comes after them, alphabetically. Only the list: the audio engine
+ * applies every plugin's filters in id order whatever this says.
+ */
+const BUNDLED_ORDER = ['lastfm', 'equaliser', 'pitch']
+
+function listedOrder(plugin: Found): number {
+  const index = BUNDLED_ORDER.indexOf(plugin.folder)
+  return index === -1 ? BUNDLED_ORDER.length : index
+}
+
 function scan(): void {
   if (!paths) return
-  const bundled = readFolder(paths.bundled, 'bundled')
+  // A stable sort, so built-ins missing from the list keep their alphabetical order.
+  const bundled = readFolder(paths.bundled, 'bundled').sort(
+    (a, b) => listedOrder(a) - listedOrder(b)
+  )
   const builtInIds = new Set(bundled.map((p) => p.folder))
   const user = readFolder(paths.user, 'user').map((plugin) =>
     builtInIds.has(plugin.folder)

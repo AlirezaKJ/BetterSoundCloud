@@ -33,7 +33,8 @@ class FakeChild extends EventEmitter {
 
 const mocks = vi.hoisted(() => ({
   setAudioFilters: vi.fn(),
-  clearAudioFilters: vi.fn(),
+  setAudioPitch: vi.fn(),
+  clearAudio: vi.fn(),
   audioListener: null as ((status: { state: string; message: string }) => void) | null,
   children: [] as FakeChild[],
   secrets: new Map<string, string>(),
@@ -61,7 +62,8 @@ vi.mock('./secrets', () => ({
 vi.mock('./session', () => ({ openInBrowser: mocks.openInBrowser }))
 vi.mock('./audio', () => ({
   setAudioFilters: mocks.setAudioFilters,
-  clearAudioFilters: mocks.clearAudioFilters,
+  setAudioPitch: mocks.setAudioPitch,
+  clearAudio: mocks.clearAudio,
   getAudioStatus: () => ({ state: 'off', message: '' }),
   onAudioStatusChange: (listener: (status: { state: string; message: string }) => void) => {
     mocks.audioListener = listener
@@ -145,6 +147,21 @@ describe('finding plugins', () => {
       { text: 'Open www.last.fm in your browser', available: true, approved: false }
     ])
     expect(viewOf(list, 'demo')?.state).toBe('off')
+  })
+
+  it('lists the built-ins Last.fm first, then the Equaliser and Pitch, then any other', async () => {
+    for (const id of ['pitch', 'equaliser', 'lastfm']) {
+      writePlugin(join(root, 'bundled', id), { id, name: id, version: '1.0.0' })
+    }
+    writePlugin(join(root, 'user', 'mine'), { id: 'mine', name: 'Mine', version: '0.1' })
+    const { listPlugins } = await load()
+    expect(listPlugins().map((p) => `${p.source}:${p.id}`)).toEqual([
+      'bundled:lastfm',
+      'bundled:equaliser',
+      'bundled:pitch',
+      'bundled:demo',
+      'user:mine'
+    ])
   })
 
   it('shows a broken plugin and why, instead of hiding it', async () => {
@@ -369,7 +386,8 @@ describe('shaping the sound', () => {
     service.setPluginEnabled('tone', true)
     host().emit('message', { type: 'started' })
     mocks.setAudioFilters.mockClear()
-    mocks.clearAudioFilters.mockClear()
+    mocks.setAudioPitch.mockClear()
+    mocks.clearAudio.mockClear()
     return service
   }
 
@@ -409,19 +427,30 @@ describe('shaping the sound', () => {
     expect(await call('audio.set', [[{ type: 'notch' }]], 2)).toMatchObject({ ok: false })
     expect(mocks.setAudioFilters).toHaveBeenCalledTimes(1)
     expect(await call('audio.clear', [], 3)).toMatchObject({ ok: true })
-    expect(mocks.clearAudioFilters).toHaveBeenCalledWith('tone')
+    expect(mocks.clearAudio).toHaveBeenCalledWith('tone')
+  })
+
+  it('passes a plugin’s key shift on, within an octave, and refuses one that is not a number', async () => {
+    await runningTone()
+    expect(await call('audio.setPitch', [30], 1)).toMatchObject({ ok: true })
+    expect(mocks.setAudioPitch).toHaveBeenCalledWith('tone', 12)
+    expect(await call('audio.setPitch', ['up'], 2)).toMatchObject({
+      ok: false,
+      error: 'bsc.audio.setPitch takes a number of semitones, from −12 to 12'
+    })
+    expect(mocks.setAudioPitch).toHaveBeenCalledTimes(1)
   })
 
   it('takes a plugin’s filters away when it is turned off, and when it crashes', async () => {
     const service = await runningTone()
     service.setPluginEnabled('tone', false)
-    expect(mocks.clearAudioFilters).toHaveBeenCalledWith('tone')
+    expect(mocks.clearAudio).toHaveBeenCalledWith('tone')
 
-    mocks.clearAudioFilters.mockClear()
+    mocks.clearAudio.mockClear()
     service.setPluginEnabled('tone', true)
     host().emit('message', { type: 'started' })
     host().emit('exit', 1)
-    expect(mocks.clearAudioFilters).toHaveBeenCalledWith('tone')
+    expect(mocks.clearAudio).toHaveBeenCalledWith('tone')
   })
 
   it('tells it the engine’s status when it starts and on every change', async () => {

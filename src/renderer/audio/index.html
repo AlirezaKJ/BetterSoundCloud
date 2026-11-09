@@ -2,9 +2,12 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- The standard CSP plus 'wasm-unsafe-eval', for this view only: the pitch shifter is
+         WebAssembly, which Chromium refuses to compile without it (measured 2026-11-10). It
+         allows WebAssembly and nothing else: no eval, no inline or remote script. -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'"
+      content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'"
     />
     <title>BetterSoundCloud — Audio</title>
   </head>

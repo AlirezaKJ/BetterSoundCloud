@@ -4,6 +4,7 @@
   import type { PluginsResult } from '@shared/ipc'
   import StatusText from './StatusText.svelte'
   import EqualiserEditor from './EqualiserEditor.svelte'
+  import PitchEditor from './PitchEditor.svelte'
 
   /*
    * The Plugins section: every plugin, built in or dropped into the plugins folder.
@@ -209,23 +210,35 @@
           <div class="settings" data-bsc-plugin-settings>
             {#each plugin.settings as { setting, value, hasValue } (setting.key)}
               {@const id = `plugin-${plugin.id}-${setting.key}`}
-              {#if setting.kind === 'equaliser'}
-                <!-- A curve needs the row's whole width: its name and help above, the editor below. -->
+              {#if setting.kind === 'equaliser' || setting.kind === 'pitch'}
+                <!-- A curve or a ruler needs the row's whole width: its name and help above, the
+                     editor below. -->
                 <div class="setting wide">
                   <div class="setting-label">
                     <span class="setting-name" id={`${id}-label`}>{setting.label}</span>
                     {#if setting.help}<p class="help">{setting.help}</p>{/if}
                   </div>
-                  <EqualiserEditor
-                    labelledBy={`${id}-label`}
-                    bands={setting.bands}
-                    range={setting.range}
-                    presets={setting.presets}
-                    value={typeof value === 'string' ? value : setting.default}
-                    onchange={(next: string) => {
-                      void setSetting(plugin.id, setting.key, next)
-                    }}
-                  />
+                  {#if setting.kind === 'equaliser'}
+                    <EqualiserEditor
+                      labelledBy={`${id}-label`}
+                      bands={setting.bands}
+                      range={setting.range}
+                      presets={setting.presets}
+                      value={typeof value === 'string' ? value : setting.default}
+                      onchange={(next: string) => {
+                        void setSetting(plugin.id, setting.key, next)
+                      }}
+                    />
+                  {:else}
+                    <PitchEditor
+                      labelledBy={`${id}-label`}
+                      range={setting.range}
+                      value={typeof value === 'string' ? value : setting.default}
+                      onchange={(next: string) => {
+                        void setSetting(plugin.id, setting.key, next)
+                      }}
+                    />
+                  {/if}
                 </div>
               {:else}
                 <div class="setting">

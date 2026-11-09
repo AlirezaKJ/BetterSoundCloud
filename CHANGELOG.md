@@ -9,6 +9,11 @@ Each version's entry is also its release notes on GitHub.
   without touching SoundCloud's page. It is a built-in plugin, off until you turn it on in
   **Settings → Plugins**, and turning it off puts SoundCloud's own sound straight back
   ([#101](https://github.com/AlirezaKJ/BetterSoundCloud/issues/101)).
+- **Pitch**: move everything SoundCloud plays up or down by up to an octave, a semitone at a time,
+  at the same speed. Another built-in plugin, off until you turn it on, and it works alongside the
+  equaliser: the key moves first, so a bass boost stays on the bass
+  ([#124](https://github.com/AlirezaKJ/BetterSoundCloud/issues/124)). Playback speed is not
+  possible: SoundCloud's player can't be reached from outside its page.
 - Plugins can shape the sound too, with the new `audio` permission
   ([guide](docs/CUSTOM_PLUGINS.md)).
 

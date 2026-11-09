@@ -1,5 +1,6 @@
 import type { PluginAction, PluginStatus } from './plugin-api'
 import { formatGains, parseGains, snapGain } from './equaliser'
+import { OCTAVE, formatSemitones, parseSemitones } from './pitch'
 
 /**
  * Plugins: what a plugin.json may say, what a permission means, and what a plugin's process may
@@ -98,6 +99,19 @@ export type PluginSetting =
       /** Each band goes this many dB up or down. */
       range: number
       presets: { name: string; gains: number[] }[]
+      default: string
+    }
+  /**
+   * A key shift, drawn by the settings panel as a ruler of semitones. Its value is text, whole
+   * semitones: "0", "2", "-3" (src/shared/pitch.ts).
+   */
+  | {
+      key: string
+      kind: 'pitch'
+      label: string
+      help: string
+      /** Semitones up or down, 1 to 12 (an octave). */
+      range: number
       default: string
     }
 
@@ -216,8 +230,25 @@ function readSetting(raw: unknown): PluginSetting | string {
       return { key, kind: 'secret', label, help }
     case 'equaliser':
       return readEqualiserSetting(raw, key, label, help)
+    case 'pitch': {
+      const range = raw['range'] ?? OCTAVE
+      if (
+        typeof range !== 'number' ||
+        !Number.isInteger(range) ||
+        range < 1 ||
+        range > OCTAVE
+      ) {
+        return `setting "${key}" needs a "range" of whole semitones, from 1 to ${OCTAVE}`
+      }
+      // Text like every stored value ("2"), though a plain number is taken too.
+      const given = raw['default']
+      const value = formatSemitones(
+        parseSemitones(typeof given === 'number' ? String(given) : given, range)
+      )
+      return { key, kind: 'pitch', label, help, range, default: value }
+    }
     default:
-      return `setting "${key}" needs a "kind" of boolean, string, secret or equaliser`
+      return `setting "${key}" needs a "kind" of boolean, string, secret, equaliser or pitch`
   }
 }
 
@@ -291,6 +322,11 @@ export function coercePluginSetting(setting: PluginSetting, value: unknown): boo
       ? formatGains(parseGains(value, setting.bands.length, setting.range))
       : setting.default
   }
+  if (setting.kind === 'pitch') {
+    return typeof value === 'string'
+      ? formatSemitones(parseSemitones(value, setting.range))
+      : setting.default
+  }
   return ''
 }
 
@@ -350,6 +386,7 @@ export const PLUGIN_CALLS = [
   'settings.secret',
   'openInBrowser',
   'audio.set',
+  'audio.setPitch',
   'audio.clear'
 ] as const
 export type PluginCall = (typeof PLUGIN_CALLS)[number]
@@ -438,6 +475,7 @@ export function callAllowed(method: PluginCall, args: unknown[], granted: string
       return host !== null && granted.includes(`browser:${host}`)
     }
     case 'audio.set':
+    case 'audio.setPitch':
     case 'audio.clear':
       return granted.includes('audio')
   }

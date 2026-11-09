@@ -163,6 +163,8 @@ describe('callAllowed', () => {
     expect(callAllowed('audio.clear', [], granted)).toBe(false)
     expect(callAllowed('audio.set', [[]], ['audio'])).toBe(true)
     expect(callAllowed('audio.clear', [], ['audio'])).toBe(true)
+    expect(callAllowed('audio.setPitch', [3], granted)).toBe(false)
+    expect(callAllowed('audio.setPitch', [3], ['audio'])).toBe(true)
   })
 
   it('opens only https pages on hosts the plugin listed', () => {
@@ -309,5 +311,47 @@ describe('the equaliser setting kind', () => {
       }).ok
     ).toBe(false)
     expect(withSetting({ ...base, range: 40 }).ok).toBe(false)
+  })
+})
+
+describe('the pitch setting kind', () => {
+  const withSetting = (setting: Record<string, unknown>) =>
+    readManifest({ ...VALID, permissions: [], settings: [setting] }, 'lastfm')
+
+  it('reads a range of whole semitones and a default, an octave unless it says otherwise', () => {
+    const result = withSetting({ key: 'semitones', kind: 'pitch', label: 'Key', default: '2' })
+    expect(result.ok && result.manifest.settings[0]).toEqual({
+      key: 'semitones',
+      kind: 'pitch',
+      label: 'Key',
+      help: '',
+      range: 12,
+      default: '2'
+    })
+    const narrow = withSetting({ key: 'k', kind: 'pitch', label: 'K', range: 3, default: '9' })
+    expect(narrow.ok && narrow.manifest.settings[0]).toMatchObject({ range: 3, default: '3' })
+  })
+
+  it('refuses a range that is not 1 to 12 whole semitones', () => {
+    for (const range of [0, 13, 2.5, '6']) {
+      const result = withSetting({ key: 'k', kind: 'pitch', label: 'K', range })
+      expect(result.ok, String(range)).toBe(false)
+    }
+  })
+
+  it('keeps a stored value to whole semitones within the range', () => {
+    const key: PluginSetting = {
+      key: 'semitones',
+      kind: 'pitch',
+      label: 'Key',
+      help: '',
+      range: 12,
+      default: '0'
+    }
+    expect(coercePluginSetting(key, '3')).toBe('3')
+    expect(coercePluginSetting(key, '-2.6')).toBe('-3')
+    expect(coercePluginSetting(key, '40')).toBe('12')
+    expect(coercePluginSetting(key, 'up')).toBe('0')
+    expect(coercePluginSetting(key, 5)).toBe('0')
   })
 })

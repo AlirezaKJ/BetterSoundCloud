@@ -305,6 +305,51 @@ try {
   await wait(1500)
   check('…and turned off, the engine lets go', (await audioViews()) === 0)
 
+  // Pitch: in the original key it runs no engine. Shifted, the audio view reports running only once
+  // its pitch shifter is built, and a shifter that cannot start makes the row say "Not working" —
+  // so "On" here means the WebAssembly loaded from app.asar under the audio view's CSP.
+  const pitch = () =>
+    settings.run(
+      `window.bsc.listPlugins().then((list) => { const p = list.find((x) => x.id === 'pitch'); return p && { state: p.state, lead: p.status && p.status.lead, problem: p.status && p.status.problem } })`
+    )
+  check('the bundled Pitch plugin is found, off', (await pitch())?.state === 'off')
+  await settings.run(`window.bsc.setPluginEnabled('pitch', true)`)
+  await wait(2000)
+  const original = await pitch()
+  check(
+    '…on in the original key, it runs no audio engine',
+    original?.lead === 'Original key' && (await audioViews()) === 0,
+    JSON.stringify(original)
+  )
+  await settings.run(`window.bsc.setPluginSetting('pitch', 'semitones', '3')`)
+  await wait(4000)
+  const shifted = await pitch()
+  check(
+    '…shifted, the engine runs with its pitch shifter built',
+    shifted?.lead === 'On' && (await audioViews()) === 1,
+    JSON.stringify(shifted)
+  )
+  // The Equaliser still holds its curve from above: one capture serves both.
+  await settings.run(`window.bsc.setPluginEnabled('equaliser', true)`)
+  await wait(3000)
+  const both = [await equaliser(), await pitch()]
+  check(
+    '…with the Equaliser on too, one capture serves both',
+    both.every((p) => p?.lead === 'On') && (await audioViews()) === 1,
+    JSON.stringify(both)
+  )
+  await settings.run(`window.bsc.setPluginEnabled('pitch', false)`)
+  await wait(2000)
+  const alone = await equaliser()
+  check(
+    '…Pitch turned off, the Equaliser keeps going',
+    alone?.lead === 'On' && (await audioViews()) === 1,
+    JSON.stringify(alone)
+  )
+  await settings.run(`window.bsc.setPluginEnabled('equaliser', false)`)
+  await wait(1500)
+  check('…and both off, the engine lets go', (await audioViews()) === 0)
+
   check(
     'no uncaught errors in the header',
     header.exceptions.length === 0,

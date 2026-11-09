@@ -3,6 +3,7 @@ import {
   AUDIO_LIMITS,
   NOT_STARVED,
   chainResponseDb,
+  combinePitch,
   describeAudioStop,
   filterResponseDb,
   headroomDb,
@@ -11,6 +12,7 @@ import {
   noteCaptureClock,
   noteCaptureSilence,
   readAudioFilters,
+  readAudioPitch,
   readAudioReport
 } from './audio'
 import type { AudioFilter, Starvation } from './audio'
@@ -102,6 +104,10 @@ describe('readAudioReport', () => {
       kind: 'failed',
       message: 'unknown error'
     })
+    expect(readAudioReport({ kind: 'pitch-failed', message: 'CompileError' })).toEqual({
+      kind: 'pitch-failed',
+      message: 'CompileError'
+    })
     expect(readAudioReport({ kind: 'silence', silent: 'yes' })).toBeNull()
     expect(readAudioReport({ kind: 'explode' })).toBeNull()
     expect(readAudioReport(null)).toBeNull()
@@ -110,13 +116,24 @@ describe('readAudioReport', () => {
 
 describe('describeAudioStop', () => {
   it('always says SoundCloud is unaffected, and what to do when there is something', () => {
-    for (const reason of ['safe-mode', 'capture-failed', 'no-sound', 'crashed'] as const) {
+    for (const reason of [
+      'safe-mode',
+      'capture-failed',
+      'pitch-failed',
+      'no-sound',
+      'crashed'
+    ] as const) {
       expect(describeAudioStop(reason)).toContain('SoundCloud plays as normal')
     }
     expect(describeAudioStop('capture-failed', 'NotAllowedError')).toContain(
       '(NotAllowedError)'
     )
     expect(describeAudioStop('no-sound')).toContain('Turn this plugin off and on')
+    // Every plugin with the permission reads it, so it names Pitch, not "this plugin".
+    expect(describeAudioStop('pitch-failed', 'CompileError')).toContain(
+      'pitch shifter couldn’t start (CompileError)'
+    )
+    expect(describeAudioStop('pitch-failed')).toContain('Turn Pitch off and on')
   })
 })
 
@@ -161,5 +178,30 @@ describe('the no-sound safety check', () => {
     expect(state.seconds).toBe(0)
     state = noteCaptureClock(state, { track: 'a', elapsed: 9, playing: true })
     expect(isStarved(state)).toBe(false)
+  })
+})
+
+describe('readAudioPitch and combinePitch', () => {
+  it('takes any number of semitones, kept within an octave and to the cent', () => {
+    expect(readAudioPitch(3)).toBe(3)
+    expect(readAudioPitch(-2.5)).toBe(-2.5)
+    expect(readAudioPitch(0.123)).toBe(0.12)
+    expect(readAudioPitch(40)).toBe(AUDIO_LIMITS.maxPitch)
+    expect(readAudioPitch(-40)).toBe(-AUDIO_LIMITS.maxPitch)
+    expect(Object.is(readAudioPitch(-0.001), 0)).toBe(true)
+  })
+
+  it('refuses what is not a number, rather than guessing', () => {
+    for (const raw of ['3', null, undefined, NaN, Infinity, {}]) {
+      expect(readAudioPitch(raw)).toBeNull()
+    }
+  })
+
+  it('adds every plugin’s shift, within an octave either way', () => {
+    expect(combinePitch([])).toBe(0)
+    expect(combinePitch([3, -1])).toBe(2)
+    expect(combinePitch([8, 7])).toBe(12)
+    expect(combinePitch([-8, -7])).toBe(-12)
+    expect(Object.is(combinePitch([2, -2]), 0)).toBe(true)
   })
 })

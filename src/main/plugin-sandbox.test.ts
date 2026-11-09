@@ -136,6 +136,23 @@ describe('permissions, at the API', () => {
     expect(logs).toEqual(['info: stopped:why'])
   })
 
+  it('shifts the key only with the audio permission', async () => {
+    const { fake } = bridge()
+    await expect(
+      runPlugin(
+        plugin(`module.exports = { activate(bsc) { return bsc.audio.setPitch(2) } }`),
+        fake
+      )
+    ).rejects.toThrow(/needs the "audio" permission/)
+
+    const { fake: allowed } = bridge()
+    await runPlugin(
+      plugin(`module.exports = { activate(bsc) { return bsc.audio.setPitch(-3) } }`, ['audio']),
+      allowed
+    )
+    expect(allowed.call).toHaveBeenCalledWith('audio.setPitch', [-3])
+  })
+
   it('tells a status listener added late the engine’s last status, after it subscribes', async () => {
     const { fake, logs } = bridge()
     const running = await runPlugin(

@@ -513,6 +513,28 @@ no gradient.
   quieter, to make room for the boost without distortion."
 - The accent appears only as focus. The plugin's own line says whether the engine is working.
 
+### Pitch ruler
+
+A `pitch` plugin setting (`src/renderer/settings/PitchEditor.svelte`), the Equaliser's sibling:
+the same bar, the same point, the same tag, so the two plugins read as one family.
+
+- **The bar**: what it is set to on the left, in words, 13px ("Up 3 semitones", "Down an octave";
+  "Original key" in Muted Ink), and the Prompt's "Reset" on the right, disabled at 0.
+- **The ruler**, a Hairline baseline across the row with a 1px Hairline tick per semitone: 7px
+  tall, 14px at 0 and at the octaves. The 0 tick is Ghost Ink, like the Equaliser's 0 dB line:
+  where the song's own key is. Beneath it, 12px tabular Muted Ink: "−12", "0", "+12".
+- **The shift is counted, not just read.** A 2px Ink line runs along the baseline from 0 to the
+  marker, and the ticks it passes turn Muted Ink: three dark ticks are three semitones.
+- **The marker** is the Equaliser's point (12px Ink dot, 2px ring of the panel's colour, 28px
+  target, a real horizontal `role="slider"`): drag anywhere along the ruler, arrows a semitone,
+  Page keys an octave, Home and End the limits, Delete or a double-click the original key. Hover
+  or drag grows the dot by 2px. Its value tag ("+3", real minus sign) floats above the ticks while
+  it is focused or dragged.
+- **Double-clicks are heard on the surface that captures the pointer** (the ruler here, the plot
+  in the Equaliser), never on the dot: a press captures the pointer, so Chromium sends the click
+  to the surface and a handler on the dot never runs.
+- The accent appears only as focus. The plugin's own line says whether the engine is working.
+
 ### Signature Component: the pending setting
 
 A setting whose feature does not exist yet renders as a full row — label, help text, and a real

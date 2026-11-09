@@ -145,27 +145,28 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CU
 
 ### Key shared files
 
-| File                        | Owns                                                                                                                                       |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `shared/ipc.ts`             | `CH` (every channel name), `ChromeApi` (the `window.bsc` type), `NavState`, `WindowState`                                                  |
-| `shared/settings-schema.ts` | `SETTINGS`, `SECTIONS`, `Settings`, `SettingKey`, `coerce`, `coerceAll`, `defaults`                                                        |
-| `shared/now-playing.ts`     | `PlayerReading`, `NowPlaying`, `readNowPlaying()` and its cleaners                                                                         |
-| `shared/page-theme.ts`      | `PageTheme`, `detectPageTheme()`, `overlayTheme()` (a theme's `@mode` beats SoundCloud's setting)                                          |
-| `shared/context-menu.ts`    | `ContextMenuRequest`, `CONTEXT_MENU_ACTIONS`, `cleanUrl`, `shortUrl`, `elide`                                                              |
-| `shared/start-page.ts`      | `START_PAGE_URLS`, `startPageUrl()`, `pageToRemember()` (only soundcloud.com pages; never `/logout` or a sign-in step)                     |
-| `shared/focus-cycle.ts`     | `focusCycle()`, `nextFocusArea()`: the order F6 moves through                                                                              |
-| `shared/presence.ts`        | `Activity`, `buildActivity()` (the Discord card), `sameActivity()`, `PRESENCE_LOGO`                                                        |
-| `shared/lyrics.ts`          | `LyricsState`, `parseLrc()`, `currentLineIndex()`, `playbackPosition()`, `lyricsQueries()`, `bestMatch()`                                  |
-| `shared/lyric-clock.ts`     | `lyricClock()`: which lyric line is being sung, one timer per line, for the pane and the showcase                                          |
-| `shared/audio.ts`           | `AudioFilter`, `readAudioFilters()`, `filterResponseDb()` (Web Audio's own maths), `headroomDb()`, `readAudioReport()`, the no-sound check |
-| `shared/equaliser.ts`       | `graphicEqualiser()` (gains to filters that pass through them), stored gains, `bandLabel()`, `gainLabel()`                                 |
-| `shared/showcase.ts`        | `artworkColour()`, `showcaseBackdrop()`, `showcaseInks()` (the showcase colours, contrast-checked), `artworkSources()`, `formatClock()`    |
-| `shared/page-status.ts`     | `PageStatus`, `describePageStatus()` (every word on that view), `describeLoadFailure()`, `retryDelay()`                                    |
-| `shared/themes.ts`          | `ThemeSummary`, `parseThemeMetadata()`, `splitThemeTargets()`, `chromeCssFor()`, `contentCssOf()`, `coverCss()`                            |
-| `shared/identity.ts`        | `Identity`, `buildUserAgent()`, `leaksAppIdentity()`, `pageLanguages()`, `acceptLanguages()`                                               |
-| `shared/plugins.ts`         | `readManifest()`, permissions, `readHostMessage()`, `callAllowed()`, `PluginView`                                                          |
-| `shared/plugin-api.ts`      | `PluginApi`: the `bsc` object a plugin gets. The contract, for code and for docs                                                           |
-| `shared/updates.ts`         | `installKind()`, `updateReach()`, `UpdateStatus`, `describeUpdateStatus()` (every word of the update line), `readUpdateError()`            |
+| File                        | Owns                                                                                                                                                                             |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `shared/ipc.ts`             | `CH` (every channel name), `ChromeApi` (the `window.bsc` type), `NavState`, `WindowState`                                                                                        |
+| `shared/settings-schema.ts` | `SETTINGS`, `SECTIONS`, `Settings`, `SettingKey`, `coerce`, `coerceAll`, `defaults`                                                                                              |
+| `shared/now-playing.ts`     | `PlayerReading`, `NowPlaying`, `readNowPlaying()` and its cleaners                                                                                                               |
+| `shared/page-theme.ts`      | `PageTheme`, `detectPageTheme()`, `overlayTheme()` (a theme's `@mode` beats SoundCloud's setting)                                                                                |
+| `shared/context-menu.ts`    | `ContextMenuRequest`, `CONTEXT_MENU_ACTIONS`, `cleanUrl`, `shortUrl`, `elide`                                                                                                    |
+| `shared/start-page.ts`      | `START_PAGE_URLS`, `startPageUrl()`, `pageToRemember()` (only soundcloud.com pages; never `/logout` or a sign-in step)                                                           |
+| `shared/focus-cycle.ts`     | `focusCycle()`, `nextFocusArea()`: the order F6 moves through                                                                                                                    |
+| `shared/presence.ts`        | `Activity`, `buildActivity()` (the Discord card), `sameActivity()`, `PRESENCE_LOGO`                                                                                              |
+| `shared/lyrics.ts`          | `LyricsState`, `parseLrc()`, `currentLineIndex()`, `playbackPosition()`, `lyricsQueries()`, `bestMatch()`                                                                        |
+| `shared/lyric-clock.ts`     | `lyricClock()`: which lyric line is being sung, one timer per line, for the pane and the showcase                                                                                |
+| `shared/audio.ts`           | `AudioFilter`, `readAudioFilters()`, `readAudioPitch()`, `combinePitch()`, `filterResponseDb()` (Web Audio's own maths), `headroomDb()`, `readAudioReport()`, the no-sound check |
+| `shared/equaliser.ts`       | `graphicEqualiser()` (gains to filters that pass through them), stored gains, `bandLabel()`, `gainLabel()`                                                                       |
+| `shared/pitch.ts`           | A `pitch` setting's stored semitones (`parseSemitones`), and its words: `semitoneWords()`, `semitoneLabel()`                                                                     |
+| `shared/showcase.ts`        | `artworkColour()`, `showcaseBackdrop()`, `showcaseInks()` (the showcase colours, contrast-checked), `artworkSources()`, `formatClock()`                                          |
+| `shared/page-status.ts`     | `PageStatus`, `describePageStatus()` (every word on that view), `describeLoadFailure()`, `retryDelay()`                                                                          |
+| `shared/themes.ts`          | `ThemeSummary`, `parseThemeMetadata()`, `splitThemeTargets()`, `chromeCssFor()`, `contentCssOf()`, `coverCss()`                                                                  |
+| `shared/identity.ts`        | `Identity`, `buildUserAgent()`, `leaksAppIdentity()`, `pageLanguages()`, `acceptLanguages()`                                                                                     |
+| `shared/plugins.ts`         | `readManifest()`, permissions, `readHostMessage()`, `callAllowed()`, `PluginView`                                                                                                |
+| `shared/plugin-api.ts`      | `PluginApi`: the `bsc` object a plugin gets. The contract, for code and for docs                                                                                                 |
+| `shared/updates.ts`         | `installKind()`, `updateReach()`, `UpdateStatus`, `describeUpdateStatus()` (every word of the update line), `readUpdateError()`                                                  |
 
 ---
 
@@ -322,7 +323,9 @@ Each view is `src/renderer/<entry>/{index.html, main.ts, <Name>.svelte}`.
   `default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'`.
   No remote scripts, styles or fonts, ever. **Artwork from `https://*.sndcdn.com` is blocked by
   this CSP**: a view that shows artwork must add exactly that origin to its own `img-src`, nothing
-  broader.
+  broader. The audio engine's view adds `'wasm-unsafe-eval'` to `script-src` for its pitch
+  shifter (§21), which allows WebAssembly and nothing else. `renderer-csp.test.ts` holds every
+  view to the standard policy or its one named exception.
 - Svelte 5 runes only: `$state`, `$derived`, `$effect`, `$props`. Event attributes (`onclick`), not
   `on:click`. Subscribe in `onMount` and return the cleanup:
 
@@ -491,6 +494,11 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
 - **Playback control (play/pause/skip from outside the page) does not exist yet** and is an open
   decision — see "Open decisions" in `docs/TODO.md`. Do not pick a mechanism without the
   maintainer.
+- **SoundCloud's media element is not in the document** (measured 2026-11-10: no `audio` or
+  `video` element while a track plays). The content preload cannot reach it, so nothing that needs
+  the element itself — seeking, playback speed, `.play()` — can be built from the isolated world;
+  the only route that reaches it is a main-world hook (§14). Sound-only changes go through the
+  audio engine (§21), which needs no access to the element.
 
 ---
 
@@ -630,7 +638,8 @@ context menu have the shortcut; embedded and player do not).
   local pipe, so the bytes on the wire are tested as sent.
 - Plugins are tested three ways: `plugin-sandbox.test.ts` runs small scripts in the real sandbox;
   `lastfm-plugin.test.ts` runs the shipped Last.fm plugin against a fake Last.fm, and
-  `equaliser-plugin.test.ts` the Equaliser against a fake engine; `plugins.test.ts`
+  `equaliser-plugin.test.ts` and `pitch-plugin.test.ts` the Equaliser and Pitch against a fake
+  engine; `plugins.test.ts`
   drives the service with real folders and a fake process. Plugin JavaScript is type-checked
   through `tsconfig.plugins.json`, against `resources/plugins/sandbox.d.ts` — which a test keeps
   equal to the sandbox's real globals.
@@ -721,11 +730,16 @@ Rules that hold this together:
   later version asks for more, it shows "needs approval" and does not start.
 - **A plugin from the user's folder asks before it turns on** (an inline confirmation in its row,
   listing its permissions). A user plugin may not reuse a built-in's id.
+- **Settings lists the built-ins in `BUNDLED_ORDER`** (plugins.ts): Last.fm, the Equaliser, Pitch.
+  A new built-in goes into that list, or it lands after them alphabetically. The user's plugins
+  come after every built-in.
 - **The `audio` permission shapes the sound, never the page.** A plugin hands `bsc.audio.set` a
-  list of filters (shaped by `readAudioFilters`, at most 16) and the core audio engine applies
-  them (§21). Plugin settings gain the `equaliser` kind, a curve the settings panel draws
-  (`EqualiserEditor.svelte`) from the same `graphicEqualiser` the sandbox hands plugins. A
-  plugin's filters are cleared whenever it stops, however it stops (`stop` and `exited` in
+  list of filters (shaped by `readAudioFilters`, at most 16), or `bsc.audio.setPitch` a shift in
+  semitones (`readAudioPitch`, within an octave), and the core audio engine applies them (§21).
+  Plugin settings gain the `equaliser` kind, a curve the settings panel draws
+  (`EqualiserEditor.svelte`) from the same `graphicEqualiser` the sandbox hands plugins, and the
+  `pitch` kind, a ruler of semitones (`PitchEditor.svelte`). A plugin's filters and shift are
+  cleared whenever it stops, however it stops (`clearAudio`, from `stop` and `exited` in
   plugins.ts). A built-in plugin's row does not list `audio` (its description says it); a plugin
   from the user's folder lists it like any other permission (`view()` in plugins.ts).
 - **No plugin code runs in SoundCloud's page.** The `page` permission exists so such plugins can
@@ -964,13 +978,15 @@ Rules that hold this together:
 ## 21. The audio engine and the Equaliser
 
 ```
-Equaliser plugin (resources/plugins/equaliser) --bsc.audio.set(filters)--> plugins.ts: readAudioFilters
-  --> main/audio.ts setAudioFilters: every plugin's filters, in plugin-id order; flat = none
+Equaliser plugin --bsc.audio.set(filters)-------> plugins.ts: readAudioFilters
+Pitch plugin     --bsc.audio.setPitch(semitones)-> plugins.ts: readAudioPitch
+  --> main/audio.ts: every plugin's filters, in plugin-id order; every plugin's shift, added up
+      (combinePitch, within ±12); flat filters and no shift = nothing asked
   --> only then: a hidden WebContentsView (renderer/audio), never added to the window
         main: expectTabAudioCapture(content) + content.getMediaSourceId(audio view)
-        --CH.audioConfigure { sourceId, filters, preampDb }--> getUserMedia({ chromeMediaSource: 'tab' })
-        capture -> preamp -> BiquadFilters -> output (fades in) -> speakers
-  <--CH.audioReport running | failed | ended | silence-- (isAudioView, readAudioReport)
+        --CH.audioConfigure { sourceId, pitch, filters, preampDb }--> getUserMedia({ chromeMediaSource: 'tab' })
+        capture -> pitch shifter (only while shifted) -> preamp -> BiquadFilters -> output -> speakers
+  <--CH.audioReport running | failed | pitch-failed | ended | silence-- (isAudioView, readAudioReport)
 engine status --{ type: 'audio' }--> plugins with the permission --> their status line
 ```
 
@@ -996,6 +1012,28 @@ Rules that hold this together:
   permission hears why (`describeAudioStop`, always ending "SoundCloud plays as normal").
 - **No plugin can make SoundCloud louder or clip it.** The preamp is minus the largest boost of the
   whole chain anywhere from 20 Hz to 20 kHz (`headroomDb`). Gains are clamped to ±24 dB per filter.
+- **Pitch is Signalsmith Stretch** (MIT, npm `signalsmith-stretch`, pinned; its licence ships in
+  `resources/licenses/`), WebAssembly in an AudioWorklet. Vite emits its one file as an asset
+  (`signalsmith-stretch?url`); main.ts imports the module from that URL and points the library's
+  `moduleUrl` at it, because left alone it loads its worklet from a blob: URL, which the CSP
+  refuses. The view's CSP adds `'wasm-unsafe-eval'` (§6): without it the WebAssembly is refused
+  in the page and in the worklet alike (measured). The shift comes before the filters, so an
+  equaliser shapes the sound as heard, and it never changes the level (measured within 0.2 dB),
+  so the preamp ignores it. Its 80 ms block is its delay (as accurate as the 120 ms default on
+  tones, measured).
+- **One graph per shape.** Everything after the capture lives in one AudioContext. Adding or
+  removing the shifter builds a fresh one and crossfades: a Signalsmith node keeps working with
+  nothing connected, so closing its context is the only way to free it. Changing the shift or the
+  filters happens in place. The view reports `running` only once its first graph, shifter
+  included, is built, so the packaged smoke check's "On" proves the WebAssembly loaded. Measured
+  end to end on the built page (2026-11-10): a 1000 Hz tone at +12 heard at 2001 Hz, and each
+  change heard within about 0.1 s.
+- **A shifter that fails steps the engine aside only while a shift is asked**: `pitch-failed`
+  latches like any failure, but `reconcile` releases it once the added shift is 0, so turning
+  Pitch off lets the Equaliser work again.
+- **Speed is not possible.** It would have to change SoundCloud's own media element, which is not
+  in the document (§8), and a live capture cannot run ahead of its source. Declined in
+  docs/TODO.md.
 - **The curve is the sound.** `graphicEqualiser` turns band gains into a low shelf, peaks and a high
   shelf, then corrects their gains until the summed response passes within 0.25 dB of every band
   (tested on extremes). The editor draws that response with Web Audio's own coefficients
@@ -1005,4 +1043,5 @@ Rules that hold this together:
   needs `backgroundThrottling: false` (its silence check is a timer) and
   `autoplayPolicy: 'no-user-gesture-required'`. Not yet checked by ear: a real SoundCloud
   protected track, the media flyout while captured, an output-device switch (docs/TODO.md).
-- Lyrics timing does not yet add the engine's delay; at 0.1 s it is within what the nudge covers.
+- Lyrics timing does not yet add the engine's delay: about 0.1 s for the capture, 0.18 s with the
+  shifter. Within what the nudge covers, and next in docs/TODO.md.

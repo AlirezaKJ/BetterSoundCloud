@@ -123,6 +123,7 @@ describe('the audio engine', () => {
     expect(content.getMediaSourceId).toHaveBeenCalledWith(view.webContents)
     expect(view.webContents.send).toHaveBeenLastCalledWith('audio:configure', {
       sourceId: 'source-1',
+      pitch: 0,
       filters: BOOST,
       preampDb: -headroomDb(BOOST)
     })
@@ -137,7 +138,7 @@ describe('the audio engine', () => {
       'audio:configure',
       expect.objectContaining({ filters: CUT, preampDb: -0 })
     )
-    engine.clearAudioFilters('equaliser')
+    engine.clearAudio('equaliser')
     expect(view.webContents.close).toHaveBeenCalled()
     expect(engine.last()?.state).toBe('off')
   })
@@ -191,7 +192,7 @@ describe('the audio engine', () => {
     engine.setAudioFilters('equaliser', CUT)
     expect(mocks.views).toHaveLength(1)
     // …turning the plugin off and on does.
-    engine.clearAudioFilters('equaliser')
+    engine.clearAudio('equaliser')
     engine.setAudioFilters('equaliser', BOOST)
     expect(mocks.views).toHaveLength(2)
   })
@@ -220,5 +221,75 @@ describe('the audio engine', () => {
     }
     expect(view.webContents.close).toHaveBeenCalled()
     expect(engine.last()?.message).toContain('No sound reached it')
+  })
+
+  it('runs for a key shift alone, and lets go when the shift is back to 0', async () => {
+    const engine = await load()
+    engine.setAudioPitch('pitch', 0)
+    expect(mocks.views).toHaveLength(0)
+    engine.setAudioPitch('pitch', 3)
+    const view = loaded()
+    expect(view.webContents.send).toHaveBeenLastCalledWith('audio:configure', {
+      sourceId: 'source-1',
+      pitch: 3,
+      filters: [],
+      preampDb: -0
+    })
+    engine.setAudioPitch('pitch', 0)
+    expect(view.webContents.close).toHaveBeenCalled()
+    expect(engine.last()?.state).toBe('off')
+  })
+
+  it('shifts and equalises in one capture, each plugin’s part going when it stops', async () => {
+    const engine = await load()
+    engine.setAudioFilters('equaliser', BOOST)
+    engine.setAudioPitch('pitch', -2)
+    const view = loaded()
+    expect(view.webContents.send).toHaveBeenLastCalledWith(
+      'audio:configure',
+      expect.objectContaining({ pitch: -2, filters: BOOST })
+    )
+    engine.clearAudio('pitch')
+    expect(mocks.views).toHaveLength(1)
+    expect(view.webContents.send).toHaveBeenLastCalledWith(
+      'audio:configure',
+      expect.objectContaining({ pitch: 0, filters: BOOST })
+    )
+    engine.clearAudio('equaliser')
+    expect(view.webContents.close).toHaveBeenCalled()
+  })
+
+  it('adds every plugin’s shift, within an octave', async () => {
+    const engine = await load()
+    engine.setAudioPitch('a', 8)
+    engine.setAudioPitch('b', 7)
+    const view = loaded()
+    expect(view.webContents.send).toHaveBeenLastCalledWith(
+      'audio:configure',
+      expect.objectContaining({ pitch: 12 })
+    )
+  })
+
+  it('steps aside when the shifter fails, until nothing asks for a shift', async () => {
+    const engine = await load()
+    engine.setAudioFilters('equaliser', BOOST)
+    engine.setAudioPitch('pitch', 5)
+    const view = loaded()
+    engine.handleAudioReport({ kind: 'pitch-failed', message: 'CompileError' })
+    expect(view.webContents.close).toHaveBeenCalled()
+    expect(engine.last()).toEqual({
+      state: 'stopped',
+      message: expect.stringContaining('pitch shifter couldn’t start (CompileError)')
+    })
+    // Moving the key does not retry…
+    engine.setAudioPitch('pitch', 4)
+    expect(mocks.views).toHaveLength(1)
+    // …but turning Pitch off lets the Equaliser work again, with no shift.
+    engine.clearAudio('pitch')
+    expect(mocks.views).toHaveLength(2)
+    expect(loaded().webContents.send).toHaveBeenLastCalledWith(
+      'audio:configure',
+      expect.objectContaining({ pitch: 0, filters: BOOST })
+    )
   })
 })

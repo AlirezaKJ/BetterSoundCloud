@@ -1,0 +1,20 @@
+{
+  "id": "pitch",
+  "name": "Pitch",
+  "version": "1.0.0",
+  "author": "BetterSoundCloud",
+  "description": "Moves everything SoundCloud plays up or down in key, at the same speed. Turn it off and SoundCloud sounds exactly as it does without it.",
+  "homepage": "https://github.com/AlirezaKJ/BetterSoundCloud",
+  "main": "index.js",
+  "permissions": ["audio"],
+  "settings": [
+    {
+      "key": "semitones",
+      "kind": "pitch",
+      "label": "Key",
+      "help": "Drag the marker, or select it and use the arrow keys. Each step is a semitone; twelve make an octave.",
+      "range": 12,
+      "default": "0"
+    }
+  ]
+}

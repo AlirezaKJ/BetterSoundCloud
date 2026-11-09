@@ -82,12 +82,14 @@ fix.
 | `string`    | text box                      | `default` is a string, up to 500 characters                                                                                                                                                                                                          |
 | `secret`    | password                      | Stored encrypted by the operating system, never shown again. Read with `bsc.settings.secret(key)`                                                                                                                                                    |
 | `equaliser` | a curve with a point per band | `bands` (2 to 10 frequencies in Hz, rising), `range` (dB up or down, 3–24, default 12), `presets` (`[{ "name", "gains" }]`, one gain per band), `default` (`"0,0,0"`). The value is text, one gain per band in half-decibel steps: `"6,4,0,0,1.5,3"` |
+| `pitch`     | a ruler of semitones          | `range` (whole semitones up or down, 1–12, default 12), `default` (`"0"`). The value is text, whole semitones: `"2"`, `"-3"`                                                                                                                         |
 
 Each takes a `key` (letters and digits), a `label` and an optional `help`.
 
 An `equaliser` setting draws the real response of `bsc.audio.graphicEqualiser(bands, gains)`, so a
 plugin that hands those filters to `bsc.audio.set` sounds exactly as the curve looks. The bundled
-Equaliser (`resources/plugins/equaliser/`) is the example.
+Equaliser (`resources/plugins/equaliser/`) is the example. A `pitch` setting is what the bundled
+Pitch plugin (`resources/plugins/pitch/`) hands to `bsc.audio.setPitch`.
 
 ---
 
@@ -111,11 +113,13 @@ already cover).
 **When a new version asks for more**, it is not started until you approve again. An update
 cannot quietly widen what a plugin may do.
 
-**`audio` changes the sound, never the page.** A plugin describes filters; the app's audio
-engine captures SoundCloud's own output from a hidden view of its own, applies every plugin's
-filters in turn, and plays the result. It turns everything down by the largest boost first, so no
-plugin can make SoundCloud distort or play louder than it does. Nothing runs while no plugin asks
-for a change, and when your plugin stops — turned off, crashed, updated — its filters go with it.
+**`audio` changes the sound, never the page.** A plugin describes filters, or a key shift; the
+app's audio engine captures SoundCloud's own output from a hidden view of its own, shifts its pitch
+by every plugin's shift added together, applies every plugin's filters in turn, and plays the
+result. It turns everything down by the largest boost first, so no plugin can make SoundCloud
+distort or play louder than it does. Nothing runs while no plugin asks for a change, and when your
+plugin stops — turned off, crashed, updated — its filters and shift go with it. Speed cannot be
+changed: SoundCloud's player is out of reach from outside its page.
 If the engine cannot work, it steps aside and SoundCloud plays as normal; your plugin hears why
 through `bsc.audio.onStatus`. Safe mode never starts it.
 
@@ -166,27 +170,28 @@ JavaScript's own built-ins. Nothing else: no `require`, `process`, `Buffer`, `fe
 
 The full, typed contract is `src/shared/plugin-api.ts`.
 
-| Call                                        | Needs            | What it does                                                                                                                                                   |
-| ------------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `bsc.plugin`                                |                  | `{ id, version }`                                                                                                                                              |
-| `bsc.log(…)`, `bsc.warn(…)`                 |                  | The app's log, tagged `[plugin:<id>]`. Warnings are kept in every build                                                                                        |
-| `bsc.nowPlaying.get()`                      | `nowPlaying`     | The current track, or `null`                                                                                                                                   |
-| `bsc.nowPlaying.onChange(fn)`               | `nowPlaying`     | Every change — including the clock, once a second while playing                                                                                                |
-| `bsc.settings.get()`                        |                  | Your non-secret settings' current values                                                                                                                       |
-| `bsc.settings.onChange(fn)`                 |                  | When the user changes one                                                                                                                                      |
-| `bsc.settings.secret(key)`                  |                  | A `secret` setting's value, or `''`                                                                                                                            |
-| `bsc.status.set({ lead, detail, problem })` |                  | The line under your plugin in Settings. `null` clears it                                                                                                       |
-| `bsc.actions.set([{ id, label }])`          |                  | Up to four buttons under that line                                                                                                                             |
-| `bsc.actions.onPress(fn)`                   |                  | Called with the button's `id`                                                                                                                                  |
-| `bsc.storage.get(key)` / `.set(key, value)` |                  | JSON values kept between runs. Up to 200 keys, 100 KB each                                                                                                     |
-| `bsc.secrets.get/set/delete(key)`           | `secrets`        | Strings encrypted by the OS. Rejects where there is no real encryption                                                                                         |
-| `bsc.fetch(url, { method, headers, body })` | `network:<host>` | An https request through the app's network stack (proxies apply). Resolves to `{ status, ok, text(), json() }`                                                 |
-| `bsc.openInBrowser(url)`                    | `browser:<host>` | Opens an https page in the user's browser                                                                                                                      |
-| `bsc.hash.md5(text)`, `.sha256(text)`       |                  | Hex digests, for APIs that sign requests                                                                                                                       |
-| `bsc.audio.set(filters)`                    | `audio`          | Replace your filters: up to 16 of `{ type: 'lowshelf' \| 'peaking' \| 'highshelf', frequency, gain, q }` (Hz, dB). Empty or flat asks for nothing              |
-| `bsc.audio.clear()`                         | `audio`          | Remove your filters                                                                                                                                            |
-| `bsc.audio.onStatus(fn)`                    | `audio`          | The engine's `{ state: 'off' \| 'starting' \| 'running' \| 'stopped', message }`, now and on every change. `message` says why it stopped, for your status line |
-| `bsc.audio.graphicEqualiser(bands, gains)`  | `audio`          | Filters for a graphic equaliser, tuned so the sound passes through each band's gain. Pure                                                                      |
+| Call                                        | Needs            | What it does                                                                                                                                                    |
+| ------------------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bsc.plugin`                                |                  | `{ id, version }`                                                                                                                                               |
+| `bsc.log(…)`, `bsc.warn(…)`                 |                  | The app's log, tagged `[plugin:<id>]`. Warnings are kept in every build                                                                                         |
+| `bsc.nowPlaying.get()`                      | `nowPlaying`     | The current track, or `null`                                                                                                                                    |
+| `bsc.nowPlaying.onChange(fn)`               | `nowPlaying`     | Every change — including the clock, once a second while playing                                                                                                 |
+| `bsc.settings.get()`                        |                  | Your non-secret settings' current values                                                                                                                        |
+| `bsc.settings.onChange(fn)`                 |                  | When the user changes one                                                                                                                                       |
+| `bsc.settings.secret(key)`                  |                  | A `secret` setting's value, or `''`                                                                                                                             |
+| `bsc.status.set({ lead, detail, problem })` |                  | The line under your plugin in Settings. `null` clears it                                                                                                        |
+| `bsc.actions.set([{ id, label }])`          |                  | Up to four buttons under that line                                                                                                                              |
+| `bsc.actions.onPress(fn)`                   |                  | Called with the button's `id`                                                                                                                                   |
+| `bsc.storage.get(key)` / `.set(key, value)` |                  | JSON values kept between runs. Up to 200 keys, 100 KB each                                                                                                      |
+| `bsc.secrets.get/set/delete(key)`           | `secrets`        | Strings encrypted by the OS. Rejects where there is no real encryption                                                                                          |
+| `bsc.fetch(url, { method, headers, body })` | `network:<host>` | An https request through the app's network stack (proxies apply). Resolves to `{ status, ok, text(), json() }`                                                  |
+| `bsc.openInBrowser(url)`                    | `browser:<host>` | Opens an https page in the user's browser                                                                                                                       |
+| `bsc.hash.md5(text)`, `.sha256(text)`       |                  | Hex digests, for APIs that sign requests                                                                                                                        |
+| `bsc.audio.set(filters)`                    | `audio`          | Replace your filters: up to 16 of `{ type: 'lowshelf' \| 'peaking' \| 'highshelf', frequency, gain, q }` (Hz, dB). Empty or flat asks for nothing               |
+| `bsc.audio.setPitch(semitones)`             | `audio`          | Move everything up or down by this many semitones at the same speed: −12 to 12, fractions allowed. 0 asks for nothing. Adds about 0.08 s of delay while shifted |
+| `bsc.audio.clear()`                         | `audio`          | Remove your filters and shift                                                                                                                                   |
+| `bsc.audio.onStatus(fn)`                    | `audio`          | The engine's `{ state: 'off' \| 'starting' \| 'running' \| 'stopped', message }`, now and on every change. `message` says why it stopped, for your status line  |
+| `bsc.audio.graphicEqualiser(bands, gains)`  | `audio`          | Filters for a graphic equaliser, tuned so the sound passes through each band's gain. Pure                                                                       |
 
 A track (`NowPlaying`) is `{ title, artist, url, artwork, elapsed, duration, playing, liked }`:
 `artist` is the uploader, `url` the track page, `artwork` a 500×500 image, `elapsed` and
@@ -208,7 +213,8 @@ A user should never have to guess whether a plugin is working.
   are checked by `npm run check` through `tsconfig.plugins.json`.
 - **Run it in the real sandbox from a test.** `runPlugin` in `src/main/plugin-sandbox.ts` takes
   your script's text and a fake bridge, with no Electron involved. `src/main/lastfm-plugin.test.ts`
-  runs the Last.fm plugin against a fake Last.fm that way, and `src/main/equaliser-plugin.test.ts`
-  checks the Equaliser asks for exactly the filters its curve shows.
+  runs the Last.fm plugin against a fake Last.fm that way, `src/main/equaliser-plugin.test.ts`
+  checks the Equaliser asks for exactly the filters its curve shows, and
+  `src/main/pitch-plugin.test.ts` that Pitch asks for the shift its ruler shows.
 - **Watch it run.** In `npm run dev`, its `bsc.log` lines appear in the terminal as
   `[plugin:<id>]`.

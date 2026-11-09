@@ -87,6 +87,9 @@ when one is refused, write down what SoundCloud said rather than retrying.
       (one that greyed out on v0.7.1): the bass rises within a moment, nothing plays twice or echoes,
       and the Windows media flyout still shows the track. Untick the plugin: the original sound is
       back at once. Its row says "On" while it works; anything else, with a reason, is a bug.
+- [ ] Turn on Pitch and move it to +2 while a track plays, with the Equaliser still on: the song
+      plays higher at the same speed, with the bass boost still on the bass, and no gap longer than
+      a moment. Move it back to 0: the original key returns. Untick both: SoundCloud's own sound.
 - [ ] Pick each built-in theme with SoundCloud in its light mode and its dark mode.
 - [ ] The portable build too: it unpacks to a new temporary folder on every launch, so the archive's
       integrity check and the `.sig` signature files must survive being moved.

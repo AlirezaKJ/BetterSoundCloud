@@ -197,6 +197,16 @@
     commit(true)
   }
 
+  /**
+   * A double-click puts the band under the pointer back to 0 dB. It is heard on the plot, not the
+   * point: the plot captures the pointer on every press, so Chromium sends the click to it, and a
+   * handler on the point never ran.
+   */
+  function onDoubleClick(event: MouseEvent): void {
+    const box = (event.currentTarget as HTMLElement).getBoundingClientRect()
+    setGain(bandAt(event.clientX - box.left), 0, true)
+  }
+
   function onKey(event: KeyboardEvent, band: number): void {
     const gain = gains[band] ?? 0
     const big = event.shiftKey ? 3 : 1
@@ -266,6 +276,7 @@
       onpointermove={onPointerMove}
       onpointerup={onPointerUp}
       onpointercancel={onPointerUp}
+      ondblclick={onDoubleClick}
       role="presentation"
     >
       <svg width={plotWidth} height={PLOT_HEIGHT} aria-hidden="true">
@@ -300,7 +311,6 @@
           onblur={() => {
             if (dragging === null) showing = null
           }}
-          ondblclick={() => setGain(i, 0, true)}
         ></div>
         {#if showing === i}
           <span

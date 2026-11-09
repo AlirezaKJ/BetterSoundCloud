@@ -91,16 +91,24 @@ export type PluginApi = {
   /**
    * Shape how SoundCloud sounds. Needs the `audio` permission.
    *
-   * A plugin describes filters; the app's audio engine applies them to SoundCloud's playback
-   * without touching SoundCloud's page, and turns everything down by the largest boost so nothing
-   * distorts (no plugin can make SoundCloud louder than it plays). Every plugin's filters are
-   * applied in turn. When none is asking for a change, the engine does not run at all.
+   * A plugin describes filters, or a key shift; the app's audio engine applies them to
+   * SoundCloud's playback without touching SoundCloud's page, and turns everything down by the
+   * largest boost so nothing distorts (no plugin can make SoundCloud louder than it plays). The
+   * shift comes first and every plugin's filters after it, in turn. When none is asking for a
+   * change, the engine does not run at all.
    *
-   * When this plugin stops — turned off, crashed, or updated — its filters are removed for it.
+   * When this plugin stops — turned off, crashed, or updated — its changes are removed for it.
    */
   readonly audio: {
     /** Replace this plugin's filters: at most 16. An empty or flat list asks for nothing. */
     set(filters: AudioFilter[]): Promise<void>
+    /**
+     * Move everything up or down by this many semitones, at the same speed: −12 to 12, fractions
+     * allowed (0.01 is a cent). 0 asks for nothing. Every plugin's shifts add up, within an octave.
+     * Shifting adds about 0.08 s of delay while it runs.
+     */
+    setPitch(semitones: number): Promise<void>
+    /** Remove this plugin's filters and shift. */
     clear(): Promise<void>
     /** What the engine is doing: with the current status at once, then on every change. */
     onStatus(listener: (status: AudioStatus) => void): () => void
