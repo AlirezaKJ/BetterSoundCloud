@@ -1154,6 +1154,7 @@ export function rendererUrl(
     | 'status'
     | 'lyrics'
     | 'showcase'
+    | 'audio'
 ): string {
   const devServer = process.env['ELECTRON_RENDERER_URL']
   return devServer

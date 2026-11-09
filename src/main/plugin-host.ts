@@ -3,6 +3,7 @@ import { runPlugin } from './plugin-sandbox'
 import type { RunningPlugin, PluginStart } from './plugin-sandbox'
 import type { PluginCall } from '@shared/plugins'
 import type { NowPlaying } from '@shared/now-playing'
+import type { AudioStatus } from '@shared/plugin-api'
 
 /**
  * The entry point of a plugin's own process — an Electron utility process, one per plugin,
@@ -21,6 +22,7 @@ type FromMain =
   | { type: 'start'; plugin: PluginStart }
   | { type: 'reply'; callId: number; ok: boolean; value?: unknown; error?: string }
   | { type: 'nowPlaying'; value: NowPlaying | null }
+  | { type: 'audio'; status: AudioStatus }
   | { type: 'settings'; values: Record<string, boolean | string> }
   | { type: 'action'; id: string }
   | { type: 'stop' }
@@ -70,6 +72,9 @@ port.on('message', (event: { data: FromMain }) => {
     }
     case 'nowPlaying':
       running?.nowPlaying(message.value)
+      return
+    case 'audio':
+      running?.audio(message.status)
       return
     case 'settings':
       running?.settings(message.values)

@@ -5,6 +5,8 @@ import type * as IdentityModule from '@shared/identity'
 
 const mocks = vi.hoisted(() => {
   return {
+    handleAudioReport: vi.fn(),
+    audioView: { id: 'the audio engine view' },
     createShell: vi.fn(),
     loadSoundCloud: vi.fn(),
     createTray: vi.fn(),
@@ -46,6 +48,7 @@ vi.mock('@shared/identity', async (importOriginal) => ({
   leaksAppIdentity: () => false
 }))
 vi.mock('./window', () => ({
+  rendererUrl: (entry: string) => `file:///renderer/${entry}/index.html`,
   createShell: mocks.createShell,
   loadSoundCloud: mocks.loadSoundCloud,
   toggleSettings: vi.fn(),
@@ -58,6 +61,14 @@ vi.mock('./window', () => ({
   closeLyrics: vi.fn(),
   openShowcase: vi.fn(),
   closeShowcase: vi.fn()
+}))
+vi.mock('./audio', () => ({
+  startAudioEngine: vi.fn(),
+  attachAudioEngine: vi.fn(),
+  detachAudioEngine: vi.fn(),
+  handleAudioReport: mocks.handleAudioReport,
+  // The audio engine's view is the one object it names; nothing else may report.
+  isAudioView: (contents: unknown) => contents === mocks.audioView
 }))
 vi.mock('./lyrics', () => ({
   getLyricsState: () => ({ state: 'idle' }),
@@ -632,6 +643,28 @@ describe('main window lifecycle', () => {
     expect(lyrics.nudgeLyrics).not.toHaveBeenCalled()
     handlerFor('on', CH.lyricsNudge)(fromLyrics, -0.5)
     expect(lyrics.nudgeLyrics).toHaveBeenCalledWith(-0.5)
+  })
+
+  it('takes audio reports from the audio engine’s view only, and only well-formed ones', async () => {
+    const { app } = await import('electron')
+    app.emit('activate')
+    const shell = mocks.createShell.mock.results.at(-1)!.value as ReturnType<typeof makeShell>
+    const report = mocks.ipcOn.mock.calls.find(([name]) => name === CH.audioReport)![1] as (
+      event: unknown,
+      raw: unknown
+    ) => void
+    mocks.handleAudioReport.mockClear()
+
+    // SoundCloud's page, or any other view, cannot tell the engine anything.
+    report({ sender: shell.content.webContents }, { kind: 'failed', message: 'x' })
+    report({ sender: shell.header.webContents }, { kind: 'running' })
+    expect(mocks.handleAudioReport).not.toHaveBeenCalled()
+
+    // The engine's view can, once its message has been shaped.
+    report({ sender: mocks.audioView }, { kind: 'nonsense' })
+    expect(mocks.handleAudioReport).not.toHaveBeenCalled()
+    report({ sender: mocks.audioView }, { kind: 'silence', silent: true })
+    expect(mocks.handleAudioReport).toHaveBeenCalledWith({ kind: 'silence', silent: true })
   })
 
   it('opens the showcase from our own buttons only, and lets only the showcase close it', async () => {

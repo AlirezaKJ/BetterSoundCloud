@@ -11,6 +11,7 @@ import type { PresenceStatus } from '@shared/presence'
 import type { PluginView } from '@shared/plugins'
 import type { LyricsState } from '@shared/lyrics'
 import type { UpdateAction, UpdateStatus } from '@shared/updates'
+import type { AudioConfig, AudioReport } from '@shared/audio'
 
 /**
  * Preload for OUR OWN chrome (header, settings, the overlays, the right-click menu). This
@@ -110,7 +111,10 @@ const api: ChromeApi = {
   onLyricsShown: (cb: (shown: boolean) => void) => subscribe(CH.lyricsShown, cb),
 
   openShowcase: () => ipcRenderer.send(CH.showcaseOpen),
-  closeShowcase: () => ipcRenderer.send(CH.showcaseClose)
+  closeShowcase: () => ipcRenderer.send(CH.showcaseClose),
+
+  onAudioConfig: (cb: (config: AudioConfig) => void) => subscribe(CH.audioConfigure, cb),
+  reportAudio: (report: AudioReport) => ipcRenderer.send(CH.audioReport, report)
 }
 
 contextBridge.exposeInMainWorld('bsc', api)

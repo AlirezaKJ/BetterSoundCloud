@@ -82,7 +82,8 @@ export default defineConfig({
           'context-menu': resolve('src/renderer/context-menu/index.html'),
           status: resolve('src/renderer/status/index.html'),
           lyrics: resolve('src/renderer/lyrics/index.html'),
-          showcase: resolve('src/renderer/showcase/index.html')
+          showcase: resolve('src/renderer/showcase/index.html'),
+          audio: resolve('src/renderer/audio/index.html')
         }
       }
     }

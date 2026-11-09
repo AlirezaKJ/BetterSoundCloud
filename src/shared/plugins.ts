@@ -1,4 +1,5 @@
 import type { PluginAction, PluginStatus } from './plugin-api'
+import { formatGains, parseGains, snapGain } from './equaliser'
 
 /**
  * Plugins: what a plugin.json may say, what a permission means, and what a plugin's process may
@@ -25,6 +26,11 @@ export type Permission =
   | { kind: 'network'; host: string }
   | { kind: 'browser'; host: string }
   /**
+   * Shaping SoundCloud's sound, through the audio engine (CLAUDE.md §21): filters described to
+   * `bsc.audio`, never code that runs on the audio or in SoundCloud's page.
+   */
+  | { kind: 'audio' }
+  /**
    * Running code inside SoundCloud's page. Not available yet: in-page code is frozen until a
    * clean sign-in baseline is recorded (docs/TODO.md, Milestone 1). A plugin asking for it is
    * shown, honestly, as one that cannot be turned on.
@@ -36,7 +42,9 @@ const HOSTNAME =
   /^(?=.{1,253}$)[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/
 
 export function parsePermission(raw: string): Permission | null {
-  if (raw === 'nowPlaying' || raw === 'secrets' || raw === 'page') return { kind: raw }
+  if (raw === 'nowPlaying' || raw === 'secrets' || raw === 'audio' || raw === 'page') {
+    return { kind: raw }
+  }
   const match = /^(network|browser):(.+)$/.exec(raw)
   if (!match) return null
   const host = (match[2] ?? '').toLowerCase()
@@ -60,6 +68,8 @@ export function describePermission(permission: Permission): string {
       return `Connect to ${permission.host}`
     case 'browser':
       return `Open ${permission.host} in your browser`
+    case 'audio':
+      return 'Change how SoundCloud sounds'
     case 'page':
       return 'Run code inside SoundCloud’s page — not available to plugins yet'
   }
@@ -74,6 +84,22 @@ export type PluginSetting =
   | { key: string; kind: 'string'; label: string; help: string; default: string }
   /** Stored encrypted by main and never sent back to the settings panel. */
   | { key: string; kind: 'secret'; label: string; help: string }
+  /**
+   * A graphic equaliser, drawn by the settings panel as a curve with a point per band. Its value
+   * is text, one gain per band in half-decibel steps: "6,4,0,0,1.5,3" (src/shared/equaliser.ts).
+   */
+  | {
+      key: string
+      kind: 'equaliser'
+      label: string
+      help: string
+      /** Band centres in Hz, rising: 2 to 10 of them. */
+      bands: number[]
+      /** Each band goes this many dB up or down. */
+      range: number
+      presets: { name: string; gains: number[] }[]
+      default: string
+    }
 
 export type PluginManifest = {
   id: string
@@ -188,8 +214,70 @@ function readSetting(raw: unknown): PluginSetting | string {
       }
     case 'secret':
       return { key, kind: 'secret', label, help }
+    case 'equaliser':
+      return readEqualiserSetting(raw, key, label, help)
     default:
-      return `setting "${key}" needs a "kind" of boolean, string or secret`
+      return `setting "${key}" needs a "kind" of boolean, string, secret or equaliser`
+  }
+}
+
+const MAX_BANDS = 10
+const MAX_PRESETS = 20
+
+function readEqualiserSetting(
+  raw: Record<string, unknown>,
+  key: string,
+  label: string,
+  help: string
+): PluginSetting | string {
+  const bands = raw['bands']
+  const rising =
+    Array.isArray(bands) &&
+    bands.length >= 2 &&
+    bands.length <= MAX_BANDS &&
+    bands.every(
+      (band: unknown, i) =>
+        typeof band === 'number' &&
+        Number.isFinite(band) &&
+        band >= 20 &&
+        band <= 20_000 &&
+        (i === 0 || band > (bands[i - 1] as number))
+    )
+  if (!rising) {
+    return `setting "${key}" needs "bands": ${MAX_BANDS} or fewer frequencies in Hz, rising, from 20 to 20000`
+  }
+  const bandList = bands as number[]
+
+  const range = raw['range'] ?? 12
+  if (typeof range !== 'number' || !Number.isFinite(range) || range < 3 || range > 24) {
+    return `setting "${key}" needs a "range" from 3 to 24 dB`
+  }
+
+  const rawPresets = raw['presets'] ?? []
+  if (!Array.isArray(rawPresets) || rawPresets.length > MAX_PRESETS) {
+    return `setting "${key}" may have at most ${MAX_PRESETS} "presets"`
+  }
+  const presets: { name: string; gains: number[] }[] = []
+  for (const preset of rawPresets) {
+    const name = isRecord(preset) ? text(preset['name'], 30) : ''
+    const gains = isRecord(preset) ? preset['gains'] : null
+    if (!name || !Array.isArray(gains) || gains.length !== bandList.length) {
+      return `each preset of setting "${key}" needs a "name" and one gain per band`
+    }
+    if (presets.some((p) => p.name === name))
+      return `preset "${name}" appears twice in setting "${key}"`
+    presets.push({ name, gains: gains.map((gain) => snapGain(Number(gain), range)) })
+  }
+
+  return {
+    key,
+    kind: 'equaliser',
+    label,
+    help,
+    bands: [...bandList],
+    range,
+    presets,
+    default: formatGains(parseGains(raw['default'], bandList.length, range))
   }
 }
 
@@ -198,6 +286,11 @@ export function coercePluginSetting(setting: PluginSetting, value: unknown): boo
   if (setting.kind === 'boolean') return typeof value === 'boolean' ? value : setting.default
   if (setting.kind === 'string')
     return typeof value === 'string' ? value.slice(0, 500) : setting.default
+  if (setting.kind === 'equaliser') {
+    return typeof value === 'string'
+      ? formatGains(parseGains(value, setting.bands.length, setting.range))
+      : setting.default
+  }
   return ''
 }
 
@@ -255,7 +348,9 @@ export const PLUGIN_CALLS = [
   'secrets.set',
   'secrets.delete',
   'settings.secret',
-  'openInBrowser'
+  'openInBrowser',
+  'audio.set',
+  'audio.clear'
 ] as const
 export type PluginCall = (typeof PLUGIN_CALLS)[number]
 
@@ -342,6 +437,9 @@ export function callAllowed(method: PluginCall, args: unknown[], granted: string
       const host = httpsHost(args[0])
       return host !== null && granted.includes(`browser:${host}`)
     }
+    case 'audio.set':
+    case 'audio.clear':
+      return granted.includes('audio')
   }
 }
 

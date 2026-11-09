@@ -22,8 +22,17 @@ import {
   toggleLyrics,
   closeLyrics,
   openShowcase,
-  closeShowcase
+  closeShowcase,
+  rendererUrl
 } from './window'
+import {
+  attachAudioEngine,
+  detachAudioEngine,
+  handleAudioReport,
+  isAudioView,
+  startAudioEngine
+} from './audio'
+import { readAudioReport } from '@shared/audio'
 import {
   getLyricsState,
   noticeNowPlaying,
@@ -392,6 +401,9 @@ if (!app.requestSingleInstanceLock()) {
       showMainWindow()
       createTray(showMainWindow)
       // Plugins belong to the app, not the window, and none of them needs SoundCloud's page.
+      // The audio engine first, so a plugin that shapes the sound has something to ask. Safe
+      // mode never runs it: troubleshooting starts from SoundCloud's own sound.
+      startAudioEngine({ safeMode: SAFE_MODE })
       startPlugins()
       app.on('activate', showMainWindow)
       app.on('second-instance', showMainWindow)
@@ -451,9 +463,17 @@ function showMainWindow(): void {
     next.content.webContents.on('render-process-gone', () => setNowPlaying(null))
     // Where the user goes, for "Where you left off" at the next launch.
     rememberLastPage(next.content.webContents)
+    // What the audio engine captures, while a plugin asks it to shape the sound (§21).
+    attachAudioEngine({
+      content: next.content.webContents,
+      identity: next.identity,
+      url: rendererUrl('audio')
+    })
     next.window.once('closed', () => {
       if (shell === next) shell = null
       setNowPlaying(null)
+      // Its own view is not the window's: the engine closes it, and waits for the next window.
+      detachAudioEngine()
       // BaseWindow does not own the lifetime of its WebContentsViews.
       for (const view of [
         next.header,
@@ -784,6 +804,13 @@ function registerIpc(): void {
   })
   ipcMain.on(CH.showcaseClose, (e) => {
     if (shell && fromShowcase(e)) closeShowcase(shell)
+  })
+
+  /** The audio engine's view saying whether its capture works. That view only, shaped first. */
+  ipcMain.on(CH.audioReport, (e, raw: unknown) => {
+    if (!isAudioView(e.sender)) return
+    const report = readAudioReport(raw)
+    if (report) handleAudioReport(report)
   })
 
   ipcMain.handle(CH.settingsSet, (e, key: unknown, value: unknown) => {

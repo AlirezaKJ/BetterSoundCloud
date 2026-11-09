@@ -90,6 +90,7 @@ credentials. v2's stated goal is to carry all of it.
 - Updates from GitHub Releases: the Windows installer and the AppImage download in the background
   and install on restart or quit, with one notification per version; the portable build, .deb and
   .rpm say a new version exists and link to it. One switch turns it all off
+- An equaliser, as a built-in plugin, shaping SoundCloud's sound without touching its page
 
 **Not yet built:** downloader, i18n, proxy, webhooks. Settings
 whose feature is missing render disabled and labelled rather than lying. Full backlog:

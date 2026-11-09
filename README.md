@@ -2,7 +2,7 @@
 
 [![Downloads](https://img.shields.io/github/downloads/AlirezaKJ/BetterSoundCloud/total.svg)](https://github.com/AlirezaKJ/BetterSoundCloud/releases)
 
-SoundCloud on your desktop, in a window of its own. BetterSoundCloud runs SoundCloud's own web player and adds what a browser tab can't: synced lyrics, Discord Rich Presence, Last.fm scrobbling, themes, plugins, and skipping the audio ads between tracks.
+SoundCloud on your desktop, in a window of its own. BetterSoundCloud runs SoundCloud's own web player and adds what a browser tab can't: synced lyrics, Discord Rich Presence, Last.fm scrobbling, an equaliser, themes, plugins, and skipping the audio ads between tracks.
 
 It is not made by SoundCloud.
 
@@ -188,10 +188,16 @@ with `--safe-mode`:
 | Linux (AppImage)    | `./BetterSoundCloud-<version>-linux-x86_64.AppImage --safe-mode`                                   |
 
 For that launch only, safe mode turns off hardware acceleration (the usual cause of a blank
-window), ad blocking and your theme. It changes no setting, and Settings says it is on. If the app
-works in safe mode, one of those three is the cause: in Settings, switch one of them off
+window), ad blocking, your theme and the equaliser. It changes no setting, and Settings says it is
+on. If the app works in safe mode, one of those is the cause: in Settings, switch one of them off
 (Hardware acceleration first), then quit and start normally, and repeat until it works. If you
 installed somewhere other than the default folder, use that path instead.
+
+### The sound is wrong: turn the equaliser off
+
+If music sounds odd, cuts out, or plays twice, open **Settings → Plugins** and untick
+**Equaliser**. SoundCloud then plays exactly as it does without it. The equaliser also steps aside
+by itself, and says why on its row, if it cannot do its job.
 
 ### SoundCloud keeps blocking you: reset your profile
 

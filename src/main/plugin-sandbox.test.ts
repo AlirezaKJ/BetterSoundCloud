@@ -108,6 +108,50 @@ describe('permissions, at the API', () => {
     expect(logs).toEqual(['info: Birahe'])
   })
 
+  it('shapes the sound only with the audio permission, and tells it the engine’s status', async () => {
+    const { fake } = bridge()
+    await expect(
+      runPlugin(plugin(`module.exports = { activate(bsc) { return bsc.audio.set([]) } }`), fake)
+    ).rejects.toThrow(/needs the "audio" permission/)
+
+    const { fake: allowed, logs } = bridge()
+    const running = await runPlugin(
+      plugin(
+        `module.exports = { activate(bsc) {
+          bsc.audio.onStatus((s) => bsc.log(s.state + ':' + s.message))
+          return bsc.audio.set(bsc.audio.graphicEqualiser([60, 1000, 15000], [6, 0, 0]))
+        } }`,
+        ['audio']
+      ),
+      allowed
+    )
+    expect(allowed.call).toHaveBeenCalledWith('audio.set', [
+      [
+        expect.objectContaining({ type: 'lowshelf' }),
+        expect.objectContaining({ type: 'peaking', frequency: 1000 }),
+        expect.objectContaining({ type: 'highshelf' })
+      ]
+    ])
+    running.audio({ state: 'stopped', message: 'why' })
+    expect(logs).toEqual(['info: stopped:why'])
+  })
+
+  it('tells a status listener added late the engine’s last status, after it subscribes', async () => {
+    const { fake, logs } = bridge()
+    const running = await runPlugin(
+      plugin(
+        `module.exports = { activate(bsc) { bsc.actions.onPress(() => bsc.audio.onStatus((s) => bsc.log(s.state))) } }`,
+        ['audio']
+      ),
+      fake
+    )
+    running.audio({ state: 'running', message: '' })
+    running.action('subscribe')
+    expect(logs).toEqual([])
+    await Promise.resolve()
+    expect(logs).toEqual(['info: running'])
+  })
+
   it('makes https requests only to listed hosts, refusing the rest before anything is sent', async () => {
     const { fake, logs } = bridge()
     await runPlugin(

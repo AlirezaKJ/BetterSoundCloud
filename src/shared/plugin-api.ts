@@ -1,4 +1,7 @@
 import type { NowPlaying } from './now-playing'
+import type { AudioFilter } from './audio'
+
+export type { AudioFilter } from './audio'
 
 /**
  * The API a plugin is written against: the `bsc` object its `activate` receives.
@@ -84,6 +87,39 @@ export type PluginApi = {
 
   /** Hex digests, for APIs that sign their requests (Last.fm signs with MD5). */
   readonly hash: { md5(text: string): string; sha256(text: string): string }
+
+  /**
+   * Shape how SoundCloud sounds. Needs the `audio` permission.
+   *
+   * A plugin describes filters; the app's audio engine applies them to SoundCloud's playback
+   * without touching SoundCloud's page, and turns everything down by the largest boost so nothing
+   * distorts (no plugin can make SoundCloud louder than it plays). Every plugin's filters are
+   * applied in turn. When none is asking for a change, the engine does not run at all.
+   *
+   * When this plugin stops — turned off, crashed, or updated — its filters are removed for it.
+   */
+  readonly audio: {
+    /** Replace this plugin's filters: at most 16. An empty or flat list asks for nothing. */
+    set(filters: AudioFilter[]): Promise<void>
+    clear(): Promise<void>
+    /** What the engine is doing: with the current status at once, then on every change. */
+    onStatus(listener: (status: AudioStatus) => void): () => void
+    /**
+     * Filters for a graphic equaliser: one per band (a low shelf, peaks, a high shelf), tuned so
+     * the sound passes through each band's gain. Pure, and the same function the settings panel
+     * draws an `equaliser` setting with.
+     */
+    graphicEqualiser(bands: number[], gains: number[]): AudioFilter[]
+  }
+}
+
+/**
+ * The audio engine, for a plugin: `off` when nothing is asked of it, `stopped` when it cannot run
+ * or stepped aside, with `message` saying why in a sentence for the plugin's status line.
+ */
+export type AudioStatus = {
+  state: 'off' | 'starting' | 'running' | 'stopped'
+  message: string
 }
 
 export type PluginFetchInit = {

@@ -1,0 +1,32 @@
+{
+  "id": "equaliser",
+  "name": "Equaliser",
+  "version": "1.0.0",
+  "author": "BetterSoundCloud",
+  "description": "Six bands of bass, middle and treble for everything SoundCloud plays. Turn it off and SoundCloud sounds exactly as it does without it.",
+  "homepage": "https://github.com/AlirezaKJ/BetterSoundCloud",
+  "main": "index.js",
+  "permissions": ["audio"],
+  "settings": [
+    {
+      "key": "curve",
+      "kind": "equaliser",
+      "label": "Bands",
+      "help": "Drag a point, or select it and use the arrow keys. Boosting a band turns everything down by as much, so loud songs never distort.",
+      "bands": [60, 150, 400, 1000, 2400, 15000],
+      "range": 12,
+      "default": "0,0,0,0,0,0",
+      "presets": [
+        { "name": "Flat", "gains": [0, 0, 0, 0, 0, 0] },
+        { "name": "Bass boost", "gains": [6, 4, 1, 0, 0, 0] },
+        { "name": "Bass cut", "gains": [-6, -4, -1, 0, 0, 0] },
+        { "name": "Treble boost", "gains": [0, 0, 0, 1, 4, 6] },
+        { "name": "Treble cut", "gains": [0, 0, 0, -1, -4, -6] },
+        { "name": "Vocal", "gains": [-3, -1, 2, 4, 3, 0] },
+        { "name": "Loudness", "gains": [5, 3, 0, -1, 2, 5] },
+        { "name": "Small speakers", "gains": [-6, 4, 3, 1, 2, 3] },
+        { "name": "Late night", "gains": [-4, -2, 0, 2, 1, -2] }
+      ]
+    }
+  ]
+}

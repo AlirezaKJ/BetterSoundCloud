@@ -2,6 +2,16 @@
 
 Each version's entry is also its release notes on GitHub.
 
+## Unreleased
+
+- **An equaliser**, like Spotify's: six bands from 60 Hz to 15 kHz, presets, and a curve you drag
+  or move with the keyboard. It shapes everything SoundCloud plays, protected tracks included,
+  without touching SoundCloud's page. It is a built-in plugin, off until you turn it on in
+  **Settings → Plugins**, and turning it off puts SoundCloud's own sound straight back
+  ([#101](https://github.com/AlirezaKJ/BetterSoundCloud/issues/101)).
+- Plugins can shape the sound too, with the new `audio` permission
+  ([guide](docs/CUSTOM_PLUGINS.md)).
+
 ## 0.8.0 (2026-11-05)
 
 ### BetterSoundCloud rebuilt from scratch.

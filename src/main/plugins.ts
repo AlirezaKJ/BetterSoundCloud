@@ -19,7 +19,14 @@ import type {
   PluginView
 } from '@shared/plugins'
 import type { PluginAction, PluginStatus } from '@shared/plugin-api'
+import { readAudioFilters } from '@shared/audio'
 import { getNowPlaying, onNowPlayingChange } from './now-playing'
+import {
+  clearAudioFilters,
+  getAudioStatus,
+  onAudioStatusChange,
+  setAudioFilters
+} from './audio'
 import { deleteSecret, getSecret, setSecret } from './secrets'
 import { openInBrowser } from './session'
 import { readRecord, writeJson } from './json-file'
@@ -123,6 +130,13 @@ export function startPlugins(overrides: Partial<PluginPaths> = {}): void {
     for (const [id, runtime] of runtimes) {
       if (runtime.state === 'running' && grantedFor(id).includes('nowPlaying')) {
         runtime.child?.postMessage({ type: 'nowPlaying', value })
+      }
+    }
+  })
+  onAudioStatusChange((status) => {
+    for (const [id, runtime] of runtimes) {
+      if (runtime.state === 'running' && grantedFor(id).includes('audio')) {
+        runtime.child?.postMessage({ type: 'audio', status })
       }
     }
   })
@@ -286,6 +300,8 @@ function start(plugin: Found): void {
 }
 
 function stop(id: string): void {
+  // Whatever it was doing to the sound ends with it, whether or not it says goodbye.
+  clearAudioFilters(id)
   const runtime = runtimes.get(id)
   if (!runtime) return
   if (runtime.startTimer) clearTimeout(runtime.startTimer)
@@ -313,6 +329,9 @@ function handle(
       runtime.state = 'running'
       if (grantedFor(manifest.id).includes('nowPlaying')) {
         child.postMessage({ type: 'nowPlaying', value: getNowPlaying() })
+      }
+      if (grantedFor(manifest.id).includes('audio')) {
+        child.postMessage({ type: 'audio', status: getAudioStatus() })
       }
       notify()
       return
@@ -398,11 +417,26 @@ async function answer(
     case 'openInBrowser':
       openInBrowser(String(args[0]))
       return null
+    case 'audio.set': {
+      const filters = readAudioFilters(args[0])
+      if (!filters) {
+        throw new Error(
+          'bsc.audio.set takes a list of at most 16 filters: { type, frequency, gain, q }'
+        )
+      }
+      setAudioFilters(id, filters)
+      return null
+    }
+    case 'audio.clear':
+      clearAudioFilters(id)
+      return null
   }
 }
 
 function exited(plugin: Found, runtime: Runtime, code: number): void {
   runtime.child = null
+  // A crashed or failed plugin leaves the sound as SoundCloud plays it.
+  clearAudioFilters(plugin.manifest?.id ?? plugin.folder)
   if (runtime.startTimer) clearTimeout(runtime.startTimer)
   if (runtime.stopping) return
 
@@ -521,11 +555,17 @@ function view(plugin: Found): PluginView {
   const permissions = manifest.permissions.map((raw) => {
     const permission = parsePermission(raw) ?? { kind: 'page' as const }
     return {
+      raw,
       text: describePermission(permission),
       available: isAvailable(permission),
       approved: granted.includes(raw)
     }
   })
+  // A built-in plugin's row leaves `audio` out: the plugin is ours, and its description already
+  // says what it does to the sound. A plugin from the user's folder lists it like any other.
+  const listed = permissions
+    .filter((p) => plugin.source === 'user' || p.raw !== 'audio')
+    .map(({ text, available, approved }) => ({ text, available, approved }))
   const runtime = runtimes.get(manifest.id)
 
   let state: PluginState
@@ -553,7 +593,7 @@ function view(plugin: Found): PluginView {
     description: manifest.description,
     homepage: manifest.homepage,
     source: plugin.source,
-    permissions,
+    permissions: listed,
     enabled: saved?.enabled === true,
     state,
     problem,

@@ -66,10 +66,11 @@ CLAUDE.md is worse than none, because it gets trusted.
   which drops the variable and, in an AppImage, starts the new copy from a system shell — Electron's
   relaunch helper runs off the AppImage's mount, which vanishes when the app exits (measured).
 - **`--safe-mode`** (`SAFE_MODE` in `index.ts`) turns off, for that launch only, hardware
-  acceleration, both ad blockers (the engine is never loaded) and the theme. It writes no setting,
-  and the settings panel says it is on (`getSafeMode`). Read the theme through `selectedTheme()`,
-  never `settings.get('appearance.theme')`, or safe mode stops covering it. Plugins still run: they
-  cannot touch the window or SoundCloud's page. Users find it in the README's Troubleshooting.
+  acceleration, both ad blockers (the engine is never loaded), the theme and the audio engine
+  (§21: a plugin's filters are refused, and its status line says why). It writes no setting, and
+  the settings panel says it is on (`getSafeMode`). Read the theme through `selectedTheme()`, never
+  `settings.get('appearance.theme')`, or safe mode stops covering it. Plugins still run otherwise:
+  they cannot touch the window or SoundCloud's page. Users find it in the README's Troubleshooting.
 - **Releases are built by `.github/workflows/release.yml`**, on a pushed tag `v<version>` that
   must match `package.json`: Windows VMP-signed (repository secrets `EVS_ACCOUNT_NAME`,
   `EVS_PASSWD`) and Linux, fuses checked by `scripts/verify-fuses.mjs`, all into a draft release.
@@ -118,6 +119,7 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CU
 | `main/page-status.ts`              | The page-status view: failed loads (and their retries), crashes, hangs, slow starts, and its buttons                                                               |
 | `main/presence.ts`                 | Discord Rich Presence: follows now-playing and the `discord.*` settings, spaces updates, reconnects; `getPresenceStatus` for settings                              |
 | `main/lyrics.ts`                   | Synced lyrics from LRCLIB: looks up only while the pane or the showcase is open, settles on a track first, caches for the session (§18)                            |
+| `main/audio.ts`                    | The audio engine: the hidden view that captures SoundCloud's output, every plugin's filters, stepping aside (§21)                                                  |
 | `main/discord-ipc.ts`              | Our own small client for the Discord app's local pipe (no Electron, tested against a real pipe)                                                                    |
 | `main/now-playing.ts`              | The one copy of "what is playing": `getNowPlaying`, `setNowPlaying`, `onNowPlayingChange`                                                                          |
 | `main/session.ts`                  | `hardenSession`, permission allowlist, `routeNewWindowsToBrowser`, `isInternalUrl`, `openInBrowser`                                                                |
@@ -143,25 +145,27 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CU
 
 ### Key shared files
 
-| File                        | Owns                                                                                                                                    |
-| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `shared/ipc.ts`             | `CH` (every channel name), `ChromeApi` (the `window.bsc` type), `NavState`, `WindowState`                                               |
-| `shared/settings-schema.ts` | `SETTINGS`, `SECTIONS`, `Settings`, `SettingKey`, `coerce`, `coerceAll`, `defaults`                                                     |
-| `shared/now-playing.ts`     | `PlayerReading`, `NowPlaying`, `readNowPlaying()` and its cleaners                                                                      |
-| `shared/page-theme.ts`      | `PageTheme`, `detectPageTheme()`, `overlayTheme()` (a theme's `@mode` beats SoundCloud's setting)                                       |
-| `shared/context-menu.ts`    | `ContextMenuRequest`, `CONTEXT_MENU_ACTIONS`, `cleanUrl`, `shortUrl`, `elide`                                                           |
-| `shared/start-page.ts`      | `START_PAGE_URLS`, `startPageUrl()`, `pageToRemember()` (only soundcloud.com pages; never `/logout` or a sign-in step)                  |
-| `shared/focus-cycle.ts`     | `focusCycle()`, `nextFocusArea()`: the order F6 moves through                                                                           |
-| `shared/presence.ts`        | `Activity`, `buildActivity()` (the Discord card), `sameActivity()`, `PRESENCE_LOGO`                                                     |
-| `shared/lyrics.ts`          | `LyricsState`, `parseLrc()`, `currentLineIndex()`, `playbackPosition()`, `lyricsQueries()`, `bestMatch()`                               |
-| `shared/lyric-clock.ts`     | `lyricClock()`: which lyric line is being sung, one timer per line, for the pane and the showcase                                       |
-| `shared/showcase.ts`        | `artworkColour()`, `showcaseBackdrop()`, `showcaseInks()` (the showcase colours, contrast-checked), `artworkSources()`, `formatClock()` |
-| `shared/page-status.ts`     | `PageStatus`, `describePageStatus()` (every word on that view), `describeLoadFailure()`, `retryDelay()`                                 |
-| `shared/themes.ts`          | `ThemeSummary`, `parseThemeMetadata()`, `splitThemeTargets()`, `chromeCssFor()`, `contentCssOf()`, `coverCss()`                         |
-| `shared/identity.ts`        | `Identity`, `buildUserAgent()`, `leaksAppIdentity()`, `pageLanguages()`, `acceptLanguages()`                                            |
-| `shared/plugins.ts`         | `readManifest()`, permissions, `readHostMessage()`, `callAllowed()`, `PluginView`                                                       |
-| `shared/plugin-api.ts`      | `PluginApi`: the `bsc` object a plugin gets. The contract, for code and for docs                                                        |
-| `shared/updates.ts`         | `installKind()`, `updateReach()`, `UpdateStatus`, `describeUpdateStatus()` (every word of the update line), `readUpdateError()`         |
+| File                        | Owns                                                                                                                                       |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `shared/ipc.ts`             | `CH` (every channel name), `ChromeApi` (the `window.bsc` type), `NavState`, `WindowState`                                                  |
+| `shared/settings-schema.ts` | `SETTINGS`, `SECTIONS`, `Settings`, `SettingKey`, `coerce`, `coerceAll`, `defaults`                                                        |
+| `shared/now-playing.ts`     | `PlayerReading`, `NowPlaying`, `readNowPlaying()` and its cleaners                                                                         |
+| `shared/page-theme.ts`      | `PageTheme`, `detectPageTheme()`, `overlayTheme()` (a theme's `@mode` beats SoundCloud's setting)                                          |
+| `shared/context-menu.ts`    | `ContextMenuRequest`, `CONTEXT_MENU_ACTIONS`, `cleanUrl`, `shortUrl`, `elide`                                                              |
+| `shared/start-page.ts`      | `START_PAGE_URLS`, `startPageUrl()`, `pageToRemember()` (only soundcloud.com pages; never `/logout` or a sign-in step)                     |
+| `shared/focus-cycle.ts`     | `focusCycle()`, `nextFocusArea()`: the order F6 moves through                                                                              |
+| `shared/presence.ts`        | `Activity`, `buildActivity()` (the Discord card), `sameActivity()`, `PRESENCE_LOGO`                                                        |
+| `shared/lyrics.ts`          | `LyricsState`, `parseLrc()`, `currentLineIndex()`, `playbackPosition()`, `lyricsQueries()`, `bestMatch()`                                  |
+| `shared/lyric-clock.ts`     | `lyricClock()`: which lyric line is being sung, one timer per line, for the pane and the showcase                                          |
+| `shared/audio.ts`           | `AudioFilter`, `readAudioFilters()`, `filterResponseDb()` (Web Audio's own maths), `headroomDb()`, `readAudioReport()`, the no-sound check |
+| `shared/equaliser.ts`       | `graphicEqualiser()` (gains to filters that pass through them), stored gains, `bandLabel()`, `gainLabel()`                                 |
+| `shared/showcase.ts`        | `artworkColour()`, `showcaseBackdrop()`, `showcaseInks()` (the showcase colours, contrast-checked), `artworkSources()`, `formatClock()`    |
+| `shared/page-status.ts`     | `PageStatus`, `describePageStatus()` (every word on that view), `describeLoadFailure()`, `retryDelay()`                                    |
+| `shared/themes.ts`          | `ThemeSummary`, `parseThemeMetadata()`, `splitThemeTargets()`, `chromeCssFor()`, `contentCssOf()`, `coverCss()`                            |
+| `shared/identity.ts`        | `Identity`, `buildUserAgent()`, `leaksAppIdentity()`, `pageLanguages()`, `acceptLanguages()`                                               |
+| `shared/plugins.ts`         | `readManifest()`, permissions, `readHostMessage()`, `callAllowed()`, `PluginView`                                                          |
+| `shared/plugin-api.ts`      | `PluginApi`: the `bsc` object a plugin gets. The contract, for code and for docs                                                           |
+| `shared/updates.ts`         | `installKind()`, `updateReach()`, `UpdateStatus`, `describeUpdateStatus()` (every word of the update line), `readUpdateError()`            |
 
 ---
 
@@ -182,6 +186,10 @@ views composited above it. Everything is held on the `Shell` object (`src/main/w
 | `status`      | `renderer/status`       | `chrome.cjs`  | Exists while `pageStatus` is set: SoundCloud's page cannot be shown (`showPageStatus`/`clearPageStatus`)                                |
 | `lyrics`      | `renderer/lyrics`       | `chrome.cjs`  | Exists while the lyrics pane is open (`toggleLyrics`/`closeLyrics`); docked right, between SoundCloud's header and play bar             |
 | `showcase`    | `renderer/showcase`     | `chrome.cjs`  | Exists while the full-screen showcase is open (`openShowcase`/`closeShowcase`); covers the whole window, which goes full screen with it |
+
+One view of ours is not on the `Shell`: the audio engine's (`renderer/audio`), which is never
+shown and never added to the window. `main/audio.ts` owns it, makes it only while a plugin asks for
+a change to the sound, and closes it when the window closes (§21).
 
 Rules that hold this together:
 
@@ -241,45 +249,46 @@ type-only imports are fine.
 `window.bsc` (type `ChromeApi`, implemented in `src/preload/chrome.ts`) exists only in our own
 views:
 
-| Method                                                | Kind        | Main accepts it from (sender check)                                                        |
-| ----------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------ |
-| `platform`                                            | value       | —                                                                                          |
-| `minimize`, `maximizeToggle`, `close`                 | send        | `fromChrome` = header, embedded                                                            |
-| `back`, `forward`, `reload`, `stop`                   | send        | `fromChrome`; `stop` while `NavState.loading` (the main frame is loading)                  |
-| `toggleSettings`, `toggleMenuBar`                     | send        | `fromChrome`                                                                               |
-| `closeSettings`                                       | send        | the settings view only                                                                     |
-| `getSettings`, `setSetting`, `listThemes`             | invoke      | `fromSettingsUi` = header, embedded, settings                                              |
-| `copyTheme`, `openThemesFolder`, `openThemeFile`      | invoke/send | `fromSettingsUi`; none takes a path                                                        |
-| `getBackgroundPicture`, `chooseBackgroundPicture`     | invoke      | `fromSettingsUi`; main shows the dialog, so no path ever crosses IPC                       |
-| `onThemesChanged`                                     | subscribe   | pushed to the settings view when the themes folder changes                                 |
-| `contextMenuAction`, `goToUrl`, `closeContextMenu`    | send/invoke | the context-menu view only                                                                 |
-| `getNowPlaying`                                       | invoke      | `fromOurViews` = header, settings, embedded, player, contextMenu, status, lyrics, showcase |
-| `onNavState`                                          | subscribe   | pushed to header                                                                           |
-| `onWindowState`                                       | subscribe   | pushed to header, embedded                                                                 |
-| `onSettingsChanged`                                   | subscribe   | pushed to header, settings (`broadcastSettings`)                                           |
-| `onPageTheme`                                         | subscribe   | pushed to embedded, player (and on their load)                                             |
-| `onContextMenu`                                       | subscribe   | pushed to the context-menu view                                                            |
-| `onNowPlaying`                                        | subscribe   | pushed to all eight of our views (`broadcastNowPlaying`)                                   |
-| `toggleLyrics`                                        | send        | `fromChrome`, or the player-bar view                                                       |
-| `closeLyrics`, `retryLyrics`, `nudgeLyrics`           | send        | the lyrics view only; a nudge must be exactly ±0.5                                         |
-| `getLyrics`                                           | invoke      | the lyrics view or the showcase                                                            |
-| `onLyrics`                                            | subscribe   | pushed to the lyrics view and the showcase (`onLyricsChange`)                              |
-| `onLyricsShown`                                       | subscribe   | pushed to the player view: whether the pane is open                                        |
-| `openShowcase`                                        | send        | `fromChrome`, or the player-bar view                                                       |
-| `closeShowcase`                                       | send        | the showcase view only                                                                     |
-| `pageStatusAction`                                    | send        | the status view only; re-checked against `shell.pageStatus`                                |
-| `onPageStatus`                                        | subscribe   | pushed to the status view (on its load and on every change)                                |
-| `listPlugins`, `setPluginEnabled`, `setPluginSetting` | invoke      | `fromSettingsUi`; the two setters answer `{ plugins, error }`                              |
-| `pluginAction`, `openPluginsFolder`                   | send        | `fromSettingsUi`                                                                           |
-| `onPluginsChanged`                                    | subscribe   | pushed to the settings view while it is open (`broadcastPlugins`)                          |
-| `getSafeMode`                                         | invoke      | `fromSettingsUi`; `true` when started with `--safe-mode`                                   |
-| (no method) `CH.focusArrived`                         | pushed      | to the view F6 moved focus into; the chrome preload itself puts focus on a control         |
-| `getWidevineSkipped`                                  | invoke      | `fromSettingsUi`; `true` after "Continue without Widevine", until Widevine arrives         |
-| `resetSettings`, `clearSiteData`                      | invoke      | the settings view only (`fromSettingsView`); each answers whether it worked                |
-| `getPresenceStatus`, `retryPresence`                  | invoke/send | `fromSettingsUi`                                                                           |
-| `onPresenceStatus`                                    | subscribe   | pushed to the settings view while it is open (`broadcastPresenceStatus`)                   |
-| `getUpdateStatus`, `updateAction`                     | invoke/send | `fromSettingsUi`; the action must pass `isUpdateAction`                                    |
-| `onUpdateStatus`                                      | subscribe   | pushed to the settings view while it is open (`broadcastUpdateStatus`)                     |
+| Method                                                | Kind           | Main accepts it from (sender check)                                                        |
+| ----------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------ |
+| `platform`                                            | value          | —                                                                                          |
+| `minimize`, `maximizeToggle`, `close`                 | send           | `fromChrome` = header, embedded                                                            |
+| `back`, `forward`, `reload`, `stop`                   | send           | `fromChrome`; `stop` while `NavState.loading` (the main frame is loading)                  |
+| `toggleSettings`, `toggleMenuBar`                     | send           | `fromChrome`                                                                               |
+| `closeSettings`                                       | send           | the settings view only                                                                     |
+| `getSettings`, `setSetting`, `listThemes`             | invoke         | `fromSettingsUi` = header, embedded, settings                                              |
+| `copyTheme`, `openThemesFolder`, `openThemeFile`      | invoke/send    | `fromSettingsUi`; none takes a path                                                        |
+| `getBackgroundPicture`, `chooseBackgroundPicture`     | invoke         | `fromSettingsUi`; main shows the dialog, so no path ever crosses IPC                       |
+| `onThemesChanged`                                     | subscribe      | pushed to the settings view when the themes folder changes                                 |
+| `contextMenuAction`, `goToUrl`, `closeContextMenu`    | send/invoke    | the context-menu view only                                                                 |
+| `getNowPlaying`                                       | invoke         | `fromOurViews` = header, settings, embedded, player, contextMenu, status, lyrics, showcase |
+| `onNavState`                                          | subscribe      | pushed to header                                                                           |
+| `onWindowState`                                       | subscribe      | pushed to header, embedded                                                                 |
+| `onSettingsChanged`                                   | subscribe      | pushed to header, settings (`broadcastSettings`)                                           |
+| `onPageTheme`                                         | subscribe      | pushed to embedded, player (and on their load)                                             |
+| `onContextMenu`                                       | subscribe      | pushed to the context-menu view                                                            |
+| `onNowPlaying`                                        | subscribe      | pushed to all eight of our views (`broadcastNowPlaying`)                                   |
+| `toggleLyrics`                                        | send           | `fromChrome`, or the player-bar view                                                       |
+| `closeLyrics`, `retryLyrics`, `nudgeLyrics`           | send           | the lyrics view only; a nudge must be exactly ±0.5                                         |
+| `getLyrics`                                           | invoke         | the lyrics view or the showcase                                                            |
+| `onLyrics`                                            | subscribe      | pushed to the lyrics view and the showcase (`onLyricsChange`)                              |
+| `onLyricsShown`                                       | subscribe      | pushed to the player view: whether the pane is open                                        |
+| `openShowcase`                                        | send           | `fromChrome`, or the player-bar view                                                       |
+| `closeShowcase`                                       | send           | the showcase view only                                                                     |
+| `onAudioConfig`, `reportAudio`                        | subscribe/send | the audio engine's view only (`isAudioView`); reports are shaped by `readAudioReport`      |
+| `pageStatusAction`                                    | send           | the status view only; re-checked against `shell.pageStatus`                                |
+| `onPageStatus`                                        | subscribe      | pushed to the status view (on its load and on every change)                                |
+| `listPlugins`, `setPluginEnabled`, `setPluginSetting` | invoke         | `fromSettingsUi`; the two setters answer `{ plugins, error }`                              |
+| `pluginAction`, `openPluginsFolder`                   | send           | `fromSettingsUi`                                                                           |
+| `onPluginsChanged`                                    | subscribe      | pushed to the settings view while it is open (`broadcastPlugins`)                          |
+| `getSafeMode`                                         | invoke         | `fromSettingsUi`; `true` when started with `--safe-mode`                                   |
+| (no method) `CH.focusArrived`                         | pushed         | to the view F6 moved focus into; the chrome preload itself puts focus on a control         |
+| `getWidevineSkipped`                                  | invoke         | `fromSettingsUi`; `true` after "Continue without Widevine", until Widevine arrives         |
+| `resetSettings`, `clearSiteData`                      | invoke         | the settings view only (`fromSettingsView`); each answers whether it worked                |
+| `getPresenceStatus`, `retryPresence`                  | invoke/send    | `fromSettingsUi`                                                                           |
+| `onPresenceStatus`                                    | subscribe      | pushed to the settings view while it is open (`broadcastPresenceStatus`)                   |
+| `getUpdateStatus`, `updateAction`                     | invoke/send    | `fromSettingsUi`; the action must pass `isUpdateAction`                                    |
+| `onUpdateStatus`                                      | subscribe      | pushed to the settings view while it is open (`broadcastUpdateStatus`)                     |
 
 Every `on…` returns an unsubscribe function. A new view that needs one of the gated methods must
 be added to that sender check, and to the matching broadcast list if it needs pushes.
@@ -307,7 +316,8 @@ be added to that sender check, and to the matching broadcast list if it needs pu
 Each view is `src/renderer/<entry>/{index.html, main.ts, <Name>.svelte}`.
 
 - `main.ts` is always: import `mount` from svelte, import `'../tokens.css'`, find `#app` (throw if
-  missing), `mount(Component, { target })`.
+  missing), `mount(Component, { target })`. The one exception is `renderer/audio`, which has no UI:
+  its `main.ts` is the audio engine's graph and mounts nothing (§21).
 - `index.html` carries the CSP — copy it exactly:
   `default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'`.
   No remote scripts, styles or fonts, ever. **Artwork from `https://*.sndcdn.com` is blocked by
@@ -580,6 +590,7 @@ Dev builds log to the terminal running `npm run dev`. Tags:
 | `[widevine]`                                                                                     | How long the Widevine wait took, or why it failed; then going on without it, or it arriving late (all builds)                                                   |
 | `[page-status]`                                                                                  | What the status view is saying (`load failed -106 ERR_INTERNET_DISCONNECTED`, `cleared`, …)                                                                     |
 | `[content]`, `[window]`                                                                          | A failed SoundCloud load; the window shown without its header                                                                                                   |
+| `[audio]`                                                                                        | The audio engine starting and running (dev); stepping aside and why (all builds)                                                                                |
 | `[theme]`, `[background]`, `[lyrics]`, `[player]`, `[context-menu]`, `[blocker]`, `[ad-request]` | Their features                                                                                                                                                  |
 
 F12 or Ctrl/Cmd+Shift+I opens DevTools for the focused view (header, content, settings and
@@ -618,7 +629,8 @@ context menu have the shortcut; embedded and player do not).
   the Discord app and to GitHub from whatever machine runs the tests. `discord-ipc.test.ts` instead runs a fake Discord on a real
   local pipe, so the bytes on the wire are tested as sent.
 - Plugins are tested three ways: `plugin-sandbox.test.ts` runs small scripts in the real sandbox;
-  `lastfm-plugin.test.ts` runs the shipped Last.fm plugin against a fake Last.fm; `plugins.test.ts`
+  `lastfm-plugin.test.ts` runs the shipped Last.fm plugin against a fake Last.fm, and
+  `equaliser-plugin.test.ts` the Equaliser against a fake engine; `plugins.test.ts`
   drives the service with real folders and a fake process. Plugin JavaScript is type-checked
   through `tsconfig.plugins.json`, against `resources/plugins/sandbox.d.ts` — which a test keeps
   equal to the sandbox's real globals.
@@ -709,6 +721,13 @@ Rules that hold this together:
   later version asks for more, it shows "needs approval" and does not start.
 - **A plugin from the user's folder asks before it turns on** (an inline confirmation in its row,
   listing its permissions). A user plugin may not reuse a built-in's id.
+- **The `audio` permission shapes the sound, never the page.** A plugin hands `bsc.audio.set` a
+  list of filters (shaped by `readAudioFilters`, at most 16) and the core audio engine applies
+  them (§21). Plugin settings gain the `equaliser` kind, a curve the settings panel draws
+  (`EqualiserEditor.svelte`) from the same `graphicEqualiser` the sandbox hands plugins. A
+  plugin's filters are cleared whenever it stops, however it stops (`stop` and `exited` in
+  plugins.ts). A built-in plugin's row does not list `audio` (its description says it); a plugin
+  from the user's folder lists it like any other permission (`view()` in plugins.ts).
 - **No plugin code runs in SoundCloud's page.** The `page` permission exists so such plugins can
   be listed honestly ("can't be turned on"), not so they can run. It waits on the Milestone 1
   baseline, and when it comes it follows §7.
@@ -939,3 +958,51 @@ Rules that hold this together:
   still signed in, and kept a taskbar pin. Running an installer by hand removes the pin instead:
   with `allowToChangeInstallationDirectory` on, electron-builder keeps shortcuts only on an update.
   The per-release steps are in docs/RELEASE_CHECKLIST.md.
+
+---
+
+## 21. The audio engine and the Equaliser
+
+```
+Equaliser plugin (resources/plugins/equaliser) --bsc.audio.set(filters)--> plugins.ts: readAudioFilters
+  --> main/audio.ts setAudioFilters: every plugin's filters, in plugin-id order; flat = none
+  --> only then: a hidden WebContentsView (renderer/audio), never added to the window
+        main: expectTabAudioCapture(content) + content.getMediaSourceId(audio view)
+        --CH.audioConfigure { sourceId, filters, preampDb }--> getUserMedia({ chromeMediaSource: 'tab' })
+        capture -> preamp -> BiquadFilters -> output (fades in) -> speakers
+  <--CH.audioReport running | failed | ended | silence-- (isAudioView, readAudioReport)
+engine status --{ type: 'audio' }--> plugins with the permission --> their status line
+```
+
+Rules that hold this together:
+
+- **Nothing in SoundCloud's page, and nothing standing in the session.** The engine captures the
+  content view's own output from a view of ours. Electron attributes that capture's permission
+  request to the view being CAPTURED (measured 2026-11-09: the content view, `media`, no media
+  types, our renderer's `file:///` origin), so `session.ts` grants nothing by default: main arms
+  one grant (`expectTabAudioCapture`) just before making a capture id, for that one view, for the
+  ten seconds an id lives, and the first request matching it in every respect uses it up.
+  Permission checks stay denied; the capture does not need them.
+- **It cannot break SoundCloud.** The app never mutes SoundCloud: while a capture lives, Chromium
+  plays the captured view only into it, and when it ends (the view closed or crashed), SoundCloud
+  plays normally again. The engine exists only while some plugin asks for a non-flat change; a flat
+  curve or a stopped plugin means no view and no capture. Safe mode never starts it.
+- **It steps aside rather than retry what keeps failing**: a refused capture, the view crashing
+  twice (it is made again once), the capture ending by itself three times, or SoundCloud's clock
+  running six seconds while the capture hears exact digital silence (`noteCaptureClock` counts only
+  forward steps of a playing track, so pauses, seeks and new tracks never count — the guard for
+  audio that bypasses what capture copies from, such as Windows' hardware DRM path). It stays
+  aside until nothing asks for it: turning the plugin off and on retries. Every plugin with the
+  permission hears why (`describeAudioStop`, always ending "SoundCloud plays as normal").
+- **No plugin can make SoundCloud louder or clip it.** The preamp is minus the largest boost of the
+  whole chain anywhere from 20 Hz to 20 kHz (`headroomDb`). Gains are clamped to ±24 dB per filter.
+- **The curve is the sound.** `graphicEqualiser` turns band gains into a low shelf, peaks and a high
+  shelf, then corrects their gains until the summed response passes within 0.25 dB of every band
+  (tested on extremes). The editor draws that response with Web Audio's own coefficients
+  (`filterResponseDb`), and the plugin asks for exactly those filters (tested).
+- **Measured, not assumed** (2026-11-09, this Electron, Google's Angel One Widevine test stream,
+  never SoundCloud): the capture carries Widevine-encrypted audio, and adds about 0.1 s. The view
+  needs `backgroundThrottling: false` (its silence check is a timer) and
+  `autoplayPolicy: 'no-user-gesture-required'`. Not yet checked by ear: a real SoundCloud
+  protected track, the media flyout while captured, an output-device switch (docs/TODO.md).
+- Lyrics timing does not yet add the engine's delay; at 0.1 s it is within what the nudge covers.

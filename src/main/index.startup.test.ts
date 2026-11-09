@@ -13,6 +13,8 @@ import type * as IdentityModule from '@shared/identity'
  */
 
 const mocks = vi.hoisted(() => ({
+  startAudioEngine: vi.fn(),
+  attachAudioEngine: vi.fn(),
   whenWidevineReady: vi.fn<() => Promise<unknown>>(),
   componentsStatus: vi.fn((): unknown => ({})),
   ipcOn: vi.fn(),
@@ -69,6 +71,7 @@ vi.mock('@shared/identity', async (importOriginal) => ({
   leaksAppIdentity: () => false
 }))
 vi.mock('./window', () => ({
+  rendererUrl: (entry: string) => `file:///renderer/${entry}/index.html`,
   createShell: mocks.createShell,
   loadSoundCloud: mocks.loadSoundCloud,
   toggleSettings: vi.fn(),
@@ -81,6 +84,13 @@ vi.mock('./window', () => ({
   closeLyrics: vi.fn(),
   openShowcase: vi.fn(),
   closeShowcase: vi.fn()
+}))
+vi.mock('./audio', () => ({
+  startAudioEngine: mocks.startAudioEngine,
+  attachAudioEngine: mocks.attachAudioEngine,
+  detachAudioEngine: vi.fn(),
+  handleAudioReport: vi.fn(),
+  isAudioView: () => false
 }))
 vi.mock('./lyrics', () => ({
   getLyricsState: () => ({ state: 'idle' }),
@@ -295,6 +305,8 @@ describe('safe mode', () => {
     )
     // Without the engine, the blocker's own correction would have saved `adBlocker: false`.
     expect(mocks.settingsSet).not.toHaveBeenCalled()
+    // And the audio engine never runs: troubleshooting starts from SoundCloud's own sound.
+    expect(mocks.startAudioEngine).toHaveBeenLastCalledWith({ safeMode: true })
   })
 
   it('leaves all of that to the settings without the flag', async () => {
@@ -305,6 +317,11 @@ describe('safe mode', () => {
     expect(mocks.loadBlockerEngine).toHaveBeenCalledOnce()
     expect(mocks.setBlockingEnabled).toHaveBeenLastCalledWith(true)
     expect(mocks.setAudioAdBlocking).toHaveBeenLastCalledWith(true)
+    expect(mocks.startAudioEngine).toHaveBeenLastCalledWith({ safeMode: false })
+    // The engine is pointed at the window's SoundCloud view, through a view of ours.
+    expect(mocks.attachAudioEngine).toHaveBeenLastCalledWith(
+      expect.objectContaining({ url: 'file:///renderer/audio/index.html' })
+    )
   })
 })
 

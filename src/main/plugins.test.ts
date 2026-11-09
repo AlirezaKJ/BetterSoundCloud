@@ -32,6 +32,9 @@ class FakeChild extends EventEmitter {
 }
 
 const mocks = vi.hoisted(() => ({
+  setAudioFilters: vi.fn(),
+  clearAudioFilters: vi.fn(),
+  audioListener: null as ((status: { state: string; message: string }) => void) | null,
   children: [] as FakeChild[],
   secrets: new Map<string, string>(),
   openInBrowser: vi.fn(),
@@ -56,6 +59,15 @@ vi.mock('./secrets', () => ({
   deleteSecret: (ns: string, key: string) => mocks.secrets.delete(`${ns}/${key}`)
 }))
 vi.mock('./session', () => ({ openInBrowser: mocks.openInBrowser }))
+vi.mock('./audio', () => ({
+  setAudioFilters: mocks.setAudioFilters,
+  clearAudioFilters: mocks.clearAudioFilters,
+  getAudioStatus: () => ({ state: 'off', message: '' }),
+  onAudioStatusChange: (listener: (status: { state: string; message: string }) => void) => {
+    mocks.audioListener = listener
+    return () => undefined
+  }
+}))
 vi.mock('./env', () => ({ isDev: false }))
 
 let root: string
@@ -344,6 +356,84 @@ describe('what a running plugin may do', () => {
     host().emit('message', 'nonsense')
     expect(viewOf(listPlugins(), 'demo')?.state).toBe('running')
     expect(host().sent('reply')).toEqual([])
+  })
+})
+
+describe('shaping the sound', () => {
+  const TONE = { id: 'tone', name: 'Tone', version: '1.0.0', permissions: ['audio'] }
+  const filter = { type: 'peaking', frequency: 1000, gain: 6, q: 1 }
+
+  async function runningTone() {
+    writePlugin(join(root, 'bundled', 'tone'), TONE)
+    const service = await load()
+    service.setPluginEnabled('tone', true)
+    host().emit('message', { type: 'started' })
+    mocks.setAudioFilters.mockClear()
+    mocks.clearAudioFilters.mockClear()
+    return service
+  }
+
+  const call = async (method: string, args: unknown[], callId = 1) => {
+    host().emit('message', { type: 'call', callId, method, args })
+    await vi.waitFor(() => expect(host().sent('reply').length).toBeGreaterThanOrEqual(callId))
+    return reply()
+  }
+
+  it('lists the permission on a plugin from the folder, not on a built-in one', async () => {
+    writePlugin(join(root, 'bundled', 'tone'), TONE)
+    writePlugin(join(root, 'user', 'mixer'), { ...TONE, id: 'mixer', name: 'Mixer' })
+    const service = await load()
+    const list = service.listPlugins()
+    expect(viewOf(list, 'tone')?.permissions).toEqual([])
+    expect(viewOf(list, 'mixer', 'user')?.permissions).toEqual([
+      { text: 'Change how SoundCloud sounds', available: true, approved: false }
+    ])
+  })
+
+  it('refuses audio calls from a plugin without the permission', async () => {
+    writePlugin(join(root, 'bundled', 'tone'), TONE)
+    const service = await load()
+    service.setPluginEnabled('demo', true)
+    host().emit('message', { type: 'started' })
+    expect(await call('audio.set', [[filter]])).toMatchObject({
+      ok: false,
+      error: 'audio.set is not among the permissions this plugin was given'
+    })
+    expect(mocks.setAudioFilters).not.toHaveBeenCalled()
+  })
+
+  it('passes a plugin’s filters on, shaped, and refuses a list it cannot use', async () => {
+    await runningTone()
+    expect(await call('audio.set', [[{ ...filter, gain: 99 }]], 1)).toMatchObject({ ok: true })
+    expect(mocks.setAudioFilters).toHaveBeenCalledWith('tone', [{ ...filter, gain: 24 }])
+    expect(await call('audio.set', [[{ type: 'notch' }]], 2)).toMatchObject({ ok: false })
+    expect(mocks.setAudioFilters).toHaveBeenCalledTimes(1)
+    expect(await call('audio.clear', [], 3)).toMatchObject({ ok: true })
+    expect(mocks.clearAudioFilters).toHaveBeenCalledWith('tone')
+  })
+
+  it('takes a plugin’s filters away when it is turned off, and when it crashes', async () => {
+    const service = await runningTone()
+    service.setPluginEnabled('tone', false)
+    expect(mocks.clearAudioFilters).toHaveBeenCalledWith('tone')
+
+    mocks.clearAudioFilters.mockClear()
+    service.setPluginEnabled('tone', true)
+    host().emit('message', { type: 'started' })
+    host().emit('exit', 1)
+    expect(mocks.clearAudioFilters).toHaveBeenCalledWith('tone')
+  })
+
+  it('tells it the engine’s status when it starts and on every change', async () => {
+    await runningTone()
+    expect(host().sent('audio')).toEqual([
+      { type: 'audio', status: { state: 'off', message: '' } }
+    ])
+    mocks.audioListener?.({ state: 'running', message: '' })
+    expect(host().sent('audio').at(-1)).toEqual({
+      type: 'audio',
+      status: { state: 'running', message: '' }
+    })
   })
 })
 

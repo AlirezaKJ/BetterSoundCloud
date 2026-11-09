@@ -9,6 +9,7 @@ import {
   readHostMessage,
   readManifest
 } from './plugins'
+import type { PluginSetting } from './plugins'
 
 const VALID = {
   id: 'lastfm',
@@ -157,6 +158,11 @@ describe('callAllowed', () => {
     // Its own storage and secret settings need nothing granted.
     expect(callAllowed('storage.set', ['k', 1], [])).toBe(true)
     expect(callAllowed('settings.secret', ['k'], [])).toBe(true)
+    // Shaping the sound needs the audio permission, and nothing else gives it.
+    expect(callAllowed('audio.set', [[]], granted)).toBe(false)
+    expect(callAllowed('audio.clear', [], granted)).toBe(false)
+    expect(callAllowed('audio.set', [[]], ['audio'])).toBe(true)
+    expect(callAllowed('audio.clear', [], ['audio'])).toBe(true)
   })
 
   it('opens only https pages on hosts the plugin listed', () => {
@@ -233,5 +239,75 @@ describe('coercePluginSetting', () => {
     const words = { key: 'b', kind: 'string', label: 'B', help: '', default: 'd' } as const
     expect(coercePluginSetting(words, 'x'.repeat(900))).toHaveLength(500)
     expect(coercePluginSetting(words, 3)).toBe('d')
+  })
+
+  it('keeps an equaliser to one half-decibel step per band, within its range', () => {
+    const curve: PluginSetting = {
+      key: 'curve',
+      kind: 'equaliser',
+      label: 'Bands',
+      help: '',
+      bands: [60, 1000, 15000],
+      range: 12,
+      presets: [],
+      default: '0,0,0'
+    }
+    expect(coercePluginSetting(curve, '6,99,-3.3')).toBe('6,12,-3.5')
+    expect(coercePluginSetting(curve, 'x')).toBe('0,0,0')
+    expect(coercePluginSetting(curve, 4)).toBe('0,0,0')
+  })
+})
+
+describe('the equaliser setting kind', () => {
+  const withSetting = (setting: Record<string, unknown>) =>
+    readManifest({ ...VALID, permissions: [], settings: [setting] }, 'lastfm')
+
+  it('reads bands, a range, presets and a default', () => {
+    const result = withSetting({
+      key: 'curve',
+      kind: 'equaliser',
+      label: 'Bands',
+      bands: [60, 1000, 15000],
+      presets: [{ name: 'Bass', gains: [6.2, 0, 0] }],
+      default: '3,0,0'
+    })
+    expect(result.ok && result.manifest.settings[0]).toEqual({
+      key: 'curve',
+      kind: 'equaliser',
+      label: 'Bands',
+      help: '',
+      bands: [60, 1000, 15000],
+      range: 12,
+      presets: [{ name: 'Bass', gains: [6, 0, 0] }],
+      default: '3,0,0'
+    })
+  })
+
+  it('refuses bands that do not rise, fall outside hearing, or are too few or many', () => {
+    for (const bands of [
+      [1000, 60],
+      [60],
+      [10, 100],
+      [60, 30_000],
+      Array.from({ length: 11 }, (_, i) => 100 + i)
+    ]) {
+      const result = withSetting({ key: 'curve', kind: 'equaliser', label: 'B', bands })
+      expect(result.ok, JSON.stringify(bands)).toBe(false)
+    }
+  })
+
+  it('refuses presets without a gain per band, or with a name used twice', () => {
+    const base = { key: 'curve', kind: 'equaliser', label: 'B', bands: [60, 1000] }
+    expect(withSetting({ ...base, presets: [{ name: 'A', gains: [1] }] }).ok).toBe(false)
+    expect(
+      withSetting({
+        ...base,
+        presets: [
+          { name: 'A', gains: [1, 1] },
+          { name: 'A', gains: [2, 2] }
+        ]
+      }).ok
+    ).toBe(false)
+    expect(withSetting({ ...base, range: 40 }).ok).toBe(false)
   })
 })

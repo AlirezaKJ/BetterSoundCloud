@@ -3,6 +3,7 @@
   import type { PluginView } from '@shared/plugins'
   import type { PluginsResult } from '@shared/ipc'
   import StatusText from './StatusText.svelte'
+  import EqualiserEditor from './EqualiserEditor.svelte'
 
   /*
    * The Plugins section: every plugin, built in or dropped into the plugins folder.
@@ -14,7 +15,8 @@
    * WHY IT ASKS, AND HOW. A plugin from the folder is someone else's code. Ticking its box opens
    * a confirmation inside its own row, listing what it will be able to do, instead of a dialog on
    * top of a dialog — the question belongs to the row, and the rest of the panel stays usable.
-   * Built-in plugins skip the question; their permissions are listed on the row all the same.
+   * Built-in plugins skip the question; their permissions are listed on the row all the same,
+   * except `audio`, which main leaves out of a built-in's list (its description says it).
    */
 
   let plugins = $state<PluginView[] | null>(null)
@@ -207,40 +209,61 @@
           <div class="settings" data-bsc-plugin-settings>
             {#each plugin.settings as { setting, value, hasValue } (setting.key)}
               {@const id = `plugin-${plugin.id}-${setting.key}`}
-              <div class="setting">
-                <div class="setting-label">
-                  <label for={id}>{setting.label}</label>
-                  {#if setting.help}<p class="help">{setting.help}</p>{/if}
-                </div>
-                {#if setting.kind === 'boolean'}
-                  <input
-                    {id}
-                    type="checkbox"
-                    checked={value === true}
-                    onchange={(e) =>
-                      setSetting(plugin.id, setting.key, e.currentTarget.checked)}
-                  />
-                {:else if setting.kind === 'string'}
-                  <input
-                    {id}
-                    type="text"
-                    value={typeof value === 'string' ? value : ''}
-                    onchange={(e) => setSetting(plugin.id, setting.key, e.currentTarget.value)}
-                  />
-                {:else}
-                  <!-- The saved value never comes back here; the placeholder only says one exists. -->
-                  <input
-                    {id}
-                    type="password"
-                    autocomplete="off"
-                    placeholder={hasValue ? 'Saved — type to replace' : ''}
-                    onchange={(e) => {
-                      void setSetting(plugin.id, setting.key, e.currentTarget.value)
-                      e.currentTarget.value = ''
+              {#if setting.kind === 'equaliser'}
+                <!-- A curve needs the row's whole width: its name and help above, the editor below. -->
+                <div class="setting wide">
+                  <div class="setting-label">
+                    <span class="setting-name" id={`${id}-label`}>{setting.label}</span>
+                    {#if setting.help}<p class="help">{setting.help}</p>{/if}
+                  </div>
+                  <EqualiserEditor
+                    labelledBy={`${id}-label`}
+                    bands={setting.bands}
+                    range={setting.range}
+                    presets={setting.presets}
+                    value={typeof value === 'string' ? value : setting.default}
+                    onchange={(next: string) => {
+                      void setSetting(plugin.id, setting.key, next)
                     }}
                   />
-                {/if}
-              </div>
+                </div>
+              {:else}
+                <div class="setting">
+                  <div class="setting-label">
+                    <label for={id}>{setting.label}</label>
+                    {#if setting.help}<p class="help">{setting.help}</p>{/if}
+                  </div>
+                  {#if setting.kind === 'boolean'}
+                    <input
+                      {id}
+                      type="checkbox"
+                      checked={value === true}
+                      onchange={(e) =>
+                        setSetting(plugin.id, setting.key, e.currentTarget.checked)}
+                    />
+                  {:else if setting.kind === 'string'}
+                    <input
+                      {id}
+                      type="text"
+                      value={typeof value === 'string' ? value : ''}
+                      onchange={(e) =>
+                        setSetting(plugin.id, setting.key, e.currentTarget.value)}
+                    />
+                  {:else}
+                    <!-- The saved value never comes back here; the placeholder only says one exists. -->
+                    <input
+                      {id}
+                      type="password"
+                      autocomplete="off"
+                      placeholder={hasValue ? 'Saved — type to replace' : ''}
+                      onchange={(e) => {
+                        void setSetting(plugin.id, setting.key, e.currentTarget.value)
+                        e.currentTarget.value = ''
+                      }}
+                    />
+                  {/if}
+                </div>
+              {/if}
             {/each}
           </div>
         {/if}
@@ -493,8 +516,13 @@
     min-width: 0;
   }
 
-  .setting label {
+  .setting label,
+  .setting-name {
     font-size: 13px;
+  }
+
+  .setting.wide {
+    display: block;
   }
 
   .footer {

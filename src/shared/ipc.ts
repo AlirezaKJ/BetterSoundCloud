@@ -8,6 +8,7 @@ import type { PresenceStatus } from './presence'
 import type { PluginView } from './plugins'
 import type { LyricsState } from './lyrics'
 import type { UpdateAction, UpdateStatus } from './updates'
+import type { AudioConfig, AudioReport } from './audio'
 
 /** Every IPC channel name, in one place. Strings are never written inline. */
 export const CH = {
@@ -108,7 +109,12 @@ export const CH = {
   // The full-screen showcase. Opened from the player-bar button (and the right-click menu, in
   // main); only the showcase itself closes it. It reads lyrics through `lyricsGet`/`lyricsChanged`.
   showcaseOpen: 'showcase:open',
-  showcaseClose: 'showcase:close'
+  showcaseClose: 'showcase:close',
+
+  // The audio engine's hidden view (src/main/audio.ts): main tells it what to capture and how to
+  // shape it; it says whether that is working. Only that view, both ways.
+  audioConfigure: 'audio:configure',
+  audioReport: 'audio:report'
 } as const
 
 /** What a change to a plugin answers: every row as it now is, and why it failed if it did. */
@@ -297,4 +303,12 @@ export type ChromeApi = {
   openShowcase(): void
   /** The showcase closing itself: its close button, or Escape. Leaves full screen too. */
   closeShowcase(): void
+
+  /**
+   * The audio engine's view only: what to capture and the filters to apply, when it loads and on
+   * every change a plugin makes.
+   */
+  onAudioConfig(cb: (config: AudioConfig) => void): () => void
+  /** The audio engine's view only: whether its capture is working. Checked by main. */
+  reportAudio(report: AudioReport): void
 }

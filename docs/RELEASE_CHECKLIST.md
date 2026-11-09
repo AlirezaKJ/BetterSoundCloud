@@ -83,6 +83,10 @@ when one is refused, write down what SoundCloud said rather than retrying.
 - [ ] Like a track and follow a user. Both stick after a reload.
 - [ ] Turn on Last.fm, connect it, and see the track scrobble on last.fm.
 - [ ] Discord shows the track while it plays.
+- [ ] Turn on the Equaliser plugin and pick Bass boost while a track plays, including a protected one
+      (one that greyed out on v0.7.1): the bass rises within a moment, nothing plays twice or echoes,
+      and the Windows media flyout still shows the track. Untick the plugin: the original sound is
+      back at once. Its row says "On" while it works; anything else, with a reason, is a bug.
 - [ ] Pick each built-in theme with SoundCloud in its light mode and its dark mode.
 - [ ] The portable build too: it unpacks to a new temporary folder on every launch, so the archive's
       integrity check and the `.sig` signature files must survive being moved.

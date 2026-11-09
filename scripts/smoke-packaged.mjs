@@ -271,6 +271,40 @@ try {
     )
   }
 
+  // The Equaliser plugin and the audio engine: nothing runs while the curve is flat; with a curve,
+  // a hidden view of ours captures SoundCloud's view (nothing plays signed out, so the capture
+  // carries silence, but it has to open); turned off, the view is gone.
+  const equaliser = () =>
+    settings.run(
+      `window.bsc.listPlugins().then((list) => { const p = list.find((x) => x.id === 'equaliser'); return p && { state: p.state, lead: p.status && p.status.lead, problem: p.status && p.status.problem } })`
+    )
+  const audioViews = async () =>
+    (
+      await fetch(`http://127.0.0.1:${PORT}/json/list`)
+        .then((response) => response.json())
+        .catch(() => [])
+    ).filter((t) => t.url.includes('/audio/index.html')).length
+  check('the bundled Equaliser plugin is found, off', (await equaliser())?.state === 'off')
+  await settings.run(`window.bsc.setPluginEnabled('equaliser', true)`)
+  await wait(2000)
+  const flat = await equaliser()
+  check(
+    '…on and flat, it runs no audio engine',
+    flat?.lead === 'Flat' && (await audioViews()) === 0,
+    JSON.stringify(flat)
+  )
+  await settings.run(`window.bsc.setPluginSetting('equaliser', 'curve', '6,4,1,0,0,0')`)
+  await wait(3000)
+  const shaped = await equaliser()
+  check(
+    '…with a curve, the engine captures SoundCloud’s view from a hidden view',
+    shaped?.lead === 'On' && (await audioViews()) === 1,
+    JSON.stringify(shaped)
+  )
+  await settings.run(`window.bsc.setPluginEnabled('equaliser', false)`)
+  await wait(1500)
+  check('…and turned off, the engine lets go', (await audioViews()) === 0)
+
   check(
     'no uncaught errors in the header',
     header.exceptions.length === 0,

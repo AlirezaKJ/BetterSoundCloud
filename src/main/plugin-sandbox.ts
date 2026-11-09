@@ -2,6 +2,8 @@ import vm from 'node:vm'
 import { createHash } from 'node:crypto'
 import type { NowPlaying } from '@shared/now-playing'
 import type {
+  AudioFilter,
+  AudioStatus,
   PluginAction,
   PluginApi,
   PluginFetchInit,
@@ -10,6 +12,7 @@ import type {
   PluginStatus
 } from '@shared/plugin-api'
 import { httpsHost } from '@shared/plugins'
+import { graphicEqualiser } from '@shared/equaliser'
 import type { PluginCall } from '@shared/plugins'
 
 /**
@@ -56,6 +59,8 @@ export type PluginStart = {
 
 export type RunningPlugin = {
   nowPlaying(value: NowPlaying | null): void
+  /** The audio engine's status, for a plugin with the `audio` permission. */
+  audio(status: AudioStatus): void
   settings(values: Record<string, boolean | string>): void
   action(id: string): void
   /** Call `deactivate`, then clear every timer and listener the plugin left behind. */
@@ -76,6 +81,9 @@ export async function runPlugin(start: PluginStart, bridge: Bridge): Promise<Run
   const nowPlayingListeners = new Set<(value: NowPlaying | null) => void>()
   const settingsListeners = new Set<(values: Record<string, boolean | string>) => void>()
   const actionListeners = new Set<(id: string) => void>()
+  const audioListeners = new Set<(status: AudioStatus) => void>()
+  /** The engine's last status, so a listener added later hears it at once. */
+  let audioStatus: AudioStatus | null = null
   let settings = { ...start.settings }
   let stopped = false
 
@@ -202,6 +210,33 @@ export async function runPlugin(start: PluginStart, bridge: Bridge): Promise<Run
     hash: Object.freeze({
       md5: (text: string) => createHash('md5').update(String(text), 'utf8').digest('hex'),
       sha256: (text: string) => createHash('sha256').update(String(text), 'utf8').digest('hex')
+    }),
+
+    audio: Object.freeze({
+      set: async (filters: AudioFilter[]) => {
+        requirePermission('audio', 'bsc.audio.set')
+        // Main shapes and checks the list (readAudioFilters); a refusal comes back as a rejection.
+        await bridge.call('audio.set', [filters])
+      },
+      clear: async () => {
+        requirePermission('audio', 'bsc.audio.clear')
+        await bridge.call('audio.clear', [])
+      },
+      onStatus: (listener: (status: AudioStatus) => void) => {
+        requirePermission('audio', 'bsc.audio.onStatus')
+        const unsubscribe = subscribe(audioListeners, listener)
+        const known = audioStatus
+        // After the caller has finished subscribing, not in the middle of it.
+        if (known) {
+          void Promise.resolve().then(() => {
+            if (audioListeners.has(listener))
+              guarded('An audio status listener', listener)({ ...known })
+          })
+        }
+        return unsubscribe
+      },
+      graphicEqualiser: (bands: number[], gains: number[]) =>
+        graphicEqualiser(numbers(bands), numbers(gains)).map((f) => ({ ...f }))
     })
   })
 
@@ -263,6 +298,7 @@ export async function runPlugin(start: PluginStart, bridge: Bridge): Promise<Run
     nowPlayingListeners.clear()
     settingsListeners.clear()
     actionListeners.clear()
+    audioListeners.clear()
   }
 
   try {
@@ -279,6 +315,10 @@ export async function runPlugin(start: PluginStart, bridge: Bridge): Promise<Run
 
   return {
     nowPlaying: (value) => deliver(nowPlayingListeners, 'A now-playing listener', value),
+    audio: (status) => {
+      audioStatus = { ...status }
+      deliver(audioListeners, 'An audio status listener', { ...status })
+    },
     settings: (values) => {
       settings = { ...values }
       deliver(settingsListeners, 'A settings listener', { ...values })
@@ -302,6 +342,14 @@ export async function runPlugin(start: PluginStart, bridge: Bridge): Promise<Run
       }
     }
   }
+}
+
+/** A list of numbers from the plugin's realm, anything else as 0. */
+function numbers(value: unknown): number[] {
+  if (!Array.isArray(value)) return []
+  return value
+    .slice(0, 32)
+    .map((n: unknown) => (typeof n === 'number' && Number.isFinite(n) ? n : 0))
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number, what: string): Promise<T> {

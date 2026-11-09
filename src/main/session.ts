@@ -21,6 +21,53 @@ export function isPermissionAllowed(permission: string): boolean {
   return ALLOWED_PERMISSIONS.has(permission)
 }
 
+/**
+ * Capturing a view's audio, for the audio engine (src/main/audio.ts). Electron attributes that
+ * request to the view being CAPTURED — SoundCloud's — not to the view asking: measured 2026-11-09
+ * in this Electron, the handler gets the content view, `media` with no media types, and our own
+ * renderer's origin (`file:///`). So nothing standing is granted, to that view or any other.
+ * Main arms one grant just before it makes a capture id, for that one view, as long as the id
+ * lives; the first request that matches it in every respect uses it up. Permission checks stay
+ * denied: the capture does not need them (measured the same day).
+ */
+const CAPTURE_ID_LIFETIME_MS = 10_000
+let armed: { contentsId: number; until: number } | null = null
+
+export function expectTabAudioCapture(captured: WebContents, now = Date.now()): void {
+  armed = { contentsId: captured.id, until: now + CAPTURE_ID_LIFETIME_MS }
+}
+
+export function mayCaptureAudio(
+  contents: WebContents | null,
+  permission: string,
+  request: { mediaTypes?: readonly string[] | undefined; securityOrigin?: string | undefined },
+  now = Date.now()
+): boolean {
+  if (!armed || !contents || now > armed.until) return false
+  if (permission !== 'media' || contents.id !== armed.contentsId) return false
+  // A tab capture names no camera or microphone; a request that does is something else.
+  if ((request.mediaTypes ?? []).length > 0) return false
+  // From one of our renderers, never from SoundCloud's page.
+  if (!isOwnRendererOrigin(request.securityOrigin)) return false
+  armed = null
+  return true
+}
+
+/** Our renderers: `file:` in a packaged app, the dev server on this machine while developing. */
+function isOwnRendererOrigin(origin: string | undefined): boolean {
+  if (!origin) return false
+  try {
+    const url = new URL(origin)
+    return (
+      url.protocol === 'file:' ||
+      (url.protocol === 'http:' &&
+        (url.hostname === 'localhost' || url.hostname === '127.0.0.1'))
+    )
+  } catch {
+    return false
+  }
+}
+
 /** Origins the content view is allowed to navigate to in-place. */
 const ALLOWED_HOSTS = [
   'soundcloud.com',
@@ -65,8 +112,12 @@ export function isInternalUrl(rawUrl: string): boolean {
 export function hardenSession(sess: Session, identity: Identity): void {
   sess.setUserAgent(identity.userAgent, identity.acceptLanguages)
 
-  sess.setPermissionRequestHandler((_wc, permission, callback) => {
-    callback(isPermissionAllowed(permission))
+  sess.setPermissionRequestHandler((wc, permission, callback, details) => {
+    const request = {
+      mediaTypes: 'mediaTypes' in details ? details.mediaTypes : undefined,
+      securityOrigin: 'securityOrigin' in details ? details.securityOrigin : undefined
+    }
+    callback(isPermissionAllowed(permission) || mayCaptureAudio(wc, permission, request))
   })
 
   sess.setPermissionCheckHandler((_wc, permission) => isPermissionAllowed(permission))

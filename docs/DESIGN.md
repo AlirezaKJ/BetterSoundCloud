@@ -488,6 +488,31 @@ bottom edge. On a tall screen the sleeve sits above the notes, at their width.
   one line saying what to do.
 - **Reduced motion**: no colour change, line movement, fade or glide; everything jumps.
 
+### Equaliser curve
+
+An `equaliser` plugin setting (`src/renderer/settings/EqualiserEditor.svelte`), set in under its
+plugin's row like every plugin setting. Spotify's interaction without Spotify's costume: no green,
+no gradient.
+
+- **The bar**: "Preset" and the settings select (Field White) on the left, the Prompt's "Reset"
+  button on the right, disabled while flat. A curve that matches no preset reads "Custom".
+- **The plot**, 168px tall beside a 44px scale ("+12 dB", "0", "−12 dB" in 12px tabular Muted
+  Ink): Hairline edges, a Hairline column per band, the 0 dB line in Ghost Ink. Bands sit evenly
+  spaced, as on a hi-fi; between two bands, x runs in log-frequency.
+- **The curve is the sound.** A 1.6px Ink line, drawn from the summed response of the exact filters
+  the plugin asks for (Web Audio's own coefficients), over a flat 7% Ink wash between it and 0 dB.
+  The filters are tuned so it passes through every point; where neighbouring bands interact, the
+  line shows the truth rather than a pleasing spline.
+- **The points** are 12px Ink dots with a 2px ring of the panel's colour, each inside a 28px
+  target that is a real `role="slider"` (vertical): drag anywhere in a band's column, Tab between
+  bands, arrows ±1 dB (Shift ±3), Page ±3, Home and End for the limits, Delete or a double-click
+  for 0. Hover or drag grows the dot by 2px. Focus: the 2px focus ring round the target.
+- **The value** of the point being moved or focused floats above it in a Field White tag with a
+  Hairline, 12px tabular ("+6 dB", with a real minus sign), below it near the top.
+- **The note** under the plot, Caption, only while something is boosted: "Everything plays 6.4 dB
+  quieter, to make room for the boost without distortion."
+- The accent appears only as focus. The plugin's own line says whether the engine is working.
+
 ### Signature Component: the pending setting
 
 A setting whose feature does not exist yet renders as a full row — label, help text, and a real
@@ -574,7 +599,8 @@ things the user switches on that act on their behalf.
   Down the label column: the name (Body), a Caption meta line ("Built in · 1.0.0 · Author" or
   "From your plugins folder · …"), the description, then **what it can do** — one permission per
   line, each after a 6×1px dash in currentcolor, the system's hairline as a list mark instead of
-  a bullet glyph or a circle.
+  a bullet glyph or a circle. A built-in plugin's row leaves out "Change how SoundCloud sounds":
+  its description already says it.
 - **Its status line and buttons** come next, in the status-line pattern above; the plugin writes
   them itself. With nothing of its own to say, the row says the state: Starting…, Stopped (with
   why), Paused (needs approval), Can’t be turned on, Can’t load.
