@@ -16,6 +16,7 @@
   import Themes from './Themes.svelte'
   import Background from './Background.svelte'
   import Reset from './Reset.svelte'
+  import BrowserSession from './BrowserSession.svelte'
 
   /*
    * The entire form is generated from the schema. Adding a setting means adding one
@@ -267,6 +268,7 @@
           {@render settingRow(key)}
         {/each}
         {#if active === 'advanced'}
+          <BrowserSession />
           <!-- Reset settings, and clear SoundCloud's data: buttons that ask first, not settings. -->
           <Reset />
         {/if}

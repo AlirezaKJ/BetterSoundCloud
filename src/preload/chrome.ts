@@ -82,6 +82,8 @@ const api: ChromeApi = {
   getWidevineSkipped: () => ipcRenderer.invoke(CH.widevineSkippedGet) as Promise<boolean>,
   resetSettings: () => ipcRenderer.invoke(CH.settingsReset) as Promise<boolean>,
   clearSiteData: () => ipcRenderer.invoke(CH.siteDataClear) as Promise<boolean>,
+  importBrowserSession: () =>
+    ipcRenderer.invoke(CH.browserSessionImport) as Promise<{ count: number; error: string }>,
 
   getUpdateStatus: () => ipcRenderer.invoke(CH.updateStatusGet) as Promise<UpdateStatus>,
   onUpdateStatus: (cb: (status: UpdateStatus) => void) => subscribe(CH.updateStatusChanged, cb),

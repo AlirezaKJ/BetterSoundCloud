@@ -76,6 +76,7 @@ export const CH = {
   // and SoundCloud's cookies, storage and cache cleared (which signs the user out).
   settingsReset: 'settings:reset',
   siteDataClear: 'app:site-data-clear',
+  browserSessionImport: 'app:browser-session-import',
 
   // settings renderer <-> main. The updater: its status, and the one button that status offers.
   updateStatusGet: 'updates:status-get',
@@ -245,6 +246,8 @@ export type ChromeApi = {
    * SoundCloud again. Answers whether the clearing worked. The settings view only.
    */
   clearSiteData(): Promise<boolean>
+  /** Choose a browser cookie export, import SoundCloud cookies, and reload the page. */
+  importBrowserSession(): Promise<{ count: number; error: string }>
 
   /**
    * What the updater is doing: idle, checking, up to date, a version available, downloading (with

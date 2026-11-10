@@ -115,6 +115,7 @@ import {
   startPlugins
 } from './plugins'
 import type { PluginsResult } from '@shared/ipc'
+import { importSoundCloudCookies } from './cookie-import'
 
 let shell: Shell | null = null
 let quitting = false
@@ -849,6 +850,32 @@ function registerIpc(): void {
     if (!shell || !fromSettingsView(e)) return false
     return clearSiteData(shell)
   })
+  ipcMain.handle(CH.browserSessionImport, (e) => {
+    if (!shell || !fromSettingsView(e)) return { count: 0, error: 'Not allowed.' }
+    return chooseAndImportBrowserSession(shell)
+  })
+}
+
+async function chooseAndImportBrowserSession(
+  target: Shell
+): Promise<{ count: number; error: string }> {
+  const { canceled, filePaths } = await dialog.showOpenDialog(target.window, {
+    title: 'Import SoundCloud session',
+    properties: ['openFile'],
+    filters: [{ name: 'Cookie-Editor JSON export', extensions: ['json'] }]
+  })
+  if (canceled || !filePaths[0]) return { count: 0, error: '' }
+  try {
+    const count = await importSoundCloudCookies(
+      target.content.webContents.session,
+      filePaths[0]
+    )
+    if (count === 0) return { count: 0, error: 'This file contains no SoundCloud cookies.' }
+    target.content.webContents.reload()
+    return { count, error: '' }
+  } catch (error) {
+    return { count: 0, error: error instanceof Error ? error.message : String(error) }
+  }
 }
 
 /**
