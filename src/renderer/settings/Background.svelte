@@ -51,8 +51,14 @@
   const needing = $derived(
     themes.find((t) => t.id === values?.['appearance.theme'] && t.needsBackground) ?? null
   )
+  /** Glass is on (Windows): it is the background, so this one is not drawn (main/index.ts). */
+  const glassOn = $derived(
+    window.bsc.platform === 'win32' && values?.['appearance.glass'] === true
+  )
   const source = $derived(
-    values ? backgroundSource(values['appearance.background'], needing !== null) : 'none'
+    values && !glassOn
+      ? backgroundSource(values['appearance.background'], needing !== null)
+      : 'none'
   )
 
   onMount(() => {
@@ -102,16 +108,21 @@
 {#if values}
   <h2 class="group" id="background-group" data-bsc-background-heading>Background</h2>
   <p class="intro">{SETTINGS['appearance.background'].help}</p>
+  {#if glassOn}
+    <p class="intro" role="status" data-bsc-background-glass>
+      Off while Glass is on: the glass is the background. Turn Glass off, below, to use one.
+    </p>
+  {/if}
 
   <div class="list" role="radiogroup" aria-labelledby="background-group" data-bsc-background>
     {#each SOURCES as option (option.value)}
       {@const id = `background-${option.value}`}
-      {@const unavailable = option.value === 'none' && needing !== null}
+      {@const unavailable = glassOn || (option.value === 'none' && needing !== null)}
       <div class="row" class:selected={source === option.value} class:unavailable>
         <label for={id}>
           <span class="name">{option.name}</span>
           <span class="help">
-            {unavailable
+            {unavailable && !glassOn
               ? `Not with ${needing?.name}: the theme is made to sit on a background, so it shows the playing track’s artwork instead.`
               : option.help}
           </span>

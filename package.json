@@ -16,6 +16,7 @@
   "scripts": {
     "postinstall": "node node_modules/electron/install.js",
     "blocker:build": "node scripts/build-blocker-engine.mjs",
+    "native:build": "node scripts/build-native.mjs",
     "dev": "electron-vite dev",
     "start": "node scripts/start.mjs",
     "build": "npm run check && electron-vite build",
@@ -24,8 +25,8 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "pack": "npm run build && electron-builder --dir",
-    "dist:win": "npm run build && electron-builder --win",
+    "pack": "npm run build && npm run native:build && electron-builder --dir",
+    "dist:win": "npm run build && node scripts/build-native.mjs --required && electron-builder --win",
     "dist:mac": "npm run build && electron-builder --mac",
     "dist:linux": "npm run build && electron-builder --linux",
     "smoke:packaged": "node scripts/smoke-packaged.mjs",

@@ -12,6 +12,11 @@ files:
   - package.json
   - '!node_modules/electron/**/*'
 
+# A native addon cannot be loaded from inside app.asar. Electron's loader follows a path into
+# app.asar to app.asar.unpacked, so main/window-glass.ts keeps one path for dev and packaged.
+asarUnpack:
+  - resources/native/**
+
 # Take the Castlabs Widevine build straight out of node_modules rather than a download
 # mirror. `npm install github:castlabs/electron-releases#vXX+wvcus` has already put it
 # there; pointing at it cannot mis-resolve, works offline, and is immune to the v27

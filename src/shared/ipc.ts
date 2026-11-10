@@ -54,6 +54,10 @@ export const CH = {
 
   // content preload -> main. A raw reading of SoundCloud's player bar; see src/shared/now-playing.ts.
   trackUpdate: 'content:track-update',
+  // content preload -> main: send me the stylesheet for SoundCloud's `/n/` iframe (shared/frames.ts).
+  // main -> content preload: that stylesheet (`buildFrameCss`), again on every change.
+  frameReady: 'content:frame-ready',
+  frameCss: 'content:frame-css',
 
   // main -> every view of ours on each change, and a one-off read when a view opens.
   nowPlayingChanged: 'now-playing:changed',

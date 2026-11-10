@@ -23,7 +23,8 @@ import {
   closeLyrics,
   openShowcase,
   closeShowcase,
-  rendererUrl
+  rendererUrl,
+  sendFrameCss
 } from './window'
 import {
   attachAudioEngine,
@@ -43,6 +44,9 @@ import {
 import { choosePicture, pictureDataUri, pictureThumbnail } from './background'
 import { setChromeTheme } from './chrome-theme'
 import type { BackgroundOptions } from './content-css'
+import { glassHeaderCss } from './content-css'
+import { glassAvailable } from './window-glass'
+import { glassTint } from '@shared/glass'
 import { backgroundSource, chromeCssFor } from '@shared/themes'
 import type { ThemeSummary } from '@shared/themes'
 import {
@@ -247,7 +251,9 @@ if (process.env['ELECTRON_RENDERER_URL']) {
   app.setPath('userData', join(app.getPath('appData'), 'BetterSoundCloud (dev)'))
 }
 
-if (SAFE_MODE || !settings.get('advanced.hardwareAcceleration')) {
+/** Decided once, here, for the whole launch: Chromium cannot change it while running. */
+const HARDWARE_ACCELERATION = !SAFE_MODE && settings.get('advanced.hardwareAcceleration')
+if (!HARDWARE_ACCELERATION) {
   app.disableHardwareAcceleration()
 }
 
@@ -543,7 +549,14 @@ function registerIpc(): void {
 
   ipcMain.on(CH.menuBarToggle, (e) => {
     if (!fromChrome(e)) return
-    settings.set('appearance.hideMenuBar', !settings.get('appearance.hideMenuBar'))
+    // "Hide the top bar until you point at it" hides our bar too, whatever this setting says,
+    // so the button that brings our bar back has to turn that off as well, or it did nothing.
+    if (settings.get('appearance.autoHideHeader')) {
+      settings.set('appearance.autoHideHeader', false)
+      settings.set('appearance.hideMenuBar', false)
+    } else {
+      settings.set('appearance.hideMenuBar', !settings.get('appearance.hideMenuBar'))
+    }
     applyLiveSettings()
     // After applying, for the same reason as the settingsSet handler below.
     broadcastSettings(settings.getAll())
@@ -625,6 +638,12 @@ function registerIpc(): void {
     const frame = event.senderFrame
     return frame !== null && frame.parent === null && isSoundCloudUrl(frame.url)
   }
+
+  // The page's preload asking for the stylesheet of SoundCloud's `/n/` iframe, once it loads.
+  ipcMain.on(CH.frameReady, (e) => {
+    if (!shell || !fromSoundCloudPage(e)) return
+    sendFrameCss(shell)
+  })
 
   ipcMain.on(CH.trackUpdate, (e, reading: unknown) => {
     if (!fromSoundCloudPage(e)) return
@@ -1067,10 +1086,30 @@ function selectedTheme(): string {
   return SAFE_MODE ? NO_THEME : settings.get('appearance.theme')
 }
 
+/**
+ * Whether the window should have glass under it: the Glass setting, unless this launch cannot
+ * draw it. Safe mode turns it off like the theme (it also turns off hardware acceleration);
+ * without hardware acceleration Chromium cannot hand the compositor see-through pixels, so the
+ * window would only go dark.
+ */
+function glassWanted(): boolean {
+  return HARDWARE_ACCELERATION && settings.get('appearance.glass') && glassAvailable()
+}
+
 /** The selected theme's `chrome` sections, into every view of ours that takes them. */
 function applyChromeTheme(): void {
   const theme = findTheme(selectedTheme())
-  setChromeTheme((kind) => (theme ? chromeCssFor(theme.sections, kind) : ''))
+  // On glass, our bar is cleared to match SoundCloud's header beside it. Appended after the
+  // theme's own sheet for the bar, so it wins over a theme's `--bsc-header-bg`.
+  const glass = glassWanted()
+  setChromeTheme((kind) =>
+    [
+      theme ? chromeCssFor(theme.sections, kind) : '',
+      glass && kind === 'header' ? glassHeaderCss() : ''
+    ]
+      .filter(Boolean)
+      .join('\n')
+  )
 }
 
 function applyLiveSettings(): void {
@@ -1092,12 +1131,16 @@ function applyLiveSettings(): void {
   // Called after the zoom above, deliberately: the overlay's height and the CSS space it
   // reserves are both derived from the current zoom factor.
   setContentAppearance(shell, {
-    hideMenuBar: settings.get('appearance.hideMenuBar'),
+    // Hiding the top bar until pointed at implies giving SoundCloud's header the window.
+    hideMenuBar:
+      settings.get('appearance.hideMenuBar') || settings.get('appearance.autoHideHeader'),
+    autoHideHeader: settings.get('appearance.autoHideHeader'),
     fullWidth: settings.get('appearance.fullWidthLayout'),
     theme: selectedTheme(),
     minimalNavigation: settings.get('appearance.minimalNavigation'),
     background: backgroundOptions(),
-    playerButtons: settings.get('appearance.playerButtons')
+    playerButtons: settings.get('appearance.playerButtons'),
+    glass: glassWanted() ? glassTint(settings.get('appearance.glassTint')) : null
   })
   // The chosen picture travels in its own sheet, and only while it is the background.
   setContentPicture(shell, currentBackground() === 'picture' ? pictureDataUri() : '')
@@ -1105,6 +1148,9 @@ function applyLiveSettings(): void {
 
 /** What the Background shows: the setting, unless the selected theme needs one (`@background`). */
 function currentBackground(): 'none' | 'artwork' | 'picture' {
+  // Glass is the background while it is on: a picture laid over it hid the glass, and its
+  // full-window blur is the kind of see-through effect that smeared on scroll (2026-11-10).
+  if (glassWanted()) return 'none'
   const theme = findTheme(selectedTheme())
   return backgroundSource(
     settings.get('appearance.background'),

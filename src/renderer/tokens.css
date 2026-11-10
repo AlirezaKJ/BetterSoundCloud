@@ -40,6 +40,12 @@
   --bsc-danger: #d33;
 
   --bsc-header-bg: var(--bsc-bg-primary);
+  /*
+   * What a view's own page is painted with, under everything in it. Our bar sets it to
+   * transparent while the window has glass under it (glassHeaderCss in main/content-css.ts);
+   * otherwise it is just the background colour.
+   */
+  --bsc-page-bg: var(--bsc-bg-primary);
   --bsc-header-height: 32px;
 
   --bsc-radius: 6px;
@@ -93,7 +99,7 @@ body {
   padding: 0;
   font-family: var(--bsc-font);
   color: var(--bsc-text-primary);
-  background: var(--bsc-bg-primary);
+  background: var(--bsc-page-bg);
   -webkit-font-smoothing: antialiased;
 }
 

@@ -4,6 +4,11 @@ Each version's entry is also its release notes on GitHub.
 
 ## Unreleased
 
+- Added a Settings import for an existing SoundCloud browser sign-in.
+- Added an optional Windows 11 Glass backdrop that stays blurred when the window loses focus.
+  Themes also apply to SoundCloud pages rendered in its same-origin `/n/` frame.
+- Added an Appearance setting to hide the top bar and reveal it from the window's top edge.
+
 - **An equaliser**, like Spotify's: six bands from 60 Hz to 15 kHz, presets, and a curve you drag
   or move with the keyboard. It shapes everything SoundCloud plays, protected tracks included,
   without touching SoundCloud's page. It is a built-in plugin, off until you turn it on in

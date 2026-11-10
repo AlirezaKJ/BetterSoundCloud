@@ -41,16 +41,30 @@ function channels(source: string, before: string): Channel[] {
  * SoundCloud's page preload writes its channel names as literals, not `CH.*`: importing CH there
  * would split a shared chunk that a sandboxed preload cannot load (CLAUDE.md §5).
  */
-const contentSends: Channel[] = [...CONTENT.matchAll(/_CHANNEL = '([^']+)'/g)].map((m) => {
-  const name = Object.entries(CH).find(([, value]) => value === m[1])?.[0]
-  if (!name) throw new Error(`content.ts uses '${m[1]}', which is not in CH`)
-  return name as Channel
-})
+const contentLiterals = new Map(
+  [...CONTENT.matchAll(/(\w+_CHANNEL) = '([^']+)'/g)].map((m) => {
+    const name = Object.entries(CH).find(([, value]) => value === m[2])?.[0]
+    if (!name) throw new Error(`content.ts uses '${m[2]}', which is not in CH`)
+    return [m[1] ?? '', name as Channel] as const
+  })
+)
+/** The content preload's channels, by how each constant is used: sent on, or listened to. */
+const contentChannels = (call: string): Channel[] =>
+  [...CONTENT.matchAll(new RegExp(`${call}\\(\\s*(\\w+_CHANNEL)`, 'g'))].map((m) => {
+    const name = contentLiterals.get(m[1] ?? '')
+    if (!name) throw new Error(`content.ts uses ${m[1]}, which it never defines`)
+    return name
+  })
+const contentSends = contentChannels('ipcRenderer\\.send')
+const contentListens = contentChannels('ipcRenderer\\.on')
 
 const handled = channels(MAIN, 'ipcMain\\.(?:on|handle|once)')
 const pushed = new Set(channels(MAIN, '\\.send'))
 const asked = new Set([...channels(CHROME, 'ipcRenderer\\.(?:send|invoke)'), ...contentSends])
-const listened = new Set(channels(CHROME, '(?:subscribe|ipcRenderer\\.on)'))
+const listened = new Set([
+  ...channels(CHROME, '(?:subscribe|ipcRenderer\\.on)'),
+  ...contentListens
+])
 
 const missing = (from: Set<Channel>, to: Iterable<Channel>) =>
   [...from].filter((channel) => ![...to].includes(channel)).sort()

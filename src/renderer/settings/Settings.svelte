@@ -44,8 +44,17 @@
   /** "Continue without Widevine" was pressed at startup: protected tracks skip until a restart. */
   let withoutWidevine = $state(false)
 
+  /** A setting that can do something here: no `platforms` list, or one naming this platform. */
+  const onThisPlatform = (key: SettingKey): boolean => {
+    const def = SETTINGS[key]
+    return !('platforms' in def) || def.platforms.some((p) => p === window.bsc.platform)
+  }
+
   const keysIn = (section: Section): SettingKey[] =>
-    SETTING_KEYS.filter((k) => SETTINGS[k].section === section)
+    SETTING_KEYS.filter((k) => SETTINGS[k].section === section && onThisPlatform(k))
+
+  /** Glass's rows go last in the Themes section, under the theme list: they apply to every theme. */
+  const isGlass = (key: SettingKey): boolean => key.startsWith('appearance.glass')
 
   /** Drawn by its own component (`drawnBy` in the schema), so it gets no ordinary row. */
   const drawnElsewhere = (key: SettingKey): boolean => 'drawnBy' in SETTINGS[key]
@@ -255,12 +264,17 @@
              themselves, which are files with descriptions and swatches (Themes.svelte). Settings
              with `drawnBy` belong to those two components, so they get no row here. -->
         {#if values}
-          {#each keysIn('themes').filter((k) => !drawnElsewhere(k)) as key (key)}
+          {#each keysIn('themes').filter((k) => !drawnElsewhere(k) && !isGlass(k)) as key (key)}
             {@render settingRow(key)}
           {/each}
         {/if}
         <Background />
         <Themes />
+        {#if values}
+          {#each keysIn('themes').filter(isGlass) as key (key)}
+            {@render settingRow(key)}
+          {/each}
+        {/if}
       {:else if !values}
         <p class="loading">Loading…</p>
       {:else}

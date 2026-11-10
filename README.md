@@ -91,6 +91,13 @@ Mind the capitals. `~/.config/bettersoundcloud`, all lowercase, is 0.7.x's;
 `~/.config/BetterSoundCloud` belongs to 0.8.0, so keep that one. If the install script also
 installed Node.js for you (in `~/.nvm`), remove it only if nothing else of yours uses it.
 
+## Glass and top bar options in development
+
+- In Themes, turn on **Glass** to blur what's behind the window and adjust **Glass tint** for
+  readability. Glass requires Windows 11, hardware acceleration and a build with the native addon.
+- In Appearance, turn on **Hide the top bar until you point at it** for a borderless layout.
+  Move the pointer to the top edge to reveal SoundCloud's header and the window buttons.
+
 ## What's new in 0.8.0
 
 0.8.0 is BetterSoundCloud rebuilt from scratch.

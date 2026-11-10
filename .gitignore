@@ -26,3 +26,7 @@ Thumbs.db
 
 # Generated from docs/TODO.md by `npm run todo`; rebuilt on demand, so never stale in git.
 /docs/todo-overview.html
+
+# Built by `npm run native:build` (scripts/build-native.mjs) on Windows; never committed.
+/native/window-glass/build/
+/resources/native/

@@ -125,6 +125,7 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CU
 | `main/session.ts`                  | `hardenSession`, permission allowlist, `routeNewWindowsToBrowser`, `isInternalUrl`, `openInBrowser`                                                                |
 | `main/settings-store.ts`           | electron-store wrapper: `get`, `getAll`, `set`, `reset`. Lazy — built on first use                                                                                 |
 | `main/content-css.ts`              | `buildContentCss()`: the one stylesheet injected into SoundCloud's page (pure, tested)                                                                             |
+| `main/window-glass.ts`             | Loads the Windows addon and enables or disables the native backdrop (§17)                                                                                          |
 | `main/themes.ts`                   | `listThemes()`, `findTheme()`, hot reload (`watchUserThemes`), editable copies, `soundCloudPaletteCss()`; reads `resources/themes/` and `<userData>/themes/` (§17) |
 | `main/background.ts`               | The Background setting's own picture: the open dialog, shrinking it to our JPEG in the profile, `pictureDataUri()`, `pictureThumbnail()` (§17)                     |
 | `main/chrome-theme.ts`             | A theme's `chrome` sections into our own views: `themeChromeView()`, `setChromeTheme()`                                                                            |
@@ -194,6 +195,10 @@ a change to the sound, and closes it when the window closes (§21).
 
 Rules that hold this together:
 
+- **Header auto-hide uses the embedded controls.** `layout()` owns their visibility. A
+  main-process pointer watcher reveals the header at the top edge. The page stylesheet slides the
+  header away with a transform and keeps its measured height.
+
 - **`layout()` is the only place that decides where views sit** and whether our 32px bar shows.
   Any new view must be positioned from `layout()`. `window.test.ts` scans the source to pin this.
 - **Overlays over SoundCloud reserve their space with CSS.** A transparent view on top of
@@ -201,7 +206,7 @@ Rules that hold this together:
   padding of at least the overlay's width. Reservation and overlay must always agree.
 - **Zoom:** the content view is zoomable and our views are not. SoundCloud CSS pixels × zoom =
   window pixels. Measured constants: `HEADER_HEIGHT` 32, SoundCloud header 46 CSS px, play bar
-  48 CSS px, `EMBEDDED_WIDTH` 144 (50 on macOS), `PLAYER_BUTTONS_WIDTH` 92, `MIN_EMBED_WIDTH` 800
+  48 CSS px, `EMBEDDED_WIDTH` 184 (50 on macOS; 52px of it is a drag handle), `PLAYER_BUTTONS_WIDTH` 92, `MIN_EMBED_WIDTH` 800
   (= window `minWidth`), `COMPACT_HEADER_WIDTH` 1100, `FIT_HEADER_WIDTH` 1000.
 - **While a page status hides SoundCloud's page, our own bar comes back** and the `embedded` and
   `player` overlays hide: there is no SoundCloud header or play bar under them. `layout()` derives
@@ -438,6 +443,9 @@ already shipped once:
    inserting the new one before removing the old, or the page flashes unstyled.
 5. **No synthetic input on SoundCloud's controls** — no `.click()`, no `dispatchEvent`, no
    `sendInputEvent`. Implicated in the like/follow blocks.
+6. **Style only the same-origin `/n/` frame.** Main builds the frame stylesheet and sends it to
+   the top-level preload. `watchStyledFrame()` uses Electron's frame CSS API and reapplies it
+   on frame loads. Keep the URL allowlist in `shared/frames.ts` and leave subframe preloads off.
 
 Patterns:
 
@@ -840,6 +848,22 @@ Rules that hold this together:
   v0.7.x's look, measured side by side.
 - Never edit a theme into SoundCloud's DOM, and never target Svelte's `svelte-…` classes in our
   views — `data-bsc-*` attributes and the `--bsc-*` tokens are the public API.
+
+### Glass
+
+`native/window-glass` draws a Windows host backdrop brush under the window's views, so the
+blur stays active when the window loses focus. Build it with `npm run native:build`. It
+requires Windows 11 and hardware acceleration at runtime. The Windows release build requires
+the addon, and electron-builder unpacks it for Electron's native module loader.
+
+`setGlass()` clears the view backgrounds after the native layer enables successfully. On
+full-screen transitions, `refreshGlass()` rebuilds the native layer and reapplies those
+background colors. Glass takes precedence over the saved Background setting.
+
+`glassCss()` runs after the page theme so it can clear large surfaces. The header and play bar
+use a darker tint, and the page is clipped at the bars to keep scrolling content from showing
+through. `glassFrameCss()` clears the same surfaces inside the `/n/` frame. Bar and layout
+rules belong to the top-level page.
 
 ---
 

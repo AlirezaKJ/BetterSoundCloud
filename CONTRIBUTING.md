@@ -49,6 +49,12 @@ hot-reload: restart `npm run dev` after changing them. If a second `npm run dev`
 instead of 5173, an old one is still running and holds the lock, and the new Electron exits
 quietly.
 
+To develop or test Glass on Windows 11, install Python and the Visual Studio Build Tools with
+**Desktop development with C++** and a Windows SDK. Run `npm run native:build` after
+`npm install`, then start the dev app. Close any app started from this checkout before
+rebuilding a changed addon so Windows can replace the loaded binary. The Windows release build
+requires the addon and packages it under `app.asar.unpacked`.
+
 ## Scripts
 
 | Command                                          | What it does                                                                                                |
@@ -58,6 +64,7 @@ quietly.
 | `npm test`                                       | Vitest, once                                                                                                |
 | `npm run build`                                  | `check`, then a production build into `out/`                                                                |
 | `npm run pack`                                   | An unpacked app in `release/`                                                                               |
+| `npm run native:build`                           | Builds the optional Windows x64 Glass addon                                                                 |
 | `npm run dist:win` \| `dist:mac` \| `dist:linux` | Installers (see "Release builds" for the signing they need)                                                 |
 | `npm run smoke:packaged`                         | Starts a packed build on a brand-new profile and checks it ([release checklist](docs/RELEASE_CHECKLIST.md)) |
 | `npm run blocker:build`                          | Rebuilds the ad-block engine in `resources/`; commit both files it writes                                   |
