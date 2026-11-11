@@ -693,6 +693,11 @@ context menu have the shortcut; embedded and player do not).
   `node_modules/electron/dist/electron.exe`, outside the repo, using its own `userData` and the
   same user agent rule. SoundCloud now requires sign-in before anything plays, so anything that
   needs a playing track has to be checked in the developer's own dev app.
+- **Protected tracks never play in `npm run dev`.** Its Electron, from `node_modules`, carries only
+  Castlabs' development Widevine signature, and SoundCloud's licence server answers every request
+  with 403 (`[net] 403 POST licence …`, measured 2026-11-12). Check DRM in a packed, VMP-signed
+  build: pack outside the repo, and run it with `--user-data-dir` on a copy of the dev profile
+  (without its caches) to stay signed in without touching the real one.
 
 ---
 
