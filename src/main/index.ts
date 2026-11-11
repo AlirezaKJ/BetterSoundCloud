@@ -30,10 +30,14 @@ import {
   attachAudioEngine,
   detachAudioEngine,
   handleAudioReport,
+  handleVisualFrame,
   isAudioView,
+  onVisualFrame,
   startAudioEngine
 } from './audio'
+import { forgetVisualPlaces, getVisualizer, onVisualizerChange } from './visualizer'
 import { readAudioReport } from '@shared/audio'
+import { readVisualFrame } from '@shared/visualizer'
 import {
   getLyricsState,
   noticeNowPlaying,
@@ -482,6 +486,8 @@ function showMainWindow(): void {
       setNowPlaying(null)
       // Its own view is not the window's: the engine closes it, and waits for the next window.
       detachAudioEngine()
+      // Nothing of the window is on screen any more, so no visualizer is either.
+      forgetVisualPlaces()
       // BaseWindow does not own the lifetime of its WebContentsViews.
       for (const view of [
         next.header,
@@ -834,6 +840,25 @@ function registerIpc(): void {
     if (!isAudioView(e.sender)) return
     const report = readAudioReport(raw)
     if (report) handleAudioReport(report)
+  })
+
+  // The Visualizer (§22): what the engine plays, frame by frame, to the view drawing it. From the
+  // engine's view only, every frame shaped first; to the showcase, the one place that draws today.
+  ipcMain.on(CH.visualFrame, (e, raw: unknown) => {
+    if (!isAudioView(e.sender)) return
+    const frame = readVisualFrame(raw)
+    if (frame) handleVisualFrame(frame)
+  })
+  onVisualFrame((frame) => {
+    const view = shell?.showcase
+    if (view && !view.webContents.isDestroyed())
+      view.webContents.send(CH.visualFrameChanged, frame)
+  })
+  ipcMain.handle(CH.visualizerGet, (e) => (fromShowcase(e) ? getVisualizer() : null))
+  onVisualizerChange((config) => {
+    const view = shell?.showcase
+    if (view && !view.webContents.isDestroyed())
+      view.webContents.send(CH.visualizerChanged, config)
   })
 
   ipcMain.handle(CH.settingsSet, (e, key: unknown, value: unknown) => {

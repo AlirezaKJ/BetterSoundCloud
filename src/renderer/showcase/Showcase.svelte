@@ -13,6 +13,8 @@
   import type { Rgb, ShowcaseInks } from '@shared/showcase'
   import type { LyricsState } from '@shared/lyrics'
   import type { NowPlaying } from '@shared/now-playing'
+  import type { VisualizerConfig } from '@shared/visualizer'
+  import Visualizer from '../lib/Visualizer.svelte'
 
   /*
    * The full-screen showcase: the playing track as a record sleeve.
@@ -26,6 +28,10 @@
    * up while the showcase is open (the same ones the pane shows). It keeps time with the pane's
    * clock (`lyricClock`), so the two can never disagree. It never touches SoundCloud's page and
    * cannot control playback; leaving it changes nothing but the window.
+   *
+   * With the Visualizer plugin on, what is playing is drawn behind it all as well (§22), in the
+   * look the plugin chose for here: bars under the sleeve and its notes, bars round the sleeve, or
+   * a waveform line. Off, or under reduced motion, there is nothing extra at all.
    */
 
   /** How long the close button and the cursor stay once the pointer stops moving. */
@@ -48,6 +54,11 @@
   let prompter = $state<HTMLElement | null>(null)
   /** Bumped when the lyric area changes size, so the lines are measured again. */
   let resized = $state(0)
+  /** The Visualizer plugin's choice for here; nothing while it is off. */
+  let visualizer = $state<VisualizerConfig>({ showcase: null })
+  let sleeve = $state<HTMLElement | null>(null)
+  let art = $state<HTMLElement | null>(null)
+  let notes = $state<HTMLElement | null>(null)
 
   let artworkWanted = ''
   let last = { elapsed: -1, playing: false }
@@ -80,6 +91,12 @@
     const stopLyrics = window.bsc.onLyrics((next) => {
       showLyrics(next)
     })
+    const stopVisualizer = window.bsc.onVisualizer((next) => {
+      visualizer = next
+    })
+    void window.bsc.getVisualizer().then((next) => {
+      if (next as unknown) visualizer = next
+    })
     void window.bsc.getNowPlaying().then((next) => {
       notePlaying(next)
     })
@@ -104,6 +121,7 @@
     return () => {
       stopPlaying()
       stopLyrics()
+      stopVisualizer()
       clock.stop()
       if (idleTimer) clearTimeout(idleTimer)
       observer.disconnect()
@@ -207,8 +225,12 @@
   style:--faint={inks.faint}
   data-bsc-showcase
 >
-  <div class="sleeve">
-    <div class="art" data-bsc-showcase-artwork>
+  {#if visualizer.showcase}
+    <Visualizer look={visualizer.showcase} ink={inks.ink} {art} {notes} frame={sleeve} />
+  {/if}
+
+  <div class="sleeve" bind:this={sleeve}>
+    <div class="art" bind:this={art} data-bsc-showcase-artwork>
       {#key artwork}
         {#if artwork}
           <img
@@ -221,7 +243,7 @@
       {/key}
     </div>
 
-    <div class="notes" data-bsc-showcase-notes>
+    <div class="notes" bind:this={notes} data-bsc-showcase-notes>
       {#if playing}
         <h1>{playing.title || 'Untitled track'}</h1>
         {#if playing.artist}<p class="artist">{playing.artist}</p>{/if}
@@ -347,6 +369,9 @@
   }
 
   .sleeve {
+    /* Above the visualizer's canvas, which sits behind everything. */
+    position: relative;
+    z-index: 1;
     display: grid;
     grid-template-columns: var(--art) minmax(0, min(38vw, 880px));
     gap: var(--gap);

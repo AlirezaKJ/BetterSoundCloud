@@ -211,6 +211,11 @@ export type AudioConfig = {
   readonly filters: readonly AudioFilter[]
   /** dB, 0 or below. */
   readonly preampDb: number
+  /**
+   * Whether a visualizer is on screen: the view then reads what it plays, at the end of its chain,
+   * and sends it about 60 times a second (src/shared/visualizer.ts). False costs nothing.
+   */
+  readonly visual: boolean
 }
 
 /** What the audio view tells main. Its renderer is ours, but it is checked like any message. */

@@ -1,0 +1,25 @@
+{
+  "id": "visualizer",
+  "name": "Visualizer",
+  "version": "1.0.0",
+  "author": "BetterSoundCloud",
+  "description": "Draws what SoundCloud plays, as it plays: bars, a waveform, or bars around the artwork. It listens only while it is on screen, and turned off, nothing of it is left running.",
+  "homepage": "https://github.com/AlirezaKJ/BetterSoundCloud",
+  "main": "index.js",
+  "permissions": ["audio"],
+  "settings": [
+    {
+      "key": "showcase",
+      "kind": "choice",
+      "label": "In the full-screen view",
+      "help": "Open it from the player bar or the right-click menu.",
+      "options": [
+        { "value": "bars", "label": "Bars" },
+        { "value": "ring", "label": "Around the artwork" },
+        { "value": "wave", "label": "Waveform" },
+        { "value": "off", "label": "Nothing" }
+      ],
+      "default": "bars"
+    }
+  ]
+}

@@ -314,6 +314,67 @@ describe('the equaliser setting kind', () => {
   })
 })
 
+describe('the choice setting kind', () => {
+  const withSetting = (setting: Record<string, unknown>) =>
+    readManifest({ ...VALID, permissions: [], settings: [setting] }, 'lastfm')
+  const options = [
+    { value: 'bars', label: 'Bars' },
+    { value: 'off', label: 'Nothing' }
+  ]
+
+  it('reads its options and a default that is one of them, else the first', () => {
+    const result = withSetting({
+      key: 'look',
+      kind: 'choice',
+      label: 'Look',
+      options,
+      default: 'off'
+    })
+    expect(result.ok && result.manifest.settings[0]).toEqual({
+      key: 'look',
+      kind: 'choice',
+      label: 'Look',
+      help: '',
+      options,
+      default: 'off'
+    })
+    const stray = withSetting({
+      key: 'look',
+      kind: 'choice',
+      label: 'Look',
+      options,
+      default: 'x'
+    })
+    expect(stray.ok && stray.manifest.settings[0]).toMatchObject({ default: 'bars' })
+  })
+
+  it('refuses fewer than two options, values that are not short words, and a value twice', () => {
+    const base = { key: 'look', kind: 'choice', label: 'Look' }
+    expect(withSetting({ ...base, options: [options[0]] }).ok).toBe(false)
+    expect(
+      withSetting({ ...base, options: [...options, { value: 'Big Bars', label: 'B' }] }).ok
+    ).toBe(false)
+    expect(
+      withSetting({ ...base, options: [...options, { value: 'bars', label: 'Again' }] }).ok
+    ).toBe(false)
+    expect(withSetting({ ...base, options: [...options, { value: 'ring' }] }).ok).toBe(false)
+  })
+
+  it('keeps a stored value to one of its options', () => {
+    const look: PluginSetting = {
+      key: 'look',
+      kind: 'choice',
+      label: 'L',
+      help: '',
+      options,
+      default: 'bars'
+    }
+    expect(coercePluginSetting(look, 'off')).toBe('off')
+    expect(coercePluginSetting(look, 'lasers')).toBe('bars')
+    expect(coercePluginSetting(look, 3)).toBe('bars')
+  })
+})
+
 describe('the pitch setting kind', () => {
   const withSetting = (setting: Record<string, unknown>) =>
     readManifest({ ...VALID, permissions: [], settings: [setting] }, 'lastfm')

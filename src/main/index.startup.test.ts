@@ -90,7 +90,14 @@ vi.mock('./audio', () => ({
   attachAudioEngine: mocks.attachAudioEngine,
   detachAudioEngine: vi.fn(),
   handleAudioReport: vi.fn(),
+  handleVisualFrame: vi.fn(),
+  onVisualFrame: vi.fn(),
   isAudioView: () => false
+}))
+vi.mock('./visualizer', () => ({
+  forgetVisualPlaces: vi.fn(),
+  getVisualizer: () => ({ showcase: null }),
+  onVisualizerChange: vi.fn()
 }))
 vi.mock('./lyrics', () => ({
   getLyricsState: () => ({ state: 'idle' }),

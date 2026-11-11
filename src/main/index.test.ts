@@ -6,6 +6,7 @@ import type * as IdentityModule from '@shared/identity'
 const mocks = vi.hoisted(() => {
   return {
     handleAudioReport: vi.fn(),
+    handleVisualFrame: vi.fn(),
     audioView: { id: 'the audio engine view' },
     createShell: vi.fn(),
     loadSoundCloud: vi.fn(),
@@ -67,8 +68,15 @@ vi.mock('./audio', () => ({
   attachAudioEngine: vi.fn(),
   detachAudioEngine: vi.fn(),
   handleAudioReport: mocks.handleAudioReport,
+  handleVisualFrame: mocks.handleVisualFrame,
+  onVisualFrame: vi.fn(),
   // The audio engine's view is the one object it names; nothing else may report.
   isAudioView: (contents: unknown) => contents === mocks.audioView
+}))
+vi.mock('./visualizer', () => ({
+  forgetVisualPlaces: vi.fn(),
+  getVisualizer: () => ({ showcase: 'bars' }),
+  onVisualizerChange: vi.fn()
 }))
 vi.mock('./lyrics', () => ({
   getLyricsState: () => ({ state: 'idle' }),
@@ -665,6 +673,27 @@ describe('main window lifecycle', () => {
     expect(mocks.handleAudioReport).not.toHaveBeenCalled()
     report({ sender: mocks.audioView }, { kind: 'silence', silent: true })
     expect(mocks.handleAudioReport).toHaveBeenCalledWith({ kind: 'silence', silent: true })
+  })
+
+  it('takes visualizer frames from the audio engine’s view only, and only whole ones', async () => {
+    const { app } = await import('electron')
+    app.emit('activate')
+    const shell = mocks.createShell.mock.results.at(-1)!.value as ReturnType<typeof makeShell>
+    const send = mocks.ipcOn.mock.calls.find(([name]) => name === CH.visualFrame)![1] as (
+      event: unknown,
+      raw: unknown
+    ) => void
+    const frame = { bands: new Array<number>(64).fill(0.25) }
+    mocks.handleVisualFrame.mockClear()
+
+    send({ sender: shell.content.webContents }, frame)
+    send({ sender: shell.header.webContents }, frame)
+    expect(mocks.handleVisualFrame).not.toHaveBeenCalled()
+
+    send({ sender: mocks.audioView }, { bands: [1] })
+    expect(mocks.handleVisualFrame).not.toHaveBeenCalled()
+    send({ sender: mocks.audioView }, frame)
+    expect(mocks.handleVisualFrame).toHaveBeenCalledWith(frame)
   })
 
   it('opens the showcase from our own buttons only, and lets only the showcase close it', async () => {

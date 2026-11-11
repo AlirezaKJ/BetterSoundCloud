@@ -23,6 +23,7 @@ import { findTheme, minimalNavigationCss, NO_THEME, soundCloudPaletteCss } from 
 import { themeChromeView } from './chrome-theme'
 import { setWindowGlass } from './window-glass'
 import { setLyricsWanted } from './lyrics'
+import { setVisualPlaceShown } from './visualizer'
 import { contentCssOf, coverCss } from '@shared/themes'
 import { overlayTheme } from '@shared/page-theme'
 import type { PageTheme } from '@shared/page-theme'
@@ -1217,6 +1218,8 @@ export function openShowcase(shell: Shell): void {
     if (!view.webContents.isDestroyed()) view.webContents.focus()
   })
   setLyricsWanted('showcase', true)
+  // The plugin's visualizer, if it chose one for here, listens only while this is on screen.
+  setVisualPlaceShown('showcase', true)
 }
 
 export function closeShowcase(shell: Shell): void {
@@ -1227,6 +1230,7 @@ export function closeShowcase(shell: Shell): void {
   // Destroyed rather than hidden, like the pane: its state lives in main.
   view.webContents.close()
   setLyricsWanted('showcase', false)
+  setVisualPlaceShown('showcase', false)
   if (shell.showcaseLeavesFullScreen && shell.window.isFullScreen()) {
     shell.window.setFullScreen(false)
   }

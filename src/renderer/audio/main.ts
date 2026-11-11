@@ -1,6 +1,7 @@
 // The pitch shifter is Signalsmith Stretch (MIT). Its licence ships with the app, in
 // resources/licenses/signalsmith-stretch.txt, since the bundler drops licence comments.
 import type { AudioConfig, AudioFilter } from '@shared/audio'
+import { bandEdges, bandLevels, isSilentFrame } from '@shared/visualizer'
 import stretchUrl from 'signalsmith-stretch?url'
 
 /*
@@ -14,7 +15,11 @@ import stretchUrl from 'signalsmith-stretch?url'
  * sound comes straight back. Nothing here touches SoundCloud's page.
  *
  *   capture -> pitch shifter (only while a shift is asked) -> preamp -> filters -> output -> speakers
- *           -> analyser (the no-sound safety check; main decides what silence means)
+ *           -> analyser (the no-sound safety check; main decides what silence means)  -> tap
+ *
+ * The tap, at the very end, is what a visualizer draws (src/shared/visualizer.ts, CLAUDE.md §22):
+ * the sound as it is heard, after the shift and the filters, so the bars are in step with it. Only
+ * while one is on screen does this view read it and send it, about 60 times a second.
  *
  * The shift comes before the filters so an equaliser shapes the sound as it is heard: a bass boost
  * stays on the bass after the key moves.
@@ -40,6 +45,8 @@ type Graph = {
   preamp: GainNode
   filters: BiquadFilterNode[]
   output: GainNode
+  /** What a visualizer draws: the output, after everything. */
+  tap: AnalyserNode
 }
 
 /** Parameter changes glide over this long, so a band dragged in settings never clicks. */
@@ -54,6 +61,17 @@ const SILENCE_CHECK_MS = 500
 const SHIFTER_BLOCK_MS = 80
 /** A shifter whose WebAssembly is refused never says it is ready; give up on it after this. */
 const SHIFTER_START_MS = 5_000
+/**
+ * How often a visualizer's frame is taken. A timer, because this view is never shown and so never
+ * gets animation frames (measured 2026-11-11: none at all, while a 16 ms timer ran about 56 times
+ * a second with background throttling off). The view drawing it animates between frames itself.
+ */
+const VISUAL_FRAME_MS = 1000 / 60
+/**
+ * The tap's FFT: 4096 points, about 12 Hz a bin at 48 kHz, so the bass still has bins of its own;
+ * no smoothing here, since the drawing view eases every bar itself.
+ */
+const TAP_FFT = 4096
 
 let stream: MediaStream | null = null
 let capturing: Promise<boolean> | null = null
@@ -64,6 +82,11 @@ let working = false
 let running = false
 let silent = false
 let stretch: Promise<Stretch> | null = null
+let visualTimer: ReturnType<typeof setTimeout> | null = null
+let lastFrameSilent = false
+const edges = bandEdges()
+// Read into the same array every frame, rather than making garbage sixty times a second.
+const spectrum = new Float32Array(TAP_FFT / 2)
 
 window.bsc.onAudioConfig((config) => {
   latest = config
@@ -107,6 +130,7 @@ async function apply(config: AudioConfig): Promise<void> {
     watchForSilence()
     report({ kind: 'running' })
   }
+  setVisual(config.visual)
 }
 
 async function capture(sourceId: string): Promise<boolean> {
@@ -160,6 +184,8 @@ async function build(source: MediaStream, config: AudioConfig): Promise<Graph | 
   if (shifter) input.connect(shifter).connect(preamp)
   else input.connect(preamp)
   output.connect(context.destination)
+  const tap = new AnalyserNode(context, { fftSize: TAP_FFT, smoothingTimeConstant: 0 })
+  output.connect(tap)
 
   const next: Graph = {
     context,
@@ -168,7 +194,8 @@ async function build(source: MediaStream, config: AudioConfig): Promise<Graph | 
     semitones: config.pitch,
     preamp,
     filters: [],
-    output
+    output,
+    tap
   }
   wireFilters(next, config.filters)
   if (context.state !== 'running') await context.resume()
@@ -268,6 +295,33 @@ function watchForSilence(): void {
     setTimeout(check, SILENCE_CHECK_MS)
   }
   check()
+}
+
+/** Start or stop sending a visualizer what this view plays. */
+function setVisual(on: boolean): void {
+  if (on && !visualTimer) {
+    lastFrameSilent = false
+    sendVisualFrame()
+  } else if (!on && visualTimer) {
+    clearTimeout(visualTimer)
+    visualTimer = null
+  }
+}
+
+/**
+ * One frame for the visualizer: the tap's bands. Silence is sent once and then not
+ * again until there is sound, so a paused track costs nothing; the drawing view lets its bars fall.
+ */
+function sendVisualFrame(): void {
+  visualTimer = setTimeout(sendVisualFrame, VISUAL_FRAME_MS)
+  const tap = graph?.tap
+  if (!tap || !graph) return
+  tap.getFloatFrequencyData(spectrum)
+  const frame = { bands: bandLevels(spectrum, graph.context.sampleRate, edges) }
+  const silent = isSilentFrame(frame)
+  if (silent && lastFrameSilent) return
+  lastFrameSilent = silent
+  window.bsc.reportVisualFrame(frame)
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {

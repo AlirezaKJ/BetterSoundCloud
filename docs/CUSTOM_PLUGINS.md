@@ -82,6 +82,7 @@ fix.
 | `string`    | text box                      | `default` is a string, up to 500 characters                                                                                                                                                                                                          |
 | `secret`    | password                      | Stored encrypted by the operating system, never shown again. Read with `bsc.settings.secret(key)`                                                                                                                                                    |
 | `equaliser` | a curve with a point per band | `bands` (2 to 10 frequencies in Hz, rising), `range` (dB up or down, 3–24, default 12), `presets` (`[{ "name", "gains" }]`, one gain per band), `default` (`"0,0,0"`). The value is text, one gain per band in half-decibel steps: `"6,4,0,0,1.5,3"` |
+| `choice`    | a dropdown                    | `options` (2 to 12 `{ "value", "label" }`, each value lowercase letters, digits or dashes), `default` (one of the values, else the first). The value is the chosen option's `value`                                                                  |
 | `pitch`     | a ruler of semitones          | `range` (whole semitones up or down, 1–12, default 12), `default` (`"0"`). The value is text, whole semitones: `"2"`, `"-3"`                                                                                                                         |
 
 Each takes a `key` (letters and digits), a `label` and an optional `help`.
@@ -122,6 +123,11 @@ plugin stops — turned off, crashed, updated — its filters and shift go with 
 changed: SoundCloud's player is out of reach from outside its page.
 If the engine cannot work, it steps aside and SoundCloud plays as normal; your plugin hears why
 through `bsc.audio.onStatus`. Safe mode never starts it.
+
+`bsc.audio.visualize` is the other half of `audio`: the app draws what is heard, in the look you
+name for each place, while that place is on screen (today the full-screen view). Your plugin never
+sees the sound and draws nothing itself. The bundled Visualizer (`resources/plugins/visualizer/`)
+is the example, and its look is a `choice` setting.
 
 **`page` is not available.** Code inside SoundCloud's page is on hold until the project has a
 clean baseline for its sign-in experiments (see `docs/TODO.md`, Milestone 1). A plugin asking for
@@ -190,6 +196,7 @@ The full, typed contract is `src/shared/plugin-api.ts`.
 | `bsc.audio.set(filters)`                    | `audio`          | Replace your filters: up to 16 of `{ type: 'lowshelf' \| 'peaking' \| 'highshelf', frequency, gain, q }` (Hz, dB). Empty or flat asks for nothing               |
 | `bsc.audio.setPitch(semitones)`             | `audio`          | Move everything up or down by this many semitones at the same speed: −12 to 12, fractions allowed. 0 asks for nothing. Adds about 0.08 s of delay while shifted |
 | `bsc.audio.clear()`                         | `audio`          | Remove your filters and shift                                                                                                                                   |
+| `bsc.audio.visualize(config)`               | `audio`          | Have the app draw what is heard: `{ showcase: 'bars' \| 'ring' \| 'wave' \| 'off' }`, or `null`. Resolves to `{ reducedMotion }`; `true` means nothing is drawn |
 | `bsc.audio.onStatus(fn)`                    | `audio`          | The engine's `{ state: 'off' \| 'starting' \| 'running' \| 'stopped', message }`, now and on every change. `message` says why it stopped, for your status line  |
 | `bsc.audio.graphicEqualiser(bands, gains)`  | `audio`          | Filters for a graphic equaliser, tuned so the sound passes through each band's gain. Pure                                                                       |
 

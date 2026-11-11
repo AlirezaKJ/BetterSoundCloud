@@ -121,6 +121,7 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CU
 | `main/presence.ts`                 | Discord Rich Presence: follows now-playing and the `discord.*` settings, spaces updates, reconnects; `getPresenceStatus` for settings                              |
 | `main/lyrics.ts`                   | Synced lyrics from LRCLIB: looks up only while the pane or the showcase is open, settles on a track first, caches for the session (§18)                            |
 | `main/audio.ts`                    | The audio engine: the hidden view that captures SoundCloud's output, every plugin's filters, stepping aside (§21)                                                  |
+| `main/visualizer.ts`               | The Visualizer: the look a plugin asked for in each place, which places are on screen, and so whether the engine listens (§22)                                     |
 | `main/discord-ipc.ts`              | Our own small client for the Discord app's local pipe (no Electron, tested against a real pipe)                                                                    |
 | `main/now-playing.ts`              | The one copy of "what is playing": `getNowPlaying`, `setNowPlaying`, `onNowPlayingChange`                                                                          |
 | `main/session.ts`                  | `hardenSession`, permission allowlist, `routeNewWindowsToBrowser`, `isInternalUrl`, `openInBrowser`                                                                |
@@ -161,6 +162,7 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CU
 | `shared/lyric-clock.ts`     | `lyricClock()`: which lyric line is being sung, one timer per line, for the pane and the showcase                                                                                |
 | `shared/audio.ts`           | `AudioFilter`, `readAudioFilters()`, `readAudioPitch()`, `combinePitch()`, `filterResponseDb()` (Web Audio's own maths), `headroomDb()`, `readAudioReport()`, the no-sound check |
 | `shared/equaliser.ts`       | `graphicEqualiser()` (gains to filters that pass through them), stored gains, `bandLabel()`, `gainLabel()`                                                                       |
+| `shared/visualizer.ts`      | `VisualFrame`, `bandLevels()` (the log bands and their dB scale), `waveOf()`, `readVisualFrame()`, `readVisualizerConfig()`, `follow()`, `nextPeak()` (§22)                      |
 | `shared/pitch.ts`           | A `pitch` setting's stored semitones (`parseSemitones`), and its words: `semitoneWords()`, `semitoneLabel()`                                                                     |
 | `shared/showcase.ts`        | `artworkColour()`, `showcaseBackdrop()`, `showcaseInks()` (the showcase colours, contrast-checked), `artworkSources()`, `formatClock()`                                          |
 | `shared/page-status.ts`     | `PageStatus`, `describePageStatus()` (every word on that view), `describeLoadFailure()`, `retryDelay()`                                                                          |
@@ -290,6 +292,9 @@ views:
 | `openShowcase`                                        | send           | `fromChrome`, or the player-bar view                                                       |
 | `closeShowcase`                                       | send           | the showcase view only                                                                     |
 | `onAudioConfig`, `reportAudio`                        | subscribe/send | the audio engine's view only (`isAudioView`); reports are shaped by `readAudioReport`      |
+| `reportVisualFrame`                                   | send           | the audio engine's view only (`isAudioView`); every frame shaped by `readVisualFrame`      |
+| `onVisualFrame`                                       | subscribe      | pushed to the showcase, about 60 a second while a visualizer is on screen                  |
+| `getVisualizer`, `onVisualizer`                       | invoke/sub     | the showcase only (`fromShowcase`): the look the Visualizer plugin chose for it            |
 | `pageStatusAction`                                    | send           | the status view only; re-checked against `shell.pageStatus`                                |
 | `onPageStatus`                                        | subscribe      | pushed to the status view (on its load and on every change)                                |
 | `listPlugins`, `setPluginEnabled`, `setPluginSetting` | invoke         | `fromSettingsUi`; the two setters answer `{ plugins, error }`                              |
@@ -664,8 +669,8 @@ context menu have the shortcut; embedded and player do not).
   local pipe, so the bytes on the wire are tested as sent.
 - Plugins are tested three ways: `plugin-sandbox.test.ts` runs small scripts in the real sandbox;
   `lastfm-plugin.test.ts` runs the shipped Last.fm plugin against a fake Last.fm, and
-  `equaliser-plugin.test.ts` and `pitch-plugin.test.ts` the Equaliser and Pitch against a fake
-  engine; `plugins.test.ts`
+  `equaliser-plugin.test.ts`, `pitch-plugin.test.ts` and `visualizer-plugin.test.ts` the
+  Equaliser, Pitch and the Visualizer against a fake engine; `plugins.test.ts`
   drives the service with real folders and a fake process. Plugin JavaScript is type-checked
   through `tsconfig.plugins.json`, against `resources/plugins/sandbox.d.ts` — which a test keeps
   equal to the sandbox's real globals.
@@ -756,17 +761,22 @@ Rules that hold this together:
   later version asks for more, it shows "needs approval" and does not start.
 - **A plugin from the user's folder asks before it turns on** (an inline confirmation in its row,
   listing its permissions). A user plugin may not reuse a built-in's id.
-- **Settings lists the built-ins in `BUNDLED_ORDER`** (plugins.ts): Last.fm, the Equaliser, Pitch.
+- **Settings lists the built-ins in `BUNDLED_ORDER`** (plugins.ts): Last.fm, the Equaliser, Pitch,
+  the Visualizer.
   A new built-in goes into that list, or it lands after them alphabetically. The user's plugins
   come after every built-in.
 - **The `audio` permission shapes the sound, never the page.** A plugin hands `bsc.audio.set` a
   list of filters (shaped by `readAudioFilters`, at most 16), or `bsc.audio.setPitch` a shift in
   semitones (`readAudioPitch`, within an octave), and the core audio engine applies them (§21).
+  `bsc.audio.visualize` asks the app to draw what is heard, a look per place
+  (`readVisualizerConfig`, §22): the plugin draws nothing itself.
   Plugin settings gain the `equaliser` kind, a curve the settings panel draws
   (`EqualiserEditor.svelte`) from the same `graphicEqualiser` the sandbox hands plugins, and the
-  `pitch` kind, a ruler of semitones (`PitchEditor.svelte`). A plugin's filters and shift are
-  cleared whenever it stops, however it stops (`clearAudio`, from `stop` and `exited` in
-  plugins.ts). A built-in plugin's row does not list `audio` (its description says it); a plugin
+  `pitch` kind, a ruler of semitones (`PitchEditor.svelte`), and the `choice` kind, a dropdown
+  of 2 to 12 `{ value, label }` options (`coercePluginSetting` keeps a stored value to one of
+  them). A plugin's filters, shift and visualizer are
+  cleared whenever it stops, however it stops (`clearAudio` and `clearVisualizer`, from `stop`
+  and `exited` in plugins.ts). A built-in plugin's row does not list `audio` (its description says it); a plugin
   from the user's folder lists it like any other permission (`view()` in plugins.ts).
 - **No plugin code runs in SoundCloud's page.** The `page` permission exists so such plugins can
   be listed honestly ("can't be turned on"), not so they can run. It waits on the Milestone 1
@@ -979,6 +989,63 @@ Rules that hold this together:
   "Seek from the showcase and the lyrics pane".
 - **The close button and the cursor hide** 2.5s after the pointer stops (a `setTimeout` reset on
   pointer movement, not polling) and come back on any movement or key; keyboard focus keeps them.
+- **With the Visualizer plugin on**, what is heard is drawn behind it all (§22): a canvas under the
+  sleeve's layer, in the showcase's own ink.
+
+---
+
+## 22. The Visualizer
+
+```
+Visualizer plugin --bsc.audio.visualize({ showcase: 'bars' | 'ring' | 'wave' | 'off' })-->
+  plugins.ts: readVisualizerConfig --> main/visualizer.ts: the look per place (first plugin by id)
+openShowcase / closeShowcase --setVisualPlaceShown('showcase')--> main/visualizer.ts
+  a place on screen with a look --> setAudioVisual(true) --> main/audio.ts runs the engine
+  (even with no filters and no shift), AudioConfig.visual = true
+renderer/audio: an AnalyserNode (FFT 4096) on the output, every ~16 ms on a timer:
+  bandLevels + waveOf --CH.visualFrame--> main: isAudioView, readVisualFrame
+  --CH.visualFrameChanged--> renderer/showcase --> lib/Visualizer.svelte (canvas, rAF, eased)
+```
+
+Rules that hold this together:
+
+- **A plugin, so it can be turned off.** The maintainer's requirement: it is the built-in
+  "Visualizer" plugin (`resources/plugins/visualizer`), off by default, and off, crashed or removed,
+  its request goes (`clearVisualizer`), nothing is drawn and the engine stops listening for it. A
+  plugin has no screen, so it only says which look it wants where; the app's views draw.
+- **It listens only while it is on screen.** `updateDemand` in main/visualizer.ts asks the engine
+  for frames only while a place with a look is showing (today: the showcase open). Otherwise it
+  costs nothing. While it listens, SoundCloud's sound goes through the engine, with its 0.1 s delay
+  and its rules for stepping aside (§21).
+- **The tap is at the end of the chain**, after Pitch and the Equaliser, so the bars show what is
+  heard and stay in step with it. The engine's other analyser, before the shifter, is the silence
+  check and nothing else.
+- **A timer in the engine's view, animation frames in the drawing view.** The engine's view is
+  never shown, so it never gets `requestAnimationFrame` (measured 2026-11-11: none at all, while a
+  16 ms timer ran about 56 times a second with `backgroundThrottling: false`). Silence is sent once,
+  then nothing until there is sound. The drawing view eases every bar toward its frame on each
+  animation frame (`follow`: 40 ms up, 220 ms down; `nextPeak`: hold 320 ms, then fall) and stops
+  its loop once everything has fallen, so a paused track costs nothing there either.
+- **What a frame holds** (`shared/visualizer.ts`, pure and tested): 64 log-spaced bands from 30 Hz
+  to 16 kHz, each band's loudest bin (or, below a bin's width, the spectrum read between the two
+  nearest bins, so the bass slopes instead of stepping), tilted +3 dB an octave around 1 kHz so
+  music reads level, scaled from −78 to −18 dB. Nothing else: every look is drawn from the bands.
+  Main checks every frame.
+- **The looks** (`lib/visualizer-draw.ts`): Bars under the sleeve and its notes, across their width;
+  "Around the artwork", a fringe of 2px hairlines standing out from the sleeve's four edges (the
+  sleeve is a square print, so a circle would cut into the notes; thick bars there read as a
+  chip's pins, seen 2026-11-11), bass at the bottom middle, treble at the top; and "Waveform", a
+  flowing line through the bands, mirrored about its middle, over a faint body. It began as an
+  oscilloscope of the raw wave, which jumped about with real music (the maintainer, 2026-11-12), so
+  the frames no longer carry the wave at all. Flat ink, square ends, no glow (DESIGN.md,
+  "Visualizer").
+- **Reduced motion removes it.** main/visualizer.ts reads the system's switch
+  (`systemPreferences.getAnimationSettings`), draws nothing and runs no engine for it, and
+  `visualize` answers `reducedMotion: true` so the plugin's row says why. The drawing view checks
+  `prefers-reduced-motion` too.
+- **Not built yet** (docs/TODO.md, Milestone 11): the strip above the player, a view of its own,
+  and MilkDrop (Butterchurn, only if its 3.0 beta runs under our CSP). Each is a new place in
+  `VISUAL_PLACES` with its looks in `LOOKS_FOR`.
 
 ---
 
@@ -1045,6 +1112,7 @@ Pitch plugin     --bsc.audio.setPitch(semitones)-> plugins.ts: readAudioPitch
         main: expectTabAudioCapture(content) + content.getMediaSourceId(audio view)
         --CH.audioConfigure { sourceId, pitch, filters, preampDb }--> getUserMedia({ chromeMediaSource: 'tab' })
         capture -> pitch shifter (only while shifted) -> preamp -> BiquadFilters -> output -> speakers
+                                                                                     -> tap (§22)
   <--CH.audioReport running | failed | pitch-failed | ended | silence-- (isAudioView, readAudioReport)
 engine status --{ type: 'audio' }--> plugins with the permission --> their status line
 ```

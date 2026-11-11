@@ -20,6 +20,7 @@ import type {
 } from '@shared/plugins'
 import type { PluginAction, PluginStatus } from '@shared/plugin-api'
 import { readAudioFilters, readAudioPitch } from '@shared/audio'
+import { readVisualizerConfig } from '@shared/visualizer'
 import { getNowPlaying, onNowPlayingChange } from './now-playing'
 import {
   clearAudio,
@@ -28,6 +29,7 @@ import {
   setAudioFilters,
   setAudioPitch
 } from './audio'
+import { clearVisualizer, reducedMotion, setVisualizer } from './visualizer'
 import { deleteSecret, getSecret, setSecret } from './secrets'
 import { openInBrowser } from './session'
 import { readRecord, writeJson } from './json-file'
@@ -303,6 +305,7 @@ function start(plugin: Found): void {
 function stop(id: string): void {
   // Whatever it was doing to the sound ends with it, whether or not it says goodbye.
   clearAudio(id)
+  clearVisualizer(id)
   const runtime = runtimes.get(id)
   if (!runtime) return
   if (runtime.startTimer) clearTimeout(runtime.startTimer)
@@ -439,13 +442,24 @@ async function answer(
     case 'audio.clear':
       clearAudio(id)
       return null
+    case 'audio.visualize': {
+      const config = readVisualizerConfig(args[0])
+      if (!config) {
+        throw new Error(
+          'bsc.audio.visualize takes null, or { showcase: "bars" | "ring" | "wave" | "off" }'
+        )
+      }
+      setVisualizer(id, config)
+      return { reducedMotion: reducedMotion() }
+    }
   }
 }
 
 function exited(plugin: Found, runtime: Runtime, code: number): void {
   runtime.child = null
-  // A crashed or failed plugin leaves the sound as SoundCloud plays it.
+  // A crashed or failed plugin leaves the sound as SoundCloud plays it, and draws nothing.
   clearAudio(plugin.manifest?.id ?? plugin.folder)
+  clearVisualizer(plugin.manifest?.id ?? plugin.folder)
   if (runtime.startTimer) clearTimeout(runtime.startTimer)
   if (runtime.stopping) return
 
@@ -488,7 +502,7 @@ function fail(runtime: Runtime, problem: string): void {
  * missing from this list comes after them, alphabetically. Only the list: the audio engine
  * applies every plugin's filters in id order whatever this says.
  */
-const BUNDLED_ORDER = ['lastfm', 'equaliser', 'pitch']
+const BUNDLED_ORDER = ['lastfm', 'equaliser', 'pitch', 'visualizer']
 
 function listedOrder(plugin: Found): number {
   const index = BUNDLED_ORDER.indexOf(plugin.folder)

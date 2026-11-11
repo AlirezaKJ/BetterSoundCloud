@@ -488,6 +488,37 @@ bottom edge. On a tall screen the sleeve sits above the notes, at their width.
   one line saying what to do.
 - **Reduced motion**: no colour change, line movement, fade or glide; everything jumps.
 
+### Visualizer
+
+What SoundCloud plays, drawn as it plays (`src/renderer/lib/Visualizer.svelte`, drawn by
+`visualizer-draw.ts`), from the built-in Visualizer plugin. Opt-in decoration: off until the
+plugin is turned on, so it is the user's choice, like a theme — the anti-reference on consumer
+music-app surface language stands for everything else. Today it lives in the showcase, which is
+already the Experience surface.
+
+- **Flat ink on the room's colour.** The showcase's own Ink, mixed down: bars at 30%, peak marks
+  at 70%, the waveform at 62%, the fringe at 42%. Decoration sits well under the text it shares
+  the room with. No glow, no gradient, no blur, never the accent (it marks state).
+- **Square ends**, like the sleeve, the progress rule and the lyric rests. A peak is a 2px rule
+  that holds a moment, then falls back.
+- **Bars** stand on the bottom margin, under the sleeve and its notes and exactly as wide as them,
+  so the readout belongs to the record rather than to the screen: 64 bars, each 56% of its slot,
+  no taller than the room below the sleeve.
+- **Around the artwork** is a fringe, not a ring: 2px hairlines standing out from the sleeve's four
+  edges, three to a band, blended between bands so the outline swells smoothly; bass at the bottom
+  middle, treble at the top, mirrored left and right. A circle would cut into the notes, and thick
+  bars round a square read as a chip's pins. No peak marks: they only cluttered it.
+- **Waveform** is a flowing line, not an oscilloscope: a smooth curve through the band levels,
+  mirrored above and below the middle of the bars' band, a 2px outline at 62% over a flat body at
+  12%, its ends easing into the middle line. The raw wave jumped about with real music
+  (2026-11-12); the levels move like the bars.
+- **Motion is the music's**: a bar rises in about 40ms and falls over about 220ms, eased
+  exponentially, so beats snap and decay like a meter. When the sound stops, everything falls and
+  the drawing stops.
+- **Reduced motion removes it**, rather than freezing it (a still visualizer reads as stuck, as a
+  still wait line does), and the plugin's row says "Hidden" and why.
+- Decorative: the canvas is hidden from assistive technology and takes no pointer.
+
 ### Equaliser curve
 
 An `equaliser` plugin setting (`src/renderer/settings/EqualiserEditor.svelte`), set in under its
@@ -630,7 +661,8 @@ things the user switches on that act on their behalf.
   them itself. With nothing of its own to say, the row says the state: Starting…, Stopped (with
   why), Paused (needs approval), Can’t be turned on, Can’t load.
 - **Its own settings**, while it is on, sit set in under a 1px Hairline rule on the left, as
-  compact rows of their own — so they read as belonging to that plugin and not to the panel.
+  compact rows of their own — so they read as belonging to that plugin and not to the panel. A
+  `choice` setting is the panel's own dropdown, at the same size as its other rows'.
 - **A plugin that cannot work is still listed**, label in Ghost Ink, checkbox disabled, with the
   reason. Hiding it would leave the user wondering where their folder went.
 - **Asking first.** Ticking a plugin from the user's folder does not tick it: a confirmation opens
@@ -775,7 +807,8 @@ are; hover does not.
   sake, an icon rail, dense chrome competing with the content it wraps. Confirmed anti-reference.
 - **Don't** adopt consumer music-app surface language — gradient heroes, artwork bleeding into
   blurred backgrounds, oversized transport controls. SoundCloud already renders all of that one
-  layer below; duplicating it makes the client a skin. Confirmed anti-reference.
+  layer below; duplicating it makes the client a skin. Confirmed anti-reference. The one exception
+  is the user's to turn on: the Visualizer plugin, flat and in the showcase's own ink (above).
 - **Don't** use glassmorphism, backdrop blur, glow, or saturated gradients. They read as a theme
   rather than a tool and destroy legibility in a 32px strip. Confirmed anti-reference. **One
   exception, the user's to choose:** the Glass setting (Windows 11, off by default, kept by the

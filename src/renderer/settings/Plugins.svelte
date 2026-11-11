@@ -254,6 +254,17 @@
                       onchange={(e) =>
                         setSetting(plugin.id, setting.key, e.currentTarget.checked)}
                     />
+                  {:else if setting.kind === 'choice'}
+                    <select
+                      {id}
+                      value={typeof value === 'string' ? value : setting.default}
+                      onchange={(e) =>
+                        setSetting(plugin.id, setting.key, e.currentTarget.value)}
+                    >
+                      {#each setting.options as option (option.value)}
+                        <option value={option.value}>{option.label}</option>
+                      {/each}
+                    </select>
                   {:else if setting.kind === 'string'}
                     <input
                       {id}
@@ -424,6 +435,23 @@
 
   input[type='text']:focus-visible,
   input[type='password']:focus-visible {
+    outline: 2px solid var(--bsc-focus);
+    outline-offset: -1px;
+  }
+
+  /* A plugin's `choice` setting: the same dropdown as the panel's own rows (Settings.svelte). */
+  select {
+    min-width: 140px;
+    padding: 6px 8px;
+    border: 1px solid var(--bsc-border);
+    border-radius: var(--bsc-radius);
+    background: var(--bsc-bg-secondary);
+    color: var(--bsc-text-primary);
+    font: inherit;
+    font-size: 13px;
+  }
+
+  select:focus-visible {
     outline: 2px solid var(--bsc-focus);
     outline-offset: -1px;
   }

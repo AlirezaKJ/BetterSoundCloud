@@ -2,7 +2,7 @@
 
 [![Downloads](https://img.shields.io/github/downloads/AlirezaKJ/BetterSoundCloud/total.svg)](https://github.com/AlirezaKJ/BetterSoundCloud/releases)
 
-SoundCloud on your desktop, in a window of its own. BetterSoundCloud runs SoundCloud's own web player and adds what a browser tab can't: synced lyrics, Discord Rich Presence, Last.fm scrobbling, an equaliser, a pitch changer, themes, a glass look on Windows 11, plugins, and skipping the audio ads between tracks.
+SoundCloud on your desktop, in a window of its own. BetterSoundCloud runs SoundCloud's own web player and adds what a browser tab can't: synced lyrics, Discord Rich Presence, Last.fm scrobbling, an equaliser, a pitch changer, a visualizer, themes, a glass look on Windows 11, plugins, and skipping the audio ads between tracks.
 
 It is not made by SoundCloud.
 
@@ -196,11 +196,12 @@ on. If the app works in safe mode, one of those is the cause: in Settings, switc
 (Hardware acceleration first), then quit and start normally, and repeat until it works. If you
 installed somewhere other than the default folder, use that path instead.
 
-### The sound is wrong: turn the equaliser or Pitch off
+### The sound is wrong: turn the equaliser, Pitch or the visualizer off
 
 If music sounds odd, cuts out, or plays twice, open **Settings → Plugins** and untick
-**Equaliser** and **Pitch**. SoundCloud then plays exactly as it does without them. Both also step
-aside by themselves, and say why on their row, if they cannot do their job.
+**Equaliser**, **Pitch** and **Visualizer**. SoundCloud then plays exactly as it does without
+them. All three also step aside by themselves, and say why on their row, if they cannot do their
+job.
 
 ### SoundCloud keeps blocking you: reset your profile
 

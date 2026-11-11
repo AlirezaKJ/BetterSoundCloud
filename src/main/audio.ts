@@ -22,6 +22,7 @@ import type {
   Starvation
 } from '@shared/audio'
 import type { AudioStatus } from '@shared/plugin-api'
+import type { VisualFrame } from '@shared/visualizer'
 import type { Identity } from '@shared/identity'
 import { expectTabAudioCapture, hardenSession, routeNewWindowsToBrowser } from './session'
 import { onNowPlayingChange } from './now-playing'
@@ -50,6 +51,10 @@ import { isDev } from './env'
  * asking for it any more: turning the plugin off and on tries again. A pitch shifter that cannot
  * start stops it only until nothing asks for a shift, so turning Pitch off is enough for the
  * Equaliser to work again.
+ *
+ * LISTENING. A visualizer on screen (§22, main/visualizer.ts) is a reason to run too: the view then
+ * reads what it plays at the very end of its chain and sends it here about 60 times a second, and
+ * the frames go on to whichever view is drawing. Off screen, it asks for nothing.
  */
 
 /** What the engine needs to run: the view to capture, and how to make a view of ours. */
@@ -83,6 +88,9 @@ let crashes = 0
 let endings = 0
 let restartTimer: ReturnType<typeof setTimeout> | null = null
 const listeners = new Set<(status: AudioStatus) => void>()
+/** Whether a visualizer is on screen, so the engine should run and send what it plays. */
+let visualWanted = false
+const frameListeners = new Set<(frame: VisualFrame) => void>()
 let started = false
 
 /** Once, at startup. In safe mode the engine never runs. */
@@ -129,6 +137,33 @@ export function setAudioPitch(owner: string, semitones: number): void {
   if (semitones === 0) pitches.delete(owner)
   else pitches.set(owner, semitones)
   reconcile()
+}
+
+/** Whether a visualizer is on screen (main/visualizer.ts decides). True runs the engine. */
+export function setAudioVisual(wanted: boolean): void {
+  if (wanted === visualWanted) return
+  visualWanted = wanted
+  reconcile()
+}
+
+/** A frame from the audio view, already shaped by `readVisualFrame`. */
+export function handleVisualFrame(frame: VisualFrame): void {
+  // A frame still in flight when the last visualizer closed is nobody's.
+  if (!visualWanted) return
+  for (const listener of frameListeners) {
+    try {
+      listener(frame)
+    } catch (error) {
+      console.error('[audio] frame listener failed:', error)
+    }
+  }
+}
+
+export function onVisualFrame(listener: (frame: VisualFrame) => void): () => void {
+  frameListeners.add(listener)
+  return () => {
+    frameListeners.delete(listener)
+  }
 }
 
 /** A plugin stopped, or asked for nothing: its filters and its shift go. */
@@ -198,7 +233,7 @@ function reconcile(): void {
   const pitch = combinePitch(pitches.values())
   // The shifter failing says nothing about the rest: once nothing asks for a shift, try again.
   if (latched?.reason === 'pitch-failed' && pitch === 0) latched = null
-  if (pitch === 0 && (filters.length === 0 || isFlat(filters))) {
+  if (pitch === 0 && (filters.length === 0 || isFlat(filters)) && !visualWanted) {
     // Nothing is asked: forget any earlier failure, so asking again tries again.
     latched = null
     crashes = 0
@@ -274,7 +309,8 @@ function sendConfig(): void {
     sourceId,
     pitch: combinePitch(pitches.values()),
     filters,
-    preampDb: -headroomDb(filters)
+    preampDb: -headroomDb(filters),
+    visual: visualWanted
   }
   view.webContents.send(CH.audioConfigure, config)
 }
@@ -348,6 +384,8 @@ export function resetAudioEngineForTests(): void {
   chains.clear()
   pitches.clear()
   listeners.clear()
+  frameListeners.clear()
+  visualWanted = false
   engine = { state: 'off' }
   latched = null
   target = null

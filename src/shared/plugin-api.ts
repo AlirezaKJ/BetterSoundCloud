@@ -1,7 +1,9 @@
 import type { NowPlaying } from './now-playing'
 import type { AudioFilter } from './audio'
+import type { VisualLook } from './visualizer'
 
 export type { AudioFilter } from './audio'
+export type { VisualLook } from './visualizer'
 
 /**
  * The API a plugin is written against: the `bsc` object its `activate` receives.
@@ -110,6 +112,18 @@ export type PluginApi = {
     setPitch(semitones: number): Promise<void>
     /** Remove this plugin's filters and shift. */
     clear(): Promise<void>
+    /**
+     * Draw what SoundCloud plays: a look per place, or null for none. Places and looks:
+     * `showcase` (the full-screen view): `'bars'` along the bottom, `'ring'` around the sleeve, or
+     * `'wave'`, a flowing line through the bands, mirrored about its middle. The app draws it; the engine runs only while one is on screen,
+     * and reads the sound at the very end of its chain, so it shows what is heard.
+     *
+     * Resolves with `reducedMotion: true` when the system asks for reduced motion: nothing is
+     * drawn then, and the plugin's status line should say so.
+     */
+    visualize(config: { showcase?: VisualLook | 'off' | null } | null): Promise<{
+      reducedMotion: boolean
+    }>
     /** What the engine is doing: with the current status at once, then on every change. */
     onStatus(listener: (status: AudioStatus) => void): () => void
     /**

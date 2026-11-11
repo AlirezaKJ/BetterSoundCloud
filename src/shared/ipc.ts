@@ -9,6 +9,7 @@ import type { PluginView } from './plugins'
 import type { LyricsState } from './lyrics'
 import type { UpdateAction, UpdateStatus } from './updates'
 import type { AudioConfig, AudioReport } from './audio'
+import type { VisualFrame, VisualizerConfig } from './visualizer'
 import type { GlassStatus } from './glass'
 
 /** Every IPC channel name, in one place. Strings are never written inline. */
@@ -122,7 +123,15 @@ export const CH = {
   // The audio engine's hidden view (src/main/audio.ts): main tells it what to capture and how to
   // shape it; it says whether that is working. Only that view, both ways.
   audioConfigure: 'audio:configure',
-  audioReport: 'audio:report'
+  audioReport: 'audio:report',
+
+  // The Visualizer (§22). The engine's view sends what it plays, about 60 times a second while a
+  // visualizer is on screen; main checks each frame and passes it to the view drawing it, which
+  // reads the plugin's choice of look through `visualizerGet`/`visualizerChanged`.
+  visualFrame: 'visualizer:frame',
+  visualFrameChanged: 'visualizer:frame-changed',
+  visualizerGet: 'visualizer:get',
+  visualizerChanged: 'visualizer:changed'
 } as const
 
 /** What a change to a plugin answers: every row as it now is, and why it failed if it did. */
@@ -336,4 +345,16 @@ export type ChromeApi = {
   onAudioConfig(cb: (config: AudioConfig) => void): () => void
   /** The audio engine's view only: whether its capture is working. Checked by main. */
   reportAudio(report: AudioReport): void
+
+  /**
+   * The audio engine's view only: one frame of what it plays (`VisualFrame`), about 60 times a
+   * second while a visualizer is on screen. Checked by main (`readVisualFrame`).
+   */
+  reportVisualFrame(frame: VisualFrame): void
+  /** The views that draw a visualizer: each frame, about 60 times a second while one shows. */
+  onVisualFrame(cb: (frame: VisualFrame) => void): () => void
+  /** The views that draw a visualizer: which look the plugin chose for each place. */
+  getVisualizer(): Promise<VisualizerConfig>
+  /** …and every change to it: the plugin turned on or off, or its look changed. */
+  onVisualizer(cb: (config: VisualizerConfig) => void): () => void
 }

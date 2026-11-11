@@ -350,6 +350,45 @@ try {
   await wait(1500)
   check('…and both off, the engine lets go', (await audioViews()) === 0)
 
+  // The Visualizer: on, it runs no engine until the full-screen view shows; there, the engine
+  // listens and the view draws on a canvas; closed, the engine lets go. Under reduced motion it is
+  // hidden and runs nothing at all.
+  const visualizer = () =>
+    settings.run(
+      `window.bsc.listPlugins().then((list) => { const p = list.find((x) => x.id === 'visualizer'); return p && { state: p.state, lead: p.status && p.status.lead, problem: p.status && p.status.problem } })`
+    )
+  check('the bundled Visualizer plugin is found, off', (await visualizer())?.state === 'off')
+  await settings.run(`window.bsc.setPluginEnabled('visualizer', true)`)
+  await wait(2000)
+  const ready = await visualizer()
+  check(
+    '…on, it runs no audio engine until something shows it',
+    ready?.state === 'running' && (await audioViews()) === 0,
+    JSON.stringify(ready)
+  )
+  await header.run('window.bsc.openShowcase()')
+  const stage = await view((url) => url.includes('/showcase/index.html'), 15000)
+  await wait(3000)
+  const reduced = stage
+    ? await stage.run(`matchMedia('(prefers-reduced-motion: reduce)').matches`)
+    : false
+  const look = stage
+    ? await stage.run(`document.querySelector('[data-bsc-visualizer]')?.dataset.look ?? ''`)
+    : ''
+  check(
+    reduced
+      ? '…under reduced motion, the full-screen view draws none and the engine stays off'
+      : '…in the full-screen view, the engine listens and its bars are drawn',
+    reduced
+      ? look === '' && (await audioViews()) === 0
+      : look === 'bars' && (await audioViews()) === 1,
+    `look "${look}", ${await audioViews()} audio view(s)`
+  )
+  if (stage) await stage.run('window.bsc.closeShowcase()').catch(() => undefined)
+  await wait(2000)
+  check('…and the view closed, the engine lets go', (await audioViews()) === 0)
+  await settings.run(`window.bsc.setPluginEnabled('visualizer', false)`)
+
   check(
     'no uncaught errors in the header',
     header.exceptions.length === 0,
