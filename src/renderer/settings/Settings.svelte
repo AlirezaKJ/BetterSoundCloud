@@ -12,10 +12,12 @@
   import type { Section, SettingDef, SettingKey, Settings } from '@shared/settings-schema'
   import DiscordStatus from './DiscordStatus.svelte'
   import UpdateStatus from './UpdateStatus.svelte'
+  import GlassStatus from './GlassStatus.svelte'
   import Plugins from './Plugins.svelte'
   import Themes from './Themes.svelte'
   import Background from './Background.svelte'
   import Reset from './Reset.svelte'
+  import BrowserSession from './BrowserSession.svelte'
 
   /*
    * The entire form is generated from the schema. Adding a setting means adding one
@@ -43,8 +45,14 @@
   /** "Continue without Widevine" was pressed at startup: protected tracks skip until a restart. */
   let withoutWidevine = $state(false)
 
+  /** A setting that can do something here: no `platforms` list, or one naming this platform. */
+  const onThisPlatform = (key: SettingKey): boolean => {
+    const def = SETTINGS[key]
+    return !('platforms' in def) || def.platforms.some((p) => p === window.bsc.platform)
+  }
+
   const keysIn = (section: Section): SettingKey[] =>
-    SETTING_KEYS.filter((k) => SETTINGS[k].section === section)
+    SETTING_KEYS.filter((k) => SETTINGS[k].section === section && onThisPlatform(k))
 
   /** Drawn by its own component (`drawnBy` in the schema), so it gets no ordinary row. */
   const drawnElsewhere = (key: SettingKey): boolean => 'drawnBy' in SETTINGS[key]
@@ -135,6 +143,7 @@
         -->
         {#if 'statusFrom' in def && def.statusFrom === 'discord'}<DiscordStatus />{/if}
         {#if 'statusFrom' in def && def.statusFrom === 'updates'}<UpdateStatus />{/if}
+        {#if 'statusFrom' in def && def.statusFrom === 'glass'}<GlassStatus />{/if}
       </div>
 
       <div class="control">
@@ -249,8 +258,9 @@
         <!-- Not schema-driven: plugins are found on disk, so their rows are too. -->
         <Plugins />
       {:else if active === 'themes'}
-        <!-- The section's switches, such as Minimal navigation, which work with any theme; then
-             the background, which needs a preview and sliders (Background.svelte); then the themes
+        <!-- The section's switches, which work with any theme: Minimal navigation, and Glass with
+             its tint on Windows, right above the Background it takes the place of; then the
+             background, which needs a preview and sliders (Background.svelte); then the themes
              themselves, which are files with descriptions and swatches (Themes.svelte). Settings
              with `drawnBy` belong to those two components, so they get no row here. -->
         {#if values}
@@ -267,6 +277,7 @@
           {@render settingRow(key)}
         {/each}
         {#if active === 'advanced'}
+          <BrowserSession />
           <!-- Reset settings, and clear SoundCloud's data: buttons that ask first, not settings. -->
           <Reset />
         {/if}

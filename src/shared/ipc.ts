@@ -9,6 +9,7 @@ import type { PluginView } from './plugins'
 import type { LyricsState } from './lyrics'
 import type { UpdateAction, UpdateStatus } from './updates'
 import type { AudioConfig, AudioReport } from './audio'
+import type { GlassStatus } from './glass'
 
 /** Every IPC channel name, in one place. Strings are never written inline. */
 export const CH = {
@@ -54,6 +55,10 @@ export const CH = {
 
   // content preload -> main. A raw reading of SoundCloud's player bar; see src/shared/now-playing.ts.
   trackUpdate: 'content:track-update',
+  // content preload -> main: send me the stylesheet for SoundCloud's `/n/` iframe (shared/frames.ts).
+  // main -> content preload: that stylesheet (`buildFrameCss`), again on every change.
+  frameReady: 'content:frame-ready',
+  frameCss: 'content:frame-css',
 
   // main -> every view of ours on each change, and a one-off read when a view opens.
   nowPlayingChanged: 'now-playing:changed',
@@ -71,11 +76,14 @@ export const CH = {
   safeModeGet: 'app:safe-mode-get',
   // settings renderer -> main. Whether this launch went on without Widevine.
   widevineSkippedGet: 'app:widevine-skipped-get',
+  // settings renderer -> main. Whether there is glass under the window, and why not.
+  glassStatusGet: 'app:glass-status-get',
 
   // settings renderer -> main. The two buttons under Advanced: settings back to their defaults,
   // and SoundCloud's cookies, storage and cache cleared (which signs the user out).
   settingsReset: 'settings:reset',
   siteDataClear: 'app:site-data-clear',
+  browserSessionImport: 'app:browser-session-import',
 
   // settings renderer <-> main. The updater: its status, and the one button that status offers.
   updateStatusGet: 'updates:status-get',
@@ -136,6 +144,9 @@ export type WindowState = {
 }
 
 /** Shape exposed on `window.bsc` in our own chrome renderers. Never in SoundCloud's page. */
+/** What "Import browser sign-in" did (`importBrowserSession`). */
+export type BrowserSessionImport = { imported: number; ignored: number; error: string }
+
 export type ChromeApi = {
   readonly platform: string
   minimize(): void
@@ -227,6 +238,13 @@ export type ChromeApi = {
   getSafeMode(): Promise<boolean>
 
   /**
+   * Whether Glass is under the window right now, and if not, why not (`GlassStatus`), for the
+   * line under the setting. It changes only when settings do, so the line asks again on each
+   * settings change rather than being pushed.
+   */
+  getGlassStatus(): Promise<GlassStatus>
+
+  /**
    * Whether the user pressed "Continue without Widevine" on "Couldn’t set up playback" this
    * launch: protected tracks grey out and skip until the app restarts, and the settings panel
    * must say so. It can only change while the status view covers the page, so read once.
@@ -245,6 +263,13 @@ export type ChromeApi = {
    * SoundCloud again. Answers whether the clearing worked. The settings view only.
    */
   clearSiteData(): Promise<boolean>
+  /**
+   * Main shows a file dialog for a browser's cookie export, takes only SoundCloud's sign-in from
+   * it, and reloads SoundCloud. `imported` sign-in cookies were set, `ignored` others in the file
+   * were left alone; `error` is a sentence for the row, '' when it worked or was cancelled. Null
+   * when main refused the sender. The settings view only.
+   */
+  importBrowserSession(): Promise<BrowserSessionImport | null>
 
   /**
    * What the updater is doing: idle, checking, up to date, a version available, downloading (with

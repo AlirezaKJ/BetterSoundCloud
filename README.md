@@ -2,7 +2,7 @@
 
 [![Downloads](https://img.shields.io/github/downloads/AlirezaKJ/BetterSoundCloud/total.svg)](https://github.com/AlirezaKJ/BetterSoundCloud/releases)
 
-SoundCloud on your desktop, in a window of its own. BetterSoundCloud runs SoundCloud's own web player and adds what a browser tab can't: synced lyrics, Discord Rich Presence, Last.fm scrobbling, an equaliser, a pitch changer, themes, plugins, and skipping the audio ads between tracks.
+SoundCloud on your desktop, in a window of its own. BetterSoundCloud runs SoundCloud's own web player and adds what a browser tab can't: synced lyrics, Discord Rich Presence, Last.fm scrobbling, an equaliser, a pitch changer, themes, a glass look on Windows 11, plugins, and skipping the audio ads between tracks.
 
 It is not made by SoundCloud.
 
@@ -169,7 +169,10 @@ scrolling has replaced, and the shuffle fix. The reasons are in the project's
   activity. This is the other bug 0.8.0 set out to fix, and it is not fixed yet. See
   [what to try](#soundcloud-keeps-blocking-you-reset-your-profile).
 - **Signing in with Google, Apple or Facebook does not work inside the app yet.** Those open in
-  your web browser, and the app stays signed out. Sign in with your email address instead.
+  your web browser, and the app stays signed out. Sign in there, then bring that sign-in into
+  the app with **Settings → Advanced → Import browser sign-in** and a cookie export
+  ([how](docs/BROWSER_SESSION_IMPORT.md)): it takes the sign-in from the file and nothing else.
+  Email sign-in inside the app also works.
 - **Casting to a Chromecast does not work** in the app: the part of Chrome that casting needs is not
   part of the app.
 
@@ -188,7 +191,7 @@ with `--safe-mode`:
 | Linux (AppImage)    | `./BetterSoundCloud-<version>-linux-x86_64.AppImage --safe-mode`                                   |
 
 For that launch only, safe mode turns off hardware acceleration (the usual cause of a blank
-window), ad blocking, your theme, the equaliser and pitch. It changes no setting, and Settings says it is
+window), ad blocking, your theme, Glass, the equaliser and pitch. It changes no setting, and Settings says it is
 on. If the app works in safe mode, one of those is the cause: in Settings, switch one of them off
 (Hardware acceleration first), then quit and start normally, and repeat until it works. If you
 installed somewhere other than the default folder, use that path instead.

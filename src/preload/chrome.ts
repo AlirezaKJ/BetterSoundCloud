@@ -1,9 +1,16 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { CH } from '@shared/ipc'
-import type { ChromeApi, NavState, PluginsResult, WindowState } from '@shared/ipc'
+import type {
+  BrowserSessionImport,
+  ChromeApi,
+  NavState,
+  PluginsResult,
+  WindowState
+} from '@shared/ipc'
 import type { SettingKey, Settings } from '@shared/settings-schema'
 import type { ThemeSummary } from '@shared/themes'
 import type { PageTheme } from '@shared/page-theme'
+import type { GlassStatus } from '@shared/glass'
 import type { ContextMenuAction, ContextMenuRequest, GoToUrlResult } from '@shared/context-menu'
 import type { NowPlaying } from '@shared/now-playing'
 import type { PageStatus, PageStatusAction } from '@shared/page-status'
@@ -79,9 +86,12 @@ const api: ChromeApi = {
   pageStatusAction: (action: PageStatusAction) => ipcRenderer.send(CH.pageStatusAction, action),
 
   getSafeMode: () => ipcRenderer.invoke(CH.safeModeGet) as Promise<boolean>,
+  getGlassStatus: () => ipcRenderer.invoke(CH.glassStatusGet) as Promise<GlassStatus>,
   getWidevineSkipped: () => ipcRenderer.invoke(CH.widevineSkippedGet) as Promise<boolean>,
   resetSettings: () => ipcRenderer.invoke(CH.settingsReset) as Promise<boolean>,
   clearSiteData: () => ipcRenderer.invoke(CH.siteDataClear) as Promise<boolean>,
+  importBrowserSession: () =>
+    ipcRenderer.invoke(CH.browserSessionImport) as Promise<BrowserSessionImport | null>,
 
   getUpdateStatus: () => ipcRenderer.invoke(CH.updateStatusGet) as Promise<UpdateStatus>,
   onUpdateStatus: (cb: (status: UpdateStatus) => void) => subscribe(CH.updateStatusChanged, cb),

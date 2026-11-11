@@ -551,7 +551,10 @@ behaviour.
 The pending setting's sibling. Where that one says a feature does not exist yet, this one says
 whether a feature that does exist is working right now — for settings whose answer can change
 without the setting changing. Today that is Discord presence, which needs the Discord app to be
-running (`statusFrom: 'discord'` in the schema, `src/renderer/settings/DiscordStatus.svelte`).
+running (`statusFrom: 'discord'` in the schema, `src/renderer/settings/DiscordStatus.svelte`), and
+Glass, which needs Windows 11 and hardware acceleration (`statusFrom: 'glass'`,
+`GlassStatus.svelte`). Glass's line appears only while the box is ticked and there is no glass
+("Off in safe mode", "Not showing"): working glass shows itself.
 
 - **Under the help text**, in the label column: one Caption line. The state comes first, in two
   or three words of Ink at 600 ("Connected", "Discord isn’t running"), then a full stop and the
@@ -666,7 +669,8 @@ Settings → Themes (`src/renderer/settings/Themes.svelte`). A single choice amo
 radio group, and the arrow keys move through it.
 
 - **The section's switches come first**, as ordinary settings rows drawn by `Settings.svelte`
-  (`appearance.minimalNavigation`, which works with any theme). A switch that is part of no theme
+  (`appearance.minimalNavigation`, which works with any theme, then Glass and Glass tint on
+  Windows, right above the Background they take the place of). A switch that is part of no theme
   sits above the list, and a Label-size heading, "Theme", in the secondary ink names the list
   under it (it is also the radio group's accessible name), so the switch never reads as one of the
   choices.
@@ -773,7 +777,11 @@ are; hover does not.
   blurred backgrounds, oversized transport controls. SoundCloud already renders all of that one
   layer below; duplicating it makes the client a skin. Confirmed anti-reference.
 - **Don't** use glassmorphism, backdrop blur, glow, or saturated gradients. They read as a theme
-  rather than a tool and destroy legibility in a 32px strip. Confirmed anti-reference.
+  rather than a tool and destroy legibility in a 32px strip. Confirmed anti-reference. **One
+  exception, the user's to choose:** the Glass setting (Windows 11, off by default, kept by the
+  maintainer 2026-11-11), which puts the whole window on a dark live blur, like a theme does. Our
+  chrome on it stays flat: a plain dark fill on the bars, no blur or glow of its own, and dark
+  ink whatever the Appearance.
 - **Don't** introduce a webfont. The CSP blocks remote loads, and the OS stack is the point.
 - **Don't** add a third radius, a second shadow, or a second accent without retiring one first.
 - **Don't** exceed 15px type in BetterSoundCloud's own UI, outside the Lyrics and Showcase

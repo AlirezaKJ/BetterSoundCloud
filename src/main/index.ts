@@ -23,7 +23,8 @@ import {
   closeLyrics,
   openShowcase,
   closeShowcase,
-  rendererUrl
+  rendererUrl,
+  sendFrameCss
 } from './window'
 import {
   attachAudioEngine,
@@ -43,6 +44,10 @@ import {
 import { choosePicture, pictureDataUri, pictureThumbnail } from './background'
 import { setChromeTheme } from './chrome-theme'
 import type { BackgroundOptions } from './content-css'
+import { glassHeaderCss } from './content-css'
+import { glassAvailable } from './window-glass'
+import { glassTint } from '@shared/glass'
+import type { GlassStatus } from '@shared/glass'
 import { backgroundSource, chromeCssFor } from '@shared/themes'
 import type { ThemeSummary } from '@shared/themes'
 import {
@@ -114,7 +119,8 @@ import {
   setPluginSetting,
   startPlugins
 } from './plugins'
-import type { PluginsResult } from '@shared/ipc'
+import type { BrowserSessionImport, PluginsResult } from '@shared/ipc'
+import { ImportProblem, importSignIn } from './cookie-import'
 
 let shell: Shell | null = null
 let quitting = false
@@ -246,7 +252,9 @@ if (process.env['ELECTRON_RENDERER_URL']) {
   app.setPath('userData', join(app.getPath('appData'), 'BetterSoundCloud (dev)'))
 }
 
-if (SAFE_MODE || !settings.get('advanced.hardwareAcceleration')) {
+/** Decided once, here, for the whole launch: Chromium cannot change it while running. */
+const HARDWARE_ACCELERATION = !SAFE_MODE && settings.get('advanced.hardwareAcceleration')
+if (!HARDWARE_ACCELERATION) {
   app.disableHardwareAcceleration()
 }
 
@@ -542,7 +550,14 @@ function registerIpc(): void {
 
   ipcMain.on(CH.menuBarToggle, (e) => {
     if (!fromChrome(e)) return
-    settings.set('appearance.hideMenuBar', !settings.get('appearance.hideMenuBar'))
+    // "Hide the top bar until you point at it" hides our bar too, whatever this setting says,
+    // so the button that brings our bar back has to turn that off as well, or it did nothing.
+    if (settings.get('appearance.autoHideHeader')) {
+      settings.set('appearance.autoHideHeader', false)
+      settings.set('appearance.hideMenuBar', false)
+    } else {
+      settings.set('appearance.hideMenuBar', !settings.get('appearance.hideMenuBar'))
+    }
     applyLiveSettings()
     // After applying, for the same reason as the settingsSet handler below.
     broadcastSettings(settings.getAll())
@@ -625,6 +640,12 @@ function registerIpc(): void {
     return frame !== null && frame.parent === null && isSoundCloudUrl(frame.url)
   }
 
+  // The page's preload asking for the stylesheet of SoundCloud's `/n/` iframe, once it loads.
+  ipcMain.on(CH.frameReady, (e) => {
+    if (!shell || !fromSoundCloudPage(e)) return
+    sendFrameCss(shell)
+  })
+
   ipcMain.on(CH.trackUpdate, (e, reading: unknown) => {
     if (!fromSoundCloudPage(e)) return
     logTrackLinks(reading)
@@ -666,6 +687,8 @@ function registerIpc(): void {
 
   // So the settings panel can say safe mode is on, rather than show settings that are not in force.
   ipcMain.handle(CH.safeModeGet, (e) => (fromSettingsUi(e) ? SAFE_MODE : null))
+  // And whether Glass is really under the window, so a ticked box never silently does nothing.
+  ipcMain.handle(CH.glassStatusGet, (e) => (fromSettingsUi(e) ? glassStatus() : null))
   // And whether this launch went on without Widevine, so skipping tracks are not a surprise.
   ipcMain.handle(CH.widevineSkippedGet, (e) =>
     fromSettingsUi(e) ? widevine.state === 'skipped' : null
@@ -849,6 +872,34 @@ function registerIpc(): void {
     if (!shell || !fromSettingsView(e)) return false
     return clearSiteData(shell)
   })
+  ipcMain.handle(CH.browserSessionImport, (e) => {
+    if (!shell || !fromSettingsView(e)) return null
+    return chooseAndImportBrowserSession(shell)
+  })
+}
+
+/**
+ * Settings → Advanced → "Import browser sign-in": main shows the file dialog, so no path and no
+ * cookie value ever reaches a renderer. Only the sign-in is taken (cookie-import.ts).
+ */
+async function chooseAndImportBrowserSession(target: Shell): Promise<BrowserSessionImport> {
+  const { canceled, filePaths } = await dialog.showOpenDialog(target.window, {
+    title: 'Import your SoundCloud sign-in',
+    properties: ['openFile'],
+    filters: [{ name: 'Cookie export (JSON)', extensions: ['json'] }]
+  })
+  const file = filePaths[0]
+  if (canceled || !file) return { imported: 0, ignored: 0, error: '' }
+  try {
+    const result = await importSignIn(target.content.webContents.session, file)
+    target.content.webContents.reload()
+    return { ...result, error: '' }
+  } catch (error) {
+    // Our own problems are written for the settings row; anything else is the file system's.
+    const message = error instanceof ImportProblem ? error.message : 'Couldn’t read that file.'
+    if (!(error instanceof ImportProblem)) console.warn('[session-import] failed:', error)
+    return { imported: 0, ignored: 0, error: message }
+  }
 }
 
 /**
@@ -1040,10 +1091,44 @@ function selectedTheme(): string {
   return SAFE_MODE ? NO_THEME : settings.get('appearance.theme')
 }
 
+/**
+ * Whether the window should have glass under it: the Glass setting, unless this launch cannot
+ * draw it. Safe mode turns it off like the theme (it also turns off hardware acceleration);
+ * without hardware acceleration Chromium cannot hand the compositor see-through pixels, so the
+ * window would only go dark.
+ */
+function glassWanted(): boolean {
+  return HARDWARE_ACCELERATION && settings.get('appearance.glass') && glassAvailable()
+}
+
+/** Whether glass is under the window, or the first reason it is not (`describeGlassStatus`). */
+function glassStatus(): GlassStatus {
+  if (!settings.get('appearance.glass')) return 'off'
+  if (SAFE_MODE) return 'safe-mode'
+  if (!HARDWARE_ACCELERATION) {
+    // Chromium reads the switch once, at launch: turned back on, it waits for a restart.
+    return settings.get('advanced.hardwareAcceleration') ? 'restart' : 'no-acceleration'
+  }
+  if (!glassAvailable()) return 'not-built'
+  return shell?.glass ? 'on' : 'refused'
+}
+
 /** The selected theme's `chrome` sections, into every view of ours that takes them. */
 function applyChromeTheme(): void {
   const theme = findTheme(selectedTheme())
-  setChromeTheme((kind) => (theme ? chromeCssFor(theme.sections, kind) : ''))
+  // On glass, our bar is cleared to match SoundCloud's header beside it. Appended after the
+  // theme's own sheet for the bar, so it wins over a theme's `--bsc-header-bg`. Only while glass
+  // is really there (`shell.glass`), not merely wanted: where Windows refuses it, a cleared bar
+  // showed the window's flat colour through a dark wash.
+  const glass = shell?.glass ?? false
+  setChromeTheme((kind) =>
+    [
+      theme ? chromeCssFor(theme.sections, kind) : '',
+      glass && kind === 'header' ? glassHeaderCss() : ''
+    ]
+      .filter(Boolean)
+      .join('\n')
+  )
 }
 
 function applyLiveSettings(): void {
@@ -1056,28 +1141,38 @@ function applyLiveSettings(): void {
   // App-wide too. Before the updater starts this only records the choice.
   setAutoUpdate(settings.get('general.checkForUpdates'))
 
-  applyChromeTheme()
-
-  if (!shell) return
+  if (!shell) {
+    applyChromeTheme()
+    return
+  }
   shell.content.webContents.setZoomFactor(settings.get('appearance.zoomFactor') / 100)
   nativeTheme.themeSource = settings.get('appearance.colorScheme')
   applyBlocking()
   // Called after the zoom above, deliberately: the overlay's height and the CSS space it
   // reserves are both derived from the current zoom factor.
   setContentAppearance(shell, {
-    hideMenuBar: settings.get('appearance.hideMenuBar'),
+    // Hiding the top bar until pointed at implies giving SoundCloud's header the window.
+    hideMenuBar:
+      settings.get('appearance.hideMenuBar') || settings.get('appearance.autoHideHeader'),
+    autoHideHeader: settings.get('appearance.autoHideHeader'),
     fullWidth: settings.get('appearance.fullWidthLayout'),
     theme: selectedTheme(),
     minimalNavigation: settings.get('appearance.minimalNavigation'),
     background: backgroundOptions(),
-    playerButtons: settings.get('appearance.playerButtons')
+    playerButtons: settings.get('appearance.playerButtons'),
+    glass: glassWanted() ? glassTint(settings.get('appearance.glassTint')) : null
   })
   // The chosen picture travels in its own sheet, and only while it is the background.
   setContentPicture(shell, currentBackground() === 'picture' ? pictureDataUri() : '')
+  // After setContentAppearance, which is what puts the glass under the window or takes it away.
+  applyChromeTheme()
 }
 
 /** What the Background shows: the setting, unless the selected theme needs one (`@background`). */
 function currentBackground(): 'none' | 'artwork' | 'picture' {
+  // Glass is the background while it is on: a picture laid over it hid the glass, and its
+  // full-window blur is the kind of see-through effect that smeared on scroll (2026-11-10).
+  if (glassWanted()) return 'none'
   const theme = findTheme(selectedTheme())
   return backgroundSource(
     settings.get('appearance.background'),

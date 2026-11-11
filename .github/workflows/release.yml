@@ -130,6 +130,9 @@ jobs:
       - run: npm ci
       # Not `npm run build`: that runs the whole check again, which the check job has done.
       - run: npx electron-vite build
+      # The Glass setting's native layer. --required: a release without it would ship a switch
+      # that does nothing. Windows runners have the C++ build tools node-gyp needs.
+      - run: node scripts/build-native.mjs --required
 
       # STRICT_VMP_SIGNING makes scripts/vmp-sign.js fail the build when it cannot sign, instead
       # of shipping a client that skips DRM tracks. It is the literal string 'true' and never

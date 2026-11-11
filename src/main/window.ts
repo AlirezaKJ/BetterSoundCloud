@@ -1,5 +1,5 @@
 import { join } from 'node:path'
-import { BaseWindow, WebContentsView, nativeTheme } from 'electron'
+import { BaseWindow, WebContentsView, nativeTheme, screen } from 'electron'
 import type { BrowserWindow, WebContents } from 'electron'
 import windowStateKeeper from 'electron-window-state'
 import { hardenSession, routeNewWindowsToBrowser } from './session'
@@ -9,6 +9,10 @@ import { isDev } from './env'
 import {
   backgroundCss,
   buildContentCss,
+  buildFrameCss,
+  glassCss,
+  glassFrameCss,
+  headerHiddenCss,
   COMPACT_HEADER_WIDTH,
   FIT_HEADER_WIDTH,
   MIN_EMBED_WIDTH,
@@ -17,12 +21,16 @@ import {
 import type { BackgroundOptions } from './content-css'
 import { findTheme, minimalNavigationCss, NO_THEME, soundCloudPaletteCss } from './themes'
 import { themeChromeView } from './chrome-theme'
+import { setWindowGlass } from './window-glass'
 import { setLyricsWanted } from './lyrics'
 import { contentCssOf, coverCss } from '@shared/themes'
 import { overlayTheme } from '@shared/page-theme'
 import type { PageTheme } from '@shared/page-theme'
 import { START_PAGE_URLS } from '@shared/start-page'
 import { hidesPage } from '@shared/page-status'
+import { HIDDEN, nextReveal } from '@shared/auto-hide'
+import { pageMode } from '@shared/glass'
+import type { RevealState } from '@shared/auto-hide'
 import type { PageStatus } from '@shared/page-status'
 import type { Identity } from '@shared/identity'
 import type { ContextMenuRequest } from '@shared/context-menu'
@@ -154,6 +162,32 @@ export type Shell = {
   /** The Background setting: what goes behind the page, or null for nothing. */
   background: BackgroundOptions | null
   /**
+   * Whether glass is actually under the window right now (the Glass setting, and the native layer
+   * accepted it). The window, our bar and SoundCloud's view are see-through exactly while this is
+   * true: see-through with nothing under them would show the desktop unblurred.
+   */
+  glass: boolean
+  /** The tint glass was last given, so an unchanged settings write does not touch the layer. */
+  glassTint: number | null
+  /**
+   * "Hide the top bar until you point at it": SoundCloud's header and our window buttons stay out
+   * of sight until the pointer touches the window's top edge (`watchAutoHideHeader`).
+   */
+  autoHideHeader: boolean
+  /** Whether the hidden header is showing right now. Meaningless while `autoHideHeader` is off. */
+  headerRevealed: boolean
+  /** The sheet that hides the header (`headerHiddenCss`) while it is hidden, like the cover's. */
+  headerHiddenKey: string | null
+  headerHiddenGeneration: number
+  /** The pointer watcher while `autoHideHeader` is on and the window is focused. */
+  autoHideTimer: ReturnType<typeof setTimeout> | null
+  /**
+   * Whether the window is focused, from its own `focus` and `blur` events. Not `isFocused()`:
+   * just after the window came back to the front it could still answer false (measured
+   * 2026-11-11), and the watcher, which starts on that `focus`, stopped again at once.
+   */
+  windowFocused: boolean
+  /**
    * The chosen background picture as a `data:` URI, or '' — and its own small stylesheet, for
    * the same reason as the cover's: it is a few hundred kilobytes, inserted once per picture
    * rather than with every settings change.
@@ -175,8 +209,10 @@ const SC_HEADER_HEIGHT = 46
 
 /**
  * Window pixels reserved at the right end of SoundCloud's header: four 30px buttons and
- * their gaps (132px) plus a 12px breathing gap, so our controls sit close enough to
- * SoundCloud's own icons to read as part of the same bar.
+ * their gaps (132px) plus a 52px gap on their left. The whole overlay is a drag region except
+ * its buttons, so that gap is the window's grab handle between SoundCloud's last icon and ours:
+ * at 12px it was too narrow to find (the user, 2026-11-10), and with SoundCloud's header hidden
+ * until pointed at, it is the only bare bar left to drag by.
  *
  * The reservation and the overlay are deliberately the same number. If the reservation
  * were smaller, SoundCloud's own controls would slide underneath the transparent part of
@@ -186,7 +222,7 @@ const SC_HEADER_HEIGHT = 46
  * `applyContentCss`.
  */
 // macOS only needs the restore-bar button here; its native controls live on the left.
-const EMBEDDED_WIDTH = process.platform === 'darwin' ? 50 : 144
+const EMBEDDED_WIDTH = process.platform === 'darwin' ? 50 : 184
 
 /**
  * SoundCloud's play controls bar, and the strip we take at its right-hand end.
@@ -286,6 +322,14 @@ export function createShell(identity: Identity): Shell {
     coverKey: null,
     coverGeneration: 0,
     background: null,
+    glass: false,
+    glassTint: null,
+    autoHideHeader: false,
+    headerRevealed: false,
+    headerHiddenKey: null,
+    headerHiddenGeneration: 0,
+    autoHideTimer: null,
+    windowFocused: window.isFocused(),
     picture: '',
     pictureKey: null,
     pictureGeneration: 0,
@@ -351,7 +395,10 @@ export function createShell(identity: Identity): Shell {
     // The page-status view covers exactly what SoundCloud's page does.
     if (shell.status) fitBelowHeader(window, shell.status, strip)
     if (shell.embedded) {
-      shell.embedded.setVisible(embeddedShows)
+      // With the header hidden until pointed at, our window buttons hide and come back with it.
+      shell.embedded.setVisible(
+        embeddedShows && (!shell.autoHideHeader || shell.headerRevealed)
+      )
       fitOverSoundCloudHeader(shell, embeddedShows)
     }
     // Both overlays, every layout. Dropping this line once was a real regression: the player
@@ -382,10 +429,16 @@ export function createShell(identity: Identity): Shell {
       compactHeader !== shell.compactHeader ||
       fitHeader !== shell.fitHeader
     ) {
+      const embeddedFlipped = embeddedShows !== shell.embeddedShowing
       shell.embeddedShowing = embeddedShows
       shell.compactHeader = compactHeader
       shell.fitHeader = fitHeader
       void applyContentCss(shell, shell.fullWidthLayout, shell.theme)
+      // The header hides until pointed at only while it is the window's top bar. Decided here,
+      // where that is known: turning the setting on from the default runs before this layout
+      // has given SoundCloud's header the window, and the header stayed on screen, without its
+      // window buttons, until the pointer had touched the top edge once (2026-11-11).
+      if (embeddedFlipped) void applyHeaderHidden(shell)
     }
   }
   shell.layout = layout
@@ -621,8 +674,10 @@ async function applyContentCss(shell: Shell, fullWidth: boolean, theme: string):
   const compactHeader = shell.compactHeader
   const fitHeader = shell.fitHeader
 
-  // Read once: the theme's page CSS, and SoundCloud's palette for the mode it was made for.
+  // Read once: the theme's page CSS, and SoundCloud's palette for the mode it was made for —
+  // or dark on glass, which is always dark (`pageMode`).
   const selected = theme === NO_THEME ? null : findTheme(theme)
+  const mode = pageMode(shell.glass, selected?.mode ?? null)
 
   const key = await webContents
     .insertCSS(
@@ -630,10 +685,12 @@ async function applyContentCss(shell: Shell, fullWidth: boolean, theme: string):
         fullWidth,
         reserve,
         nativeControlsReserve: process.platform === 'darwin' ? Math.ceil(80 / zoom) : 0,
-        palette: selected?.mode ? soundCloudPaletteCss(selected.mode) : '',
+        palette: mode ? soundCloudPaletteCss(mode) : '',
         theme: selected ? contentCssOf(selected.sections) : '',
         minimalNavigation: shell.minimalNavigation ? minimalNavigationCss() : '',
         background: shell.background ? backgroundCss(shell.background) : '',
+        autoHideHeader: shell.autoHideHeader,
+        glass: shell.glass ? glassCss() : '',
         playerReserve,
         compactHeader,
         fitHeader
@@ -648,6 +705,26 @@ async function applyContentCss(shell: Shell, fullWidth: boolean, theme: string):
   }
   shell.reservationKey = key
   if (previous) await webContents.removeInsertedCSS(previous).catch(() => undefined)
+  // SoundCloud's newer pages live in an iframe that the sheet above never reaches.
+  sendFrameCss(shell)
+}
+
+/**
+ * The stylesheet for SoundCloud's `/n/` iframe (shared/frames.ts), to the page's preload, which
+ * puts it into that frame (`watchStyledFrame` in preload/content.ts). Sent after every change to
+ * the page's own sheet, and when the preload asks on load.
+ */
+export function sendFrameCss(shell: Shell): void {
+  const { webContents } = shell.content
+  if (webContents.isDestroyed()) return
+  const selected = shell.theme === NO_THEME ? null : findTheme(shell.theme)
+  const mode = pageMode(shell.glass, selected?.mode ?? null)
+  const css = buildFrameCss({
+    palette: mode ? soundCloudPaletteCss(mode) : '',
+    theme: selected ? contentCssOf(selected.sections) : '',
+    glass: shell.glass ? glassFrameCss() : ''
+  })
+  webContents.send(CH.frameCss, css)
 }
 
 /**
@@ -717,16 +794,27 @@ export function setContentAppearance(
     minimalNavigation: boolean
     background: BackgroundOptions | null
     playerButtons: boolean
+    /** The glass tint (0xAARRGGBB, `glassTint`) while the Glass setting is on, else null. */
+    glass: number | null
+    /** "Hide the top bar until you point at it". */
+    autoHideHeader: boolean
   }
 ): void {
+  setGlass(shell, options.glass)
+  setAutoHideHeader(shell, options.autoHideHeader)
   shell.fullWidthLayout = options.fullWidth
   shell.theme = options.theme
   shell.minimalNavigation = options.minimalNavigation
   shell.background = options.background
   shell.hideMenuBar = options.hideMenuBar
+  // After setGlass above: on glass, SoundCloud's bars are dark whatever its own setting says,
+  // so the window buttons and player buttons drawn on them must be too.
   setThemeMode(
     shell,
-    options.theme === NO_THEME ? null : (findTheme(options.theme)?.mode ?? null)
+    pageMode(
+      shell.glass,
+      options.theme === NO_THEME ? null : (findTheme(options.theme)?.mode ?? null)
+    )
   )
 
   // The embedded bar exists exactly while our own bar is hidden — it carries the only
@@ -735,6 +823,155 @@ export function setContentAppearance(
   setPlayerButtons(shell, options.playerButtons)
   shell.layout()
   void applyContentCss(shell, options.fullWidth, options.theme)
+}
+
+/**
+ * Put glass under the window, change its tint, or take it away — and make the window, our bar and
+ * SoundCloud's view see-through only while it is there. The page stylesheet follows `shell.glass`
+ * (`applyContentCss`, called right after this by `setContentAppearance`).
+ *
+ * The overlays and the settings panel are see-through already. The lyrics pane and the showcase
+ * are not, on purpose: they sit over SoundCloud's page, not over the glass.
+ */
+/**
+ * Rebuild the glass from scratch: the layer, the opt-in and the see-through background colours.
+ * Going full screen and back (the showcase does) leaves the window with neither — measured
+ * 2026-11-10: after the showcase closed, the glass was black and scrolling smeared stale frames
+ * over the page, since nothing valid was under it any more. A no-op while Glass is off.
+ */
+function refreshGlass(shell: Shell): void {
+  const tint = shell.glassTint
+  if (!shell.glass || tint === null || shell.window.isDestroyed()) return
+  setWindowGlass(shell.window, null)
+  shell.glass = setWindowGlass(shell.window, tint)
+  const colour = shell.glass
+    ? '#00000000'
+    : nativeTheme.shouldUseDarkColors
+      ? '#121212'
+      : '#f2f2f2'
+  shell.window.setBackgroundColor(colour)
+  for (const view of [shell.header, shell.content]) {
+    if (!view.webContents.isDestroyed()) {
+      view.setBackgroundColor(colour)
+      view.webContents.invalidate()
+    }
+  }
+}
+
+function setGlass(shell: Shell, tint: number | null): void {
+  if (tint === shell.glassTint && shell.glass === (tint !== null)) return
+  shell.glassTint = tint
+  shell.glass = setWindowGlass(shell.window, tint)
+  const colour = shell.glass
+    ? '#00000000'
+    : nativeTheme.shouldUseDarkColors
+      ? '#121212'
+      : '#f2f2f2'
+  shell.window.setBackgroundColor(colour)
+  for (const view of [shell.header, shell.content]) {
+    if (!view.webContents.isDestroyed()) view.setBackgroundColor(colour)
+  }
+}
+
+/*
+ * ── The top bar, hidden until pointed at ─────────────────────────────────────────────────────
+ *
+ * A browser's compact mode: SoundCloud's header (which is the window's top bar while ours is
+ * hidden) slides out of sight, and comes back when the pointer touches the top edge of the window.
+ * Main watches the pointer, because the window buttons are a view of their own that the page's
+ * CSS cannot reach; this is polling in our own process, never on SoundCloud's origin (§14), and
+ * only while the window is focused and the setting is on: the watcher stops when the window
+ * loses focus, minimised or in the tray included, and the window's `focus` starts it again
+ * (`resumeAutoHideHeader`). Keyboard focus inside the header keeps it on screen by CSS alone
+ * (`headerHiddenCss`), so typing in SoundCloud's search box never chases it away.
+ */
+
+/** How often the pointer is looked at while the header is hidden until pointed at. */
+const AUTO_HIDE_POLL_MS = 60
+
+function setAutoHideHeader(shell: Shell, on: boolean): void {
+  if (on === shell.autoHideHeader) return
+  shell.autoHideHeader = on
+  if (shell.autoHideTimer) clearTimeout(shell.autoHideTimer)
+  shell.autoHideTimer = null
+  // Hidden from the start; off, it is simply shown.
+  shell.headerRevealed = false
+  if (on && shell.windowFocused) watchAutoHideHeader(shell, HIDDEN)
+  void applyHeaderHidden(shell)
+  shell.layout()
+}
+
+/**
+ * Look at the pointer, act on `nextReveal`, and look again in a moment — a timeout that re-arms
+ * itself, never an interval (eslint holds main to that too), stopped by `setAutoHideHeader` and
+ * by the window's `blur` (`pauseAutoHideHeader`).
+ */
+function watchAutoHideHeader(shell: Shell, state: RevealState): void {
+  shell.autoHideTimer = setTimeout(() => {
+    shell.autoHideTimer = null
+    const { window } = shell
+    if (window.isDestroyed() || !shell.autoHideHeader) return
+    let next: RevealState
+    if (!shell.embeddedShowing) {
+      // While our own bar shows instead (a narrow window, a page status), nothing is hidden.
+      next = { revealed: true, awaySince: 0 }
+    } else {
+      const bounds = window.getContentBounds()
+      const pointer = screen.getCursorScreenPoint()
+      next = nextReveal(state, {
+        x: pointer.x - bounds.x,
+        y: pointer.y - bounds.y,
+        width: bounds.width,
+        headerHeight: SC_HEADER_HEIGHT * shell.content.webContents.getZoomFactor(),
+        focused: shell.windowFocused,
+        now: Date.now()
+      })
+    }
+    setHeaderRevealed(shell, next.revealed)
+    watchAutoHideHeader(shell, next)
+  }, AUTO_HIDE_POLL_MS)
+}
+
+/** The window came to the front: watch the pointer again, if the setting is on and nothing does. */
+function resumeAutoHideHeader(shell: Shell): void {
+  shell.windowFocused = true
+  if (shell.autoHideHeader && !shell.autoHideTimer) watchAutoHideHeader(shell, HIDDEN)
+}
+
+/**
+ * The window went to the back — another app in front, minimised, or in the tray: nobody is
+ * pointing at our top edge. Hide the header and stop looking until it is focused again.
+ */
+function pauseAutoHideHeader(shell: Shell): void {
+  shell.windowFocused = false
+  if (shell.autoHideTimer) clearTimeout(shell.autoHideTimer)
+  shell.autoHideTimer = null
+  if (shell.autoHideHeader) setHeaderRevealed(shell, false)
+}
+
+function setHeaderRevealed(shell: Shell, revealed: boolean): void {
+  if (revealed === shell.headerRevealed) return
+  shell.headerRevealed = revealed
+  void applyHeaderHidden(shell)
+  shell.layout()
+}
+
+/** Put the header-hiding sheet in, or take it out. Like `applyCover`: newest call wins. */
+async function applyHeaderHidden(shell: Shell): Promise<void> {
+  const { webContents } = shell.content
+  const generation = ++shell.headerHiddenGeneration
+  if (webContents.isDestroyed()) return
+  const previous = shell.headerHiddenKey
+  const hidden = shell.autoHideHeader && !shell.headerRevealed && shell.embeddedShowing
+  const key = hidden
+    ? await webContents.insertCSS(headerHiddenCss(shell.glass)).catch(() => null)
+    : null
+  if (generation !== shell.headerHiddenGeneration) {
+    if (key) void webContents.removeInsertedCSS(key).catch(() => undefined)
+    return
+  }
+  shell.headerHiddenKey = key
+  if (previous) await webContents.removeInsertedCSS(previous).catch(() => undefined)
 }
 
 function setEmbedded(shell: Shell, enabled: boolean): void {
@@ -1096,10 +1333,18 @@ function wireStateEvents(shell: Shell): void {
     void applyContentCss(shell, shell.fullWidthLayout, shell.theme)
     void applyCover(shell)
     void applyPicture(shell)
+    void applyHeaderHidden(shell)
   })
 
   content.webContents.on('did-navigate', sendNav)
   content.webContents.on('did-navigate-in-page', sendNav)
+  // SoundCloud's `/n/` iframe follows the page around: moving between pages inside the app
+  // navigates or replaces it, and a new document in it starts without our sheet (a track opened
+  // from a playlist stayed solid while the same track loaded directly was dressed, 2026-11-10).
+  // Every frame navigation, in-page ones included, has the preload dress it again. They are rare.
+  content.webContents.on('did-frame-navigate', () => sendFrameCss(shell))
+  content.webContents.on('did-navigate-in-page', () => sendFrameCss(shell))
+  content.webContents.on('did-frame-finish-load', () => sendFrameCss(shell))
   // Reload turns into Stop while the page loads, and back: the bar's only sign that anything
   // is happening, in a frameless window that has no spinner of its own.
   content.webContents.on('did-start-loading', sendNav)
@@ -1115,9 +1360,15 @@ function wireStateEvents(shell: Shell): void {
   // leaves the showcase too, rather than stranding it in a window.
   window.on('leave-full-screen', () => {
     if (shell.showcase) closeShowcase(shell)
+    // Once now and once after Windows has finished its own transition, which can undo the first.
+    refreshGlass(shell)
+    setTimeout(() => refreshGlass(shell), 300)
   })
+  window.on('enter-full-screen', () => refreshGlass(shell))
   window.on('focus', sendWindow)
+  window.on('focus', () => resumeAutoHideHeader(shell))
   window.on('blur', sendWindow)
+  window.on('blur', () => pauseAutoHideHeader(shell))
 
   // A failed load, a crash and a hang are page-status.ts's: it tells the user, not the console.
 }

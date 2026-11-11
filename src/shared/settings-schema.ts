@@ -70,11 +70,12 @@ type Base = {
    * A live line under the control saying whether the feature behind it is actually working,
    * when that can change without the setting changing. `discord`: whether the Discord app is
    * running and connected. `updates`: what the updater is doing, with its one button (check,
-   * download, restart to install, open the download page). A ticked box over a feature that
-   * cannot work right now is a control that silently does nothing — the line is how the panel
-   * says so.
+   * download, restart to install, open the download page). `glass`: why there is no glass under
+   * the window while the box is ticked (safe mode, hardware acceleration off, before Windows 11).
+   * A ticked box over a feature that cannot work right now is a control that silently does
+   * nothing — the line is how the panel says so.
    */
-  readonly statusFrom?: 'discord' | 'updates'
+  readonly statusFrom?: 'discord' | 'updates' | 'glass'
   /**
    * Drawn by its own component in the settings panel instead of as an ordinary row, because a
    * plain control would not do: `themes` is the theme list (Themes.svelte), `background` the
@@ -82,6 +83,13 @@ type Base = {
    * and defaulted from this schema like every other setting.
    */
   readonly drawnBy?: 'themes' | 'background'
+  /**
+   * The only platforms where the setting can do anything, when it is not all of them. The panel
+   * leaves the row out elsewhere rather than offer a switch that silently does nothing (the same
+   * honesty as `wired`); the value is still stored and defaulted everywhere, so a profile moved
+   * between machines keeps it.
+   */
+  readonly platforms?: readonly ('win32' | 'darwin' | 'linux')[]
 }
 
 export type SettingDef =
@@ -176,6 +184,17 @@ export const SETTINGS = {
       'header. Toggle it from the expand button at either end — the top bar, or ' +
       'SoundCloud’s header once it is hidden.'
   },
+  // A browser's compact mode (Zen's, the user's reference): main watches the pointer and slides
+  // SoundCloud's header in when it touches the top edge (`watchAutoHideHeader` in window.ts).
+  'appearance.autoHideHeader': {
+    kind: 'boolean',
+    default: false,
+    label: 'Hide the top bar until you point at it',
+    section: 'appearance',
+    help:
+      'SoundCloud’s header and the window buttons slide out of sight, and come back when the ' +
+      'pointer touches the top edge of the window. Hides the BetterSoundCloud bar as well.'
+  },
   'appearance.fullWidthLayout': {
     kind: 'boolean',
     default: true,
@@ -248,6 +267,36 @@ export const SETTINGS = {
     section: 'themes',
     drawnBy: 'background',
     help: 'How much of the picture shows: a faint tint at 5%, full colour at 100%.'
+  },
+
+  // A live blur of what is behind the window, under every view (native/window-glass, CLAUDE.md
+  // §17 "Glass"). Windows only: elsewhere the native layer does not exist.
+  'appearance.glass': {
+    kind: 'boolean',
+    default: false,
+    label: 'Glass',
+    section: 'themes',
+    platforms: ['win32'],
+    statusFrom: 'glass',
+    help:
+      'SoundCloud’s page and the bars around it sit on a live, blurred view of whatever is ' +
+      'behind the window, and stay that way when another window is in front. The glass is ' +
+      'dark, so SoundCloud shows in its dark colours while it is on. Works with every theme, ' +
+      'and takes the place of the Background; a theme’s own panels keep their colours. Needs ' +
+      'Windows 11 and hardware acceleration.'
+  },
+  // 35% by default, the darkest tint at which a light wallpaper still visibly shows through while
+  // SoundCloud's grey secondary text stays readable over a white one (checked by eye, 2026-11-10).
+  'appearance.glassTint': {
+    kind: 'number',
+    default: 35,
+    min: 0,
+    max: 90,
+    step: 5,
+    label: 'Glass tint',
+    section: 'themes',
+    platforms: ['win32'],
+    help: 'How dark the glass is: clear at 0%, nearly solid at 90%. Raise it over a bright desktop.'
   },
 
   // `string`, not `enum`, on purpose: `coerce` validates an enum against a fixed list, and a

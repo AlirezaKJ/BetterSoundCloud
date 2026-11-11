@@ -29,8 +29,9 @@
  * playing by watching the player bar. Both are observers; neither writes anything.
  */
 
-import { ipcRenderer } from 'electron'
+import { ipcRenderer, webFrame } from 'electron'
 import { detectPageTheme } from '@shared/page-theme'
+import { isStyledFrameUrl } from '@shared/frames'
 import type { PageTheme } from '@shared/page-theme'
 import type { PlayerReading } from '@shared/now-playing'
 import { PLAYER_BAR } from './soundcloud-selectors'
@@ -49,6 +50,8 @@ import { PLAYER_BAR } from './soundcloud-selectors'
  */
 const PAGE_THEME_CHANNEL = 'page:theme'
 const TRACK_UPDATE_CHANNEL = 'content:track-update'
+const FRAME_READY_CHANNEL = 'content:frame-ready'
+const FRAME_CSS_CHANNEL = 'content:frame-css'
 
 type Disposer = () => void
 
@@ -230,6 +233,7 @@ function readPlayer(bar: Element): PlayerReading {
 function start(): void {
   const themeAgain = watchPageTheme()
   const playerAgain = watchPlayer()
+  const frameAgain = watchStyledFrame()
 
   // Back from the back/forward cache. Main forgets what was playing whenever the page is
   // left, and each watcher only speaks on a change, so both say their current state once
@@ -240,6 +244,7 @@ function start(): void {
     try {
       themeAgain()
       playerAgain()
+      frameAgain()
     } catch {
       /* ignore */
     }
@@ -247,6 +252,61 @@ function start(): void {
 
   // Kept for the next in-page feature that needs an event rather than a mutation.
   void listen
+}
+
+/**
+ * Dress SoundCloud's `/n/` iframes in the stylesheet main sends for them: themes, the Background's
+ * ground and Glass. SoundCloud draws its newer pages (`iframe.webiIframe`, the signed-in track
+ * page) and some modules of its older ones (`iframe.webiEmbeddedModuleIframe`, Artist tools on
+ * Discover) as same-origin iframes at `https://soundcloud.com/n/…` (measured 2026-11-10), and
+ * `webContents.insertCSS` only reaches the top frame, so none of those showed any of it.
+ *
+ * `webFrame.getFrameForSelector` hands this (top-frame) preload an iframe's own `WebFrame`, and
+ * its `insertCSS` is the same mechanism main uses for the page: a user stylesheet, not a node, so
+ * rule 1 holds and nothing is visible to the page. Each iframe is addressed by its own `src`
+ * (the call returns the first match only), and only one whose `src` is such a page
+ * (shared/frames.ts) is ever touched. It is dressed each time it loads a document (a capturing
+ * `load` listener: iframe loads do not bubble, but they do pass the capture phase, which also
+ * catches iframes added later) and all of them again whenever main sends — main re-sends on every
+ * frame navigation, in-page ones included (window.ts). Each new sheet goes in before the old one
+ * comes out, as main does, so a theme change never flashes.
+ */
+function watchStyledFrame(): ReportAgain {
+  let css = ''
+  const dressed = new Map<HTMLIFrameElement, { frame: Electron.WebFrame; key: string }>()
+
+  const dress = (element: HTMLIFrameElement): void => {
+    const src = element.getAttribute('src') ?? ''
+    if (!element.isConnected || !isStyledFrameUrl(src)) return
+    const frame = webFrame.getFrameForSelector(`iframe[src="${CSS.escape(src)}"]`)
+    const previous = dressed.get(element)
+    dressed.delete(element)
+    if (frame && css) dressed.set(element, { frame, key: frame.insertCSS(css) })
+    // Removing from a document the frame has since replaced is a no-op.
+    if (previous) previous.frame.removeInsertedCSS(previous.key)
+  }
+
+  const dressAll = (): void => {
+    for (const element of [...dressed.keys()]) if (!element.isConnected) dressed.delete(element)
+    for (const element of document.querySelectorAll('iframe')) dress(element)
+  }
+
+  ipcRenderer.on(FRAME_CSS_CHANNEL, (_event, next: unknown) => {
+    try {
+      // Sent again on every frame navigation, so dress again even when unchanged: a frame may
+      // hold a new document that has none of it.
+      if (typeof next !== 'string') return
+      css = next
+      dressAll()
+    } catch {
+      /* ignore */
+    }
+  })
+  listen('load', (event) => {
+    if (event.target instanceof HTMLIFrameElement) dress(event.target)
+  })
+  ipcRenderer.send(FRAME_READY_CHANNEL)
+  return () => ipcRenderer.send(FRAME_READY_CHANNEL)
 }
 
 if (document.readyState === 'loading') {

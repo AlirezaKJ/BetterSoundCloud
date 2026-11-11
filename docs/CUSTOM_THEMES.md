@@ -68,6 +68,9 @@ target that does not exist is dropped. Sections can repeat; each is appended to 
 The window buttons drawn on SoundCloud's own bars are not `chrome`: they match the bar beneath them,
 so they follow your theme's `@mode`, or SoundCloud's own light or dark setting if it has none.
 
+The content section also applies inside SoundCloud's same-origin `/n/` pages. Selectors in
+that section should work when the frame's document is the page root.
+
 ## 4. Recolouring our windows
 
 Our windows are built entirely from design tokens (`src/renderer/tokens.css`). Set them in a
@@ -186,6 +189,13 @@ your page colour — the `background` you give `<body>` or `<html>` — so that 
 dark one deepens the picture, a light or grey one frosts it, as Glassmorphism's does. Everything else
 your theme paints stays solid and covers it, which is how a theme decides where the background
 shows; translucent panels, as in Glassmorphism, let it show through them.
+
+With **Glass** enabled on Windows 11, the desktop backdrop takes the place of the Background
+setting, including for themes marked `@background required`. Glass clears the page's large
+background surfaces and tints the bars. **Glass is dark**: while it is on, SoundCloud shows its
+dark palette whatever your theme's `@mode`, so a light theme's page rules land on dark colours.
+Give smaller panels their own surface colors when they need extra contrast, and check your theme
+with both light and dark desktops behind the window.
 
 ## 7. Rules
 
