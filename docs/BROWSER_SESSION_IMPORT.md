@@ -1,33 +1,33 @@
-# Import a SoundCloud browser session
+# Import your browser's SoundCloud sign-in
 
-BetterSoundCloud 0.8.0 opens Google sign-in in the system browser. That browser's
-SoundCloud session does not automatically reach the app. To use a session from Zen,
-Firefox, or Edge:
+Signing in to SoundCloud with Google, Apple or Facebook opens your web browser, and that sign-in
+stays in the browser. To use it in BetterSoundCloud:
 
-1. Sign in to SoundCloud in the browser.
-2. On `soundcloud.com`, use Cookie-Editor to export the current site's cookies as
-   an unencrypted JSON file.
-3. In BetterSoundCloud, open **Settings → Advanced → Import browser sign-in** and
-   choose the JSON file. The SoundCloud page reloads with the imported cookies.
+1. Sign in to SoundCloud in your browser (Chrome, Edge, Firefox, Zen, …).
+2. With soundcloud.com open, use the Cookie-Editor extension to export its cookies as JSON.
+3. In BetterSoundCloud, open **Settings → Advanced → Import browser sign-in**, choose the file,
+   and SoundCloud reloads, signed in.
+4. Delete the file. Anyone who has it can sign in as you.
 
-The JSON file contains live session credentials. Keep it private and remove it
-when you no longer need it. The app reads the chosen file once; it does not copy
-the file into the project or upload it. `cookies.json` is ignored by Git, but any
-other export filename should also be kept out of commits.
+**Only the sign-in is taken.** The export holds about fifty cookies: the sign-in, and SoundCloud's
+ads, analytics, consent and preferences, and its bot check's own cookie. The app takes the three
+that are the sign-in and leaves the rest in the file. The app's own cookies stay as they are,
+except its old sign-in, which the new one replaces.
 
-## Implementation
+If the row says the file has no sign-in in it, or that it has expired, sign in on soundcloud.com
+in your browser again and export a fresh copy.
 
-- The settings view requests an import through its preload bridge. Main accepts
-  the request only from that view and opens the system file picker; the renderer
-  never receives the path or cookie values.
-- `src/main/cookie-import.ts` parses a Cookie-Editor JSON array and imports only
-  `soundcloud.com` cookies and its subdomains into the content view's session.
-  Cookies for Google or other sites are ignored.
-- After a successful import, main reloads the SoundCloud content view. A canceled
-  picker changes nothing; malformed files and files without SoundCloud cookies
-  produce an error in the settings row.
+## How it works
 
-This transfers an existing SoundCloud session. It does not complete Google's
-OAuth flow inside BetterSoundCloud or guarantee that SoundCloud will accept the
-transferred session. If the session expires or is rejected, sign in again in the
-browser and import a fresh export.
+- The settings view only asks; main shows the file dialog and reads the file once. Neither the
+  path nor any cookie value reaches a renderer, and nothing is copied or kept.
+- `src/shared/sign-in-cookies.ts` decides what is taken: `oauth_token` (the sign-in itself,
+  required), `oauth_refresh_token` (which renews it) and `_soundcloud_session` (the sign-in
+  service's session, on `api-auth.soundcloud.com`, when the export has it), each matched by name
+  **and** host. These are the sign-in of a signed-in session, measured 2026-11-11 from cookie
+  names and flags only. Each is set host-only and secure, the way SoundCloud sets it, after the
+  app's old sign-in is removed, so two accounts never mix. Expired cookies are skipped.
+- Everything else stays behind on purpose. `datadome` above all: DataDome gives it to one client,
+  and the app presenting a browser's would be exactly the mismatch a bot check looks for.
+- This moves a sign-in that already exists. It does not sign in with Google inside the app, and
+  SoundCloud may still refuse a moved sign-in; then sign in again in the browser and export afresh.

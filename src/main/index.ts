@@ -118,8 +118,8 @@ import {
   setPluginSetting,
   startPlugins
 } from './plugins'
-import type { PluginsResult } from '@shared/ipc'
-import { importSoundCloudCookies } from './cookie-import'
+import type { BrowserSessionImport, PluginsResult } from '@shared/ipc'
+import { ImportProblem, importSignIn } from './cookie-import'
 
 let shell: Shell | null = null
 let quitting = false
@@ -870,30 +870,32 @@ function registerIpc(): void {
     return clearSiteData(shell)
   })
   ipcMain.handle(CH.browserSessionImport, (e) => {
-    if (!shell || !fromSettingsView(e)) return { count: 0, error: 'Not allowed.' }
+    if (!shell || !fromSettingsView(e)) return null
     return chooseAndImportBrowserSession(shell)
   })
 }
 
-async function chooseAndImportBrowserSession(
-  target: Shell
-): Promise<{ count: number; error: string }> {
+/**
+ * Settings → Advanced → "Import browser sign-in": main shows the file dialog, so no path and no
+ * cookie value ever reaches a renderer. Only the sign-in is taken (cookie-import.ts).
+ */
+async function chooseAndImportBrowserSession(target: Shell): Promise<BrowserSessionImport> {
   const { canceled, filePaths } = await dialog.showOpenDialog(target.window, {
-    title: 'Import SoundCloud session',
+    title: 'Import your SoundCloud sign-in',
     properties: ['openFile'],
-    filters: [{ name: 'Cookie-Editor JSON export', extensions: ['json'] }]
+    filters: [{ name: 'Cookie export (JSON)', extensions: ['json'] }]
   })
-  if (canceled || !filePaths[0]) return { count: 0, error: '' }
+  const file = filePaths[0]
+  if (canceled || !file) return { imported: 0, ignored: 0, error: '' }
   try {
-    const count = await importSoundCloudCookies(
-      target.content.webContents.session,
-      filePaths[0]
-    )
-    if (count === 0) return { count: 0, error: 'This file contains no SoundCloud cookies.' }
+    const result = await importSignIn(target.content.webContents.session, file)
     target.content.webContents.reload()
-    return { count, error: '' }
+    return { ...result, error: '' }
   } catch (error) {
-    return { count: 0, error: error instanceof Error ? error.message : String(error) }
+    // Our own problems are written for the settings row; anything else is the file system's.
+    const message = error instanceof ImportProblem ? error.message : 'Couldn’t read that file.'
+    if (!(error instanceof ImportProblem)) console.warn('[session-import] failed:', error)
+    return { imported: 0, ignored: 0, error: message }
   }
 }
 

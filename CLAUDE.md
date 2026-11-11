@@ -553,6 +553,14 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
   storage type and the HTTP cache of the content view's session, taken by reference (§10), then
   reopens the start page with the back/forward history dropped. It never opens SoundCloud while
   Widevine is not ready. Both ask first, inside their row, and both are the settings view's only.
+- **"Import browser sign-in"** (Settings → Advanced, `BrowserSession.svelte`) brings a browser's
+  SoundCloud sign-in into the content view's session from a cookie export the user picks in main's
+  own dialog (`importSignIn`, main/cookie-import.ts); no path or value reaches a renderer, and
+  nothing is kept. **It takes the sign-in and nothing else**: `readSignInCookies`
+  (shared/sign-in-cookies.ts) picks `oauth_token`, `oauth_refresh_token` and
+  `_soundcloud_session` by name and host, sets them host-only as SoundCloud does, after removing
+  the app's old ones. Never widen it to the whole file: `datadome` is issued to one client, and
+  a browser's in the app is the mismatch the bot check looks for.
 
 ---
 

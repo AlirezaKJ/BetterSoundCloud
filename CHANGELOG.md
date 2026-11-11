@@ -4,7 +4,9 @@ Each version's entry is also its release notes on GitHub.
 
 ## Unreleased
 
-- Added a Settings import for an existing SoundCloud browser sign-in.
+- **Import browser sign-in** (Settings → Advanced): signed in to SoundCloud with Google in your
+  browser? Export soundcloud.com's cookies with Cookie-Editor and choose the file; the app takes
+  the sign-in from it and nothing else.
 - Added an optional Windows 11 Glass backdrop that stays blurred when the window loses focus.
   Themes also apply to SoundCloud pages rendered in its same-origin `/n/` frame.
 - Added an Appearance setting to hide the top bar and reveal it from the window's top edge.

@@ -141,6 +141,9 @@ export type WindowState = {
 }
 
 /** Shape exposed on `window.bsc` in our own chrome renderers. Never in SoundCloud's page. */
+/** What "Import browser sign-in" did (`importBrowserSession`). */
+export type BrowserSessionImport = { imported: number; ignored: number; error: string }
+
 export type ChromeApi = {
   readonly platform: string
   minimize(): void
@@ -250,8 +253,13 @@ export type ChromeApi = {
    * SoundCloud again. Answers whether the clearing worked. The settings view only.
    */
   clearSiteData(): Promise<boolean>
-  /** Choose a browser cookie export, import SoundCloud cookies, and reload the page. */
-  importBrowserSession(): Promise<{ count: number; error: string }>
+  /**
+   * Main shows a file dialog for a browser's cookie export, takes only SoundCloud's sign-in from
+   * it, and reloads SoundCloud. `imported` sign-in cookies were set, `ignored` others in the file
+   * were left alone; `error` is a sentence for the row, '' when it worked or was cancelled. Null
+   * when main refused the sender. The settings view only.
+   */
+  importBrowserSession(): Promise<BrowserSessionImport | null>
 
   /**
    * What the updater is doing: idle, checking, up to date, a version available, downloading (with

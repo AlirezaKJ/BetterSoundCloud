@@ -176,10 +176,10 @@ scrolling has replaced, and the shuffle fix. The reasons are in the project's
   activity. This is the other bug 0.8.0 set out to fix, and it is not fixed yet. See
   [what to try](#soundcloud-keeps-blocking-you-reset-your-profile).
 - **Signing in with Google, Apple or Facebook does not work inside the app yet.** Those open in
-  your web browser, and the app stays signed out. You can sign in there and use
-  **Settings → Advanced → Import browser sign-in** with a SoundCloud cookie export;
-  see the [browser session import guide](docs/BROWSER_SESSION_IMPORT.md). Email sign-in
-  inside the app also works.
+  your web browser, and the app stays signed out. Sign in there, then bring that sign-in into
+  the app with **Settings → Advanced → Import browser sign-in** and a cookie export
+  ([how](docs/BROWSER_SESSION_IMPORT.md)): it takes the sign-in from the file and nothing else.
+  Email sign-in inside the app also works.
 - **Casting to a Chromecast does not work** in the app: the part of Chrome that casting needs is not
   part of the app.
 
