@@ -110,7 +110,7 @@
   <p class="intro">{SETTINGS['appearance.background'].help}</p>
   {#if glassOn}
     <p class="intro" role="status" data-bsc-background-glass>
-      Off while Glass is on: the glass is the background. Turn Glass off, below, to use one.
+      Off while Glass is on: the glass is the background. Turn Glass off, above, to use one.
     </p>
   {/if}
 
@@ -143,7 +143,8 @@
               <img src={thumbnail} alt="Your background" />
             {/if}
             <div>
-              <button type="button" disabled={choosing} onclick={choosePicture}>
+              <!-- Not while Glass is on: choosing also selects the picture, which would not show. -->
+              <button type="button" disabled={choosing || glassOn} onclick={choosePicture}>
                 {thumbnail ? 'Choose another picture…' : 'Choose a picture…'}
               </button>
               {#if !thumbnail}<p class="help">No picture chosen yet.</p>{/if}

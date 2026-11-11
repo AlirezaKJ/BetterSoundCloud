@@ -70,11 +70,12 @@ type Base = {
    * A live line under the control saying whether the feature behind it is actually working,
    * when that can change without the setting changing. `discord`: whether the Discord app is
    * running and connected. `updates`: what the updater is doing, with its one button (check,
-   * download, restart to install, open the download page). A ticked box over a feature that
-   * cannot work right now is a control that silently does nothing — the line is how the panel
-   * says so.
+   * download, restart to install, open the download page). `glass`: why there is no glass under
+   * the window while the box is ticked (safe mode, hardware acceleration off, before Windows 11).
+   * A ticked box over a feature that cannot work right now is a control that silently does
+   * nothing — the line is how the panel says so.
    */
-  readonly statusFrom?: 'discord' | 'updates'
+  readonly statusFrom?: 'discord' | 'updates' | 'glass'
   /**
    * Drawn by its own component in the settings panel instead of as an ordinary row, because a
    * plain control would not do: `themes` is the theme list (Themes.svelte), `background` the
@@ -276,11 +277,13 @@ export const SETTINGS = {
     label: 'Glass',
     section: 'themes',
     platforms: ['win32'],
+    statusFrom: 'glass',
     help:
       'SoundCloud’s page and the bars around it sit on a live, blurred view of whatever is ' +
-      'behind the window, and stay that way when another window is in front. Works with every ' +
-      'theme, and takes the place of the Background while it is on; a theme’s own panels keep ' +
-      'their colours. Needs Windows 11 and hardware acceleration.'
+      'behind the window, and stay that way when another window is in front. The glass is ' +
+      'dark, so SoundCloud shows in its dark colours while it is on. Works with every theme, ' +
+      'and takes the place of the Background; a theme’s own panels keep their colours. Needs ' +
+      'Windows 11 and hardware acceleration.'
   },
   // 35% by default, the darkest tint at which a light wallpaper still visibly shows through while
   // SoundCloud's grey secondary text stays readable over a white one (checked by eye, 2026-11-10).

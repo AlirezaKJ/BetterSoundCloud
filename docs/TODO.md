@@ -466,6 +466,14 @@ Nothing publishes today. The updater, the signing decisions and the Linux verifi
       Four dangling pointers, each in a file a contributor or theme author will read: `ci.yml:44` names `scripts/sign-vmp.js` (the file is `vmp-sign.js`); ~~`tokens.css:6` points theme authors at `docs/CUSTOM_THEMES.md`, which does not exist; `README.md:104` claims `resources/` is seeded into userData on first launch~~ (both fixed 2026-10-27); ~~`README.md:41` calls `npm run check` "tsc (both projects)" when it runs three~~ (fixed 2026-10-29: that table is now in CONTRIBUTING.md and says four, which is what it runs today). Also delete the 13 lines of commented-out placeholder in `FUNDING.yml`, and correct the roadmap note that still names `com.akj.bsc` when the shipped appId is `com.alirezakj.bettersoundcloud`.
       `source: infrastructure` · `evidence: .github/workflows/ci.yml:44; src/renderer/tokens.css:6; README.md:41, :104; .github/FUNDING.yml; electron-builder.yml:1` · `effort: S`
 
+- [x] **Hide the top bar until you point at it** — PR #126 (Jeter361), reviewed and fixed 2026-11-11
+      `appearance.autoHideHeader`: SoundCloud's header and the window buttons slide away and come back when the pointer touches the window's top edge, like a browser's compact mode. Main watches the pointer every 60 ms. Fixed in review, each checked in the packed build: turning it on from the default left the header showing, without its window buttons, until the pointer had touched the edge once; the watcher ran for as long as the setting was on, minimised and in the tray included (it now runs only between the window's `focus` and `blur`); and the header slid away while typing in SoundCloud's search box (it now stays while the keyboard is in it). The PR also widened the window buttons' strip on SoundCloud's header from 144 to 184px for everyone on Windows, to leave a grab handle; compared with `main` at five widths, only the search box gets shorter.
+      `source: PR #126` · `evidence: src/main/window.ts (watchAutoHideHeader, pauseAutoHideHeader); src/main/content-css.ts (headerHiddenCss)` · `effort: done`
+
+- [ ] **Hidden header: give its empty strip to the page** — decided 2026-11-11, fix later
+      The maintainer wants it fixed. Hidden, the header keeps its 46px box (a transform, so nothing reflows on each reveal), so the page gains no room: an empty strip stays where the header was, which is most of the point of hiding it. Do what a browser's compact mode does: while the setting is on, the page starts at the window's top edge, and the header, when pointed at, slides in **over** the page rather than pushing it down, so nothing reflows on a reveal either. Needs SoundCloud's own top offset measured (what holds its content 46px down), the page's sticky parts checked (the hero and the playlist header stick under the header), and Glass's top cut (`GLASS_CLIP`) re-checked with it: today `headerHiddenCss` lifts the cut while hidden, and it must come back only over the revealed header.
+      `source: review of PR #126, 2026-11-11` · `evidence: src/main/content-css.ts (headerHiddenCss)` · `effort: S`
+
 ---
 
 ## Milestone 7 — Phase 1: AudioMonitor and the in-page contract
@@ -726,6 +734,14 @@ Everything in Phases 3, 5 and 6 depends on this. It is also the first code to go
   **Original scope:**
   `.prettierignore` lists `resources/themes/` but not `resources/plugins/`, and ESLint ignores only `out/`, `release/`, `node_modules/` and `*.min.js`. So the first bundled plugin fails `npm run check` against a plugin API no tsconfig knows about, with the `setInterval` rule firing a message about preload code. Either lint them with a dedicated config that _encodes the tier rules_ — the better answer, since the repo guard already wants CI to reject forbidden patterns in exactly these files — or exempt them and enforce at load time. What must not happen is discovering it as a red CI run and fixing it by adding an ignore.
   `source: infrastructure` · `evidence: .prettierignore; eslint.config.js:8, :31-39, :66-74; resources/plugins/.gitkeep` · `effort: S`
+
+- [x] **Glass** — PR #126 (Jeter361), kept by the maintainer 2026-11-11, with fixes
+      `appearance.glass` and `appearance.glassTint` (Windows 11): a host backdrop brush drawn under the window by a native addon (`native/window-glass`, Node-API, built by `npm run native:build`, required by the release build, unpacked from the asar), so the blur stays live with another window in front, where Electron's own acrylic and mica went flat. Its page CSS clears SoundCloud's large surfaces and cuts the page off under the bars. Kept knowing the cost: C++, a Visual Studio build step and a release-workflow step. Fixed in review, each checked in the packed build: with Appearance on Light our bar's title and buttons were all but invisible on the glass, and SoundCloud's own light mode would have put dark text on it, so Glass is now dark throughout (`pageMode`); the switch said nothing when there was no glass, so it has a status line (`describeGlassStatus`); and its rows sat under the whole theme list, so they now sit above the Background they replace.
+      `source: PR #126` · `evidence: src/shared/glass.ts; src/main/window-glass.ts; native/window-glass/window_glass.cc` · `effort: done`
+
+- [ ] **Glass: see the status line on Windows 10, and its frame theming signed in**
+      Two things the review could not check on this machine. On Windows 10 the native opt-in should be refused and the line read "Not showing. Windows didn't draw it. Glass needs Windows 11." Signed in, a theme and Glass should reach SoundCloud's newer pages, which it draws in a same-origin `/n/` frame (a track's page): the PR styles that frame through Electron's frame API from the content preload, never its DOM.
+      `source: review of PR #126, 2026-11-11` · `evidence: src/shared/glass.ts; src/preload/content.ts (watchStyledFrame)` · `effort: S`
 
 ---
 

@@ -592,15 +592,23 @@ export function buildFrameCss({
  * cover's, so a reveal swaps a few lines instead of the whole page sheet. The header keeps its box
  * (46 CSS px, §4); only a transform moves it, so nothing in the page reflows. With Glass on, the
  * page is no longer cut off at the top (`GLASS_CLIP`), so it runs up to the window's edge.
+ *
+ * **Except while the keyboard is in it** (`:focus-visible` inside the header): main only watches
+ * the pointer, so typing in SoundCloud's search box and moving the pointer down to the results
+ * slid the box away mid-word, and Tab walked through links nobody could see. `:focus-visible`,
+ * not `:focus-within`, so a link clicked with the mouse, which keeps focus after SoundCloud moves
+ * to its page, does not pin the header on screen. Pure CSS: the page tells us nothing.
  */
 export function headerHiddenCss(glass: boolean): string {
   const rules = [
-    'html body #app > header.header { transform: translateY(-100%) !important; opacity: 0 !important; pointer-events: none !important; }'
+    'html body #app > header.header:not(:has(:focus-visible)) { transform: translateY(-100%) !important; opacity: 0 !important; pointer-events: none !important; }'
   ]
   if (glass) {
+    // While the keyboard brings the header back, the page is cut off under it again.
+    const away = 'html:not(:has(#app > header.header :focus-visible))'
     rules.push(
-      'html body #app > .l-container.l-content { mask-image: none !important; }',
-      'html:has(.playControls.m-visible) body #app > .l-container.l-content { mask-image: linear-gradient(to bottom, #000 calc(100% - var(--play-controls-height, 48px)), transparent calc(100% - var(--play-controls-height, 48px))) !important; }'
+      `${away} body #app > .l-container.l-content { mask-image: none !important; }`,
+      `${away}:has(.playControls.m-visible) body #app > .l-container.l-content { mask-image: linear-gradient(to bottom, #000 calc(100% - var(--play-controls-height, 48px)), transparent calc(100% - var(--play-controls-height, 48px))) !important; }`
     )
   }
   return rules.join('\n')
@@ -610,10 +618,34 @@ export function headerHiddenCss(glass: boolean): string {
  * Our 32px bar on glass: its page cleared and its strip given the solid colour of SoundCloud's
  * header beside it (`glassCss`), so the two read as one bar. Goes after the theme's own sheet for
  * the header (it is appended to it), so it wins over a theme's `--bsc-header-bg`.
+ *
+ * **Glass is dark, so the bar's ink is too.** The bar follows the app's Appearance, and with it
+ * on Light the title and buttons were dark grey on the near-black glass, all but invisible
+ * (2026-11-11). Under a light scheme the inks become tokens.css's dark ones (`GLASS_BAR_INKS`,
+ * held equal to that file by a test). Not under forced colours, where the system's own win.
  */
 export function glassHeaderCss(): string {
-  return `:root { --bsc-page-bg: transparent; --bsc-header-bg: ${GLASS_BAR}; }`
+  const inks = Object.entries(GLASS_BAR_INKS)
+    .map(([token, value]) => `${token}: ${value};`)
+    .join(' ')
+  return `:root { --bsc-page-bg: transparent; --bsc-header-bg: ${GLASS_BAR}; }
+@media (prefers-color-scheme: light) and (forced-colors: none) {
+  :root { ${inks} }
+}`
 }
+
+/**
+ * The ink tokens our bar draws with, at tokens.css's dark-mode values: what the bar wears on glass
+ * while the app is Light. The accent is left alone: its light value, #e64d00, still clears 3:1 on
+ * the glass.
+ */
+export const GLASS_BAR_INKS = {
+  '--bsc-text-primary': '#f2f2f2',
+  '--bsc-text-secondary': '#a0a0a0',
+  '--bsc-text-disabled': '#5c5c5c',
+  '--bsc-bg-hover': 'rgb(255 255 255 / 10%)',
+  '--bsc-border': 'rgb(255 255 255 / 14%)'
+} as const
 
 /**
  * The sheet that carries the chosen picture as `--bsc-picture`: a JPEG main made itself, as a

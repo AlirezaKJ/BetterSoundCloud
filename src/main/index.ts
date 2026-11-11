@@ -47,6 +47,7 @@ import type { BackgroundOptions } from './content-css'
 import { glassHeaderCss } from './content-css'
 import { glassAvailable } from './window-glass'
 import { glassTint } from '@shared/glass'
+import type { GlassStatus } from '@shared/glass'
 import { backgroundSource, chromeCssFor } from '@shared/themes'
 import type { ThemeSummary } from '@shared/themes'
 import {
@@ -686,6 +687,8 @@ function registerIpc(): void {
 
   // So the settings panel can say safe mode is on, rather than show settings that are not in force.
   ipcMain.handle(CH.safeModeGet, (e) => (fromSettingsUi(e) ? SAFE_MODE : null))
+  // And whether Glass is really under the window, so a ticked box never silently does nothing.
+  ipcMain.handle(CH.glassStatusGet, (e) => (fromSettingsUi(e) ? glassStatus() : null))
   // And whether this launch went on without Widevine, so skipping tracks are not a surprise.
   ipcMain.handle(CH.widevineSkippedGet, (e) =>
     fromSettingsUi(e) ? widevine.state === 'skipped' : null
@@ -1098,12 +1101,26 @@ function glassWanted(): boolean {
   return HARDWARE_ACCELERATION && settings.get('appearance.glass') && glassAvailable()
 }
 
+/** Whether glass is under the window, or the first reason it is not (`describeGlassStatus`). */
+function glassStatus(): GlassStatus {
+  if (!settings.get('appearance.glass')) return 'off'
+  if (SAFE_MODE) return 'safe-mode'
+  if (!HARDWARE_ACCELERATION) {
+    // Chromium reads the switch once, at launch: turned back on, it waits for a restart.
+    return settings.get('advanced.hardwareAcceleration') ? 'restart' : 'no-acceleration'
+  }
+  if (!glassAvailable()) return 'not-built'
+  return shell?.glass ? 'on' : 'refused'
+}
+
 /** The selected theme's `chrome` sections, into every view of ours that takes them. */
 function applyChromeTheme(): void {
   const theme = findTheme(selectedTheme())
   // On glass, our bar is cleared to match SoundCloud's header beside it. Appended after the
-  // theme's own sheet for the bar, so it wins over a theme's `--bsc-header-bg`.
-  const glass = glassWanted()
+  // theme's own sheet for the bar, so it wins over a theme's `--bsc-header-bg`. Only while glass
+  // is really there (`shell.glass`), not merely wanted: where Windows refuses it, a cleared bar
+  // showed the window's flat colour through a dark wash.
+  const glass = shell?.glass ?? false
   setChromeTheme((kind) =>
     [
       theme ? chromeCssFor(theme.sections, kind) : '',
@@ -1124,9 +1141,10 @@ function applyLiveSettings(): void {
   // App-wide too. Before the updater starts this only records the choice.
   setAutoUpdate(settings.get('general.checkForUpdates'))
 
-  applyChromeTheme()
-
-  if (!shell) return
+  if (!shell) {
+    applyChromeTheme()
+    return
+  }
   shell.content.webContents.setZoomFactor(settings.get('appearance.zoomFactor') / 100)
   nativeTheme.themeSource = settings.get('appearance.colorScheme')
   applyBlocking()
@@ -1146,6 +1164,8 @@ function applyLiveSettings(): void {
   })
   // The chosen picture travels in its own sheet, and only while it is the background.
   setContentPicture(shell, currentBackground() === 'picture' ? pictureDataUri() : '')
+  // After setContentAppearance, which is what puts the glass under the window or takes it away.
+  applyChromeTheme()
 }
 
 /** What the Background shows: the setting, unless the selected theme needs one (`@background`). */

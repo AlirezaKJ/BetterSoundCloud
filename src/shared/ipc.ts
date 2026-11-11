@@ -9,6 +9,7 @@ import type { PluginView } from './plugins'
 import type { LyricsState } from './lyrics'
 import type { UpdateAction, UpdateStatus } from './updates'
 import type { AudioConfig, AudioReport } from './audio'
+import type { GlassStatus } from './glass'
 
 /** Every IPC channel name, in one place. Strings are never written inline. */
 export const CH = {
@@ -75,6 +76,8 @@ export const CH = {
   safeModeGet: 'app:safe-mode-get',
   // settings renderer -> main. Whether this launch went on without Widevine.
   widevineSkippedGet: 'app:widevine-skipped-get',
+  // settings renderer -> main. Whether there is glass under the window, and why not.
+  glassStatusGet: 'app:glass-status-get',
 
   // settings renderer -> main. The two buttons under Advanced: settings back to their defaults,
   // and SoundCloud's cookies, storage and cache cleared (which signs the user out).
@@ -233,6 +236,13 @@ export type ChromeApi = {
    * Fixed for the life of the app, so read once.
    */
   getSafeMode(): Promise<boolean>
+
+  /**
+   * Whether Glass is under the window right now, and if not, why not (`GlassStatus`), for the
+   * line under the setting. It changes only when settings do, so the line asks again on each
+   * settings change rather than being pushed.
+   */
+  getGlassStatus(): Promise<GlassStatus>
 
   /**
    * Whether the user pressed "Continue without Widevine" on "Couldn’t set up playback" this

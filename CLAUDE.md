@@ -66,7 +66,8 @@ CLAUDE.md is worse than none, because it gets trusted.
   which drops the variable and, in an AppImage, starts the new copy from a system shell — Electron's
   relaunch helper runs off the AppImage's mount, which vanishes when the app exits (measured).
 - **`--safe-mode`** (`SAFE_MODE` in `index.ts`) turns off, for that launch only, hardware
-  acceleration, both ad blockers (the engine is never loaded), the theme and the audio engine
+  acceleration, both ad blockers (the engine is never loaded), the theme, Glass (which needs
+  acceleration; its status line says so) and the audio engine
   (§21: a plugin's filters are refused, and its status line says why). It writes no setting, and
   the settings panel says it is on (`getSafeMode`). Read the theme through `selectedTheme()`, never
   `settings.get('appearance.theme')`, or safe mode stops covering it. Plugins still run otherwise:
@@ -197,7 +198,14 @@ Rules that hold this together:
 
 - **Header auto-hide uses the embedded controls.** `layout()` owns their visibility. A
   main-process pointer watcher reveals the header at the top edge. The page stylesheet slides the
-  header away with a transform and keeps its measured height.
+  header away with a transform and keeps its measured height. Three rules, each from a bug found
+  in review (2026-11-11): the hiding sheet is re-decided in `layout()` whenever `embeddedShowing`
+  flips, since turning the setting on runs before the layout that gives SoundCloud's header the
+  window; the watcher runs only while the window is focused, started by the window's `focus` and
+  stopped by its `blur` (`shell.windowFocused`, never `isFocused()`, which could still answer
+  false just after `focus`); and the header stays while the keyboard is in it
+  (`:has(:focus-visible)` in `headerHiddenCss`), so typing in SoundCloud's search box never
+  chases it away.
 
 - **`layout()` is the only place that decides where views sit** and whether our 32px bar shows.
   Any new view must be positioned from `layout()`. `window.test.ts` scans the source to pin this.
@@ -288,6 +296,7 @@ views:
 | `pluginAction`, `openPluginsFolder`                   | send           | `fromSettingsUi`                                                                           |
 | `onPluginsChanged`                                    | subscribe      | pushed to the settings view while it is open (`broadcastPlugins`)                          |
 | `getSafeMode`                                         | invoke         | `fromSettingsUi`; `true` when started with `--safe-mode`                                   |
+| `getGlassStatus`                                      | invoke         | `fromSettingsUi`; `GlassStatus`: whether Glass is under the window, or why not             |
 | (no method) `CH.focusArrived`                         | pushed         | to the view F6 moved focus into; the chrome preload itself puts focus on a control         |
 | `getWidevineSkipped`                                  | invoke         | `fromSettingsUi`; `true` after "Continue without Widevine", until Widevine arrives         |
 | `resetSettings`, `clearSiteData`                      | invoke         | the settings view only (`fromSettingsView`); each answers whether it worked                |
@@ -538,7 +547,8 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
   `describePresenceStatus`). Use it wherever a ticked box can be true while the feature cannot
   work — the panel must not show a control that silently does nothing. `statusFrom: 'updates'`
   is the updater's line, with its one button (`UpdateStatus.svelte`, words from
-  `describeUpdateStatus`, §20).
+  `describeUpdateStatus`, §20). `statusFrom: 'glass'` says why there is no glass while the box is
+  ticked (`GlassStatus.svelte`, words from `describeGlassStatus`, §17), and nothing otherwise.
 - Main reads with `settings.get(key)` / `getAll()`; writes go through `settings.set`, which
   coerces. Live effects are applied in `applyLiveSettings()` in `index.ts`.
 - Renderers read with `getSettings()` + `onSettingsChanged()` and write with `setSetting()`, which
@@ -872,6 +882,23 @@ background colors. Glass takes precedence over the saved Background setting.
 use a darker tint, and the page is clipped at the bars to keep scrolling content from showing
 through. `glassFrameCss()` clears the same surfaces inside the `/n/` frame. Bar and layout
 rules belong to the top-level page.
+
+- **Kept by the maintainer, 2026-11-11**, native addon and all (PR #126, Jeter361). It is an
+  opt-in look, off by default; DESIGN.md's "no glassmorphism" stays the rule for our own chrome.
+- **Glass is dark.** Its tint is a near-black, so while it is on the page is SoundCloud's dark
+  palette whatever SoundCloud's own setting or the theme's `@mode` says (`pageMode` in
+  shared/glass.ts, used for the palette sheet, the `/n/` frame and `setThemeMode`, so the
+  overlays on SoundCloud's bars draw for a dark bar too). Our bar gets tokens.css's dark inks
+  under a light scheme (`GLASS_BAR_INKS`, pinned equal to tokens.css by a test): with Appearance
+  on Light, its title and buttons were all but invisible on the glass.
+- **Our bar is cleared only while glass is really there** (`shell.glass`), not merely wanted, so
+  `applyChromeTheme()` runs after `setContentAppearance` in `applyLiveSettings`.
+- **The switch says when there is no glass** (`statusFrom: 'glass'`, `getGlassStatus`,
+  `glassStatus()` in index.ts): safe mode, hardware acceleration off or waiting for a restart, a
+  build without the addon, or Windows refusing it (before Windows 11). Not yet seen on a real
+  Windows 10 machine.
+- In Settings, Glass and its tint sit with Minimal navigation, above the Background they replace
+  (DESIGN.md, "Theme rows").
 
 ---
 

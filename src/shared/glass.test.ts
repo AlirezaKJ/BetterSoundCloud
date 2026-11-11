@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { GLASS_PLATFORMS, glassTint } from './glass'
+import { GLASS_PLATFORMS, describeGlassStatus, glassTint, pageMode } from './glass'
+import type { GlassStatus } from './glass'
 import { isStyledFrameUrl } from './frames'
 import { HIDDEN, HIDE_DELAY_MS, nextReveal } from './auto-hide'
 import type { RevealInput } from './auto-hide'
@@ -30,6 +31,48 @@ describe('the Glass settings', () => {
       const def = SETTINGS[key]
       expect('platforms' in def && def.platforms).toEqual(['win32'])
     }
+  })
+
+  it('say under the switch when there is no glass, so a ticked box never silently does nothing', () => {
+    const def = SETTINGS['appearance.glass']
+    expect('statusFrom' in def && def.statusFrom).toBe('glass')
+  })
+})
+
+describe('pageMode', () => {
+  it('is dark on glass, whatever SoundCloud or the theme says: the glass is a near-black', () => {
+    expect(pageMode(true, null)).toBe('dark')
+    expect(pageMode(true, 'light')).toBe('dark')
+    expect(pageMode(true, 'dark')).toBe('dark')
+  })
+
+  it('is the theme’s @mode without glass, or null to follow SoundCloud', () => {
+    expect(pageMode(false, 'light')).toBe('light')
+    expect(pageMode(false, null)).toBeNull()
+  })
+})
+
+describe('describeGlassStatus', () => {
+  it('says nothing when the box already tells the truth: off, or glass on screen', () => {
+    expect(describeGlassStatus('off')).toBeNull()
+    expect(describeGlassStatus('on')).toBeNull()
+  })
+
+  it('names the reason, and what to do, whenever the box is ticked and there is no glass', () => {
+    const reasons: GlassStatus[] = [
+      'safe-mode',
+      'no-acceleration',
+      'restart',
+      'not-built',
+      'refused'
+    ]
+    const lines = reasons.map((status) => describeGlassStatus(status))
+    for (const line of lines) {
+      expect(line?.lead).toMatch(/^\S+( \S+){0,3}$/) // the state in a few words
+      expect(line?.detail).toMatch(/\.$/)
+    }
+    expect(describeGlassStatus('no-acceleration')?.detail).toContain('Advanced')
+    expect(describeGlassStatus('refused')?.detail).toContain('Windows 11')
   })
 })
 

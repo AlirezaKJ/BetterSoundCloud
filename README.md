@@ -2,7 +2,7 @@
 
 [![Downloads](https://img.shields.io/github/downloads/AlirezaKJ/BetterSoundCloud/total.svg)](https://github.com/AlirezaKJ/BetterSoundCloud/releases)
 
-SoundCloud on your desktop, in a window of its own. BetterSoundCloud runs SoundCloud's own web player and adds what a browser tab can't: synced lyrics, Discord Rich Presence, Last.fm scrobbling, an equaliser, a pitch changer, themes, plugins, and skipping the audio ads between tracks.
+SoundCloud on your desktop, in a window of its own. BetterSoundCloud runs SoundCloud's own web player and adds what a browser tab can't: synced lyrics, Discord Rich Presence, Last.fm scrobbling, an equaliser, a pitch changer, themes, a glass look on Windows 11, plugins, and skipping the audio ads between tracks.
 
 It is not made by SoundCloud.
 
@@ -90,13 +90,6 @@ rm -rf ~/.config/bettersoundcloud                           # its sign-in and se
 Mind the capitals. `~/.config/bettersoundcloud`, all lowercase, is 0.7.x's;
 `~/.config/BetterSoundCloud` belongs to 0.8.0, so keep that one. If the install script also
 installed Node.js for you (in `~/.nvm`), remove it only if nothing else of yours uses it.
-
-## Glass and top bar options in development
-
-- In Themes, turn on **Glass** to blur what's behind the window and adjust **Glass tint** for
-  readability. Glass requires Windows 11, hardware acceleration and a build with the native addon.
-- In Appearance, turn on **Hide the top bar until you point at it** for a borderless layout.
-  Move the pointer to the top edge to reveal SoundCloud's header and the window buttons.
 
 ## What's new in 0.8.0
 
@@ -198,7 +191,7 @@ with `--safe-mode`:
 | Linux (AppImage)    | `./BetterSoundCloud-<version>-linux-x86_64.AppImage --safe-mode`                                   |
 
 For that launch only, safe mode turns off hardware acceleration (the usual cause of a blank
-window), ad blocking, your theme, the equaliser and pitch. It changes no setting, and Settings says it is
+window), ad blocking, your theme, Glass, the equaliser and pitch. It changes no setting, and Settings says it is
 on. If the app works in safe mode, one of those is the cause: in Settings, switch one of them off
 (Hardware acceleration first), then quit and start normally, and repeat until it works. If you
 installed somewhere other than the default folder, use that path instead.

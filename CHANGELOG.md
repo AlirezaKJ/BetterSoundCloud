@@ -7,9 +7,15 @@ Each version's entry is also its release notes on GitHub.
 - **Import browser sign-in** (Settings → Advanced): signed in to SoundCloud with Google in your
   browser? Export soundcloud.com's cookies with Cookie-Editor and choose the file; the app takes
   the sign-in from it and nothing else.
-- Added an optional Windows 11 Glass backdrop that stays blurred when the window loses focus.
-  Themes also apply to SoundCloud pages rendered in its same-origin `/n/` frame.
-- Added an Appearance setting to hide the top bar and reveal it from the window's top edge.
+- **Glass** (Settings → Themes, Windows 11): SoundCloud and the bars around it sit on a live,
+  blurred view of whatever is behind the window, and stay that way when another window is in
+  front. The glass is dark, so SoundCloud shows in its dark colours while it is on, with any
+  theme. If it can't show, in safe mode or with hardware acceleration off, Settings says why.
+- **Hide the top bar until you point at it** (Settings → Appearance): SoundCloud's header and the
+  window buttons slide away, and come back when the pointer touches the top edge of the window.
+  The header stays while you type in its search box.
+- Themes now reach SoundCloud's newer pages too, such as a track's page when signed in, which
+  SoundCloud draws in a frame of its own.
 
 - **An equaliser**, like Spotify's: six bands from 60 Hz to 15 kHz, presets, and a curve you drag
   or move with the keyboard. It shapes everything SoundCloud plays, protected tracks included,

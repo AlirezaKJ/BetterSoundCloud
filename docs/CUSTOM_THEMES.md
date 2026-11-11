@@ -192,8 +192,10 @@ shows; translucent panels, as in Glassmorphism, let it show through them.
 
 With **Glass** enabled on Windows 11, the desktop backdrop takes the place of the Background
 setting, including for themes marked `@background required`. Glass clears the page's large
-background surfaces and tints the bars. Give smaller panels their own surface colors when they
-need extra contrast, and check your theme with both light and dark desktops behind the window.
+background surfaces and tints the bars. **Glass is dark**: while it is on, SoundCloud shows its
+dark palette whatever your theme's `@mode`, so a light theme's page rules land on dark colours.
+Give smaller panels their own surface colors when they need extra contrast, and check your theme
+with both light and dark desktops behind the window.
 
 ## 7. Rules
 

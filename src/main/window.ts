@@ -29,6 +29,7 @@ import type { PageTheme } from '@shared/page-theme'
 import { START_PAGE_URLS } from '@shared/start-page'
 import { hidesPage } from '@shared/page-status'
 import { HIDDEN, nextReveal } from '@shared/auto-hide'
+import { pageMode } from '@shared/glass'
 import type { RevealState } from '@shared/auto-hide'
 import type { PageStatus } from '@shared/page-status'
 import type { Identity } from '@shared/identity'
@@ -178,8 +179,14 @@ export type Shell = {
   /** The sheet that hides the header (`headerHiddenCss`) while it is hidden, like the cover's. */
   headerHiddenKey: string | null
   headerHiddenGeneration: number
-  /** The pointer watcher while `autoHideHeader` is on. */
+  /** The pointer watcher while `autoHideHeader` is on and the window is focused. */
   autoHideTimer: ReturnType<typeof setTimeout> | null
+  /**
+   * Whether the window is focused, from its own `focus` and `blur` events. Not `isFocused()`:
+   * just after the window came back to the front it could still answer false (measured
+   * 2026-11-11), and the watcher, which starts on that `focus`, stopped again at once.
+   */
+  windowFocused: boolean
   /**
    * The chosen background picture as a `data:` URI, or '' — and its own small stylesheet, for
    * the same reason as the cover's: it is a few hundred kilobytes, inserted once per picture
@@ -322,6 +329,7 @@ export function createShell(identity: Identity): Shell {
     headerHiddenKey: null,
     headerHiddenGeneration: 0,
     autoHideTimer: null,
+    windowFocused: window.isFocused(),
     picture: '',
     pictureKey: null,
     pictureGeneration: 0,
@@ -421,10 +429,16 @@ export function createShell(identity: Identity): Shell {
       compactHeader !== shell.compactHeader ||
       fitHeader !== shell.fitHeader
     ) {
+      const embeddedFlipped = embeddedShows !== shell.embeddedShowing
       shell.embeddedShowing = embeddedShows
       shell.compactHeader = compactHeader
       shell.fitHeader = fitHeader
       void applyContentCss(shell, shell.fullWidthLayout, shell.theme)
+      // The header hides until pointed at only while it is the window's top bar. Decided here,
+      // where that is known: turning the setting on from the default runs before this layout
+      // has given SoundCloud's header the window, and the header stayed on screen, without its
+      // window buttons, until the pointer had touched the top edge once (2026-11-11).
+      if (embeddedFlipped) void applyHeaderHidden(shell)
     }
   }
   shell.layout = layout
@@ -660,8 +674,10 @@ async function applyContentCss(shell: Shell, fullWidth: boolean, theme: string):
   const compactHeader = shell.compactHeader
   const fitHeader = shell.fitHeader
 
-  // Read once: the theme's page CSS, and SoundCloud's palette for the mode it was made for.
+  // Read once: the theme's page CSS, and SoundCloud's palette for the mode it was made for —
+  // or dark on glass, which is always dark (`pageMode`).
   const selected = theme === NO_THEME ? null : findTheme(theme)
+  const mode = pageMode(shell.glass, selected?.mode ?? null)
 
   const key = await webContents
     .insertCSS(
@@ -669,7 +685,7 @@ async function applyContentCss(shell: Shell, fullWidth: boolean, theme: string):
         fullWidth,
         reserve,
         nativeControlsReserve: process.platform === 'darwin' ? Math.ceil(80 / zoom) : 0,
-        palette: selected?.mode ? soundCloudPaletteCss(selected.mode) : '',
+        palette: mode ? soundCloudPaletteCss(mode) : '',
         theme: selected ? contentCssOf(selected.sections) : '',
         minimalNavigation: shell.minimalNavigation ? minimalNavigationCss() : '',
         background: shell.background ? backgroundCss(shell.background) : '',
@@ -702,8 +718,9 @@ export function sendFrameCss(shell: Shell): void {
   const { webContents } = shell.content
   if (webContents.isDestroyed()) return
   const selected = shell.theme === NO_THEME ? null : findTheme(shell.theme)
+  const mode = pageMode(shell.glass, selected?.mode ?? null)
   const css = buildFrameCss({
-    palette: selected?.mode ? soundCloudPaletteCss(selected.mode) : '',
+    palette: mode ? soundCloudPaletteCss(mode) : '',
     theme: selected ? contentCssOf(selected.sections) : '',
     glass: shell.glass ? glassFrameCss() : ''
   })
@@ -790,9 +807,14 @@ export function setContentAppearance(
   shell.minimalNavigation = options.minimalNavigation
   shell.background = options.background
   shell.hideMenuBar = options.hideMenuBar
+  // After setGlass above: on glass, SoundCloud's bars are dark whatever its own setting says,
+  // so the window buttons and player buttons drawn on them must be too.
   setThemeMode(
     shell,
-    options.theme === NO_THEME ? null : (findTheme(options.theme)?.mode ?? null)
+    pageMode(
+      shell.glass,
+      options.theme === NO_THEME ? null : (findTheme(options.theme)?.mode ?? null)
+    )
   )
 
   // The embedded bar exists exactly while our own bar is hidden — it carries the only
@@ -858,7 +880,10 @@ function setGlass(shell: Shell, tint: number | null): void {
  * hidden) slides out of sight, and comes back when the pointer touches the top edge of the window.
  * Main watches the pointer, because the window buttons are a view of their own that the page's
  * CSS cannot reach; this is polling in our own process, never on SoundCloud's origin (§14), and
- * only while the window is focused and the setting is on.
+ * only while the window is focused and the setting is on: the watcher stops when the window
+ * loses focus, minimised or in the tray included, and the window's `focus` starts it again
+ * (`resumeAutoHideHeader`). Keyboard focus inside the header keeps it on screen by CSS alone
+ * (`headerHiddenCss`), so typing in SoundCloud's search box never chases it away.
  */
 
 /** How often the pointer is looked at while the header is hidden until pointed at. */
@@ -871,14 +896,15 @@ function setAutoHideHeader(shell: Shell, on: boolean): void {
   shell.autoHideTimer = null
   // Hidden from the start; off, it is simply shown.
   shell.headerRevealed = false
-  if (on) watchAutoHideHeader(shell, HIDDEN)
+  if (on && shell.windowFocused) watchAutoHideHeader(shell, HIDDEN)
   void applyHeaderHidden(shell)
   shell.layout()
 }
 
 /**
  * Look at the pointer, act on `nextReveal`, and look again in a moment — a timeout that re-arms
- * itself, never an interval (eslint holds main to that too), stopped by `setAutoHideHeader`.
+ * itself, never an interval (eslint holds main to that too), stopped by `setAutoHideHeader` and
+ * by the window's `blur` (`pauseAutoHideHeader`).
  */
 function watchAutoHideHeader(shell: Shell, state: RevealState): void {
   shell.autoHideTimer = setTimeout(() => {
@@ -897,13 +923,30 @@ function watchAutoHideHeader(shell: Shell, state: RevealState): void {
         y: pointer.y - bounds.y,
         width: bounds.width,
         headerHeight: SC_HEADER_HEIGHT * shell.content.webContents.getZoomFactor(),
-        focused: window.isFocused(),
+        focused: shell.windowFocused,
         now: Date.now()
       })
     }
     setHeaderRevealed(shell, next.revealed)
     watchAutoHideHeader(shell, next)
   }, AUTO_HIDE_POLL_MS)
+}
+
+/** The window came to the front: watch the pointer again, if the setting is on and nothing does. */
+function resumeAutoHideHeader(shell: Shell): void {
+  shell.windowFocused = true
+  if (shell.autoHideHeader && !shell.autoHideTimer) watchAutoHideHeader(shell, HIDDEN)
+}
+
+/**
+ * The window went to the back — another app in front, minimised, or in the tray: nobody is
+ * pointing at our top edge. Hide the header and stop looking until it is focused again.
+ */
+function pauseAutoHideHeader(shell: Shell): void {
+  shell.windowFocused = false
+  if (shell.autoHideTimer) clearTimeout(shell.autoHideTimer)
+  shell.autoHideTimer = null
+  if (shell.autoHideHeader) setHeaderRevealed(shell, false)
 }
 
 function setHeaderRevealed(shell: Shell, revealed: boolean): void {
@@ -1323,7 +1366,9 @@ function wireStateEvents(shell: Shell): void {
   })
   window.on('enter-full-screen', () => refreshGlass(shell))
   window.on('focus', sendWindow)
+  window.on('focus', () => resumeAutoHideHeader(shell))
   window.on('blur', sendWindow)
+  window.on('blur', () => pauseAutoHideHeader(shell))
 
   // A failed load, a crash and a hang are page-status.ts's: it tells the user, not the console.
 }

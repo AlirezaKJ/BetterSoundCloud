@@ -1,7 +1,10 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, it, expect } from 'vitest'
 import {
   buildContentCss,
   buildFrameCss,
+  GLASS_BAR_INKS,
   glassCss,
   glassFrameCss,
   glassHeaderCss,
@@ -129,12 +132,34 @@ describe('glass in the page sheet', () => {
 })
 
 describe('glassHeaderCss', () => {
+  const css = glassHeaderCss()
+  /** Every `{ … }` body in the sheet: the declarations, without the media query around them. */
+  const bodies = [...css.matchAll(/\{([^{}]*)\}/g)].map(([, body]) => body ?? '')
+
   it('clears our bar’s page and sets only tokens, like a theme’s chrome block', () => {
-    const css = glassHeaderCss()
-    expect(css).toMatch(/^:root \{[^{}]*\}$/)
-    for (const [, property] of css.matchAll(/(--?[\w-]+)\s*:/g))
-      expect(property).toMatch(/^--bsc-/)
-    expect(css).toContain('--bsc-page-bg: transparent')
+    expect(bodies.length).toBeGreaterThan(0)
+    for (const body of bodies)
+      for (const [, property] of body.matchAll(/([\w-]+)\s*:/g))
+        expect(property).toMatch(/^--bsc-/)
+    expect(css).toMatch(/^:root \{[^{}]*--bsc-page-bg: transparent/)
+  })
+
+  it('gives the bar dark ink under a light scheme, since the glass is dark either way', () => {
+    // Measured 2026-11-11: with Appearance on Light, the title and buttons all but vanished.
+    expect(css).toMatch(
+      /@media \(prefers-color-scheme: light\) and \(forced-colors: none\) \{\s*:root \{[^{}]*--bsc-text-secondary: #a0a0a0/
+    )
+  })
+
+  it('uses exactly tokens.css’s dark values, so the two cannot drift apart', () => {
+    const tokens = readFileSync(join(import.meta.dirname, '../renderer/tokens.css'), 'utf8')
+    const dark = /@media \(prefers-color-scheme: dark\) \{\s*:where\(:root\) \{([^}]*)\}/.exec(
+      tokens
+    )?.[1]
+    expect(dark).toBeTruthy()
+    for (const [token, value] of Object.entries(GLASS_BAR_INKS)) {
+      expect(dark, token).toContain(`${token}: ${value};`)
+    }
   })
 })
 
@@ -146,9 +171,20 @@ describe('headerHiddenCss', () => {
     expect(css).not.toContain('mask-image')
   })
 
+  it('leaves the header on screen while the keyboard is in it: typing in search, or Tab', () => {
+    // :focus-visible, not :focus-within: a link clicked with the mouse keeps focus after
+    // SoundCloud moves to its page, and must not pin the header there.
+    expect(headerHiddenCss(false)).toContain('header.header:not(:has(:focus-visible))')
+    expect(headerHiddenCss(false)).not.toContain('focus-within')
+  })
+
   it('lifts Glass’s top cut while the header is away, so the page runs up to the edge', () => {
     const css = headerHiddenCss(true)
     expect(css).toContain('mask-image: none')
-    expect(css).toContain('html:has(.playControls.m-visible)')
+    expect(css).toContain(':has(.playControls.m-visible)')
+    // ...and not while the keyboard has brought the header back over it.
+    for (const rule of css.split('\n').filter((r) => r.includes('mask-image'))) {
+      expect(rule).toMatch(/^html:not\(:has\(#app > header\.header :focus-visible\)\)/)
+    }
   })
 })
