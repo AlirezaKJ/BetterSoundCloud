@@ -33,6 +33,21 @@ if (!exe || !existsSync(exe)) {
 }
 
 const PORT = 9333
+
+// Something else already answering on the port would be driven instead of the app this starts:
+// a dev app run with `--remoteDebuggingPort 9333` once had its theme, Minimal navigation and
+// full-screen view changed by this script, on its real profile (2026-11-12). Refuse instead.
+const taken = await fetch(`http://127.0.0.1:${PORT}/json/version`)
+  .then(() => true)
+  .catch(() => false)
+if (taken) {
+  console.error(
+    `Something already answers on port ${PORT} (another app with remote debugging?). ` +
+      'Close it first: this script would drive it instead of the packed app.'
+  )
+  process.exit(2)
+}
+
 const profile = mkdtempSync(join(tmpdir(), 'bsc-smoke-'))
 const results = []
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -61,6 +76,13 @@ class View {
       } else if (data.method === 'Runtime.exceptionThrown') {
         this.exceptions.push(data.params.exceptionDetails.exception?.description ?? 'error')
       }
+    }
+    // A view that closes itself (the lyrics pane's closeLyrics, the showcase's closeShowcase) can
+    // go before its answer is sent; that call then answers nothing rather than hanging the run
+    // (it did, 2026-11-12).
+    this.socket.onclose = () => {
+      for (const resolve of this.pending.values()) resolve({})
+      this.pending.clear()
     }
   }
 
@@ -366,6 +388,23 @@ try {
     ready?.state === 'running' && (await audioViews()) === 0,
     JSON.stringify(ready)
   )
+  // Its strip above the player waits for a track: the view is made, but with nothing loaded
+  // (signed out, here) the page makes no room for it. A track playing is a check by hand.
+  const stripViews = async () =>
+    (await fetch(`http://127.0.0.1:${PORT}/json/list`).then((r) => r.json())).filter((t) =>
+      t.url.includes('/visual-strip/index.html')
+    ).length
+  const appPadding = () =>
+    page.run(`getComputedStyle(document.querySelector('#app')).paddingBottom`)
+  check(
+    '…its strip above the player waits for a track, with SoundCloud’s page left alone',
+    (await stripViews()) === 1 && (await appPadding()) === '0px',
+    `${await stripViews()} strip view(s), #app padding ${await appPadding()}`
+  )
+  await settings.run(`window.bsc.setPluginSetting('visualizer', 'strip', 'off')`)
+  await wait(1000)
+  check('…set to nothing there, the strip goes', (await stripViews()) === 0)
+  await settings.run(`window.bsc.setPluginSetting('visualizer', 'strip', 'bars')`)
   await header.run('window.bsc.openShowcase()')
   const stage = await view((url) => url.includes('/showcase/index.html'), 15000)
   await wait(3000)
@@ -388,6 +427,8 @@ try {
   await wait(2000)
   check('…and the view closed, the engine lets go', (await audioViews()) === 0)
   await settings.run(`window.bsc.setPluginEnabled('visualizer', false)`)
+  await wait(1000)
+  check('…and the plugin off, its strip goes too', (await stripViews()) === 0)
 
   check(
     'no uncaught errors in the header',

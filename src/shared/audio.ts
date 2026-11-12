@@ -300,23 +300,43 @@ export function describeAudioStop(reason: AudioStopReason, detail = ''): string 
  * runs. So the audio view reports exact digital silence, and main counts the seconds SoundCloud's
  * clock moves forward during it — only forward, in steps a playing track makes, on one track, so
  * a pause, a seek or a new track never counts. Past the limit, the engine steps aside.
+ *
+ * Only before the capture has heard anything of the track. Audio that bypasses the capture does
+ * so from a track's first second; a track that has been heard is reaching it, so a silent ending
+ * or a quiet stretch later on is the music. Counting those stepped the engine aside at the end of
+ * a song (2026-11-12), and with the Visualizer's strip the engine runs all session, so one false
+ * alarm ended the visualizer until the plugin was turned off and on.
+ *
+ * The audio view's first check always reports, sound or silence, so `known` says whether a reading
+ * of "not silent" is the capture's word or just the starting value.
  */
 
 /** Seconds of SoundCloud playing while the capture heard nothing, before the engine steps aside. */
 export const SILENCE_LIMIT_SECONDS = 6
 
 export type Starvation = {
+  /** The capture has said whether it hears anything, at least once. */
+  readonly known: boolean
   readonly silent: boolean
+  /** The capture has heard this track. */
+  readonly heard: boolean
   readonly track: string
   readonly elapsed: number
   readonly seconds: number
 }
 
-export const NOT_STARVED: Starvation = { silent: false, track: '', elapsed: 0, seconds: 0 }
+export const NOT_STARVED: Starvation = {
+  known: false,
+  silent: false,
+  heard: false,
+  track: '',
+  elapsed: 0,
+  seconds: 0
+}
 
-/** The capture went silent, or heard something again (which forgets every counted second). */
+/** The capture went silent, or heard something (which forgets every counted second). */
 export function noteCaptureSilence(state: Starvation, silent: boolean): Starvation {
-  return { ...state, silent, seconds: silent ? state.seconds : 0 }
+  return { ...state, known: true, silent, seconds: silent ? state.seconds : 0 }
 }
 
 /** A clock reading from now-playing. */
@@ -328,12 +348,17 @@ export function noteCaptureClock(
     readonly playing: boolean
   } | null
 ): Starvation {
-  if (!reading) return { ...state, track: '', seconds: 0 }
+  if (!reading) return { ...state, track: '', heard: false, seconds: 0 }
   const sameTrack = reading.track === state.track
   const step = reading.elapsed - state.elapsed
-  const counts = state.silent && sameTrack && reading.playing && step > 0 && step <= 2
+  const playedOn = sameTrack && reading.playing && step > 0 && step <= 2
+  // A second of the track went by while the capture said it hears something: it is reaching us.
+  const heard = sameTrack && (state.heard || (playedOn && state.known && !state.silent))
+  const counts = playedOn && state.silent && !heard
   return {
+    known: state.known,
     silent: state.silent,
+    heard,
     track: reading.track,
     elapsed: reading.elapsed,
     seconds: !sameTrack ? 0 : counts ? state.seconds + step : state.seconds

@@ -97,6 +97,11 @@ export interface ContentCssOptions {
    * or null when they are switched off.
    */
   playerReserve?: number | null
+  /**
+   * CSS pixels of the Visualizer's strip floating above SoundCloud's player (§22), or null while
+   * it is not showing: the page makes room for it (`stripCss`).
+   */
+  stripReserve?: number | null
   /** Override SoundCloud's centred container so the bars span the window. */
   fullWidth: boolean
   /**
@@ -132,6 +137,7 @@ export function buildContentCss({
   glass,
   autoHideHeader,
   playerReserve,
+  stripReserve,
   compactHeader,
   fitHeader,
   nativeControlsReserve
@@ -244,7 +250,30 @@ export function buildContentCss({
     rules.push(`.playControls__wrapper { padding-right: ${playerReserve}px !important; }`)
   }
 
+  if (stripReserve) rules.push(stripCss(stripReserve))
+
   return rules.join('\n')
+}
+
+/**
+ * Room for the Visualizer's strip (§22), which floats `reserve` CSS pixels tall just above
+ * SoundCloud's player bar. SoundCloud's bar itself is left alone; the strip is a view of ours over
+ * the bottom of the page, which steps aside whenever the pointer comes near (window.ts), so this
+ * only keeps SoundCloud's own things from ending up under it:
+ *
+ * - the page leaves room at its end, so its last row can scroll clear of the strip;
+ * - the newer pages' frame (sized to the window less the bar) ends above it;
+ * - toasts (`.announcements`, pinned to the window's bottom and lifted by the bar's height in
+ *   SoundCloud's own rule) are lifted above it too, so an "Undo" is never under it.
+ *
+ * All of it only while the bar is showing (`.playControls.m-visible`), as the strip only shows
+ * while a track is loaded.
+ */
+export function stripCss(reserve: number): string {
+  const bar = 'var(--play-controls-height, 48px)'
+  return `html:has(.playControls.m-visible) body #app { padding-bottom: ${reserve}px !important; }
+html:has(.playControls.m-visible) body .webiIframeV2Layout.playerVisible:not(.fullScreen) { height: calc(100% - ${bar} - ${reserve}px) !important; }
+html:has(.playControls.m-visible) body .announcements.m-offset { transform: translate3d(0, calc(-1 * ${bar} - ${reserve}px), 0) !important; }`
 }
 
 /*

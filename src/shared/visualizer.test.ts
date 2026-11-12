@@ -2,6 +2,9 @@ import { describe, it, expect } from 'vitest'
 import {
   NO_VISUALIZER,
   PEAK_HOLD_MS,
+  STRIP_APPROACH,
+  STRIP_INSET,
+  STRIP_RETREAT,
   VISUAL_BANDS,
   VISUAL_CEILING_DB,
   VISUAL_FLOOR_DB,
@@ -13,7 +16,10 @@ import {
   nextPeak,
   readVisualFrame,
   readVisualizerConfig,
-  showsAnything
+  showcaseLayout,
+  showsAnything,
+  stripAside,
+  stripLayout
 } from './visualizer'
 
 const RATE = 48_000
@@ -103,14 +109,23 @@ describe('readVisualFrame', () => {
 
 describe('readVisualizerConfig', () => {
   it('takes a look per place, with off, null or nothing meaning none', () => {
-    expect(readVisualizerConfig({ showcase: 'ring' })).toEqual({ showcase: 'ring' })
+    expect(readVisualizerConfig({ showcase: 'ring' })).toEqual({
+      showcase: 'ring',
+      strip: null
+    })
+    expect(readVisualizerConfig({ showcase: 'off', strip: 'wave' })).toEqual({
+      showcase: null,
+      strip: 'wave'
+    })
     expect(readVisualizerConfig({ showcase: 'off' })).toEqual(NO_VISUALIZER)
     expect(readVisualizerConfig({})).toEqual(NO_VISUALIZER)
     expect(readVisualizerConfig(null)).toEqual(NO_VISUALIZER)
   })
 
-  it('refuses unknown looks and places, rather than silently showing nothing', () => {
+  it('refuses unknown looks and places, and a look a place cannot draw', () => {
     expect(readVisualizerConfig({ showcase: 'milkdrop' })).toBeNull()
+    // The ring follows the sleeve, which the strip does not have.
+    expect(readVisualizerConfig({ strip: 'ring' })).toBeNull()
     expect(readVisualizerConfig({ titlebar: 'bars' })).toBeNull()
     expect(readVisualizerConfig(['bars'])).toBeNull()
     expect(readVisualizerConfig('bars')).toBeNull()
@@ -118,7 +133,80 @@ describe('readVisualizerConfig', () => {
 
   it('says whether a config draws anything at all', () => {
     expect(showsAnything(NO_VISUALIZER)).toBe(false)
-    expect(showsAnything({ showcase: 'bars' })).toBe(true)
+    expect(showsAnything({ showcase: 'bars', strip: null })).toBe(true)
+    expect(showsAnything({ showcase: null, strip: 'bars' })).toBe(true)
+  })
+})
+
+describe('showcaseLayout', () => {
+  // A 1920×1080 screen, measured from the built showcase: the sleeve left, the notes beside it.
+  const sleeve = { left: 213, top: 205, right: 881, bottom: 873 }
+  const notes = { left: 977, top: 205, right: 1707, bottom: 873 }
+  const both = { left: 213, top: 205, right: 1707, bottom: 873 }
+
+  it('puts bars and the flowing line under the sleeve and its notes, exactly as wide', () => {
+    const layout = showcaseLayout('bars', sleeve, notes, both, 1920, 1080)
+    expect(layout?.kind).toBe('band')
+    if (layout?.kind !== 'band') return
+    expect([layout.area.left, layout.area.right]).toEqual([both.left, both.right])
+    expect(layout.area.top).toBeGreaterThan(sleeve.bottom)
+    expect(layout.area.bottom).toBeLessThan(1080)
+  })
+
+  it('keeps the ring clear of the notes beside the sleeve', () => {
+    const layout = showcaseLayout('ring', sleeve, notes, both, 1920, 1080)
+    if (layout?.kind !== 'ring') throw new Error('no ring')
+    expect(sleeve.right + layout.gap + layout.reach).toBeLessThan(notes.left)
+  })
+
+  it('draws nothing where there is no room, rather than over the text', () => {
+    // A tall screen: the notes under the sleeve, running to the bottom.
+    const tallNotes = { left: 100, top: 700, right: 700, bottom: 1060 }
+    const tallSleeve = { left: 100, top: 40, right: 700, bottom: 640 }
+    const tallBoth = { left: 100, top: 40, right: 700, bottom: 1060 }
+    expect(showcaseLayout('bars', tallSleeve, tallNotes, tallBoth, 800, 1080)).toBeNull()
+  })
+})
+
+describe('stripLayout', () => {
+  it('spans the strip inside the controls’ own side padding, standing on the bar', () => {
+    expect(stripLayout(1366, 40)).toEqual({
+      kind: 'band',
+      area: { left: STRIP_INSET, right: 1366 - STRIP_INSET, top: 0, bottom: 40 }
+    })
+    expect(stripLayout(40, 40)).toBeNull()
+  })
+})
+
+describe('stripAside', () => {
+  // A 1366×768 window at 100%: the bar is the bottom 48px, the strip the 40px above it.
+  const window = { width: 1366, height: 768, stripTop: 768 - 48 - 40, zoom: 1 }
+
+  it('steps aside as the pointer comes near the strip, or is on the bar under it', () => {
+    expect(stripAside(false, { x: 600, y: 300 }, window)).toBe(false)
+    expect(stripAside(false, { x: 600, y: window.stripTop - STRIP_APPROACH }, window)).toBe(
+      true
+    )
+    expect(stripAside(false, { x: 600, y: 700 }, window)).toBe(true)
+    expect(stripAside(false, { x: 600, y: 760 }, window)).toBe(true)
+  })
+
+  it('stays aside until the pointer is past the volume slider’s reach, so the slider stays open', () => {
+    const slider = { x: 900, y: window.stripTop - 100 }
+    expect(stripAside(false, slider, window)).toBe(false)
+    expect(stripAside(true, slider, window)).toBe(true)
+    expect(stripAside(true, { x: 900, y: window.stripTop - STRIP_RETREAT - 1 }, window)).toBe(
+      false
+    )
+  })
+
+  it('comes back when the pointer leaves the window, and reaches further on a zoomed page', () => {
+    expect(stripAside(true, { x: 600, y: 800 }, window)).toBe(false)
+    expect(stripAside(true, { x: -5, y: 700 }, window)).toBe(false)
+    const zoomed = { ...window, zoom: 1.5 }
+    const between = { x: 600, y: window.stripTop - STRIP_APPROACH * 1.25 }
+    expect(stripAside(false, between, window)).toBe(false)
+    expect(stripAside(false, between, zoomed)).toBe(true)
   })
 })
 

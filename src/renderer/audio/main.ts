@@ -80,7 +80,8 @@ let graph: Graph | null = null
 let latest: AudioConfig | null = null
 let working = false
 let running = false
-let silent = false
+/** What the last check heard; null until the first, which always reports (shared/audio.ts). */
+let silent: boolean | null = null
 let stretch: Promise<Stretch> | null = null
 let visualTimer: ReturnType<typeof setTimeout> | null = null
 let lastFrameSilent = false

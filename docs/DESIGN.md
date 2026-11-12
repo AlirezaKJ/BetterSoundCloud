@@ -493,8 +493,8 @@ bottom edge. On a tall screen the sleeve sits above the notes, at their width.
 What SoundCloud plays, drawn as it plays (`src/renderer/lib/Visualizer.svelte`, drawn by
 `visualizer-draw.ts`), from the built-in Visualizer plugin. Opt-in decoration: off until the
 plugin is turned on, so it is the user's choice, like a theme — the anti-reference on consumer
-music-app surface language stands for everything else. Today it lives in the showcase, which is
-already the Experience surface.
+music-app surface language stands for everything else. It lives in the showcase, which is already
+the Experience surface, and in a quiet strip standing on SoundCloud's player while browsing.
 
 - **Flat ink on the room's colour.** The showcase's own Ink, mixed down: bars at 30%, peak marks
   at 70%, the waveform at 62%, the fringe at 42%. Decoration sits well under the text it shares
@@ -515,6 +515,16 @@ already the Experience surface.
 - **Motion is the music's**: a bar rises in about 40ms and falls over about 220ms, eased
   exponentially, so beats snap and decay like a meter. When the sound stops, everything falls and
   the drawing stops.
+- **The strip above the player** floats: bars standing on the top edge of SoundCloud's player
+  bar, over the bottom of the page, with no backdrop of their own (the maintainer asked for it on
+  the player, not in it). SoundCloud's icon colours for the page's light or dark (white, or
+  `#333`; the overlay exception). It is peripheral, so it stays quiet: Bars are 2px hairlines
+  every 6px at 50%, blended between bands, with no peak marks, inset 16px like the controls;
+  Waveform rises from the bar's edge, its body filled down to it (mirrored about a middle line it
+  struck through the page's text). It steps aside the moment the pointer comes near it or the
+  bar, and fades back in over 180ms once the pointer is well clear, so nothing under it is ever
+  out of reach. It goes whenever it would be empty: nothing loaded, the page hidden, or the sound
+  engine stepped aside.
 - **Reduced motion removes it**, rather than freezing it (a still visualizer reads as stuck, as a
   still wait line does), and the plugin's row says "Hidden" and why.
 - Decorative: the canvas is hidden from assistive technology and takes no pointer.

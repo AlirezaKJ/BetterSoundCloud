@@ -454,7 +454,7 @@ describe('shaping the sound', () => {
       ok: true,
       value: { reducedMotion: false }
     })
-    expect(mocks.setVisualizer).toHaveBeenCalledWith('tone', { showcase: 'ring' })
+    expect(mocks.setVisualizer).toHaveBeenCalledWith('tone', { showcase: 'ring', strip: null })
     expect(await call('audio.visualize', [{ showcase: 'lasers' }], 2)).toMatchObject({
       ok: false
     })

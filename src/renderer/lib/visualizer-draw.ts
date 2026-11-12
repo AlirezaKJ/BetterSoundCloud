@@ -7,7 +7,7 @@
  * that holds, then falls back.
  */
 
-export type Box = { left: number; top: number; right: number; bottom: number }
+import type { Box } from '@shared/visualizer'
 
 /** How strongly each part is inked: decoration, so well under the text, but there to be seen. */
 const BAR_ALPHA = 0.3
@@ -53,6 +53,56 @@ export function drawBars(
   context.globalAlpha = 1
 }
 
+/**
+ * The strip's hairlines: 2px wide, one every 6px. Half strength: they float over the page, artwork
+ * included, where a third was lost (seen 2026-11-12), and still sit well under its text.
+ */
+const HAIRLINE = 2
+const HAIRLINE_PITCH = 6
+const HAIRLINE_ALPHA = 0.5
+
+/**
+ * Bars as hairlines standing on the bottom edge of `area`, one every few pixels, each blended from
+ * the two nearest bands. For the strip over SoundCloud's player: 64 blocks in a band that short
+ * read as a row of tiles rather than a spectrum (seen 2026-11-12), and peak marks over them were
+ * clutter in something meant to stay quiet while browsing.
+ */
+export function drawHairlines(
+  context: CanvasRenderingContext2D,
+  area: Box,
+  levels: ArrayLike<number>,
+  ink: string
+): void {
+  const count = levels.length
+  const width = area.right - area.left
+  const height = area.bottom - area.top
+  const lines = Math.max(count, Math.floor(width / HAIRLINE_PITCH))
+  const slot = width / lines
+  context.fillStyle = ink
+  context.globalAlpha = HAIRLINE_ALPHA
+  for (let line = 0; line < lines; line++) {
+    const band = ((line + 0.5) / lines) * count - 0.5
+    const tall = Math.round(levelBetween(levels, band) * height)
+    if (tall < 1) continue
+    const x = Math.round(area.left + line * slot + (slot - HAIRLINE) / 2)
+    context.fillRect(x, area.bottom - tall, HAIRLINE, tall)
+  }
+  context.globalAlpha = 1
+}
+
+/**
+ * A level between bands: `band` is a place along the spectrum in bands (0 is the lowest band's
+ * centre), blended from the two nearest.
+ */
+function levelBetween(levels: ArrayLike<number>, band: number): number {
+  const count = levels.length
+  const at = Math.min(count - 1, Math.max(0, band))
+  const below = Math.floor(at)
+  const above = Math.min(count - 1, below + 1)
+  const low = levels[below] ?? 0
+  return low + ((levels[above] ?? 0) - low) * (at - below)
+}
+
 /** The flowing line: its outline, the faint body between its halves, and its tapered ends. */
 const FLOW_LINE_ALPHA = 0.62
 const FLOW_BODY_ALPHA = 0.12
@@ -64,17 +114,22 @@ const FLOW_TAPER = 4
  * is softened with its neighbours (1–2–1) and the two ends taper to the middle line, so the shape
  * closes cleanly. Not the raw wave: that jumped about with real music (2026-11-12), where these
  * levels, already eased, move like the bars. A 2px outline over a faint flat body.
+ *
+ * `rise` draws one half only, rising from the bottom edge, its body filled down to it: for the
+ * strip over SoundCloud's player, where a line across the middle struck through the page's text
+ * (seen 2026-11-12) and the bars beside it stand on the bar.
  */
 export function drawFlow(
   context: CanvasRenderingContext2D,
   area: Box,
   levels: ArrayLike<number>,
-  ink: string
+  ink: string,
+  rise = false
 ): void {
   const count = levels.length
   if (count < 3) return
-  const middle = (area.top + area.bottom) / 2
-  const half = (area.bottom - area.top) / 2
+  const middle = rise ? area.bottom : (area.top + area.bottom) / 2
+  const half = rise ? area.bottom - area.top : (area.bottom - area.top) / 2
   const step = (area.right - area.left) / (count - 1)
   const at = (i: number): number => levels[Math.min(count - 1, Math.max(0, i))] ?? 0
   const swing = Array.from({ length: count }, (_, i) => {
@@ -104,11 +159,17 @@ export function drawFlow(
   context.beginPath()
   context.moveTo(area.left, middle)
   trace(forward, 1)
-  trace(back, -1)
+  if (!rise) trace(back, -1)
   context.closePath()
   context.fillStyle = ink
   context.globalAlpha = FLOW_BODY_ALPHA
   context.fill()
+  if (rise) {
+    // The outline is the curve alone: closed, it would draw a rule along the bar's edge.
+    context.beginPath()
+    context.moveTo(area.left, middle)
+    trace(forward, 1)
+  }
   context.strokeStyle = ink
   context.lineWidth = 2
   context.lineJoin = 'round'
@@ -145,14 +206,9 @@ export function drawRing(
   const slot = (side * 2) / lines
   const centre = (sleeve.left + sleeve.right) / 2
 
-  // A level between bands: the line's place along the spectrum, blended from the two nearest.
-  const levelAt = (line: number): number => {
-    const band = Math.min(count - 1, Math.max(0, (line + 0.5) / RING_LINES_PER_BAND - 0.5))
-    const below = Math.floor(band)
-    const above = Math.min(count - 1, below + 1)
-    const low = levels[below] ?? 0
-    return low + ((levels[above] ?? 0) - low) * (band - below)
-  }
+  // The line's place along the spectrum, blended from the two nearest bands.
+  const levelAt = (line: number): number =>
+    levelBetween(levels, (line + 0.5) / RING_LINES_PER_BAND - 0.5)
 
   context.fillStyle = ink
   context.globalAlpha = RING_ALPHA

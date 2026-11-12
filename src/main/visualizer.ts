@@ -46,7 +46,7 @@ export function getVisualizer(): VisualizerConfig {
     }
     return null
   }
-  return { showcase: lookFor('showcase') }
+  return { showcase: lookFor('showcase'), strip: lookFor('strip') }
 }
 
 export function onVisualizerChange(listener: (config: VisualizerConfig) => void): () => void {

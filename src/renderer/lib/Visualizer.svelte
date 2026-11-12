@@ -1,9 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { VISUAL_BANDS, follow, nextPeak } from '@shared/visualizer'
-  import type { Peak, VisualFrame, VisualLook } from '@shared/visualizer'
-  import { drawBars, drawFlow, drawRing } from './visualizer-draw'
-  import type { Box } from './visualizer-draw'
+  import type { Peak, VisualFrame, VisualLayout, VisualLook } from '@shared/visualizer'
+  import { drawBars, drawFlow, drawHairlines, drawRing } from './visualizer-draw'
 
   /*
    * The Visualizer, drawn (CLAUDE.md §22): what SoundCloud plays, from the frames the audio engine
@@ -16,19 +15,23 @@
    * stops, so a silent visualizer costs nothing. Reduced motion draws nothing at all: a visualizer
    * is only motion, so it is removed rather than frozen (DESIGN.md).
    *
-   * It places itself by measuring the showcase's own parts: `art` is the sleeve, `notes` the text
-   * beside or below it, `frame` the two together.
+   * Where it draws is the place's to say: `layout` is asked on every frame (so it follows a resize
+   * with no listener) and answers with the pure geometry in shared/visualizer.ts, or null where
+   * there is no room. The showcase measures its sleeve and notes; the strip is its whole view.
    */
 
   type Props = {
     look: VisualLook
-    /** The ink to draw with: the showcase's, computed for the room's colour. */
+    /** The ink to draw with: the showcase's for the room's colour, or the bar's icon colour. */
     ink: string
-    art: HTMLElement | null
-    notes: HTMLElement | null
-    frame: HTMLElement | null
+    layout: () => VisualLayout | null
+    /**
+     * Drawn in the strip over SoundCloud's player: bars as hairlines without peak marks, and the
+     * waveform rising from the bar's edge rather than mirrored about a middle line.
+     */
+    strip?: boolean
   }
-  let { look, ink, art, notes, frame }: Props = $props()
+  let { look, ink, layout, strip = false }: Props = $props()
 
   /** No frame for this long means no sound: let everything fall. */
   const SILENT_AFTER_MS = 150
@@ -85,37 +88,14 @@
   function draw(): void {
     const context = sized()
     if (!context) return
-    const { innerWidth: width, innerHeight: height } = window
-    context.clearRect(0, 0, width, height)
-    const sleeve = rectOf(art)
-    const words = rectOf(notes)
-    const both = rectOf(frame)
-    if (!sleeve || !words || !both) return
-
-    if (look === 'ring') {
-      const side = sleeve.right - sleeve.left
-      const gap = Math.max(8, Math.round(side * 0.018))
-      // Room on each side of the sleeve: to the notes where they sit, else to the screen's edge.
-      const right = (words.left >= sleeve.right ? words.left : width) - sleeve.right
-      const below = (words.top >= sleeve.bottom ? words.top : height) - sleeve.bottom
-      const room = Math.min(sleeve.left, sleeve.top, right, below) - gap
-      const reach = Math.min(side * 0.09, room * 0.72)
-      if (reach >= 8) drawRing(context, sleeve, gap, reach, levels, ink)
-      return
-    }
-
-    // Bars and the flowing line share the band under the sleeve and its notes, across their width.
-    const pad = Math.min(96, Math.max(24, height * 0.06))
-    const top = Math.max(sleeve.bottom, both.bottom) + Math.max(16, height * 0.04)
-    const area: Box = {
-      left: both.left,
-      right: both.right,
-      top: Math.max(top, height - pad - height * 0.16),
-      bottom: height - pad
-    }
-    if (area.bottom - area.top < 28) return
-    if (look === 'bars') drawBars(context, area, levels, peakLevels(), ink)
-    else drawFlow(context, area, levels, ink)
+    context.clearRect(0, 0, window.innerWidth, window.innerHeight)
+    const place = layout()
+    if (!place) return
+    if (place.kind === 'ring')
+      drawRing(context, place.sleeve, place.gap, place.reach, levels, ink)
+    else if (look === 'bars' && strip) drawHairlines(context, place.area, levels, ink)
+    else if (look === 'bars') drawBars(context, place.area, levels, peakLevels(), ink)
+    else drawFlow(context, place.area, levels, ink, strip)
   }
 
   function peakLevels(): number[] {
@@ -135,12 +115,6 @@
     const context = canvas.getContext('2d')
     context?.setTransform(scale, 0, 0, scale, 0, 0)
     return context
-  }
-
-  function rectOf(element: HTMLElement | null): Box | null {
-    if (!element) return null
-    const { left, top, right, bottom } = element.getBoundingClientRect()
-    return { left, top, right, bottom }
   }
 </script>
 

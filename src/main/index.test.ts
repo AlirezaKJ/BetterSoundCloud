@@ -61,7 +61,10 @@ vi.mock('./window', () => ({
   toggleLyrics: vi.fn(),
   closeLyrics: vi.fn(),
   openShowcase: vi.fn(),
-  closeShowcase: vi.fn()
+  closeShowcase: vi.fn(),
+  setVisualStrip: vi.fn(),
+  setTrackLoaded: vi.fn(),
+  setAudioStopped: vi.fn()
 }))
 vi.mock('./audio', () => ({
   startAudioEngine: vi.fn(),
@@ -70,12 +73,13 @@ vi.mock('./audio', () => ({
   handleAudioReport: mocks.handleAudioReport,
   handleVisualFrame: mocks.handleVisualFrame,
   onVisualFrame: vi.fn(),
+  onAudioStatusChange: vi.fn(),
   // The audio engine's view is the one object it names; nothing else may report.
   isAudioView: (contents: unknown) => contents === mocks.audioView
 }))
 vi.mock('./visualizer', () => ({
   forgetVisualPlaces: vi.fn(),
-  getVisualizer: () => ({ showcase: 'bars' }),
+  getVisualizer: () => ({ showcase: 'bars', strip: 'bars' }),
   onVisualizerChange: vi.fn()
 }))
 vi.mock('./lyrics', () => ({

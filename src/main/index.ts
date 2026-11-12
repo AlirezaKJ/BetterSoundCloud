@@ -23,6 +23,9 @@ import {
   closeLyrics,
   openShowcase,
   closeShowcase,
+  setVisualStrip,
+  setTrackLoaded,
+  setAudioStopped,
   rendererUrl,
   sendFrameCss
 } from './window'
@@ -32,6 +35,7 @@ import {
   handleAudioReport,
   handleVisualFrame,
   isAudioView,
+  onAudioStatusChange,
   onVisualFrame,
   startAudioEngine
 } from './audio'
@@ -454,6 +458,9 @@ function showMainWindow(): void {
   if (!shell) {
     const next = createShell(browserIdentity())
     shell = next
+    // The Visualizer's strip, if the plugin chose one before this window existed (§22).
+    setTrackLoaded(next, getNowPlaying() !== null)
+    setVisualStrip(next, getVisualizer().strip !== null)
     if (isDev) checkPageLanguages(next.header, browserIdentity().languages)
     next.window.on('close', (event) => {
       if (quitting || !keepsRunningWhenClosed()) return
@@ -495,6 +502,7 @@ function showMainWindow(): void {
         next.settings,
         next.embedded,
         next.player,
+        next.visualStrip,
         next.contextMenu,
         next.status,
         next.lyrics,
@@ -791,6 +799,8 @@ function registerIpc(): void {
   // `--bsc-cover` for themes: the artwork of what is playing, once per track.
   onNowPlayingChange((nowPlaying) => {
     if (shell) setContentCover(shell, nowPlaying?.artwork ?? '')
+    // SoundCloud shows its player bar while a track is loaded, and the Visualizer's strip with it.
+    if (shell) setTrackLoaded(shell, nowPlaying !== null)
     // The lyrics service only acts on a different track; the pane follows the clock itself.
     noticeNowPlaying(nowPlaying)
   })
@@ -803,6 +813,8 @@ function registerIpc(): void {
     shell !== null && event.sender === shell.lyrics?.webContents
   const fromShowcase = (event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent): boolean =>
     shell !== null && event.sender === shell.showcase?.webContents
+  const fromVisualStrip = (event: Electron.IpcMainInvokeEvent): boolean =>
+    shell !== null && event.sender === shell.visualStrip?.webContents
   ipcMain.on(CH.lyricsToggle, (e) => {
     if (shell && (fromChrome(e) || e.sender === shell.player?.webContents)) toggleLyrics(shell)
   })
@@ -842,23 +854,37 @@ function registerIpc(): void {
     if (report) handleAudioReport(report)
   })
 
-  // The Visualizer (§22): what the engine plays, frame by frame, to the view drawing it. From the
-  // engine's view only, every frame shaped first; to the showcase, the one place that draws today.
+  // The Visualizer (§22): what the engine plays, frame by frame, to the views drawing it. From the
+  // engine's view only, every frame shaped first; to the showcase, and to the strip under the
+  // player while it is drawn (the showcase covers it while open).
   ipcMain.on(CH.visualFrame, (e, raw: unknown) => {
     if (!isAudioView(e.sender)) return
     const frame = readVisualFrame(raw)
     if (frame) handleVisualFrame(frame)
   })
   onVisualFrame((frame) => {
-    const view = shell?.showcase
-    if (view && !view.webContents.isDestroyed())
-      view.webContents.send(CH.visualFrameChanged, frame)
+    if (!shell) return
+    const strip = shell.visualStripShowing && !shell.showcase ? shell.visualStrip : null
+    for (const view of [shell.showcase, strip]) {
+      if (view && !view.webContents.isDestroyed())
+        view.webContents.send(CH.visualFrameChanged, frame)
+    }
   })
-  ipcMain.handle(CH.visualizerGet, (e) => (fromShowcase(e) ? getVisualizer() : null))
+  ipcMain.handle(CH.visualizerGet, (e) =>
+    fromShowcase(e) || fromVisualStrip(e) ? getVisualizer() : null
+  )
+  // The strip's band goes while the engine has stepped aside: it would have nothing to draw.
+  onAudioStatusChange((status) => {
+    if (shell) setAudioStopped(shell, status.state === 'stopped')
+  })
   onVisualizerChange((config) => {
-    const view = shell?.showcase
-    if (view && !view.webContents.isDestroyed())
-      view.webContents.send(CH.visualizerChanged, config)
+    if (!shell) return
+    // The strip's view exists while the plugin has chosen a look for it.
+    setVisualStrip(shell, config.strip !== null)
+    for (const view of [shell.showcase, shell.visualStrip]) {
+      if (view && !view.webContents.isDestroyed())
+        view.webContents.send(CH.visualizerChanged, config)
+    }
   })
 
   ipcMain.handle(CH.settingsSet, (e, key: unknown, value: unknown) => {

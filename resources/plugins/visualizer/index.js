@@ -4,12 +4,13 @@
  *
  * Written only against the `bsc` API, like the Equaliser and Pitch. A plugin has no screen of its
  * own, so this one does not draw: it tells the app which look it wants in each place
- * (`bsc.audio.visualize`), and the app's own views draw it from the audio engine's sound. Its one
- * setting today is the look in the full-screen view.
+ * (`bsc.audio.visualize`), and the app's own views draw it from the audio engine's sound. Its
+ * settings are the look in each place: the full-screen view, and the strip above the player.
  *
  * It is a plugin, off until turned on, so that it can never be what breaks SoundCloud: turned
  * off, crashed or uninstalled, the app drops its request, nothing is drawn, and the engine stops
- * listening for it. Even on, the engine listens only while a visualizer is on screen.
+ * listening for it. Even on, the engine listens only
+ * while a visualizer is on screen.
  */
 
 /** @typedef {import('../../../src/shared/plugin-api').PluginApi} PluginApi */
@@ -18,14 +19,14 @@
 
 /** @type {PluginApi | null} */
 let api = null
-/** @type {VisualLook | 'off'} */
-let showcase = 'off'
+/** @type {{ showcase: VisualLook | 'off', strip: VisualLook | 'off' }} */
+let looks = { showcase: 'off', strip: 'off' }
 let reducedMotion = false
 /** @type {AudioStatus} */
 let engine = { state: 'off', message: '' }
 
-/** The looks the full-screen view can take; anything else is "off". */
-const LOOKS = ['bars', 'ring', 'wave']
+/** The looks each place can take; anything else is "off". */
+const LOOKS = { showcase: ['bars', 'ring', 'wave'], strip: ['bars', 'wave'] }
 
 module.exports = {
   /** @param {PluginApi} bsc */
@@ -36,9 +37,9 @@ module.exports = {
       showStatus()
     })
     bsc.settings.onChange((values) => {
-      apply(values['showcase'])
+      apply(values)
     })
-    apply(bsc.settings.get()['showcase'])
+    apply(bsc.settings.get())
   },
 
   deactivate() {
@@ -47,15 +48,29 @@ module.exports = {
   }
 }
 
-/** @param {unknown} value */
-function apply(value) {
+/**
+ * A setting's value as a look for that place, or "off".
+ *
+ * @param {unknown} value
+ * @param {string[]} allowed
+ * @returns {VisualLook | 'off'}
+ */
+function lookOf(value, allowed) {
+  return typeof value === 'string' && allowed.includes(value)
+    ? /** @type {VisualLook} */ (value)
+    : 'off'
+}
+
+/** @param {Record<string, boolean | string>} values */
+function apply(values) {
   const bsc = api
   if (!bsc) return
-  showcase = /** @type {VisualLook | 'off'} */ (
-    typeof value === 'string' && LOOKS.includes(value) ? value : 'off'
-  )
+  looks = {
+    showcase: lookOf(values['showcase'], LOOKS.showcase),
+    strip: lookOf(values['strip'], LOOKS.strip)
+  }
   bsc.audio
-    .visualize({ showcase })
+    .visualize(looks)
     .then((answer) => {
       reducedMotion = answer.reducedMotion
       showStatus()
@@ -66,10 +81,19 @@ function apply(value) {
   showStatus()
 }
 
+/** Where it shows, in words: "in the full-screen view and above the player". */
+function placesWords() {
+  const places = []
+  if (looks.showcase !== 'off') places.push('in the full-screen view')
+  if (looks.strip !== 'off') places.push('above the player')
+  return places.join(' and ')
+}
+
 /** The line under the plugin in settings. */
 function showStatus() {
   if (!api) return
-  if (showcase === 'off') {
+  const where = placesWords()
+  if (!where) {
     api.status.set({ lead: 'Nothing chosen', detail: 'Choose a look below to see one.' })
     return
   }
@@ -86,5 +110,5 @@ function showStatus() {
     api.status.set({ lead: 'Not working', problem: engine.message })
     return
   }
-  api.status.set({ lead: 'On', detail: 'It shows in the full-screen view while music plays.' })
+  api.status.set({ lead: 'On', detail: `It shows ${where} while music plays.` })
 }

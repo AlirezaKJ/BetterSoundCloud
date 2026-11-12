@@ -83,6 +83,7 @@ export default defineConfig({
           status: resolve('src/renderer/status/index.html'),
           lyrics: resolve('src/renderer/lyrics/index.html'),
           showcase: resolve('src/renderer/showcase/index.html'),
+          'visual-strip': resolve('src/renderer/visual-strip/index.html'),
           audio: resolve('src/renderer/audio/index.html')
         }
       }

@@ -121,7 +121,7 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CU
 | `main/presence.ts`                 | Discord Rich Presence: follows now-playing and the `discord.*` settings, spaces updates, reconnects; `getPresenceStatus` for settings                              |
 | `main/lyrics.ts`                   | Synced lyrics from LRCLIB: looks up only while the pane or the showcase is open, settles on a track first, caches for the session (§18)                            |
 | `main/audio.ts`                    | The audio engine: the hidden view that captures SoundCloud's output, every plugin's filters, stepping aside (§21)                                                  |
-| `main/visualizer.ts`               | The Visualizer: the look a plugin asked for in each place, which places are on screen, and so whether the engine listens (§22)                                     |
+| `main/visualizer.ts`               | The Visualizer: the look a plugin asked for in each place, which places are on screen, and so whether the engine listens (§22); the strip's view is in window.ts   |
 | `main/discord-ipc.ts`              | Our own small client for the Discord app's local pipe (no Electron, tested against a real pipe)                                                                    |
 | `main/now-playing.ts`              | The one copy of "what is playing": `getNowPlaying`, `setNowPlaying`, `onNowPlayingChange`                                                                          |
 | `main/session.ts`                  | `hardenSession`, permission allowlist, `routeNewWindowsToBrowser`, `isInternalUrl`, `openInBrowser`                                                                |
@@ -148,29 +148,29 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CU
 
 ### Key shared files
 
-| File                        | Owns                                                                                                                                                                             |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `shared/ipc.ts`             | `CH` (every channel name), `ChromeApi` (the `window.bsc` type), `NavState`, `WindowState`                                                                                        |
-| `shared/settings-schema.ts` | `SETTINGS`, `SECTIONS`, `Settings`, `SettingKey`, `coerce`, `coerceAll`, `defaults`                                                                                              |
-| `shared/now-playing.ts`     | `PlayerReading`, `NowPlaying`, `readNowPlaying()` and its cleaners                                                                                                               |
-| `shared/page-theme.ts`      | `PageTheme`, `detectPageTheme()`, `overlayTheme()` (a theme's `@mode` beats SoundCloud's setting)                                                                                |
-| `shared/context-menu.ts`    | `ContextMenuRequest`, `CONTEXT_MENU_ACTIONS`, `cleanUrl`, `shortUrl`, `elide`                                                                                                    |
-| `shared/start-page.ts`      | `START_PAGE_URLS`, `startPageUrl()`, `pageToRemember()` (only soundcloud.com pages; never `/logout` or a sign-in step)                                                           |
-| `shared/focus-cycle.ts`     | `focusCycle()`, `nextFocusArea()`: the order F6 moves through                                                                                                                    |
-| `shared/presence.ts`        | `Activity`, `buildActivity()` (the Discord card), `sameActivity()`, `PRESENCE_LOGO`                                                                                              |
-| `shared/lyrics.ts`          | `LyricsState`, `parseLrc()`, `currentLineIndex()`, `playbackPosition()`, `lyricsQueries()`, `bestMatch()`                                                                        |
-| `shared/lyric-clock.ts`     | `lyricClock()`: which lyric line is being sung, one timer per line, for the pane and the showcase                                                                                |
-| `shared/audio.ts`           | `AudioFilter`, `readAudioFilters()`, `readAudioPitch()`, `combinePitch()`, `filterResponseDb()` (Web Audio's own maths), `headroomDb()`, `readAudioReport()`, the no-sound check |
-| `shared/equaliser.ts`       | `graphicEqualiser()` (gains to filters that pass through them), stored gains, `bandLabel()`, `gainLabel()`                                                                       |
-| `shared/visualizer.ts`      | `VisualFrame`, `bandLevels()` (the log bands and their dB scale), `waveOf()`, `readVisualFrame()`, `readVisualizerConfig()`, `follow()`, `nextPeak()` (§22)                      |
-| `shared/pitch.ts`           | A `pitch` setting's stored semitones (`parseSemitones`), and its words: `semitoneWords()`, `semitoneLabel()`                                                                     |
-| `shared/showcase.ts`        | `artworkColour()`, `showcaseBackdrop()`, `showcaseInks()` (the showcase colours, contrast-checked), `artworkSources()`, `formatClock()`                                          |
-| `shared/page-status.ts`     | `PageStatus`, `describePageStatus()` (every word on that view), `describeLoadFailure()`, `retryDelay()`                                                                          |
-| `shared/themes.ts`          | `ThemeSummary`, `parseThemeMetadata()`, `splitThemeTargets()`, `chromeCssFor()`, `contentCssOf()`, `coverCss()`                                                                  |
-| `shared/identity.ts`        | `Identity`, `buildUserAgent()`, `leaksAppIdentity()`, `pageLanguages()`, `acceptLanguages()`                                                                                     |
-| `shared/plugins.ts`         | `readManifest()`, permissions, `readHostMessage()`, `callAllowed()`, `PluginView`                                                                                                |
-| `shared/plugin-api.ts`      | `PluginApi`: the `bsc` object a plugin gets. The contract, for code and for docs                                                                                                 |
-| `shared/updates.ts`         | `installKind()`, `updateReach()`, `UpdateStatus`, `describeUpdateStatus()` (every word of the update line), `readUpdateError()`                                                  |
+| File                        | Owns                                                                                                                                                                                 |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `shared/ipc.ts`             | `CH` (every channel name), `ChromeApi` (the `window.bsc` type), `NavState`, `WindowState`                                                                                            |
+| `shared/settings-schema.ts` | `SETTINGS`, `SECTIONS`, `Settings`, `SettingKey`, `coerce`, `coerceAll`, `defaults`                                                                                                  |
+| `shared/now-playing.ts`     | `PlayerReading`, `NowPlaying`, `readNowPlaying()` and its cleaners                                                                                                                   |
+| `shared/page-theme.ts`      | `PageTheme`, `detectPageTheme()`, `overlayTheme()` (a theme's `@mode` beats SoundCloud's setting)                                                                                    |
+| `shared/context-menu.ts`    | `ContextMenuRequest`, `CONTEXT_MENU_ACTIONS`, `cleanUrl`, `shortUrl`, `elide`                                                                                                        |
+| `shared/start-page.ts`      | `START_PAGE_URLS`, `startPageUrl()`, `pageToRemember()` (only soundcloud.com pages; never `/logout` or a sign-in step)                                                               |
+| `shared/focus-cycle.ts`     | `focusCycle()`, `nextFocusArea()`: the order F6 moves through                                                                                                                        |
+| `shared/presence.ts`        | `Activity`, `buildActivity()` (the Discord card), `sameActivity()`, `PRESENCE_LOGO`                                                                                                  |
+| `shared/lyrics.ts`          | `LyricsState`, `parseLrc()`, `currentLineIndex()`, `playbackPosition()`, `lyricsQueries()`, `bestMatch()`                                                                            |
+| `shared/lyric-clock.ts`     | `lyricClock()`: which lyric line is being sung, one timer per line, for the pane and the showcase                                                                                    |
+| `shared/audio.ts`           | `AudioFilter`, `readAudioFilters()`, `readAudioPitch()`, `combinePitch()`, `filterResponseDb()` (Web Audio's own maths), `headroomDb()`, `readAudioReport()`, the no-sound check     |
+| `shared/equaliser.ts`       | `graphicEqualiser()` (gains to filters that pass through them), stored gains, `bandLabel()`, `gainLabel()`                                                                           |
+| `shared/visualizer.ts`      | `VisualFrame`, `bandLevels()` (the log bands and their dB scale), `readVisualFrame()`, `readVisualizerConfig()`, `showcaseLayout()`, `stripLayout()`, `follow()`, `nextPeak()` (§22) |
+| `shared/pitch.ts`           | A `pitch` setting's stored semitones (`parseSemitones`), and its words: `semitoneWords()`, `semitoneLabel()`                                                                         |
+| `shared/showcase.ts`        | `artworkColour()`, `showcaseBackdrop()`, `showcaseInks()` (the showcase colours, contrast-checked), `artworkSources()`, `formatClock()`                                              |
+| `shared/page-status.ts`     | `PageStatus`, `describePageStatus()` (every word on that view), `describeLoadFailure()`, `retryDelay()`                                                                              |
+| `shared/themes.ts`          | `ThemeSummary`, `parseThemeMetadata()`, `splitThemeTargets()`, `chromeCssFor()`, `contentCssOf()`, `coverCss()`                                                                      |
+| `shared/identity.ts`        | `Identity`, `buildUserAgent()`, `leaksAppIdentity()`, `pageLanguages()`, `acceptLanguages()`                                                                                         |
+| `shared/plugins.ts`         | `readManifest()`, permissions, `readHostMessage()`, `callAllowed()`, `PluginView`                                                                                                    |
+| `shared/plugin-api.ts`      | `PluginApi`: the `bsc` object a plugin gets. The contract, for code and for docs                                                                                                     |
+| `shared/updates.ts`         | `installKind()`, `updateReach()`, `UpdateStatus`, `describeUpdateStatus()` (every word of the update line), `readUpdateError()`                                                      |
 
 ---
 
@@ -180,17 +180,18 @@ There is no BrowserWindow. `createShell()` builds a frameless `BaseWindow` and s
 `WebContentsView`s in it. Our UI is never injected into SoundCloud's page; it is drawn in separate
 views composited above it. Everything is held on the `Shell` object (`src/main/window.ts`).
 
-| `Shell` field | Renderer entry          | Preload       | Lifetime                                                                                                                                |
-| ------------- | ----------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `header`      | `renderer/header`       | `chrome.cjs`  | Always. Hidden (`setVisible(false)`) while SoundCloud owns the top                                                                      |
-| `content`     | soundcloud.com          | `content.cjs` | Always. Loads `https://soundcloud.com/discover` once Widevine is ready (`loadSoundCloud`)                                               |
-| `settings`    | `renderer/settings`     | `chrome.cjs`  | Created on open, destroyed on close (`toggleSettings`/`closeSettings`)                                                                  |
-| `embedded`    | `renderer/embedded`     | `chrome.cjs`  | Exists while `appearance.hideMenuBar` is on; window buttons over SoundCloud's header                                                    |
-| `player`      | `renderer/player`       | `chrome.cjs`  | Exists while `appearance.playerButtons` is on; buttons at the right end of SoundCloud's play bar                                        |
-| `contextMenu` | `renderer/context-menu` | `chrome.cjs`  | Created once (`attachContextMenu`), hidden between uses                                                                                 |
-| `status`      | `renderer/status`       | `chrome.cjs`  | Exists while `pageStatus` is set: SoundCloud's page cannot be shown (`showPageStatus`/`clearPageStatus`)                                |
-| `lyrics`      | `renderer/lyrics`       | `chrome.cjs`  | Exists while the lyrics pane is open (`toggleLyrics`/`closeLyrics`); docked right, between SoundCloud's header and play bar             |
-| `showcase`    | `renderer/showcase`     | `chrome.cjs`  | Exists while the full-screen showcase is open (`openShowcase`/`closeShowcase`); covers the whole window, which goes full screen with it |
+| `Shell` field | Renderer entry          | Preload       | Lifetime                                                                                                                                                                           |
+| ------------- | ----------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `header`      | `renderer/header`       | `chrome.cjs`  | Always. Hidden (`setVisible(false)`) while SoundCloud owns the top                                                                                                                 |
+| `content`     | soundcloud.com          | `content.cjs` | Always. Loads `https://soundcloud.com/discover` once Widevine is ready (`loadSoundCloud`)                                                                                          |
+| `settings`    | `renderer/settings`     | `chrome.cjs`  | Created on open, destroyed on close (`toggleSettings`/`closeSettings`)                                                                                                             |
+| `embedded`    | `renderer/embedded`     | `chrome.cjs`  | Exists while `appearance.hideMenuBar` is on; window buttons over SoundCloud's header                                                                                               |
+| `player`      | `renderer/player`       | `chrome.cjs`  | Exists while `appearance.playerButtons` is on; buttons at the right end of SoundCloud's play bar                                                                                   |
+| `contextMenu` | `renderer/context-menu` | `chrome.cjs`  | Created once (`attachContextMenu`), hidden between uses                                                                                                                            |
+| `status`      | `renderer/status`       | `chrome.cjs`  | Exists while `pageStatus` is set: SoundCloud's page cannot be shown (`showPageStatus`/`clearPageStatus`)                                                                           |
+| `lyrics`      | `renderer/lyrics`       | `chrome.cjs`  | Exists while the lyrics pane is open (`toggleLyrics`/`closeLyrics`); docked right, between SoundCloud's header and play bar                                                        |
+| `showcase`    | `renderer/showcase`     | `chrome.cjs`  | Exists while the full-screen showcase is open (`openShowcase`/`closeShowcase`); covers the whole window, which goes full screen with it                                            |
+| `visualStrip` | `renderer/visual-strip` | `chrome.cjs`  | Exists while the Visualizer plugin chose a look for the strip (`setVisualStrip`); stands on SoundCloud's player bar while a track is loaded, and steps aside for the pointer (§22) |
 
 One view of ours is not on the `Shell`: the audio engine's (`renderer/audio`), which is never
 shown and never added to the window. `main/audio.ts` owns it, makes it only while a plugin asks for
@@ -281,7 +282,7 @@ views:
 | `onNavState`                                          | subscribe      | pushed to header                                                                           |
 | `onWindowState`                                       | subscribe      | pushed to header, embedded                                                                 |
 | `onSettingsChanged`                                   | subscribe      | pushed to header, settings (`broadcastSettings`)                                           |
-| `onPageTheme`                                         | subscribe      | pushed to embedded, player (and on their load)                                             |
+| `onPageTheme`                                         | subscribe      | pushed to embedded, player, the Visualizer strip (and on their load)                       |
 | `onContextMenu`                                       | subscribe      | pushed to the context-menu view                                                            |
 | `onNowPlaying`                                        | subscribe      | pushed to all eight of our views (`broadcastNowPlaying`)                                   |
 | `toggleLyrics`                                        | send           | `fromChrome`, or the player-bar view                                                       |
@@ -293,8 +294,8 @@ views:
 | `closeShowcase`                                       | send           | the showcase view only                                                                     |
 | `onAudioConfig`, `reportAudio`                        | subscribe/send | the audio engine's view only (`isAudioView`); reports are shaped by `readAudioReport`      |
 | `reportVisualFrame`                                   | send           | the audio engine's view only (`isAudioView`); every frame shaped by `readVisualFrame`      |
-| `onVisualFrame`                                       | subscribe      | pushed to the showcase, about 60 a second while a visualizer is on screen                  |
-| `getVisualizer`, `onVisualizer`                       | invoke/sub     | the showcase only (`fromShowcase`): the look the Visualizer plugin chose for it            |
+| `onVisualFrame`                                       | subscribe      | pushed to the showcase and the strip while drawn, about 60 a second                        |
+| `getVisualizer`, `onVisualizer`                       | invoke/sub     | the showcase or the strip (`fromShowcase`, `fromVisualStrip`): the looks the plugin chose  |
 | `pageStatusAction`                                    | send           | the status view only; re-checked against `shell.pageStatus`                                |
 | `onPageStatus`                                        | subscribe      | pushed to the status view (on its load and on every change)                                |
 | `listPlugins`, `setPluginEnabled`, `setPluginSetting` | invoke         | `fromSettingsUi`; the two setters answer `{ plugins, error }`                              |
@@ -630,6 +631,7 @@ Dev builds log to the terminal running `npm run dev`. Tags:
 | `[page-status]`                                                                                  | What the status view is saying (`load failed -106 ERR_INTERNET_DISCONNECTED`, `cleared`, …)                                                                     |
 | `[content]`, `[window]`                                                                          | A failed SoundCloud load; the window shown without its header                                                                                                   |
 | `[audio]`                                                                                        | The audio engine starting and running (dev); stepping aside and why (all builds)                                                                                |
+| `[visualizer]`                                                                                   | The Visualizer's strip: where it is, and whether it is shown, aside for the pointer, or hidden (dev)                                                            |
 | `[theme]`, `[background]`, `[lyrics]`, `[player]`, `[context-menu]`, `[blocker]`, `[ad-request]` | Their features                                                                                                                                                  |
 
 F12 or Ctrl/Cmd+Shift+I opens DevTools for the focused view (header, content, settings and
@@ -685,7 +687,9 @@ context menu have the shortcut; embedded and player do not).
   that switch, so nobody's real profile is touched — and `--remote-debugging-port`, then drives our
   views' `window.bsc` and only reads SoundCloud's page. What it cannot check (sign-in, DRM playback)
   is in `docs/RELEASE_CHECKLIST.md`. Run it before every tag; a dev-only test would not have caught
-  #95/#105, which existed only after packing and signing.
+  #95/#105, which existed only after packing and signing. Its port is 9333, and it refuses to start
+  while anything else answers there: it once drove a dev app given that port, on the real dev
+  profile. Give a dev app you inspect over CDP another port.
 - **A packed `.asar` under the repo can be locked by Orca** (an Electron app's file system opens
   archives as folders): `release/win-unpacked` then cannot be rebuilt (EBUSY). Build elsewhere with
   `npx electron-builder --dir -c.directories.output=<folder outside the repo>`.
@@ -999,61 +1003,6 @@ Rules that hold this together:
 
 ---
 
-## 22. The Visualizer
-
-```
-Visualizer plugin --bsc.audio.visualize({ showcase: 'bars' | 'ring' | 'wave' | 'off' })-->
-  plugins.ts: readVisualizerConfig --> main/visualizer.ts: the look per place (first plugin by id)
-openShowcase / closeShowcase --setVisualPlaceShown('showcase')--> main/visualizer.ts
-  a place on screen with a look --> setAudioVisual(true) --> main/audio.ts runs the engine
-  (even with no filters and no shift), AudioConfig.visual = true
-renderer/audio: an AnalyserNode (FFT 4096) on the output, every ~16 ms on a timer:
-  bandLevels + waveOf --CH.visualFrame--> main: isAudioView, readVisualFrame
-  --CH.visualFrameChanged--> renderer/showcase --> lib/Visualizer.svelte (canvas, rAF, eased)
-```
-
-Rules that hold this together:
-
-- **A plugin, so it can be turned off.** The maintainer's requirement: it is the built-in
-  "Visualizer" plugin (`resources/plugins/visualizer`), off by default, and off, crashed or removed,
-  its request goes (`clearVisualizer`), nothing is drawn and the engine stops listening for it. A
-  plugin has no screen, so it only says which look it wants where; the app's views draw.
-- **It listens only while it is on screen.** `updateDemand` in main/visualizer.ts asks the engine
-  for frames only while a place with a look is showing (today: the showcase open). Otherwise it
-  costs nothing. While it listens, SoundCloud's sound goes through the engine, with its 0.1 s delay
-  and its rules for stepping aside (§21).
-- **The tap is at the end of the chain**, after Pitch and the Equaliser, so the bars show what is
-  heard and stay in step with it. The engine's other analyser, before the shifter, is the silence
-  check and nothing else.
-- **A timer in the engine's view, animation frames in the drawing view.** The engine's view is
-  never shown, so it never gets `requestAnimationFrame` (measured 2026-11-11: none at all, while a
-  16 ms timer ran about 56 times a second with `backgroundThrottling: false`). Silence is sent once,
-  then nothing until there is sound. The drawing view eases every bar toward its frame on each
-  animation frame (`follow`: 40 ms up, 220 ms down; `nextPeak`: hold 320 ms, then fall) and stops
-  its loop once everything has fallen, so a paused track costs nothing there either.
-- **What a frame holds** (`shared/visualizer.ts`, pure and tested): 64 log-spaced bands from 30 Hz
-  to 16 kHz, each band's loudest bin (or, below a bin's width, the spectrum read between the two
-  nearest bins, so the bass slopes instead of stepping), tilted +3 dB an octave around 1 kHz so
-  music reads level, scaled from −78 to −18 dB. Nothing else: every look is drawn from the bands.
-  Main checks every frame.
-- **The looks** (`lib/visualizer-draw.ts`): Bars under the sleeve and its notes, across their width;
-  "Around the artwork", a fringe of 2px hairlines standing out from the sleeve's four edges (the
-  sleeve is a square print, so a circle would cut into the notes; thick bars there read as a
-  chip's pins, seen 2026-11-11), bass at the bottom middle, treble at the top; and "Waveform", a
-  flowing line through the bands, mirrored about its middle, over a faint body. It began as an
-  oscilloscope of the raw wave, which jumped about with real music (the maintainer, 2026-11-12), so
-  the frames no longer carry the wave at all. Flat ink, square ends, no glow (DESIGN.md,
-  "Visualizer").
-- **Reduced motion removes it.** main/visualizer.ts reads the system's switch
-  (`systemPreferences.getAnimationSettings`), draws nothing and runs no engine for it, and
-  `visualize` answers `reducedMotion: true` so the plugin's row says why. The drawing view checks
-  `prefers-reduced-motion` too.
-- **Not built yet** (docs/TODO.md, Milestone 11): the strip above the player, a view of its own,
-  and MilkDrop (Butterchurn, only if its 3.0 beta runs under our CSP). Each is a new place in
-  `VISUAL_PLACES` with its looks in `LOOKS_FOR`.
-
----
-
 ## 20. Updates
 
 ```
@@ -1177,3 +1126,106 @@ Rules that hold this together:
   protected track, the media flyout while captured, an output-device switch (docs/TODO.md).
 - Lyrics timing does not yet add the engine's delay: about 0.1 s for the capture, 0.18 s with the
   shifter. Within what the nudge covers, and next in docs/TODO.md.
+
+---
+
+## 22. The Visualizer
+
+```
+Visualizer plugin --bsc.audio.visualize({ showcase: 'bars'|'ring'|'wave'|'off', strip: 'bars'|'wave'|'off' })-->
+  plugins.ts: readVisualizerConfig --> main/visualizer.ts: the look per place (first plugin by id)
+a place drawn on screen --setVisualPlaceShown(place)--> main/visualizer.ts
+  showcase: openShowcase / closeShowcase
+  strip: layout(), while its view exists, a track is loaded, the page is up and no showcase covers it
+  a place drawn with a look --> setAudioVisual(true) --> main/audio.ts runs the engine
+  (even with no filters and no shift), AudioConfig.visual = true
+renderer/audio: an AnalyserNode (FFT 4096) on the output, every ~16 ms on a timer:
+  bandLevels --CH.visualFrame--> main: isAudioView, readVisualFrame
+  --CH.visualFrameChanged--> renderer/showcase, renderer/visual-strip
+  --> lib/Visualizer.svelte (canvas, rAF, eased; where it draws from showcaseLayout / stripLayout)
+```
+
+Rules that hold this together:
+
+- **A plugin, so it can be turned off.** The maintainer's requirement: it is the built-in
+  "Visualizer" plugin (`resources/plugins/visualizer`), off by default, and off, crashed or removed,
+  its request goes (`clearVisualizer`), nothing is drawn, SoundCloud's bar goes back to its own
+  height and the engine stops listening for it. A plugin has no screen, so it only says which look
+  it wants where; the app's views draw.
+- **It listens only while it is drawn.** `updateDemand` in main/visualizer.ts asks the engine for
+  frames only while a place with a look is on screen. While it listens, SoundCloud's sound goes
+  through the engine, with its 0.1 s delay and its rules for stepping aside (§21). The strip is on
+  screen whenever a track is loaded, so with it chosen, the engine runs for the whole session.
+- **The tap is at the end of the chain**, after Pitch and the Equaliser, so the bars show what is
+  heard and stay in step with it. The engine's other analyser, before the shifter, is the silence
+  check and nothing else.
+- **A timer in the engine's view, animation frames in the drawing view.** The engine's view is
+  never shown, so it never gets `requestAnimationFrame` (measured 2026-11-11: none at all, while a
+  16 ms timer ran about 56 times a second with `backgroundThrottling: false`). Silence is sent once,
+  then nothing until there is sound. The drawing view eases every bar toward its frame on each
+  animation frame (`follow`: 40 ms up, 220 ms down; `nextPeak`: hold 320 ms, then fall) and stops
+  its loop once everything has fallen, so a paused track costs nothing there either.
+- **What a frame holds** (`shared/visualizer.ts`, pure and tested): 64 log-spaced bands from 30 Hz
+  to 16 kHz, each band's loudest bin (or, below a bin's width, the spectrum read between the two
+  nearest bins, so the bass slopes instead of stepping), tilted +3 dB an octave around 1 kHz so
+  music reads level, scaled from −78 to −18 dB. Nothing else: every look is drawn from the bands.
+  Main checks every frame.
+- **Where each place draws is pure and tested** (`showcaseLayout`, `stripLayout`): the drawing
+  view measures (the showcase its sleeve and notes, the strip its own size) and asks on every
+  frame, so a resize needs no listener.
+- **The looks** (`lib/visualizer-draw.ts`): in the showcase, Bars under the sleeve and its notes,
+  across their width; "Around the artwork", a fringe of 2px hairlines standing out from the
+  sleeve's four edges (the sleeve is a square print, so a circle would cut into the notes; thick
+  bars there read as a chip's pins, seen 2026-11-11), bass at the bottom middle, treble at the top;
+  and "Waveform", a flowing line through the bands, mirrored about its middle, over a faint body.
+  It began as an oscilloscope of the raw wave, which jumped about with real music (the maintainer,
+  2026-11-12), so the frames no longer carry the wave at all. In the strip, Bars are hairlines (2px
+  every 6px at half strength, blended between bands, no peak marks: `drawHairlines`), because 64
+  blocks in a band that short read as a row of tiles (seen 2026-11-12); Waveform rises from the
+  bar's edge (`drawFlow(…, rise)`), since a line across the middle struck through the page's
+  text. Flat ink, square ends,
+  no glow (DESIGN.md, "Visualizer").
+- **Reduced motion removes it.** main/visualizer.ts reads the system's switch
+  (`systemPreferences.getAnimationSettings`), draws nothing and runs no engine for it, and
+  `visualize` answers `reducedMotion: true` so the plugin's row says why. The drawing view checks
+  `prefers-reduced-motion` too.
+
+### The strip above the player
+
+Bars standing on the top edge of SoundCloud's player bar while browsing: the `visualStrip` view
+(`renderer/visual-strip`), transparent, 40 window pixels tall (`VISUAL_STRIP_HEIGHT`), over the
+bottom of SoundCloud's page. SoundCloud's bar is left exactly as it is.
+
+- **It steps aside for the pointer.** What is under a view of ours cannot be clicked, and the
+  queue, the volume slider and the ad panel open upward from SoundCloud's controls, right where
+  the strip floats. So main watches the pointer (`watchVisualStrip`, every 60 ms, only while the
+  strip is in place and the window focused, like the hidden header's watcher) and hides the view
+  once the pointer is within 12 CSS px of it or on the bar under it (`stripAside`, pure and
+  tested). It comes back only when the pointer is 160 CSS px clear, past the volume slider, which
+  opens on hover: coming back under a pointer moving down the slider would close it. The maintainer
+  first asked for it under the controls, inside a grown bar; seen there, they wanted it above
+  (2026-11-12).
+- **The page makes room, SoundCloud's bar does not.** `stripCss` pads `#app`, so the page's last
+  row can scroll clear of the strip, ends the newer pages' frame above it, and lifts the toasts
+  (`.announcements.m-offset`) above it so an "Undo" is never under it. Every rule is scoped to
+  `html:has(.playControls.m-visible)` and goes after the theme with the other layout rules.
+- **`layout()` decides it, like every other view**: wanted while the view exists (the plugin
+  chose a look for the strip), a track is loaded (`setTrackLoaded`, from now-playing: SoundCloud
+  fills its bar's title exactly while it shows the bar) and the page is up; drawn while no
+  showcase covers it; in place while the engine runs (`shell.visualStripShowing`, which the page's
+  room, `stripReserve`, also reads); visible while not aside. It spans the page, stopping at the
+  lyrics pane while that is open. The page's stylesheet is re-applied only when it flips.
+- **No strip the engine cannot fill.** While the engine has stepped aside (`setAudioStopped`, from
+  `onAudioStatusChange`: safe mode, a refused capture, the silence guard), the strip goes. It goes
+  on asking for sound, so the engine stays aside instead of retrying (§21); turning the plugin or
+  the strip off and on retries. `setAudioStopped` lays out on the next turn, since the engine can
+  stop while `layout()` is asking it to start. The silence guard counts only before the capture
+  has heard a track, since with the strip the engine runs all session: counting a song's silent
+  ending once stepped it aside after one song (2026-11-12).
+- **Its colours are SoundCloud's icon colours** for the page's light or dark: `onPageTheme`, like
+  the player buttons, so a theme's `@mode` or Glass (always dark) too. White on dark, `#333` on
+  light: the exception DESIGN.md allows for overlays on SoundCloud's bars. Coming back after
+  stepping aside, it fades in over 180 ms (`visibilitychange`); going, it is gone at once.
+- **Not built yet** (docs/TODO.md, Milestone 11): a view of its own, and MilkDrop (Butterchurn,
+  only if its 3.0 beta runs under our CSP). Each is a new place in `VISUAL_PLACES` with its looks
+  in `LOOKS_FOR`.

@@ -39,18 +39,29 @@ export type VisualFrame = {
 /** The looks there are, and the places they can show. */
 export const VISUAL_LOOKS = ['bars', 'ring', 'wave'] as const
 export type VisualLook = (typeof VISUAL_LOOKS)[number]
-export const VISUAL_PLACES = ['showcase'] as const
+/**
+ * Where a visualizer can show: `showcase`, the full-screen view; `strip`, a band under SoundCloud's
+ * player controls while browsing (§22).
+ */
+export const VISUAL_PLACES = ['showcase', 'strip'] as const
 export type VisualPlace = (typeof VISUAL_PLACES)[number]
 
-/** Which looks each place can draw. The ring follows the sleeve, which only the showcase has. */
+/**
+ * Which looks each place can draw. The ring follows the sleeve, which only the showcase has; the
+ * strip is a band, so it takes the looks drawn in one.
+ */
 export const LOOKS_FOR: Readonly<Record<VisualPlace, readonly VisualLook[]>> = {
-  showcase: ['bars', 'ring', 'wave']
+  showcase: ['bars', 'ring', 'wave'],
+  strip: ['bars', 'wave']
 }
 
 /** What a plugin asked for: a look per place, or null where it shows nothing. */
-export type VisualizerConfig = { readonly showcase: VisualLook | null }
+export type VisualizerConfig = {
+  readonly showcase: VisualLook | null
+  readonly strip: VisualLook | null
+}
 
-export const NO_VISUALIZER: VisualizerConfig = { showcase: null }
+export const NO_VISUALIZER: VisualizerConfig = { showcase: null, strip: null }
 
 /**
  * A plugin's `bsc.audio.visualize` argument, shaped: null asks for nothing; an object names a look
@@ -64,8 +75,9 @@ export function readVisualizerConfig(raw: unknown): VisualizerConfig | null {
   if (Object.keys(given).some((key) => !(VISUAL_PLACES as readonly string[]).includes(key)))
     return null
   const showcase = readLook(given['showcase'], 'showcase')
-  if (showcase === undefined) return null
-  return { showcase }
+  const strip = readLook(given['strip'], 'strip')
+  if (showcase === undefined || strip === undefined) return null
+  return { showcase, strip }
 }
 
 /** A look for a place, null for none, undefined for nonsense. */
@@ -198,4 +210,98 @@ export function nextPeak(peak: Peak, level: number, dtMs: number): Peak {
   if (heldMs < PEAK_HOLD_MS) return { level: peak.level, heldMs }
   const fallen = peak.level - (PEAK_FALL_PER_SECOND * Math.max(0, dtMs)) / 1000
   return { level: Math.max(level, fallen), heldMs }
+}
+
+/*
+ * ── Where a look is drawn ─────────────────────────────────────────────────────────────────────
+ *
+ * Pure geometry, in CSS pixels, from the rectangles a view measures: so each place's layout is
+ * tested here, and the drawing view only measures and draws.
+ */
+
+export type Box = { left: number; top: number; right: number; bottom: number }
+
+/** A look drawn in a band (bars or the flowing line), or as a fringe round the sleeve. */
+export type VisualLayout =
+  { kind: 'band'; area: Box } | { kind: 'ring'; sleeve: Box; gap: number; reach: number }
+
+/**
+ * In the showcase: bars and the flowing line in the band under the sleeve and its notes, exactly as
+ * wide as them; the ring round the sleeve, as far out as the room on its tightest side allows.
+ * Null when there is no room (a tall screen, where the notes sit under the sleeve).
+ */
+export function showcaseLayout(
+  look: VisualLook,
+  sleeve: Box,
+  notes: Box,
+  both: Box,
+  width: number,
+  height: number
+): VisualLayout | null {
+  if (look === 'ring') {
+    const side = sleeve.right - sleeve.left
+    const gap = Math.max(8, Math.round(side * 0.018))
+    // Room on each side of the sleeve: to the notes where they sit, else to the screen's edge.
+    const right = (notes.left >= sleeve.right ? notes.left : width) - sleeve.right
+    const below = (notes.top >= sleeve.bottom ? notes.top : height) - sleeve.bottom
+    const room = Math.min(sleeve.left, sleeve.top, right, below) - gap
+    const reach = Math.min(side * 0.09, room * 0.72)
+    return reach >= 8 ? { kind: 'ring', sleeve, gap, reach } : null
+  }
+  const pad = Math.min(96, Math.max(24, height * 0.06))
+  const top = Math.max(sleeve.bottom, both.bottom) + Math.max(16, height * 0.04)
+  const area: Box = {
+    left: both.left,
+    right: both.right,
+    top: Math.max(top, height - pad - height * 0.16),
+    bottom: height - pad
+  }
+  return area.bottom - area.top >= 28 ? { kind: 'band', area } : null
+}
+
+/** The strip's side margins: SoundCloud's own padding in its bar, 16 CSS px. */
+export const STRIP_INSET = 16
+
+/**
+ * In the strip floating above SoundCloud's player: one band across the view, inset at the sides
+ * like the controls below it, the bars standing on the bar's top edge.
+ */
+export function stripLayout(width: number, height: number): VisualLayout | null {
+  const area: Box = { left: STRIP_INSET, right: width - STRIP_INSET, top: 0, bottom: height }
+  return area.right - area.left >= 64 && area.bottom - area.top >= 8
+    ? { kind: 'band', area }
+    : null
+}
+
+/*
+ * ── The strip stepping aside ──────────────────────────────────────────────────────────────────
+ *
+ * The strip is a view of ours over SoundCloud's page, so what is under it cannot be clicked. The
+ * queue and the volume slider open upward from SoundCloud's controls, right where it floats, so it
+ * steps aside whenever the pointer comes near it or the bar under it (window pixels throughout).
+ * Once aside, it stays aside until the pointer is well clear: the volume slider opens on hover and
+ * reaches above the strip, and the strip coming back under a pointer moving down the slider would
+ * close it.
+ */
+
+/** How far above the strip the pointer sends it aside, in CSS pixels (times the zoom). */
+export const STRIP_APPROACH = 12
+/** How far above the strip the pointer must go before it comes back: past the volume slider. */
+export const STRIP_RETREAT = 160
+
+/**
+ * Whether the strip should be aside now, from where the pointer is relative to the window's
+ * content (`x`, `y`), the window's size, the strip's top edge and the zoom, and whether it already
+ * was. Anywhere outside the window brings it back.
+ */
+export function stripAside(
+  wasAside: boolean,
+  pointer: { x: number; y: number },
+  window: { width: number; height: number; stripTop: number; zoom: number }
+): boolean {
+  const inside =
+    pointer.x >= 0 && pointer.x < window.width && pointer.y >= 0 && pointer.y < window.height
+  if (!inside) return false
+  const reach = (wasAside ? STRIP_RETREAT : STRIP_APPROACH) * window.zoom
+  return pointer.y >= window.stripTop - reach
 }

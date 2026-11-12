@@ -90,6 +90,11 @@ when one is refused, write down what SoundCloud said rather than retrying.
 - [ ] Turn on Pitch and move it to +2 while a track plays, with the Equaliser still on: the song
       plays higher at the same speed, with the bass boost still on the bass, and no gap longer than
       a moment. Move it back to 0: the original key returns. Untick both: SoundCloud's own sound.
+- [ ] Turn on the Visualizer while a track plays, including a protected one: hairline bars move
+      with the music, standing on SoundCloud's player. Point at the bar: the bars step aside, and
+      the queue, the volume slider and the page above the bar all work; point away and they come
+      back. Let a few songs play through: the bars keep going. Open the full-screen view: its bars
+      move too. Set "Above the player" to Nothing, then untick the plugin: the bars go each time.
 - [ ] Pick each built-in theme with SoundCloud in its light mode and its dark mode.
 - [ ] The portable build too: it unpacks to a new temporary folder on every launch, so the archive's
       integrity check and the `.sig` signature files must survive being moved.

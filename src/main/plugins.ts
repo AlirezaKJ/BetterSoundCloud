@@ -446,7 +446,7 @@ async function answer(
       const config = readVisualizerConfig(args[0])
       if (!config) {
         throw new Error(
-          'bsc.audio.visualize takes null, or { showcase: "bars" | "ring" | "wave" | "off" }'
+          'bsc.audio.visualize takes null, or { showcase: "bars" | "ring" | "wave" | "off", strip: "bars" | "wave" | "off" }'
         )
       }
       setVisualizer(id, config)

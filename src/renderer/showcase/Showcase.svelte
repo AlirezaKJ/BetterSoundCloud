@@ -13,7 +13,8 @@
   import type { Rgb, ShowcaseInks } from '@shared/showcase'
   import type { LyricsState } from '@shared/lyrics'
   import type { NowPlaying } from '@shared/now-playing'
-  import type { VisualizerConfig } from '@shared/visualizer'
+  import { NO_VISUALIZER, showcaseLayout } from '@shared/visualizer'
+  import type { Box, VisualLayout, VisualLook, VisualizerConfig } from '@shared/visualizer'
   import Visualizer from '../lib/Visualizer.svelte'
 
   /*
@@ -55,7 +56,7 @@
   /** Bumped when the lyric area changes size, so the lines are measured again. */
   let resized = $state(0)
   /** The Visualizer plugin's choice for here; nothing while it is off. */
-  let visualizer = $state<VisualizerConfig>({ showcase: null })
+  let visualizer = $state<VisualizerConfig>(NO_VISUALIZER)
   let sleeve = $state<HTMLElement | null>(null)
   let art = $state<HTMLElement | null>(null)
   let notes = $state<HTMLElement | null>(null)
@@ -213,6 +214,27 @@
     const line = prompter.querySelector<HTMLElement>(`[data-line="${index}"]`)
     shift = line ? line.offsetTop : 0
   })
+  /** Where the visualizer draws: measured from the sleeve and its notes, on every frame. */
+  function visualizerLayout(look: VisualLook): VisualLayout | null {
+    const sleeveBox = boxOf(art)
+    const notesBox = boxOf(notes)
+    const bothBox = boxOf(sleeve)
+    if (!sleeveBox || !notesBox || !bothBox) return null
+    return showcaseLayout(
+      look,
+      sleeveBox,
+      notesBox,
+      bothBox,
+      window.innerWidth,
+      window.innerHeight
+    )
+  }
+
+  function boxOf(element: HTMLElement | null): Box | null {
+    if (!element) return null
+    const { left, top, right, bottom } = element.getBoundingClientRect()
+    return { left, top, right, bottom }
+  }
 </script>
 
 <main
@@ -226,7 +248,8 @@
   data-bsc-showcase
 >
   {#if visualizer.showcase}
-    <Visualizer look={visualizer.showcase} ink={inks.ink} {art} {notes} frame={sleeve} />
+    {@const look = visualizer.showcase}
+    <Visualizer {look} ink={inks.ink} layout={() => visualizerLayout(look)} />
   {/if}
 
   <div class="sleeve" bind:this={sleeve}>

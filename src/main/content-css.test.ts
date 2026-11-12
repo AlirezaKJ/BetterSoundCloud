@@ -5,7 +5,8 @@ import {
   COMPACT_HEADER_WIDTH,
   FIT_HEADER_WIDTH,
   MIN_EMBED_WIDTH,
-  pictureCss
+  pictureCss,
+  stripCss
 } from './content-css'
 
 describe('buildContentCss', () => {
@@ -304,5 +305,41 @@ describe('pictureCss', () => {
     ]) {
       expect(pictureCss(bad), bad).toBe('html:root { --bsc-picture: none; }')
     }
+  })
+})
+
+describe('stripCss', () => {
+  const css = stripCss(40)
+  const rules = css.split('\n')
+
+  it('leaves SoundCloud’s bar and everything that opens from it alone', () => {
+    expect(css).not.toMatch(/playControls__|\.volume|\.playControls\s*\{/)
+  })
+
+  it('leaves the page room at its end, ends the newer pages’ frame and lifts the toasts above it', () => {
+    expect(css).toContain('#app { padding-bottom: 40px !important; }')
+    expect(css).toContain(
+      '.webiIframeV2Layout.playerVisible:not(.fullScreen) { height: calc(100% - var(--play-controls-height, 48px) - 40px) !important; }'
+    )
+    expect(css).toContain(
+      '.announcements.m-offset { transform: translate3d(0, calc(-1 * var(--play-controls-height, 48px) - 40px), 0) !important; }'
+    )
+  })
+
+  it('changes nothing while SoundCloud’s bar is hidden (nothing loaded)', () => {
+    for (const rule of rules) expect(rule).toMatch(/^html:has\(\.playControls\.m-visible\)/)
+  })
+
+  it('goes with the layout rules, after the theme, so no theme can undo it', () => {
+    const page = buildContentCss({
+      fullWidth: true,
+      reserve: null,
+      theme: '.theme {}',
+      stripReserve: 40
+    })
+    expect(page.indexOf('.theme {}')).toBeLessThan(page.indexOf('#app { padding-bottom: 40px'))
+    expect(
+      buildContentCss({ fullWidth: true, reserve: null, stripReserve: null })
+    ).not.toContain('padding-bottom: 40px')
   })
 })

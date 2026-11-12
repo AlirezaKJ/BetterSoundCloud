@@ -171,6 +171,40 @@ describe('the no-sound safety check', () => {
     expect(state.seconds).toBe(0)
   })
 
+  /** A track playing from `from`, a second at a time, with the capture hearing it. */
+  function heardPlay(start: Starvation, track: string, from: number, seconds: number) {
+    let state = noteCaptureSilence(start, false)
+    for (let t = from; t <= from + seconds; t++) {
+      state = noteCaptureClock(state, { track, elapsed: t, playing: true })
+    }
+    return state
+  }
+
+  it('never counts a silent ending, or any quiet stretch, of a track it has heard', () => {
+    // A song heard for a while, then ten seconds of exact digital silence at its end.
+    let state = heardPlay(NOT_STARVED, 'a', 0, 30)
+    state = silentPlay(state, 'a', 31, 10)
+    expect(isStarved(state)).toBe(false)
+  })
+
+  it('still steps aside when the next track never reaches the capture', () => {
+    // A heard track, then a protected one played a way the capture cannot see.
+    let state = heardPlay(NOT_STARVED, 'a', 0, 30)
+    state = noteCaptureSilence(state, true)
+    state = noteCaptureClock(state, { track: 'b', elapsed: 0, playing: true })
+    state = silentPlay(state, 'b', 1, 6)
+    expect(isStarved(state)).toBe(true)
+  })
+
+  it('takes nothing as heard before the capture has said so', () => {
+    // The engine just started: "not silent" is only the starting value until the first report.
+    let state = noteCaptureClock(NOT_STARVED, { track: 'a', elapsed: 0, playing: true })
+    state = noteCaptureClock(state, { track: 'a', elapsed: 1, playing: true })
+    expect(state.heard).toBe(false)
+    state = silentPlay(state, 'a', 2, 6)
+    expect(isStarved(state)).toBe(true)
+  })
+
   it('forgets the count the moment sound arrives', () => {
     let state = noteCaptureClock(NOT_STARVED, { track: 'a', elapsed: 0, playing: true })
     state = silentPlay(state, 'a', 1, 5)

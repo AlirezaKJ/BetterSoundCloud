@@ -43,6 +43,33 @@ describe('layout() owns every view position', () => {
     expect(layoutBody()).toContain('shell.showcase.setBounds({ x: 0, y: 0, width, height })')
   })
 
+  it('floats the Visualizer strip on the bar’s top edge, out of the pointer’s way', () => {
+    // The strip is a view of ours over SoundCloud's page, and the queue and the volume slider open
+    // upward from the bar right under it: it must step aside for the pointer, or they would be
+    // dead to clicks.
+    const body = layoutBody()
+    expect(body).toMatch(/y: height - barHeight - VISUAL_STRIP_HEIGHT/)
+    expect(body).toContain('!shell.visualStripAside')
+    expect(body).toContain('watchVisualStrip(shell, watchStrip)')
+    // Watched only while it is in place and the window focused, and never aside when not watched.
+    expect(body).toContain(
+      'const watchStrip = visualStripShows && visualStripDrawn && shell.windowFocused'
+    )
+    expect(body).toContain('if (!watchStrip) shell.visualStripAside = false')
+    // Gone while the engine has stepped aside, but still asking for sound, so the engine stays
+    // aside instead of retrying what failed (§21).
+    expect(body).toContain('const visualStripShows = visualStripWanted && !shell.audioStopped')
+    expect(body).toContain('const visualStripDrawn = visualStripWanted && !shell.showcase')
+    // The page's room for it is re-decided whenever it comes or goes, from the same flag…
+    expect(body).toMatch(/if \(visualStripFlipped\) void applyContentCss\(/)
+    expect(SRC).toMatch(/stripReserve = shell\.visualStripShowing \?/)
+    // …and the engine listens for it only while it is drawn.
+    expect(body).toContain("setVisualPlaceShown('strip', visualStripDrawn)")
+    // The window's focus starts and stops the watcher.
+    expect(SRC).toContain("window.on('focus', () => shell.layout())")
+    expect(SRC).toContain("window.on('blur', () => shell.layout())")
+  })
+
   it('never brings full screen back on the next launch', () => {
     // Full screen belongs to the showcase alone. electron-window-state restores it by default,
     // so quitting with the showcase open relaunched the app full screen with no showcase.
