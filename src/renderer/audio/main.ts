@@ -1,7 +1,8 @@
 // The pitch shifter is Signalsmith Stretch (MIT). Its licence ships with the app, in
 // resources/licenses/signalsmith-stretch.txt, since the bundler drops licence comments.
 import type { AudioConfig, AudioFilter } from '@shared/audio'
-import { bandEdges, bandLevels, isSilentFrame } from '@shared/visualizer'
+import { bandEdges, bandLevels, isSilentFrame, VISUAL_WAVE } from '@shared/visualizer'
+import type { VisualFrame } from '@shared/visualizer'
 import stretchUrl from 'signalsmith-stretch?url'
 
 /*
@@ -16,10 +17,12 @@ import stretchUrl from 'signalsmith-stretch?url'
  *
  *   capture -> pitch shifter (only while a shift is asked) -> preamp -> filters -> output -> speakers
  *           -> analyser (the no-sound safety check; main decides what silence means)  -> tap
+ *                                                                         -> left, right
  *
  * The tap, at the very end, is what a visualizer draws (src/shared/visualizer.ts, CLAUDE.md §22):
  * the sound as it is heard, after the shift and the filters, so the bars are in step with it. Only
- * while one is on screen does this view read it and send it, about 60 times a second.
+ * while one is on screen does this view read it and send it, about 60 times a second; and only
+ * while that one is MilkDrop, which analyses the sound itself, the two channels as well.
  *
  * The shift comes before the filters so an equaliser shapes the sound as it is heard: a bass boost
  * stays on the bass after the key moves.
@@ -47,6 +50,9 @@ type Graph = {
   output: GainNode
   /** What a visualizer draws: the output, after everything. */
   tap: AnalyserNode
+  /** Each channel of the output, for MilkDrop, at the size it reads (VISUAL_WAVE samples). */
+  left: AnalyserNode
+  right: AnalyserNode
 }
 
 /** Parameter changes glide over this long, so a band dragged in settings never clicks. */
@@ -84,10 +90,14 @@ let running = false
 let silent: boolean | null = null
 let stretch: Promise<Stretch> | null = null
 let visualTimer: ReturnType<typeof setTimeout> | null = null
+/** Whether the visualizer on screen is MilkDrop, so frames carry the channels too. */
+let waveWanted = false
 let lastFrameSilent = false
 const edges = bandEdges()
 // Read into the same array every frame, rather than making garbage sixty times a second.
 const spectrum = new Float32Array(TAP_FFT / 2)
+const leftWave = new Uint8Array(VISUAL_WAVE)
+const rightWave = new Uint8Array(VISUAL_WAVE)
 
 window.bsc.onAudioConfig((config) => {
   latest = config
@@ -131,6 +141,7 @@ async function apply(config: AudioConfig): Promise<void> {
     watchForSilence()
     report({ kind: 'running' })
   }
+  waveWanted = config.visual && config.visualWave
   setVisual(config.visual)
 }
 
@@ -187,6 +198,13 @@ async function build(source: MediaStream, config: AudioConfig): Promise<Graph | 
   output.connect(context.destination)
   const tap = new AnalyserNode(context, { fftSize: TAP_FFT, smoothingTimeConstant: 0 })
   output.connect(tap)
+  // MilkDrop analyses each channel itself, as an analyser of its own would give it the samples.
+  const channels = new ChannelSplitterNode(context, { numberOfOutputs: 2 })
+  const left = new AnalyserNode(context, { fftSize: VISUAL_WAVE, smoothingTimeConstant: 0 })
+  const right = new AnalyserNode(context, { fftSize: VISUAL_WAVE, smoothingTimeConstant: 0 })
+  output.connect(channels)
+  channels.connect(left, 0)
+  channels.connect(right, 1)
 
   const next: Graph = {
     context,
@@ -196,7 +214,9 @@ async function build(source: MediaStream, config: AudioConfig): Promise<Graph | 
     preamp,
     filters: [],
     output,
-    tap
+    tap,
+    left,
+    right
   }
   wireFilters(next, config.filters)
   if (context.state !== 'running') await context.resume()
@@ -310,15 +330,26 @@ function setVisual(on: boolean): void {
 }
 
 /**
- * One frame for the visualizer: the tap's bands. Silence is sent once and then not
- * again until there is sound, so a paused track costs nothing; the drawing view lets its bars fall.
+ * One frame for the visualizer: the tap's bands, and for MilkDrop the channels. Silence is sent
+ * once and then not again until there is sound, so a paused track costs nothing; the drawing view
+ * lets its bars fall.
  */
 function sendVisualFrame(): void {
   visualTimer = setTimeout(sendVisualFrame, VISUAL_FRAME_MS)
   const tap = graph?.tap
   if (!tap || !graph) return
   tap.getFloatFrequencyData(spectrum)
-  const frame = { bands: bandLevels(spectrum, graph.context.sampleRate, edges) }
+  let wave: VisualFrame['wave'] = null
+  if (waveWanted) {
+    graph.left.getByteTimeDomainData(leftWave)
+    graph.right.getByteTimeDomainData(rightWave)
+    // Sending copies them, so the same two arrays serve every frame.
+    wave = { left: leftWave, right: rightWave }
+  }
+  const frame: VisualFrame = {
+    bands: bandLevels(spectrum, graph.context.sampleRate, edges),
+    wave
+  }
   const silent = isSilentFrame(frame)
   if (silent && lastFrameSilent) return
   lastFrameSilent = silent

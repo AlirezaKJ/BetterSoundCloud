@@ -65,7 +65,8 @@ vi.mock('./session', () => ({ openInBrowser: mocks.openInBrowser }))
 vi.mock('./visualizer', () => ({
   setVisualizer: mocks.setVisualizer,
   clearVisualizer: mocks.clearVisualizer,
-  reducedMotion: () => false
+  reducedMotion: () => false,
+  milkdropPossible: () => true
 }))
 vi.mock('./audio', () => ({
   setAudioFilters: mocks.setAudioFilters,
@@ -452,12 +453,13 @@ describe('shaping the sound', () => {
     await runningTone()
     expect(await call('audio.visualize', [{ showcase: 'ring' }], 1)).toMatchObject({
       ok: true,
-      value: { reducedMotion: false }
+      value: { reducedMotion: false, milkdrop: true }
     })
     expect(mocks.setVisualizer).toHaveBeenCalledWith('tone', {
       showcase: 'ring',
       strip: null,
-      view: null
+      view: null,
+      presets: 'timed'
     })
     expect(await call('audio.visualize', [{ showcase: 'lasers' }], 2)).toMatchObject({
       ok: false

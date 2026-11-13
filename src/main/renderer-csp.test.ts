@@ -5,24 +5,25 @@ import { describe, it, expect } from 'vitest'
 /**
  * Every view's CSP is the standard one (CLAUDE.md §6), with two kinds of exception, each as narrow
  * as it can be: the showcase and the Visualizer's view of its own load artwork from SoundCloud's
- * image host (for its colour), and the audio engine compiles WebAssembly for its pitch shifter.
- * Another exception, or a broader one, fails here first.
+ * image host (for its colour), and compile WebAssembly for MilkDrop's presets; the audio engine
+ * compiles WebAssembly for its pitch shifter. Another exception, or a broader one, fails here
+ * first.
  */
 
 const STANDARD =
   "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'"
 
+// 'wasm-unsafe-eval' lets WebAssembly compile and nothing else: no eval, no inline script.
+const WASM = (policy: string): string =>
+  policy.replace("script-src 'self'", "script-src 'self' 'wasm-unsafe-eval'")
+const ARTWORK = (policy: string): string =>
+  policy.replace("img-src 'self' data:", "img-src 'self' data: https://*.sndcdn.com")
+
 const EXCEPTIONS: Record<string, string> = {
-  showcase: STANDARD.replace(
-    "img-src 'self' data:",
-    "img-src 'self' data: https://*.sndcdn.com"
-  ),
-  'visual-view': STANDARD.replace(
-    "img-src 'self' data:",
-    "img-src 'self' data: https://*.sndcdn.com"
-  ),
-  // 'wasm-unsafe-eval' lets WebAssembly compile and nothing else: no eval, no inline script.
-  audio: STANDARD.replace("script-src 'self'", "script-src 'self' 'wasm-unsafe-eval'")
+  // Both draw MilkDrop (Butterchurn), whose presets compile to WebAssembly.
+  showcase: WASM(ARTWORK(STANDARD)),
+  'visual-view': WASM(ARTWORK(STANDARD)),
+  audio: WASM(STANDARD)
 }
 
 const RENDERER = join(import.meta.dirname, '../renderer')

@@ -57,7 +57,9 @@ CLAUDE.md is worse than none, because it gets trusted.
   its Electron exits silently, leaving the old main-process code running. Check for a listener on
   5173 and running `electron.exe` processes before assuming a build is live.
 - `npm install` needs `allow-git=root` (in `.npmrc`) because Electron comes from the Castlabs
-  GitHub release (Widevine build). `postinstall` fetches the binary.
+  GitHub release (Widevine build). `postinstall` fetches the binary. **After adding a package
+  (`npm install -D <name>`) the binary was gone** (2026-11-13: `npm run check` said "not
+  downloaded"); `node node_modules/electron/install.js` brings it back.
 - **On Linux the Castlabs build dies at startup whenever `CHROME_DESKTOP` is set**, to any value
   (castlabs/electron-releases#165, measured 2026-10-28). Dev clears it in `electron.vite.config.ts`;
   a packaged build started from a VS Code/Orca terminal needs `env -u CHROME_DESKTOP`. Electron
@@ -162,7 +164,7 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CU
 | `shared/lyric-clock.ts`     | `lyricClock()`: which lyric line is being sung, one timer per line, for the pane and the showcase                                                                                    |
 | `shared/audio.ts`           | `AudioFilter`, `readAudioFilters()`, `readAudioPitch()`, `combinePitch()`, `filterResponseDb()` (Web Audio's own maths), `headroomDb()`, `readAudioReport()`, the no-sound check     |
 | `shared/equaliser.ts`       | `graphicEqualiser()` (gains to filters that pass through them), stored gains, `bandLabel()`, `gainLabel()`                                                                           |
-| `shared/visualizer.ts`      | `VisualFrame`, `bandLevels()` (the log bands and their dB scale), `readVisualFrame()`, `readVisualizerConfig()`, `showcaseLayout()`, `stripLayout()`, `follow()`, `nextPeak()` (§22) |
+| `shared/visualizer.ts`      | `VisualFrame`, `bandLevels()` (log bands, their dB scale), `readVisualFrame()`, `readVisualizerConfig()`, the layouts, `follow()`, `nextPeak()`, MilkDrop's `readPresetPack()` (§22) |
 | `shared/pitch.ts`           | A `pitch` setting's stored semitones (`parseSemitones`), and its words: `semitoneWords()`, `semitoneLabel()`                                                                         |
 | `shared/showcase.ts`        | `artworkColour()`, `showcaseBackdrop()`, `showcaseInks()` (the showcase colours, contrast-checked), `artworkSources()`, `formatClock()`                                              |
 | `shared/page-status.ts`     | `PageStatus`, `describePageStatus()` (every word on that view), `describeLoadFailure()`, `retryDelay()`                                                                              |
@@ -295,10 +297,11 @@ views:
 | `closeShowcase`                                       | send           | the showcase view only                                                                                 |
 | `onAudioConfig`, `reportAudio`                        | subscribe/send | the audio engine's view only (`isAudioView`); reports are shaped by `readAudioReport`                  |
 | `reportVisualFrame`                                   | send           | the audio engine's view only (`isAudioView`); every frame shaped by `readVisualFrame`                  |
-| `onVisualFrame`                                       | subscribe      | pushed to the showcase, the strip and the view of its own while drawn, about 60 a second               |
+| `onVisualFrame`                                       | subscribe      | to the showcase, the strip and the view of its own while drawn, ~60 a second; channels for MilkDrop    |
 | `getVisualizer`, `onVisualizer`                       | invoke/sub     | the showcase, the strip or the view (`fromShowcase`, `fromVisualStrip`, `fromVisualView`)              |
 | `toggleVisualView`                                    | send           | `fromChrome`, or the player-bar view                                                                   |
 | `closeVisualView`                                     | send           | the view of its own only                                                                               |
+| `reportVisualViewLook`                                | send           | the view of its own only; one of its looks, so the engine sends MilkDrop the channels                  |
 | `onVisualViewState`                                   | subscribe      | pushed to the player view: whether the view of its own can open, and whether it is open                |
 | `pageStatusAction`                                    | send           | the status view only; re-checked against `shell.pageStatus`                                            |
 | `onPageStatus`                                        | subscribe      | pushed to the status view (on its load and on every change)                                            |
@@ -348,7 +351,8 @@ Each view is `src/renderer/<entry>/{index.html, main.ts, <Name>.svelte}`.
   No remote scripts, styles or fonts, ever. **Artwork from `https://*.sndcdn.com` is blocked by
   this CSP**: a view that shows artwork must add exactly that origin to its own `img-src`, nothing
   broader. The audio engine's view adds `'wasm-unsafe-eval'` to `script-src` for its pitch
-  shifter (§21), which allows WebAssembly and nothing else. `renderer-csp.test.ts` holds every
+  shifter (§21), which allows WebAssembly and nothing else; the showcase and the Visualizer's
+  view of its own add it too, for MilkDrop's presets (§22). `renderer-csp.test.ts` holds every
   view to the standard policy or its one named exception.
 - Svelte 5 runes only: `$state`, `$derived`, `$effect`, `$props`. Event attributes (`onclick`), not
   `on:click`. Subscribe in `onMount` and return the cleanup:
@@ -675,7 +679,9 @@ context menu have the shortcut; embedded and player do not).
   local pipe, so the bytes on the wire are tested as sent.
 - Plugins are tested three ways: `plugin-sandbox.test.ts` runs small scripts in the real sandbox;
   `lastfm-plugin.test.ts` runs the shipped Last.fm plugin against a fake Last.fm, and
-  `equaliser-plugin.test.ts`, `pitch-plugin.test.ts` and `visualizer-plugin.test.ts` the
+  `equaliser-plugin.test.ts`, `pitch-plugin.test.ts` and `visualizer-plugin.test.ts` (with
+  `visualizer.test.ts` for main's side, and `milkdrop-presets.test.ts` for the MilkDrop presets
+  shipped: WebAssembly only, pinned, licensed) the
   Equaliser, Pitch and the Visualizer against a fake engine; `plugins.test.ts`
   drives the service with real folders and a fake process. Plugin JavaScript is type-checked
   through `tsconfig.plugins.json`, against `resources/plugins/sandbox.d.ts` — which a test keeps
@@ -1071,6 +1077,8 @@ Pitch plugin     --bsc.audio.setPitch(semitones)-> plugins.ts: readAudioPitch
         --CH.audioConfigure { sourceId, pitch, filters, preampDb }--> getUserMedia({ chromeMediaSource: 'tab' })
         capture -> pitch shifter (only while shifted) -> preamp -> BiquadFilters -> output -> speakers
                                                                                      -> tap (§22)
+                                                                                     -> left, right
+                                                                                        (MilkDrop)
   <--CH.audioReport running | failed | pitch-failed | ended | silence-- (isAudioView, readAudioReport)
 engine status --{ type: 'audio' }--> plugins with the permission --> their status line
 ```
@@ -1136,19 +1144,21 @@ Rules that hold this together:
 ## 22. The Visualizer
 
 ```
-Visualizer plugin --bsc.audio.visualize({ showcase: 'bars'|'ring'|'wave'|'off', strip: …, view: … })-->
+Visualizer plugin --bsc.audio.visualize({ showcase: 'bars'|'ring'|'wave'|'milkdrop'|'off', strip: …,
+                                          view: …, presets: 'timed'|'track'|'still' })-->
   plugins.ts: readVisualizerConfig --> main/visualizer.ts: the look per place (first plugin by id)
 a place drawn on screen --setVisualPlaceShown(place)--> main/visualizer.ts
   showcase: openShowcase / closeShowcase
   strip: layout(), while its view exists, a track is loaded, the page is up and nothing covers it
   view: layout(), while it is open, the page is up and no showcase covers it
-  a place drawn with a look --> setAudioVisual(true) --> main/audio.ts runs the engine
-  (even with no filters and no shift), AudioConfig.visual = true
+  a place drawn with a look --> setAudioVisual(true, MilkDrop?) --> main/audio.ts runs the engine
+  (even with no filters and no shift), AudioConfig.visual = true, visualWave = MilkDrop drawn
 renderer/audio: an AnalyserNode (FFT 4096) on the output, every ~16 ms on a timer:
-  bandLevels --CH.visualFrame--> main: isAudioView, readVisualFrame
+  bandLevels (+ each channel's 1024 samples, for MilkDrop) --CH.visualFrame--> main: isAudioView,
+  readVisualFrame
   --CH.visualFrameChanged--> renderer/showcase, renderer/visual-strip, renderer/visual-view
   --> lib/Visualizer.svelte (canvas, rAF, eased; where it draws from showcaseLayout / stripLayout /
-      viewLayout)
+      viewLayout), or lib/MilkDrop.svelte (Butterchurn, WebGL, from the channels)
 ```
 
 Rules that hold this together:
@@ -1171,6 +1181,11 @@ Rules that hold this together:
   then nothing until there is sound. The drawing view eases every bar toward its frame on each
   animation frame (`follow`: 40 ms up, 220 ms down; `nextPeak`: hold 320 ms, then fall) and stops
   its loop once everything has fallen, so a paused track costs nothing there either.
+- **About 60 frames a second, whatever the screen** (`drawDue`, 12.8 ms between drawn frames, for
+  every look, MilkDrop's too). Animation frames come at the screen's refresh, and on a 240 Hz
+  screen Bars drew 240 a second: 18% of a core in its view and 32% in the GPU process, against
+  11% and 13% capped (measured 2026-11-13, the view of its own). 60 and 75 Hz screens still draw
+  every frame; 120 and 240 Hz draw 60, 144 Hz 72, 165 Hz 55, steadily (tested).
 - **What a frame holds** (`shared/visualizer.ts`, pure and tested): 64 log-spaced bands from 30 Hz
   to 16 kHz, each band's loudest bin (or, below a bin's width, the spectrum read between the two
   nearest bins, so the bass slopes instead of stepping), tilted +3 dB an octave around 1 kHz so
@@ -1245,9 +1260,10 @@ from `onVisualizerChange`). Escape or its ✕ closes it.
   `img-src` like the showcase's), the look large across it (`viewLayout`) and drawn at twice the
   strength (`strong`): here the visualizer is the subject, not decoration under text. Nothing
   loaded or paused, it says so in the middle of the room.
-- **The plugin chooses the look; the view can try another.** A two-button switch at its top
-  (Bars, Waveform), or ← and →, change the look for as long as it is open (`stepLook`); a new
-  choice in the plugin's settings replaces it. The controls and the cursor go once the pointer
+- **The plugin chooses the look; the view can try another.** A switch at its top (Bars,
+  Waveform, MilkDrop where it can run), or ← and →, change the look for as long as it is open
+  (`stepIndex` through the looks on offer); a new choice in the plugin's settings replaces it.
+  It tells main the look it draws (`reportVisualViewLook`), since MilkDrop needs the channels. The controls and the cursor go once the pointer
   rests, like the showcase's.
 - **The player bar makes room for its button.** The button comes first, so lyrics and the showcase
   never move; the buttons' width is 92px, 126 with it (`playerButtonsWidth`), and the reservation
@@ -1258,6 +1274,56 @@ from `onVisualizerChange`). Escape or its ✕ closes it.
   the engine listens for it only while it is drawn, not under the showcase. F6 treats it as the
   page it covers (`viewFor`/`areaOf` in main/focus-cycle.ts). It closes when the plugin drops
   its look, and it is focused on opening, so the keys work at once.
-- **Not built yet** (docs/TODO.md, Milestone 11): MilkDrop (Butterchurn, only if its 3.0 beta runs
-  under our CSP), in the showcase and the view of its own. Each is a new place in `VISUAL_PLACES` with its looks
-  in `LOOKS_FOR`.
+
+### MilkDrop
+
+MilkDrop's presets, in the showcase and the view of its own (never the strip, which floats over
+SoundCloud's page): Butterchurn's WebGL renderer (`lib/MilkDrop.svelte`, loaded by
+`lib/milkdrop.ts`), from the sound's two channels.
+
+- **Butterchurn 3.0.0-beta.5 and the `minimal` pack of `butterchurn-presets` 3.0.0-beta.4**
+  (29 presets), MIT, pinned devDependencies, bundled into chunks of their own that load only when
+  MilkDrop is first drawn. Their licences, and those of what Butterchurn bundles (eel-wasm, MIT;
+  AssemblyScript's loader, Apache-2.0; a Math polyfill, MIT), are in
+  `resources/licenses/butterchurn.txt`. `milkdrop-presets.test.ts` holds all three to it.
+- **WebAssembly, never `new Function`.** 2.6.7, npm's `latest`, compiles every preset with
+  `new Function`, which our CSP forbids. 3.0's beta compiles a preset's EEL equations to
+  WebAssembly (`onlyUseWASM`), so the two views add `'wasm-unsafe-eval'` and nothing else.
+  Measured 2026-11-13 in this Electron: all 29 presets load and draw under that policy, none
+  under the standard one, and nothing asked for `'unsafe-eval'`. `readPresetPack` keeps only
+  EEL presets; the test fails if the pack holds any other kind.
+- **The sound.** Butterchurn gets no AudioContext and reads no AudioNode: each animation frame
+  hands it the latest channels (`render({ audioLevels })`, undocumented, read from its source).
+  The engine reads them with a channel splitter and two analysers at Butterchurn's size
+  (`VISUAL_WAVE`, 1024) and sends them only while MilkDrop is on screen (`AudioConfig.visualWave`,
+  from `updateDemand`, which knows the look the view of its own draws through
+  `setVisualViewLook`). No channels for 150 ms is drawn as silence. Butterchurn assumes 44.1 kHz
+  for its bass/mid/treble split; the capture runs at 48 kHz, a 9% shift nobody can see.
+- **Only on the graphics card.** Without hardware acceleration Chromium still offers WebGL, in
+  software, at 12 to 112 ms a frame (measured), which would slow the whole app. So main draws
+  Bars in MilkDrop's place (`milkdropPossible`: `app.getGPUFeatureStatus().webgl` must start with
+  `enabled`; `unavailable_software` without acceleration, measured), and `visualize` answers
+  `milkdrop: false` so the plugin's row says why. The views check the renderer too
+  (`hardwareWebgl`: no SwiftShader, WARP or llvmpipe) and do not offer it, and a MilkDrop that
+  cannot start (no preset compiles) says so (`onfail`) and its place draws Bars.
+- **What it costs.** It renders at the room's CSS size, never device pixels, scaled down past
+  about a 1080p frame (`milkdropRenderSize`), at most about 60 frames a second like every look,
+  and only while SoundCloud plays: paused, it holds its last frame and costs nothing. Closing the
+  view frees its WebGL context at once (`loseGLContext`). Measured 2026-11-13 in the view of its
+  own at 1280×760 (RTX 3070): about the CPU of Bars, 4 to 6% of the graphics card, and about
+  95 MB more memory (its view and the GPU process) while it is open. Both views ask whether WebGL
+  is on the graphics card as they start, whatever their look (`hardwareWebgl`): an A/B showed that
+  asking only once MilkDrop was wanted made them paint about 20 ms later, not sooner.
+- **Presets** come in a shuffled order (`presetOrder`, every one once before any repeats) and
+  change by themselves as the plugin's "MilkDrop changes preset" says (`presets`: every 30 s with
+  a 2.7 s blend, with each new track, or only when asked); ↑ and ↓ change them in both views
+  (1 s blend), and the view of its own shows the name with two buttons. Loads go one at a time,
+  so the last key pressed wins.
+- **How it sits in each room.** In the showcase it is multiplied into the room's colour
+  (`shade`): nothing it draws is lighter than the room, so every word keeps the contrast it has on
+  the room alone (7:1 ink), and it reads as moving light and shade in the artwork's colour. In
+  the view of its own it is the subject, at full strength; its controls stand on a plate of the
+  room's colour; paused, it is shaded like the showcase so "Paused" reads; with nothing loaded it
+  is loaded but out of sight (`hidden`), so it shows at once when music starts.
+- `[data-bsc-milkdrop]` says `loading`, `ready` (a preset compiled) or `failed`: the packaged
+  smoke check reads it in both views.

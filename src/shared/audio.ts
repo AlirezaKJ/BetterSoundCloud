@@ -216,6 +216,11 @@ export type AudioConfig = {
    * and sends it about 60 times a second (src/shared/visualizer.ts). False costs nothing.
    */
   readonly visual: boolean
+  /**
+   * Whether that visualizer is MilkDrop, which reads the sound itself: each frame then carries the
+   * left and right channels too (`VisualFrame.wave`). Only with `visual`.
+   */
+  readonly visualWave: boolean
 }
 
 /** What the audio view tells main. Its renderer is ours, but it is checked like any message. */

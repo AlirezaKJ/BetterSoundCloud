@@ -536,6 +536,16 @@ view of its own over SoundCloud's page, which is an Experience surface too.
   still, as in the showcase. Nothing loaded: "Nothing is playing" and what to do, in the middle;
   paused: "Paused". Its player-bar button is a three-bar meter, first in the row so the others
   never move, pressed while open.
+- **MilkDrop** is the one look that is not ours: MilkDrop's own presets, full colour, filling the
+  room, in the full-screen view and the view of its own (never the strip). In the full-screen view
+  it is multiplied into the room's colour, so nothing it draws is lighter than the room and the
+  text keeps its 7:1: moving light and shade in the artwork's colour, never a light behind the
+  words. In the view of its own it is the subject, at full strength; the controls stand on a plate
+  of the room's colour (10px radius and the one shadow: it floats and takes input), with the
+  preset's name in ink and two chevron buttons (↑ ↓, the same keys); paused, it sinks into the
+  room like the full-screen view's, so "Paused" reads; with nothing loaded it is out of sight. It
+  surfaces over 600ms when it first draws; MilkDrop's own blends (2.7s, 1s when asked) do the
+  rest.
 - **Reduced motion removes it**, rather than freezing it (a still visualizer reads as stuck, as a
   still wait line does), and the plugin's row says "Hidden" and why.
 - Decorative: the canvas is hidden from assistive technology and takes no pointer.

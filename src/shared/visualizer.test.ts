@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
+  MILKDROP_MAX_PIXELS,
   NO_VISUALIZER,
   PEAK_HOLD_MS,
   STRIP_APPROACH,
@@ -8,18 +9,23 @@ import {
   VISUAL_BANDS,
   VISUAL_CEILING_DB,
   VISUAL_FLOOR_DB,
+  VISUAL_WAVE,
   VIEW_CONTROLS,
   bandEdges,
   bandLevels,
   dbToLevel,
+  drawDue,
+  drawsFromWave,
   follow,
   isSilentFrame,
+  milkdropRenderSize,
   nextPeak,
+  presetOrder,
   readVisualFrame,
   readVisualizerConfig,
   showcaseLayout,
   showsAnything,
-  stepLook,
+  stepIndex,
   stripAside,
   stripLayout,
   viewLayout
@@ -88,12 +94,40 @@ describe('dbToLevel', () => {
 })
 
 describe('readVisualFrame', () => {
-  const good = { bands: new Array<number>(VISUAL_BANDS).fill(0.5) }
+  const good = { bands: new Array<number>(VISUAL_BANDS).fill(0.5), wave: null }
+  const channel = (): Uint8Array => new Uint8Array(VISUAL_WAVE).fill(128)
 
   it('takes a frame of the right length, clamping values into range, and nothing else', () => {
     const frame = readVisualFrame({ bands: [1.5, ...good.bands.slice(1)], extra: 'x' })
     expect(frame?.bands[0]).toBe(1)
-    expect(frame && Object.keys(frame)).toEqual(['bands'])
+    expect(frame && Object.keys(frame)).toEqual(['bands', 'wave'])
+    expect(frame?.wave).toBeNull()
+  })
+
+  it('takes the channels for MilkDrop: two arrays of bytes, exactly the size it reads', () => {
+    const left = channel()
+    const right = channel()
+    expect(readVisualFrame({ bands: good.bands, wave: { left, right } })?.wave).toEqual({
+      left,
+      right
+    })
+    expect(readVisualFrame({ bands: good.bands, wave: null })?.wave).toBeNull()
+  })
+
+  it('refuses channels of the wrong size or kind, rather than drawing from them', () => {
+    const short = new Uint8Array(VISUAL_WAVE - 1)
+    const numbers = Array.from({ length: VISUAL_WAVE }, () => 128)
+    const floats = new Float32Array(VISUAL_WAVE)
+    for (const wave of [
+      { left: short, right: channel() },
+      { left: channel(), right: numbers },
+      { left: floats, right: channel() },
+      { left: channel() },
+      [channel(), channel()],
+      'wave'
+    ]) {
+      expect(readVisualFrame({ bands: good.bands, wave })).toBeNull()
+    }
   })
 
   it('refuses the wrong length, non-numbers and non-finite values', () => {
@@ -105,7 +139,9 @@ describe('readVisualFrame', () => {
   })
 
   it('knows digital silence when it sees it', () => {
-    expect(isSilentFrame({ bands: new Array<number>(VISUAL_BANDS).fill(0) })).toBe(true)
+    expect(isSilentFrame({ bands: new Array<number>(VISUAL_BANDS).fill(0), wave: null })).toBe(
+      true
+    )
     expect(isSilentFrame(good)).toBe(false)
   })
 })
@@ -115,20 +151,37 @@ describe('readVisualizerConfig', () => {
     expect(readVisualizerConfig({ showcase: 'ring' })).toEqual({
       showcase: 'ring',
       strip: null,
-      view: null
+      view: null,
+      presets: 'timed'
     })
     expect(readVisualizerConfig({ showcase: 'off', strip: 'wave', view: 'bars' })).toEqual({
       showcase: null,
       strip: 'wave',
-      view: 'bars'
+      view: 'bars',
+      presets: 'timed'
     })
     expect(readVisualizerConfig({ showcase: 'off' })).toEqual(NO_VISUALIZER)
     expect(readVisualizerConfig({})).toEqual(NO_VISUALIZER)
     expect(readVisualizerConfig(null)).toEqual(NO_VISUALIZER)
   })
 
+  it('takes MilkDrop in the showcase and the view of its own, and when it changes preset', () => {
+    expect(readVisualizerConfig({ showcase: 'milkdrop', view: 'milkdrop' })).toEqual({
+      showcase: 'milkdrop',
+      strip: null,
+      view: 'milkdrop',
+      presets: 'timed'
+    })
+    for (const presets of ['timed', 'track', 'still'] as const)
+      expect(readVisualizerConfig({ view: 'milkdrop', presets })?.presets).toBe(presets)
+  })
+
   it('refuses unknown looks and places, and a look a place cannot draw', () => {
-    expect(readVisualizerConfig({ showcase: 'milkdrop' })).toBeNull()
+    expect(readVisualizerConfig({ showcase: 'butterchurn' })).toBeNull()
+    // MilkDrop fills a room; the strip floats over SoundCloud's page.
+    expect(readVisualizerConfig({ strip: 'milkdrop' })).toBeNull()
+    expect(readVisualizerConfig({ view: 'milkdrop', presets: 'often' })).toBeNull()
+    expect(readVisualizerConfig({ view: 'milkdrop', presets: null })).toBeNull()
     // The ring follows the sleeve, which only the showcase has.
     expect(readVisualizerConfig({ strip: 'ring' })).toBeNull()
     expect(readVisualizerConfig({ view: 'ring' })).toBeNull()
@@ -142,18 +195,6 @@ describe('readVisualizerConfig', () => {
     expect(showsAnything({ ...NO_VISUALIZER, showcase: 'bars' })).toBe(true)
     expect(showsAnything({ ...NO_VISUALIZER, strip: 'bars' })).toBe(true)
     expect(showsAnything({ ...NO_VISUALIZER, view: 'wave' })).toBe(true)
-  })
-})
-
-describe('stepLook', () => {
-  it('steps through a place’s looks with the arrow keys, wrapping at either end', () => {
-    expect(stepLook('view', 'bars', 1)).toBe('wave')
-    expect(stepLook('view', 'wave', 1)).toBe('bars')
-    expect(stepLook('view', 'bars', -1)).toBe('wave')
-    expect(stepLook('showcase', 'bars', -1)).toBe('wave')
-    expect(stepLook('showcase', 'bars', 1)).toBe('ring')
-    // A look the place cannot draw starts from its first.
-    expect(stepLook('view', 'ring', 1)).toBe('wave')
   })
 })
 
@@ -277,5 +318,73 @@ describe('nextPeak', () => {
     expect(peak.level).toBeLessThan(0.8)
     for (let i = 0; i < 200; i++) peak = nextPeak(peak, 0.2, 16)
     expect(peak.level).toBe(0.2)
+  })
+})
+
+describe('MilkDrop', () => {
+  it('is the one look drawn from the channels', () => {
+    expect(drawsFromWave('milkdrop')).toBe(true)
+    for (const look of ['bars', 'ring', 'wave', null] as const)
+      expect(drawsFromWave(look)).toBe(false)
+  })
+
+  it('renders at the room’s own size, scaled down past about a 1080p frame', () => {
+    expect(milkdropRenderSize(1280, 720)).toEqual({ width: 1280, height: 720 })
+    expect(milkdropRenderSize(1920, 1080)).toEqual({ width: 1920, height: 1080 })
+    const big = milkdropRenderSize(3840, 2160)
+    expect(big).toEqual({ width: 1920, height: 1080 })
+    const wide = milkdropRenderSize(3440, 1440)
+    expect(wide.width * wide.height).toBeLessThanOrEqual(MILKDROP_MAX_PIXELS * 1.01)
+    expect(wide.width / wide.height).toBeCloseTo(3440 / 1440, 2)
+    expect(milkdropRenderSize(0, 0)).toEqual({ width: 16, height: 16 })
+  })
+
+  it('shuffles every preset in once before any comes again', () => {
+    const order = presetOrder(29)
+    expect([...order].sort((a, b) => a - b)).toEqual(Array.from({ length: 29 }, (_, i) => i))
+    // A fixed draw gives a fixed order: always the last left becomes the first.
+    expect(presetOrder(4, () => 0)).toEqual([1, 2, 3, 0])
+    expect(presetOrder(4, () => 0.999)).toEqual([0, 1, 2, 3])
+    expect(presetOrder(0)).toEqual([])
+    expect(presetOrder(1)).toEqual([0])
+  })
+
+  it('steps through presets, wrapping at either end', () => {
+    expect(stepIndex(0, 1, 3)).toBe(1)
+    expect(stepIndex(2, 1, 3)).toBe(0)
+    expect(stepIndex(0, -1, 3)).toBe(2)
+    expect(stepIndex(1, -7, 3)).toBe(0)
+    expect(stepIndex(0, 1, 0)).toBe(0)
+  })
+})
+
+describe('drawDue', () => {
+  /** Frames drawn in a second at a screen's refresh rate, with each frame's time off by `jitter`. */
+  const drawnAt = (hz: number, jitter = 0): number => {
+    let last = 0
+    let drawn = 0
+    for (let frame = 1; frame <= hz; frame++) {
+      const now = (frame * 1000) / hz + (frame % 2 === 0 ? jitter : -jitter)
+      if (drawDue(now, last)) {
+        drawn++
+        last = now
+      }
+    }
+    return drawn
+  }
+
+  it('draws every frame of a 60 or 75 Hz screen, even when frames come early or late', () => {
+    expect(drawnAt(60)).toBe(60)
+    expect(drawnAt(60, 1)).toBe(60)
+    expect(drawnAt(75)).toBe(75)
+    expect(drawnAt(75, 0.2)).toBe(75)
+  })
+
+  it('draws about 60 a second on fast screens, steadily', () => {
+    expect(drawnAt(120)).toBe(60)
+    expect(drawnAt(144)).toBe(72)
+    expect(drawnAt(165)).toBe(55)
+    expect(drawnAt(240)).toBe(60)
+    expect(drawnAt(240, 0.2)).toBe(60)
   })
 })

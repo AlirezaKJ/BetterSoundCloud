@@ -128,8 +128,12 @@ through `bsc.audio.onStatus`. Safe mode never starts it.
 name for each place, while that place is on screen: `showcase`, the full-screen view, and
 `strip`, standing on SoundCloud's player while a track is loaded (it steps aside when the pointer
 comes near); and `view`, a view of its own over SoundCloud's page, which the user opens from the
-player bar while your plugin offers it. Your plugin never sees the sound and draws nothing itself. The bundled Visualizer
-(`resources/plugins/visualizer/`) is the example, with a `choice` setting for each place.
+player bar while your plugin offers it. The showcase and the view can also take `milkdrop`,
+MilkDrop's presets, with `presets` saying when they change by themselves (`timed`, `track` or
+`still`); without hardware acceleration Bars are drawn instead and `visualize` answers
+`milkdrop: false`, so your status line can say so. Your plugin never sees the sound and draws
+nothing itself. The bundled Visualizer (`resources/plugins/visualizer/`) is the example, with a
+`choice` setting for each place.
 
 **`page` is not available.** Code inside SoundCloud's page is on hold until the project has a
 clean baseline for its sign-in experiments (see `docs/TODO.md`, Milestone 1). A plugin asking for

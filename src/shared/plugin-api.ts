@@ -1,9 +1,9 @@
 import type { NowPlaying } from './now-playing'
 import type { AudioFilter } from './audio'
-import type { VisualLook } from './visualizer'
+import type { MilkdropChange, VisualLook } from './visualizer'
 
 export type { AudioFilter } from './audio'
-export type { VisualLook } from './visualizer'
+export type { MilkdropChange, VisualLook } from './visualizer'
 
 /**
  * The API a plugin is written against: the `bsc` object its `activate` receives.
@@ -114,24 +114,30 @@ export type PluginApi = {
     clear(): Promise<void>
     /**
      * Draw what SoundCloud plays: a look per place, or null for none. Places and looks:
-     * `showcase` (the full-screen view): `'bars'` along the bottom, `'ring'` around the sleeve, or
-     * `'wave'`, a flowing line through the bands, mirrored about its middle; `strip` (standing on
-     * SoundCloud's player while a track is loaded): `'bars'` or `'wave'`; `view` (a view of its
-     * own over SoundCloud's page, opened from the player bar): `'bars'` or `'wave'`. The app draws
-     * it; the engine runs only while one is on screen, and reads the sound at the very end of its
-     * chain, so it shows what is heard.
+     * `showcase` (the full-screen view): `'bars'` along the bottom, `'ring'` around the sleeve,
+     * `'wave'`, a flowing line through the bands, mirrored about its middle, or `'milkdrop'`, a
+     * MilkDrop preset filling the room; `strip` (standing on SoundCloud's player while a track is
+     * loaded): `'bars'` or `'wave'`; `view` (a view of its own over SoundCloud's page, opened from
+     * the player bar): `'bars'`, `'wave'` or `'milkdrop'`. `presets` says when MilkDrop moves to
+     * another preset by itself: `'timed'` (every 30 seconds, the default), `'track'` (with each new
+     * track) or `'still'` (only when the listener asks). The app draws it; the engine runs only
+     * while one is on screen, and reads the sound at the very end of its chain, so it shows what
+     * is heard.
      *
      * Resolves with `reducedMotion: true` when the system asks for reduced motion: nothing is
-     * drawn then, and the plugin's status line should say so.
+     * drawn then, and the plugin's status line should say so. `milkdrop: false` when MilkDrop
+     * cannot be drawn (it needs hardware acceleration): Bars are drawn in its place.
      */
     visualize(
       config: {
         showcase?: VisualLook | 'off' | null
         strip?: VisualLook | 'off' | null
         view?: VisualLook | 'off' | null
+        presets?: MilkdropChange
       } | null
     ): Promise<{
       reducedMotion: boolean
+      milkdrop: boolean
     }>
     /** What the engine is doing: with the current status at once, then on every change. */
     onStatus(listener: (status: AudioStatus) => void): () => void

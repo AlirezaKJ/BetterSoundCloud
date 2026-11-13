@@ -90,6 +90,8 @@ let restartTimer: ReturnType<typeof setTimeout> | null = null
 const listeners = new Set<(status: AudioStatus) => void>()
 /** Whether a visualizer is on screen, so the engine should run and send what it plays. */
 let visualWanted = false
+/** Whether that visualizer is MilkDrop, so each frame should carry the channels too. */
+let waveWanted = false
 const frameListeners = new Set<(frame: VisualFrame) => void>()
 let started = false
 
@@ -139,10 +141,15 @@ export function setAudioPitch(owner: string, semitones: number): void {
   reconcile()
 }
 
-/** Whether a visualizer is on screen (main/visualizer.ts decides). True runs the engine. */
-export function setAudioVisual(wanted: boolean): void {
-  if (wanted === visualWanted) return
+/**
+ * Whether a visualizer is on screen (main/visualizer.ts decides), and whether it reads the
+ * channels (MilkDrop). True runs the engine.
+ */
+export function setAudioVisual(wanted: boolean, wave = false): void {
+  const nextWave = wanted && wave
+  if (wanted === visualWanted && nextWave === waveWanted) return
   visualWanted = wanted
+  waveWanted = nextWave
   reconcile()
 }
 
@@ -310,7 +317,8 @@ function sendConfig(): void {
     pitch: combinePitch(pitches.values()),
     filters,
     preampDb: -headroomDb(filters),
-    visual: visualWanted
+    visual: visualWanted,
+    visualWave: waveWanted
   }
   view.webContents.send(CH.audioConfigure, config)
 }
@@ -386,6 +394,7 @@ export function resetAudioEngineForTests(): void {
   listeners.clear()
   frameListeners.clear()
   visualWanted = false
+  waveWanted = false
   engine = { state: 'off' }
   latched = null
   target = null

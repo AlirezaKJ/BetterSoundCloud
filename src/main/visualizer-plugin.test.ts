@@ -16,7 +16,10 @@ const DIR = join(import.meta.dirname, '../../resources/plugins/visualizer')
 const CODE = readFileSync(join(DIR, 'index.js'), 'utf8')
 const RAW_MANIFEST = JSON.parse(readFileSync(join(DIR, 'plugin.json'), 'utf8')) as unknown
 
-async function run(settings: Record<string, string>, answer = { reducedMotion: false }) {
+async function run(
+  settings: Record<string, string>,
+  answer: { reducedMotion: boolean; milkdrop?: boolean } = { reducedMotion: false }
+) {
   const calls: { method: string; args: unknown[] }[] = []
   const statuses: (PluginStatus | null)[] = []
   const bridge: Bridge = {
@@ -46,14 +49,15 @@ async function run(settings: Record<string, string>, answer = { reducedMotion: f
 }
 
 describe('the Visualizer plugin', () => {
-  it('has a valid manifest: the audio permission, and bars in every place to start', () => {
+  it('has a valid manifest: the audio permission, bars in every place, timed presets', () => {
     const result = readManifest(RAW_MANIFEST, 'visualizer')
     if (!result.ok) throw new Error(result.problem)
     expect(result.manifest.permissions).toEqual(['audio'])
     expect(result.manifest.settings).toEqual([
       expect.objectContaining({ key: 'showcase', kind: 'choice', default: 'bars' }),
       expect.objectContaining({ key: 'strip', kind: 'choice', default: 'bars' }),
-      expect.objectContaining({ key: 'view', kind: 'choice', default: 'bars' })
+      expect.objectContaining({ key: 'view', kind: 'choice', default: 'bars' }),
+      expect.objectContaining({ key: 'presets', kind: 'choice', default: 'timed' })
     ])
   })
 
@@ -66,19 +70,36 @@ describe('the Visualizer plugin', () => {
         const config = readVisualizerConfig({ [setting.key]: option.value })
         expect(config, `${setting.key}: ${option.value}`).not.toBeNull()
       }
-      expect(setting.options.map((o) => o.value)).toContain('off')
+      if (setting.key !== 'presets')
+        expect(setting.options.map((o) => o.value)).toContain('off')
     }
+    const looks = (key: string): string[] => {
+      const setting = result.manifest.settings.find((one) => one.key === key)
+      return setting?.kind === 'choice' ? setting.options.map((o) => o.value) : []
+    }
+    expect(looks('showcase')).toContain('milkdrop')
+    expect(looks('view')).toContain('milkdrop')
+    expect(looks('strip')).not.toContain('milkdrop')
   })
 
   it('asks for the looks chosen, in a shape main accepts as it is', async () => {
-    const { calls } = await run({ showcase: 'ring', strip: 'wave', view: 'bars' })
+    const { calls } = await run({
+      showcase: 'ring',
+      strip: 'wave',
+      view: 'milkdrop',
+      presets: 'track'
+    })
     expect(calls).toEqual([
-      { method: 'audio.visualize', args: [{ showcase: 'ring', strip: 'wave', view: 'bars' }] }
+      {
+        method: 'audio.visualize',
+        args: [{ showcase: 'ring', strip: 'wave', view: 'milkdrop', presets: 'track' }]
+      }
     ])
     expect(readVisualizerConfig(calls[0]?.args[0])).toEqual({
       showcase: 'ring',
       strip: 'wave',
-      view: 'bars'
+      view: 'milkdrop',
+      presets: 'track'
     })
   })
 
@@ -87,10 +108,10 @@ describe('the Visualizer plugin', () => {
     plugin.settings({ showcase: 'wave', strip: 'bars' })
     plugin.settings({ showcase: 'off', strip: 'ring' })
     expect(calls.map((c) => c.args[0])).toEqual([
-      { showcase: 'bars', strip: 'bars', view: 'off' },
-      { showcase: 'wave', strip: 'bars', view: 'off' },
+      { showcase: 'bars', strip: 'bars', view: 'off', presets: 'timed' },
+      { showcase: 'wave', strip: 'bars', view: 'off', presets: 'timed' },
       // The ring is not a strip look: it is "off" there.
-      { showcase: 'off', strip: 'off', view: 'off' }
+      { showcase: 'off', strip: 'off', view: 'off', presets: 'timed' }
     ])
     expect(last()?.lead).toBe('Nothing chosen')
   })
@@ -111,6 +132,23 @@ describe('the Visualizer plugin', () => {
       'SoundCloud’s sound couldn’t be captured (NotAllowedError), so SoundCloud plays as normal.'
     plugin.audio({ state: 'stopped', message })
     expect(last()).toEqual({ lead: 'Not working', problem: message })
+  })
+
+  it('says MilkDrop needs hardware acceleration when main cannot draw it', async () => {
+    const { plugin, last } = await run(
+      { showcase: 'milkdrop', strip: 'bars' },
+      { reducedMotion: false, milkdrop: false }
+    )
+    expect(last()).toEqual({
+      lead: 'On',
+      detail: 'It shows in the full-screen view and above the player while music plays.',
+      problem:
+        'MilkDrop needs hardware acceleration (Settings → Advanced), so Bars show in its place.'
+    })
+    // Not chosen anywhere, nothing to say about it.
+    plugin.settings({ showcase: 'bars', strip: 'bars' })
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(last()?.problem).toBeUndefined()
   })
 
   it('says it is hidden when the system asks for reduced motion', async () => {

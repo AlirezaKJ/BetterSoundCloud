@@ -472,6 +472,53 @@ try {
     '…and closed, the engine lets go',
     (await ownViews()) === 0 && (await audioViews()) === 0
   )
+
+  // MilkDrop: Butterchurn's presets compile to WebAssembly under the CSP of the views that draw
+  // it, in the packed build, in its own view and in the full-screen view; the engine listens for
+  // them. Nothing plays here, so it loads and waits out of sight. "ready" means a preset compiled:
+  // a refused one leaves it "failed", and Bars in its place.
+  if (!reduced) {
+    const milkdropIn = async (target) => {
+      for (let tries = 0; tries < 30; tries++) {
+        const state = await target.run(
+          `document.querySelector('[data-bsc-milkdrop]')?.dataset.bscMilkdrop ?? ''`
+        )
+        if (state && state !== 'loading') return state
+        await wait(500)
+      }
+      return 'still loading'
+    }
+    await settings.run(`window.bsc.setPluginSetting('visualizer', 'view', 'milkdrop')`)
+    await wait(1000)
+    const row = await visualizer()
+    await header.run('window.bsc.toggleVisualView()')
+    const drop = await view((url) => url.includes('/visual-view/index.html'), 15000)
+    const dropState = drop ? await milkdropIn(drop) : 'no view'
+    check(
+      '…MilkDrop in its own view: its presets compile under the view’s CSP',
+      dropState === 'ready' && (await audioViews()) === 1 && !row?.problem,
+      `${dropState}, ${await audioViews()} audio view(s)${row?.problem ? `, ${row.problem}` : ''}`
+    )
+    check(
+      'no uncaught errors in the visualizer’s own view',
+      (drop?.exceptions.length ?? 0) === 0,
+      drop?.exceptions[0]
+    )
+    if (drop) await drop.run('window.bsc.closeVisualView()').catch(() => undefined)
+    await settings.run(`window.bsc.setPluginSetting('visualizer', 'showcase', 'milkdrop')`)
+    await wait(1000)
+    await header.run('window.bsc.openShowcase()')
+    const hall = await view((url) => url.includes('/showcase/index.html'), 15000)
+    const hallState = hall ? await milkdropIn(hall) : 'no view'
+    check(
+      '…and in the full-screen view',
+      hallState === 'ready' && (hall?.exceptions.length ?? 0) === 0,
+      `${hallState}${hall?.exceptions[0] ? `, ${hall.exceptions[0]}` : ''}`
+    )
+    if (hall) await hall.run('window.bsc.closeShowcase()').catch(() => undefined)
+    await wait(2000)
+    check('…and both closed, the engine lets go', (await audioViews()) === 0)
+  }
   await settings.run(`window.bsc.setPluginEnabled('visualizer', false)`)
   await wait(1000)
   check('…and the plugin off, its strip goes too', (await stripViews()) === 0)

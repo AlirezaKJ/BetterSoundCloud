@@ -6,7 +6,7 @@
  * own, so this one does not draw: it tells the app which look it wants in each place
  * (`bsc.audio.visualize`), and the app's own views draw it from the audio engine's sound. Its
  * settings are the look in each place: the full-screen view, the strip above the player, and a
- * view of its own over SoundCloud's page.
+ * view of its own over SoundCloud's page; and when MilkDrop moves on to another preset.
  *
  * It is a plugin, off until turned on, so that it can never be what breaks SoundCloud: turned
  * off, crashed or uninstalled, the app drops its request, nothing is drawn, and the engine stops
@@ -16,21 +16,28 @@
 /** @typedef {import('../../../src/shared/plugin-api').PluginApi} PluginApi */
 /** @typedef {import('../../../src/shared/plugin-api').AudioStatus} AudioStatus */
 /** @typedef {import('../../../src/shared/plugin-api').VisualLook} VisualLook */
+/** @typedef {import('../../../src/shared/plugin-api').MilkdropChange} MilkdropChange */
 
 /** @type {PluginApi | null} */
 let api = null
 /** @type {{ showcase: VisualLook | 'off', strip: VisualLook | 'off', view: VisualLook | 'off' }} */
 let looks = { showcase: 'off', strip: 'off', view: 'off' }
+/** @type {MilkdropChange} */
+let presets = 'timed'
 let reducedMotion = false
+/** Whether MilkDrop can be drawn here: it needs hardware acceleration. */
+let milkdrop = true
 /** @type {AudioStatus} */
 let engine = { state: 'off', message: '' }
 
 /** The looks each place can take; anything else is "off". */
 const LOOKS = {
-  showcase: ['bars', 'ring', 'wave'],
+  showcase: ['bars', 'ring', 'wave', 'milkdrop'],
   strip: ['bars', 'wave'],
-  view: ['bars', 'wave']
+  view: ['bars', 'wave', 'milkdrop']
 }
+/** @type {MilkdropChange[]} */
+const PRESET_CHANGES = ['timed', 'track', 'still']
 
 module.exports = {
   /** @param {PluginApi} bsc */
@@ -74,10 +81,12 @@ function apply(values) {
     strip: lookOf(values['strip'], LOOKS.strip),
     view: lookOf(values['view'], LOOKS.view)
   }
+  presets = PRESET_CHANGES.find((change) => change === values['presets']) ?? 'timed'
   bsc.audio
-    .visualize(looks)
+    .visualize({ ...looks, presets })
     .then((answer) => {
       reducedMotion = answer.reducedMotion
+      milkdrop = answer.milkdrop
       showStatus()
     })
     .catch((/** @type {unknown} */ error) => {
@@ -116,6 +125,16 @@ function showStatus() {
   // where it shows rather than claiming it is on screen.
   if (engine.state === 'stopped') {
     api.status.set({ lead: 'Not working', problem: engine.message })
+    return
+  }
+  const wantsMilkdrop = looks.showcase === 'milkdrop' || looks.view === 'milkdrop'
+  if (wantsMilkdrop && !milkdrop) {
+    api.status.set({
+      lead: 'On',
+      detail: `It shows ${where} while music plays.`,
+      problem:
+        'MilkDrop needs hardware acceleration (Settings → Advanced), so Bars show in its place.'
+    })
     return
   }
   api.status.set({ lead: 'On', detail: `It shows ${where} while music plays.` })

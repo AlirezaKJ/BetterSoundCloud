@@ -9,6 +9,8 @@
   import { NO_VISUALIZER, showcaseLayout } from '@shared/visualizer'
   import type { Box, VisualLayout, VisualLook, VisualizerConfig } from '@shared/visualizer'
   import Visualizer from '../lib/Visualizer.svelte'
+  import MilkDrop from '../lib/MilkDrop.svelte'
+  import { hardwareWebgl } from '../lib/milkdrop'
   import { artworkRoom, NEUTRAL_ROOM } from '../lib/artwork-room'
 
   /*
@@ -25,8 +27,9 @@
    * cannot control playback; leaving it changes nothing but the window.
    *
    * With the Visualizer plugin on, what is playing is drawn behind it all as well (§22), in the
-   * look the plugin chose for here: bars under the sleeve and its notes, bars round the sleeve, or
-   * a waveform line. Off, or under reduced motion, there is nothing extra at all.
+   * look the plugin chose for here: bars under the sleeve and its notes, bars round the sleeve, a
+   * waveform line, or MilkDrop filling the room, multiplied into its colour so the text keeps its
+   * contrast (↑ and ↓ change its preset). Off, or under reduced motion, there is nothing extra.
    */
 
   /** How long the close button and the cursor stay once the pointer stops moving. */
@@ -49,6 +52,9 @@
   let resized = $state(0)
   /** The Visualizer plugin's choice for here; nothing while it is off. */
   let visualizer = $state<VisualizerConfig>(NO_VISUALIZER)
+  /** MilkDrop could not start here (or has no graphics card to run on): Bars take its place. */
+  let milkdropFailed = $state(!hardwareWebgl())
+  let milkdrop = $state<{ step(by: number): void } | null>(null)
   let sleeve = $state<HTMLElement | null>(null)
   let art = $state<HTMLElement | null>(null)
   let notes = $state<HTMLElement | null>(null)
@@ -99,6 +105,8 @@
 
     const onKey = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') window.bsc.closeShowcase()
+      else if (event.key === 'ArrowDown') milkdrop?.step(1)
+      else if (event.key === 'ArrowUp') milkdrop?.step(-1)
       else wake()
     }
     window.addEventListener('keydown', onKey)
@@ -206,8 +214,20 @@
   style:--faint={inks.faint}
   data-bsc-showcase
 >
-  {#if visualizer.showcase}
-    {@const look = visualizer.showcase}
+  {#if visualizer.showcase === 'milkdrop' && !milkdropFailed}
+    <!-- Multiplied into the room's colour: nothing it draws is lighter than the room, so every
+         word here keeps the contrast it has on the room alone. -->
+    <MilkDrop
+      bind:this={milkdrop}
+      presets={visualizer.presets}
+      track={playing ? playing.url || `${playing.artist}\n${playing.title}` : ''}
+      running={playing?.playing ?? false}
+      hidden={!playing}
+      shade
+      onfail={() => (milkdropFailed = true)}
+    />
+  {:else if visualizer.showcase}
+    {@const look = visualizer.showcase === 'milkdrop' ? 'bars' : visualizer.showcase}
     <Visualizer {look} ink={inks.ink} layout={() => visualizerLayout(look)} />
   {/if}
 

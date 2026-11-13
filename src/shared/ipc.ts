@@ -9,7 +9,7 @@ import type { PluginView } from './plugins'
 import type { LyricsState } from './lyrics'
 import type { UpdateAction, UpdateStatus } from './updates'
 import type { AudioConfig, AudioReport } from './audio'
-import type { VisualFrame, VisualizerConfig, VisualViewState } from './visualizer'
+import type { VisualFrame, VisualizerConfig, VisualLook, VisualViewState } from './visualizer'
 import type { GlassStatus } from './glass'
 
 /** Every IPC channel name, in one place. Strings are never written inline. */
@@ -133,10 +133,11 @@ export const CH = {
   visualizerGet: 'visualizer:get',
   visualizerChanged: 'visualizer:changed',
   // The Visualizer's view of its own: toggled from the player-bar button (and the right-click
-  // menu, in main); only the view itself closes it. main -> the player-bar buttons: whether it
-  // can be opened and whether it is open.
+  // menu, in main); only the view itself closes it, and says which look it draws (MilkDrop needs
+  // the channels). main -> the player-bar buttons: whether it can be opened and whether it is open.
   visualViewToggle: 'visualizer:view-toggle',
   visualViewClose: 'visualizer:view-close',
+  visualViewLook: 'visualizer:view-look',
   visualViewState: 'visualizer:view-state'
 } as const
 
@@ -367,6 +368,11 @@ export type ChromeApi = {
   toggleVisualView(): void
   /** The view of its own closing itself: its close button, or Escape. */
   closeVisualView(): void
+  /**
+   * The view of its own only: the look it draws now, on opening and whenever its switch or the
+   * arrow keys change it, so the engine sends MilkDrop the sound's channels exactly while it shows.
+   */
+  reportVisualViewLook(look: VisualLook): void
   /**
    * The player-bar buttons only: whether the view of its own can be opened (the Visualizer plugin
    * chose a look for it) and whether it is open. On their load and on every change.

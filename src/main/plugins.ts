@@ -29,7 +29,7 @@ import {
   setAudioFilters,
   setAudioPitch
 } from './audio'
-import { clearVisualizer, reducedMotion, setVisualizer } from './visualizer'
+import { clearVisualizer, milkdropPossible, reducedMotion, setVisualizer } from './visualizer'
 import { deleteSecret, getSecret, setSecret } from './secrets'
 import { openInBrowser } from './session'
 import { readRecord, writeJson } from './json-file'
@@ -446,11 +446,11 @@ async function answer(
       const config = readVisualizerConfig(args[0])
       if (!config) {
         throw new Error(
-          'bsc.audio.visualize takes null, or { showcase: "bars" | "ring" | "wave" | "off", strip: "bars" | "wave" | "off", view: "bars" | "wave" | "off" }'
+          'bsc.audio.visualize takes null, or { showcase: "bars" | "ring" | "wave" | "milkdrop" | "off", strip: "bars" | "wave" | "off", view: "bars" | "wave" | "milkdrop" | "off", presets: "timed" | "track" | "still" }'
         )
       }
       setVisualizer(id, config)
-      return { reducedMotion: reducedMotion() }
+      return { reducedMotion: reducedMotion(), milkdrop: milkdropPossible() }
     }
   }
 }

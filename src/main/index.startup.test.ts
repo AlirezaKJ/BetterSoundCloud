@@ -103,8 +103,9 @@ vi.mock('./audio', () => ({
 }))
 vi.mock('./visualizer', () => ({
   forgetVisualPlaces: vi.fn(),
-  getVisualizer: () => ({ showcase: null, strip: null, view: null }),
-  onVisualizerChange: vi.fn()
+  getVisualizer: () => ({ showcase: null, strip: null, view: null, presets: 'timed' }),
+  onVisualizerChange: vi.fn(),
+  setVisualViewLook: vi.fn()
 }))
 vi.mock('./lyrics', () => ({
   getLyricsState: () => ({ state: 'idle' }),

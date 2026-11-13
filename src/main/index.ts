@@ -42,9 +42,14 @@ import {
   onVisualFrame,
   startAudioEngine
 } from './audio'
-import { forgetVisualPlaces, getVisualizer, onVisualizerChange } from './visualizer'
+import {
+  forgetVisualPlaces,
+  getVisualizer,
+  onVisualizerChange,
+  setVisualViewLook
+} from './visualizer'
 import { readAudioReport } from '@shared/audio'
-import { readVisualFrame } from '@shared/visualizer'
+import { LOOKS_FOR, readVisualFrame } from '@shared/visualizer'
 import {
   getLyricsState,
   noticeNowPlaying,
@@ -863,6 +868,11 @@ function registerIpc(): void {
   })
   ipcMain.on(CH.visualViewClose, (e) => {
     if (shell && fromVisualView(e)) closeVisualView(shell)
+  })
+  ipcMain.on(CH.visualViewLook, (e, raw: unknown) => {
+    if (!fromVisualView(e)) return
+    const look = LOOKS_FOR.view.find((one) => one === raw)
+    if (look) setVisualViewLook(look)
   })
 
   /** The audio engine's view saying whether its capture works. That view only, shaped first. */

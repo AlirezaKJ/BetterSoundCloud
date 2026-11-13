@@ -99,6 +99,12 @@ when one is refused, write down what SoundCloud said rather than retrying.
       the page, coloured from the artwork, with large bars moving to the music. ← and → switch to
       the waveform and back; Esc closes it. Set "In its own view" to Nothing: the button goes, and
       the like and queue buttons are still clickable.
+- [ ] Set "In its own view" to MilkDrop and open it while a track plays: a preset fills the room
+      and moves with the music; ↓ and ↑ change it, and its name changes with it; pause, and it
+      holds still, sunk into the room's colour, with "Paused" over it. Set "In the full-screen
+      view" to MilkDrop: it fills the room behind the sleeve, never lighter than the room, and the
+      title stays easy to read. With "MilkDrop changes preset" on "Every 30 seconds" it moves on
+      by itself. Watch the window's frame rate with the view open: it must not stutter.
 - [ ] Pick each built-in theme with SoundCloud in its light mode and its dark mode.
 - [ ] The portable build too: it unpacks to a new temporary folder on every launch, so the archive's
       integrity check and the `.sig` signature files must survive being moved.

@@ -23,7 +23,7 @@ import { findTheme, minimalNavigationCss, NO_THEME, soundCloudPaletteCss } from 
 import { themeChromeView } from './chrome-theme'
 import { setWindowGlass } from './window-glass'
 import { setLyricsWanted } from './lyrics'
-import { setVisualPlaceShown } from './visualizer'
+import { setVisualPlaceShown, setVisualViewLook } from './visualizer'
 import { stripAside } from '@shared/visualizer'
 import { contentCssOf, coverCss } from '@shared/themes'
 import { overlayTheme } from '@shared/page-theme'
@@ -1372,8 +1372,10 @@ export function closeVisualView(shell: Shell): void {
   if (!view) return
   shell.visualView = null
   shell.window.contentView.removeChildView(view)
-  // Destroyed rather than hidden, like the lyrics pane: its state lives in main.
+  // Destroyed rather than hidden, like the lyrics pane: its state lives in main. The look tried
+  // in it goes with it; the next one opens on the plugin's.
   view.webContents.close()
+  setVisualViewLook(null)
   sendVisualViewState(shell)
   shell.layout()
   // Back to SoundCloud, so the keyboard works there again without a click.

@@ -19,7 +19,12 @@ import type { PluginView } from '@shared/plugins'
 import type { LyricsState } from '@shared/lyrics'
 import type { UpdateAction, UpdateStatus } from '@shared/updates'
 import type { AudioConfig, AudioReport } from '@shared/audio'
-import type { VisualFrame, VisualizerConfig, VisualViewState } from '@shared/visualizer'
+import type {
+  VisualFrame,
+  VisualizerConfig,
+  VisualLook,
+  VisualViewState
+} from '@shared/visualizer'
 
 /**
  * Preload for OUR OWN chrome (header, settings, the overlays, the right-click menu). This
@@ -132,6 +137,7 @@ const api: ChromeApi = {
   onVisualizer: (cb: (config: VisualizerConfig) => void) => subscribe(CH.visualizerChanged, cb),
   toggleVisualView: () => ipcRenderer.send(CH.visualViewToggle),
   closeVisualView: () => ipcRenderer.send(CH.visualViewClose),
+  reportVisualViewLook: (look: VisualLook) => ipcRenderer.send(CH.visualViewLook, look),
   onVisualViewState: (cb: (state: VisualViewState) => void) => subscribe(CH.visualViewState, cb)
 }
 

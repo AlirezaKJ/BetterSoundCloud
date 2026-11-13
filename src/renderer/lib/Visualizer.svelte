@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { VISUAL_BANDS, follow, nextPeak } from '@shared/visualizer'
+  import { VISUAL_BANDS, drawDue, follow, nextPeak } from '@shared/visualizer'
   import type { Peak, VisualFrame, VisualLayout, VisualLook } from '@shared/visualizer'
   import { drawBars, drawFlow, drawHairlines, drawRing, STRONG } from './visualizer-draw'
 
@@ -9,8 +9,9 @@
    * sends about 60 times a second while this is on screen. A canvas behind everything, decorative
    * and hidden from assistive technology.
    *
-   * Frames arrive at the engine's pace; this draws at the screen's, easing every bar toward its
-   * frame (quick up, slow down) so motion stays smooth whatever the timing. When the sound stops
+   * Frames arrive at the engine's pace; this draws at the screen's, up to about 60 a second
+   * (`drawDue`: a 240 Hz screen would otherwise draw four times as often for nothing), easing every
+   * bar toward its frame (quick up, slow down) so motion stays smooth whatever the timing. When the sound stops
    * — a pause, the end of a track, the engine stepping aside — the bars fall away and the loop
    * stops, so a silent visualizer costs nothing. Reduced motion draws nothing at all: a visualizer
    * is only motion, so it is removed rather than frozen (DESIGN.md).
@@ -73,6 +74,10 @@
 
   function tick(now: number): void {
     raf = 0
+    if (!drawDue(now, lastTick)) {
+      raf = requestAnimationFrame(tick)
+      return
+    }
     const dt = Math.min(100, Math.max(0, now - lastTick))
     lastTick = now
     const current = now - lastFrameAt > SILENT_AFTER_MS ? null : target

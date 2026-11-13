@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => {
   return {
     handleAudioReport: vi.fn(),
     handleVisualFrame: vi.fn(),
+    setVisualViewLook: vi.fn(),
     audioView: { id: 'the audio engine view' },
     createShell: vi.fn(),
     loadSoundCloud: vi.fn(),
@@ -82,8 +83,9 @@ vi.mock('./audio', () => ({
 }))
 vi.mock('./visualizer', () => ({
   forgetVisualPlaces: vi.fn(),
-  getVisualizer: () => ({ showcase: 'bars', strip: 'bars', view: 'bars' }),
-  onVisualizerChange: vi.fn()
+  getVisualizer: () => ({ showcase: 'bars', strip: 'bars', view: 'bars', presets: 'timed' }),
+  onVisualizerChange: vi.fn(),
+  setVisualViewLook: mocks.setVisualViewLook
 }))
 vi.mock('./lyrics', () => ({
   getLyricsState: () => ({ state: 'idle' }),
@@ -700,7 +702,18 @@ describe('main window lifecycle', () => {
     send({ sender: mocks.audioView }, { bands: [1] })
     expect(mocks.handleVisualFrame).not.toHaveBeenCalled()
     send({ sender: mocks.audioView }, frame)
-    expect(mocks.handleVisualFrame).toHaveBeenCalledWith(frame)
+    expect(mocks.handleVisualFrame).toHaveBeenCalledWith({ ...frame, wave: null })
+
+    // MilkDrop's channels come through whole, or the frame does not come through at all.
+    const left = new Uint8Array(1024).fill(128)
+    const right = new Uint8Array(1024).fill(128)
+    send({ sender: mocks.audioView }, { ...frame, wave: { left, right } })
+    expect(mocks.handleVisualFrame).toHaveBeenLastCalledWith({
+      ...frame,
+      wave: { left, right }
+    })
+    send({ sender: mocks.audioView }, { ...frame, wave: { left, right: new Uint8Array(3) } })
+    expect(mocks.handleVisualFrame).toHaveBeenCalledTimes(2)
   })
 
   it('opens the showcase from our own buttons only, and lets only the showcase close it', async () => {
@@ -787,9 +800,18 @@ describe('main window lifecycle', () => {
     expect(handlerFor('handle', CH.visualizerGet)(fromOwnView)).toEqual({
       showcase: 'bars',
       strip: 'bars',
-      view: 'bars'
+      view: 'bars',
+      presets: 'timed'
     })
     expect(handlerFor('handle', CH.nowPlayingGet)(fromOwnView)).not.toBeUndefined()
+
+    // It says which look it draws, and only a look it can draw; nobody else may say.
+    handlerFor('on', CH.visualViewLook)(fromPlayer, 'milkdrop')
+    handlerFor('on', CH.visualViewLook)(fromOwnView, 'ring')
+    handlerFor('on', CH.visualViewLook)(fromOwnView, { look: 'bars' })
+    expect(mocks.setVisualViewLook).not.toHaveBeenCalled()
+    handlerFor('on', CH.visualViewLook)(fromOwnView, 'milkdrop')
+    expect(mocks.setVisualViewLook).toHaveBeenCalledWith('milkdrop')
   })
 
   it('gives every window the same identity, its header built from the page’s languages', () => {

@@ -116,11 +116,35 @@ describe('the audio engine', () => {
     expect(engine.getAudioStatus().state).toBe('off')
   })
 
+  it('asks for the channels only while MilkDrop is drawn, on the same view', async () => {
+    const engine = await load()
+    engine.setAudioVisual(true)
+    const view = loaded()
+    expect(view.webContents.send).toHaveBeenLastCalledWith(
+      'audio:configure',
+      expect.objectContaining({ visual: true, visualWave: false })
+    )
+    engine.setAudioVisual(true, true)
+    expect(view.webContents.send).toHaveBeenLastCalledWith(
+      'audio:configure',
+      expect.objectContaining({ visual: true, visualWave: true })
+    )
+    expect(mocks.views).toHaveLength(1)
+    engine.setAudioVisual(true, false)
+    expect(view.webContents.send).toHaveBeenLastCalledWith(
+      'audio:configure',
+      expect.objectContaining({ visual: true, visualWave: false })
+    )
+    // No visualizer, no channels: the flag never outlives the visualizer it was for.
+    engine.setAudioVisual(false, true)
+    expect(view.webContents.destroyed).toBe(true)
+  })
+
   it('passes frames on only while a visualizer is on screen', async () => {
     const engine = await load()
     const frames: unknown[] = []
     engine.onVisualFrame((frame) => frames.push(frame))
-    const frame = { bands: [0.5], wave: [0] }
+    const frame = { bands: [0.5], wave: null }
     engine.handleVisualFrame(frame)
     expect(frames).toHaveLength(0)
     engine.setAudioVisual(true)
@@ -165,7 +189,8 @@ describe('the audio engine', () => {
       pitch: 0,
       filters: BOOST,
       preampDb: -headroomDb(BOOST),
-      visual: false
+      visual: false,
+      visualWave: false
     })
     engine.handleAudioReport({ kind: 'running' })
     expect(engine.last()?.state).toBe('running')
@@ -274,7 +299,8 @@ describe('the audio engine', () => {
       pitch: 3,
       filters: [],
       preampDb: -0,
-      visual: false
+      visual: false,
+      visualWave: false
     })
     engine.setAudioPitch('pitch', 0)
     expect(view.webContents.close).toHaveBeenCalled()

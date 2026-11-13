@@ -1,6 +1,6 @@
-import { systemPreferences } from 'electron'
-import { NO_VISUALIZER, VISUAL_PLACES } from '@shared/visualizer'
-import type { VisualPlace, VisualizerConfig } from '@shared/visualizer'
+import { app, systemPreferences } from 'electron'
+import { drawsFromWave, NO_VISUALIZER, VISUAL_PLACES } from '@shared/visualizer'
+import type { VisualLook, VisualPlace, VisualizerConfig } from '@shared/visualizer'
 import { setAudioVisual } from './audio'
 
 /**
@@ -14,12 +14,21 @@ import { setAudioVisual } from './audio'
  *
  * It never runs under reduced motion: a visualizer is nothing but motion, so it is removed rather
  * than frozen (DESIGN.md, like the wait line), and the plugin is told so it can say why.
+ *
+ * MilkDrop needs WebGL on the graphics card. Without it (hardware acceleration off), Chromium
+ * draws WebGL in software at 12 to 112 ms a frame (measured 2026-11-13), which would make the
+ * whole app crawl, so Bars are drawn in its place and the plugin is told why.
  */
 
 /** Each plugin's request, by plugin id. One look per place wins: the first plugin's, by id. */
 const requests = new Map<string, VisualizerConfig>()
 /** The places on screen now. */
 const shown = new Set<VisualPlace>()
+/**
+ * The look the view of its own draws, when it was changed there (its switch or the arrow keys);
+ * null for the plugin's. It decides whether the engine sends MilkDrop the channels.
+ */
+let viewLook: VisualLook | null = null
 const listeners = new Set<(config: VisualizerConfig) => void>()
 
 /** A plugin's request, already shaped. Asking for nothing anywhere withdraws it. */
@@ -35,18 +44,52 @@ export function clearVisualizer(owner: string): void {
   if (requests.delete(owner)) changed()
 }
 
-/** What the views should draw: for each place, the first plugin's look there, by plugin id. */
+/**
+ * What the views should draw: for each place, the first plugin's look there, by plugin id, with
+ * Bars for MilkDrop where it cannot be drawn; and when MilkDrop changes preset, as the first
+ * plugin asking for anything said.
+ */
 export function getVisualizer(): VisualizerConfig {
   if (reducedMotion()) return NO_VISUALIZER
   const owners = [...requests.keys()].sort()
+  const canMilkdrop = milkdropPossible()
   const lookFor = (place: VisualPlace): VisualizerConfig[VisualPlace] => {
     for (const owner of owners) {
       const look = requests.get(owner)?.[place] ?? null
+      if (look === 'milkdrop' && !canMilkdrop) return 'bars'
       if (look) return look
     }
     return null
   }
-  return { showcase: lookFor('showcase'), strip: lookFor('strip'), view: lookFor('view') }
+  const first = owners[0] === undefined ? undefined : requests.get(owners[0])
+  return {
+    showcase: lookFor('showcase'),
+    strip: lookFor('strip'),
+    view: lookFor('view'),
+    presets: first?.presets ?? NO_VISUALIZER.presets
+  }
+}
+
+/**
+ * Whether MilkDrop can be drawn: Chromium has WebGL on the graphics card. With hardware
+ * acceleration off it reports `unavailable_software`, with it on `enabled` (measured 2026-11-13).
+ */
+export function milkdropPossible(): boolean {
+  try {
+    return app.getGPUFeatureStatus().webgl.startsWith('enabled')
+  } catch {
+    return false
+  }
+}
+
+/**
+ * The look the view of its own is drawing now, as it says; null when it closes, so the next one
+ * starts from the plugin's. Only MilkDrop changes anything: the channels it reads.
+ */
+export function setVisualViewLook(look: VisualLook | null): void {
+  if (look === viewLook) return
+  viewLook = look
+  updateDemand()
 }
 
 export function onVisualizerChange(listener: (config: VisualizerConfig) => void): () => void {
@@ -95,10 +138,19 @@ function changed(): void {
   updateDemand()
 }
 
-/** The engine listens while some place on screen has a look to draw, and only then. */
+/**
+ * The engine listens while some place on screen has a look to draw, and only then; and sends the
+ * channels while one of them is MilkDrop.
+ */
 function updateDemand(): void {
   const config = getVisualizer()
-  setAudioVisual([...shown].some((place) => config[place] !== null))
+  const drawn = [...shown].map((place) =>
+    place === 'view' && config.view !== null ? (viewLook ?? config.view) : config[place]
+  )
+  setAudioVisual(
+    drawn.some((look) => look !== null),
+    drawn.some((look) => drawsFromWave(look))
+  )
 }
 
 /** For tests: forget everything. */
@@ -106,4 +158,5 @@ export function resetVisualizerForTests(): void {
   requests.clear()
   shown.clear()
   listeners.clear()
+  viewLook = null
 }

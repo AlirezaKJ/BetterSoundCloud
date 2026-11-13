@@ -3,8 +3,10 @@
  * plugin service and the views that draw. No Electron, no DOM, so every judgement here is tested.
  *
  *   engine view: an AnalyserNode at the end of its chain --bandLevels--> a VisualFrame
+ *                (and, for MilkDrop, the left and right channels as they sound)
  *   main:        readVisualFrame (every frame, like every message) --> the view that draws
- *   drawing:     follow (attack and release) and nextPeak (hold, then fall), per animation frame
+ *   drawing:     follow (attack and release) and nextPeak (hold, then fall), per animation frame;
+ *                or MilkDrop (Butterchurn, lib/MilkDrop.svelte), from the channels
  */
 
 /** Frequency bands per frame: log-spaced, so each octave gets the same width on screen. */
@@ -27,17 +29,29 @@ export const VISUAL_CEILING_DB = -18
 export const VISUAL_TILT_DB_PER_OCTAVE = 3
 
 /**
- * One frame of what is heard, as the engine sends it about 60 times a second: every look is drawn
- * from these levels. (The raw waveform went with the oscilloscope look, which jumped about with
- * real music, 2026-11-12; MilkDrop will bring its own time-domain data.)
+ * Samples per channel in a frame's wave: what MilkDrop reads (Butterchurn analyses 1024 samples,
+ * bytes centred on 128, as an AnalyserNode's `getByteTimeDomainData` gives them).
+ */
+export const VISUAL_WAVE = 1024
+
+/** The left and right channels as they sound, VISUAL_WAVE bytes each, 128 being silence. */
+export type VisualWave = { left: Uint8Array; right: Uint8Array }
+
+/**
+ * One frame of what is heard, as the engine sends it about 60 times a second: every look but
+ * MilkDrop is drawn from these levels. MilkDrop reads the sound itself, so only while it is drawn
+ * does a frame carry the channels too. (The raw waveform once went to the oscilloscope look, which
+ * jumped about with real music, 2026-11-12.)
  */
 export type VisualFrame = {
   /** VISUAL_BANDS levels, 0 to 1, low to high. */
   bands: number[]
+  /** The channels, while MilkDrop is drawn; null otherwise. */
+  wave: VisualWave | null
 }
 
 /** The looks there are, and the places they can show. */
-export const VISUAL_LOOKS = ['bars', 'ring', 'wave'] as const
+export const VISUAL_LOOKS = ['bars', 'ring', 'wave', 'milkdrop'] as const
 export type VisualLook = (typeof VISUAL_LOOKS)[number]
 /**
  * Where a visualizer can show (§22): `showcase`, the full-screen view; `strip`, bars standing on
@@ -48,22 +62,37 @@ export type VisualPlace = (typeof VISUAL_PLACES)[number]
 
 /**
  * Which looks each place can draw. The ring follows the sleeve, which only the showcase has; the
- * strip and the view of its own have no sleeve, so they take the looks drawn in a band.
+ * strip and the view of its own have no sleeve, so they take the looks drawn in a band. MilkDrop
+ * fills a whole room, so never the strip, which floats over SoundCloud's page.
  */
 export const LOOKS_FOR: Readonly<Record<VisualPlace, readonly VisualLook[]>> = {
-  showcase: ['bars', 'ring', 'wave'],
+  showcase: ['bars', 'ring', 'wave', 'milkdrop'],
   strip: ['bars', 'wave'],
-  view: ['bars', 'wave']
+  view: ['bars', 'wave', 'milkdrop']
 }
+
+/**
+ * When MilkDrop moves on to another preset by itself: every so often (`timed`), with each new
+ * track, or only when asked (`still`: ↑ and ↓, or the view's own buttons).
+ */
+export const MILKDROP_CHANGES = ['timed', 'track', 'still'] as const
+export type MilkdropChange = (typeof MILKDROP_CHANGES)[number]
 
 /** What a plugin asked for: a look per place, or null where it shows nothing. */
 export type VisualizerConfig = {
   readonly showcase: VisualLook | null
   readonly strip: VisualLook | null
   readonly view: VisualLook | null
+  /** When MilkDrop changes preset, wherever it is drawn. */
+  readonly presets: MilkdropChange
 }
 
-export const NO_VISUALIZER: VisualizerConfig = { showcase: null, strip: null, view: null }
+export const NO_VISUALIZER: VisualizerConfig = {
+  showcase: null,
+  strip: null,
+  view: null,
+  presets: 'timed'
+}
 
 /**
  * The view of its own, as the player-bar buttons need it: whether it can be opened (the plugin
@@ -73,30 +102,26 @@ export type VisualViewState = { readonly available: boolean; readonly open: bool
 
 /**
  * A plugin's `bsc.audio.visualize` argument, shaped: null asks for nothing; an object names a look
- * per place, where 'off', null or nothing means none. Anything else is refused (null), so a
- * mistake is an error in the plugin's log, not a visualizer that silently does not show.
+ * per place, where 'off', null or nothing means none, and may say when MilkDrop changes preset
+ * (`presets`, `timed` if not). Anything else is refused (null), so a mistake is an error in the
+ * plugin's log, not a visualizer that silently does not show.
  */
 export function readVisualizerConfig(raw: unknown): VisualizerConfig | null {
   if (raw === null) return NO_VISUALIZER
   if (typeof raw !== 'object' || Array.isArray(raw)) return null
   const given = raw as Record<string, unknown>
-  if (Object.keys(given).some((key) => !(VISUAL_PLACES as readonly string[]).includes(key)))
-    return null
+  const keys: readonly string[] = [...VISUAL_PLACES, 'presets']
+  if (Object.keys(given).some((key) => !keys.includes(key))) return null
   const showcase = readLook(given['showcase'], 'showcase')
   const strip = readLook(given['strip'], 'strip')
   const view = readLook(given['view'], 'view')
+  const presets =
+    given['presets'] === undefined
+      ? 'timed'
+      : MILKDROP_CHANGES.find((change) => change === given['presets'])
   if (showcase === undefined || strip === undefined || view === undefined) return null
-  return { showcase, strip, view }
-}
-
-/**
- * The look `step` places along from `current` in a place's looks, wrapping at either end: the
- * arrow keys in the view of its own. A look the place cannot draw starts from its first.
- */
-export function stepLook(place: VisualPlace, current: VisualLook, step: number): VisualLook {
-  const looks = LOOKS_FOR[place]
-  const at = Math.max(0, looks.indexOf(current))
-  return looks[(((at + step) % looks.length) + looks.length) % looks.length] ?? current
+  if (presets === undefined) return null
+  return { showcase, strip, view, presets }
 }
 
 /** A look for a place, null for none, undefined for nonsense. */
@@ -175,11 +200,26 @@ export function dbToLevel(db: number): number {
   return Math.min(1, Math.max(0, level))
 }
 
-/** A frame from the engine's view, checked like any message: the right length, finite, in range. */
+/**
+ * A frame from the engine's view, checked like any message: the right length, finite, in range;
+ * the channels, when there, exactly VISUAL_WAVE bytes each.
+ */
 export function readVisualFrame(raw: unknown): VisualFrame | null {
   if (typeof raw !== 'object' || raw === null) return null
-  const bands = readNumbers((raw as Record<string, unknown>)['bands'], VISUAL_BANDS, 0, 1)
-  return bands ? { bands } : null
+  const given = raw as Record<string, unknown>
+  const bands = readNumbers(given['bands'], VISUAL_BANDS, 0, 1)
+  if (!bands) return null
+  if (given['wave'] === undefined || given['wave'] === null) return { bands, wave: null }
+  const wave = given['wave']
+  if (typeof wave !== 'object' || Array.isArray(wave)) return null
+  const left = (wave as Record<string, unknown>)['left']
+  const right = (wave as Record<string, unknown>)['right']
+  if (!isWaveChannel(left) || !isWaveChannel(right)) return null
+  return { bands, wave: { left, right } }
+}
+
+function isWaveChannel(raw: unknown): raw is Uint8Array {
+  return raw instanceof Uint8Array && raw.length === VISUAL_WAVE
 }
 
 function readNumbers(raw: unknown, length: number, min: number, max: number): number[] | null {
@@ -195,6 +235,21 @@ function readNumbers(raw: unknown, length: number, min: number, max: number): nu
 /** Digital silence: SoundCloud paused, or between tracks. Nothing to draw, nothing to send. */
 export function isSilentFrame(frame: VisualFrame): boolean {
   return frame.bands.every((level) => level === 0)
+}
+
+/**
+ * The shortest time between two drawn frames, for every look. A view's animation frames come at
+ * its screen's refresh, and on a 240 Hz screen the visualizer drew 240 a second: four times the
+ * work for motion nobody sees (measured 2026-11-13, Bars in the view of its own: 18% of a core in
+ * its view and 32% in the GPU process). At 12.8 ms a 60 or 75 Hz screen still draws every frame,
+ * 120 and 240 Hz draw 60 a second, 144 Hz 72 and 165 Hz 55: steady, since it falls between whole
+ * frames at all of them rather than on one, where timing jitter would make it flicker between two.
+ */
+export const DRAW_INTERVAL_MS = 12.8
+
+/** Whether an animation frame at `now` should draw, the last one drawn having been at `last`. */
+export function drawDue(now: number, last: number): boolean {
+  return now - last >= DRAW_INTERVAL_MS
 }
 
 /** A bar rises this fast (ms to cover about two thirds of the way) and falls this slowly. */
@@ -351,4 +406,98 @@ export function viewLayout(
   return area.right - area.left >= 120 && area.bottom - area.top >= 40
     ? { kind: 'band', area }
     : null
+}
+
+/*
+ * ── MilkDrop ──────────────────────────────────────────────────────────────────────────────────
+ *
+ * Butterchurn (MIT, lib/MilkDrop.svelte) draws MilkDrop's presets with WebGL from the channels a
+ * frame carries. What is decided about it is here, so it is tested.
+ */
+
+/** The look draws from the channels, not the bands: the engine sends them only for it. */
+export function drawsFromWave(look: VisualLook | null): boolean {
+  return look === 'milkdrop'
+}
+
+/** A timed change comes this often: about MilkDrop's own pace, slow enough to watch one. */
+export const MILKDROP_TIMED_MS = 30_000
+/** One preset melts into the next over this long when it changes by itself, MilkDrop's way. */
+export const MILKDROP_BLEND_SECONDS = 2.7
+/** And over this long when asked for, so a key press answers at once. */
+export const MILKDROP_STEP_BLEND_SECONDS = 1
+/**
+ * The most pixels MilkDrop renders, whatever the screen: about a 1080p frame. Its images are soft
+ * by nature, so beyond this a larger render costs the graphics card and shows nothing more.
+ */
+export const MILKDROP_MAX_PIXELS = 1920 * 1080
+
+/**
+ * The size MilkDrop renders at for a room `width` × `height` CSS pixels: the room's own size
+ * (never the screen's device pixels), scaled down to MILKDROP_MAX_PIXELS keeping its shape, and
+ * never under 16 pixels a side. The canvas stretches it to the room.
+ */
+export function milkdropRenderSize(
+  width: number,
+  height: number,
+  maxPixels = MILKDROP_MAX_PIXELS
+): { width: number; height: number } {
+  const w = Math.max(1, width)
+  const h = Math.max(1, height)
+  const scale = Math.min(1, Math.sqrt(maxPixels / (w * h)))
+  return {
+    width: Math.max(16, Math.round(w * scale)),
+    height: Math.max(16, Math.round(h * scale))
+  }
+}
+
+/**
+ * The order presets come in: every one once before any comes again, shuffled (Fisher–Yates), as
+ * MilkDrop picks at random. `random` returns [0, 1), so tests can fix it.
+ */
+export function presetOrder(count: number, random: () => number = Math.random): number[] {
+  const order = Array.from({ length: Math.max(0, count) }, (_, i) => i)
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = Math.min(i, Math.floor(random() * (i + 1)))
+    const swap = order[i] ?? i
+    order[i] = order[j] ?? j
+    order[j] = swap
+  }
+  return order
+}
+
+/**
+ * `at` moved `step` places through a list of `count`, wrapping at either end: the arrow keys
+ * through the looks on offer in the view of its own, and through MilkDrop's presets.
+ */
+export function stepIndex(at: number, step: number, count: number): number {
+  if (count <= 0) return 0
+  return (((at + step) % count) + count) % count
+}
+
+/** A MilkDrop preset as a pack holds it: data Butterchurn compiles when it loads it. */
+export type MilkdropPreset = Record<string, unknown>
+
+/**
+ * The presets in a pack, by name, as its bundle exports them: an object of presets, wrapped in a
+ * `default` or two depending on how the bundler joined its module systems. A preset is kept only
+ * if it carries its equations as EEL (`init_eqs_eel`), which Butterchurn compiles to WebAssembly:
+ * the other kind compiles with `new Function`, which our CSP refuses.
+ */
+export function readPresetPack(raw: unknown): { name: string; preset: MilkdropPreset }[] {
+  let at = raw
+  for (let depth = 0; depth < 3 && typeof at === 'object' && at !== null; depth++) {
+    const presets = Object.entries(at as Record<string, unknown>).flatMap(([name, value]) =>
+      isWasmPreset(value) ? [{ name, preset: value }] : []
+    )
+    if (presets.length > 0) return presets
+    at = (at as Record<string, unknown>)['default']
+  }
+  return []
+}
+
+function isWasmPreset(value: unknown): value is MilkdropPreset {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false
+  const preset = value as Record<string, unknown>
+  return typeof preset['baseVals'] === 'object' && typeof preset['init_eqs_eel'] === 'string'
 }
