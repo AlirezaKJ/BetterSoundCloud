@@ -8,6 +8,7 @@ import {
   VISUAL_BANDS,
   VISUAL_CEILING_DB,
   VISUAL_FLOOR_DB,
+  VIEW_CONTROLS,
   bandEdges,
   bandLevels,
   dbToLevel,
@@ -18,8 +19,10 @@ import {
   readVisualizerConfig,
   showcaseLayout,
   showsAnything,
+  stepLook,
   stripAside,
-  stripLayout
+  stripLayout,
+  viewLayout
 } from './visualizer'
 
 const RATE = 48_000
@@ -111,11 +114,13 @@ describe('readVisualizerConfig', () => {
   it('takes a look per place, with off, null or nothing meaning none', () => {
     expect(readVisualizerConfig({ showcase: 'ring' })).toEqual({
       showcase: 'ring',
-      strip: null
+      strip: null,
+      view: null
     })
-    expect(readVisualizerConfig({ showcase: 'off', strip: 'wave' })).toEqual({
+    expect(readVisualizerConfig({ showcase: 'off', strip: 'wave', view: 'bars' })).toEqual({
       showcase: null,
-      strip: 'wave'
+      strip: 'wave',
+      view: 'bars'
     })
     expect(readVisualizerConfig({ showcase: 'off' })).toEqual(NO_VISUALIZER)
     expect(readVisualizerConfig({})).toEqual(NO_VISUALIZER)
@@ -124,8 +129,9 @@ describe('readVisualizerConfig', () => {
 
   it('refuses unknown looks and places, and a look a place cannot draw', () => {
     expect(readVisualizerConfig({ showcase: 'milkdrop' })).toBeNull()
-    // The ring follows the sleeve, which the strip does not have.
+    // The ring follows the sleeve, which only the showcase has.
     expect(readVisualizerConfig({ strip: 'ring' })).toBeNull()
+    expect(readVisualizerConfig({ view: 'ring' })).toBeNull()
     expect(readVisualizerConfig({ titlebar: 'bars' })).toBeNull()
     expect(readVisualizerConfig(['bars'])).toBeNull()
     expect(readVisualizerConfig('bars')).toBeNull()
@@ -133,8 +139,48 @@ describe('readVisualizerConfig', () => {
 
   it('says whether a config draws anything at all', () => {
     expect(showsAnything(NO_VISUALIZER)).toBe(false)
-    expect(showsAnything({ showcase: 'bars', strip: null })).toBe(true)
-    expect(showsAnything({ showcase: null, strip: 'bars' })).toBe(true)
+    expect(showsAnything({ ...NO_VISUALIZER, showcase: 'bars' })).toBe(true)
+    expect(showsAnything({ ...NO_VISUALIZER, strip: 'bars' })).toBe(true)
+    expect(showsAnything({ ...NO_VISUALIZER, view: 'wave' })).toBe(true)
+  })
+})
+
+describe('stepLook', () => {
+  it('steps through a place’s looks with the arrow keys, wrapping at either end', () => {
+    expect(stepLook('view', 'bars', 1)).toBe('wave')
+    expect(stepLook('view', 'wave', 1)).toBe('bars')
+    expect(stepLook('view', 'bars', -1)).toBe('wave')
+    expect(stepLook('showcase', 'bars', -1)).toBe('wave')
+    expect(stepLook('showcase', 'bars', 1)).toBe('ring')
+    // A look the place cannot draw starts from its first.
+    expect(stepLook('view', 'ring', 1)).toBe('wave')
+  })
+})
+
+describe('viewLayout', () => {
+  // The page area of a maximised 1707×960 window: under SoundCloud's header, above its bar.
+  const width = 1707
+  const height = 818
+
+  it('stands the bars on a margin above the bottom, under the controls, inset at the sides', () => {
+    const layout = viewLayout('bars', width, height)
+    if (layout?.kind !== 'band') throw new Error('no band')
+    expect(layout.area.left).toBeGreaterThanOrEqual(24)
+    expect(layout.area.right).toBe(width - layout.area.left)
+    expect(layout.area.bottom).toBeLessThan(height)
+    expect(layout.area.top).toBeGreaterThanOrEqual(VIEW_CONTROLS)
+    expect(layout.area.bottom - layout.area.top).toBeGreaterThan(height * 0.5)
+  })
+
+  it('runs the waveform through all the room below the controls', () => {
+    const layout = viewLayout('wave', width, height)
+    if (layout?.kind !== 'band') throw new Error('no band')
+    expect(layout.area.top).toBe(VIEW_CONTROLS)
+  })
+
+  it('draws nothing in a view too small to draw in', () => {
+    expect(viewLayout('bars', 100, 818)).toBeNull()
+    expect(viewLayout('bars', 1707, 120)).toBeNull()
   })
 })
 

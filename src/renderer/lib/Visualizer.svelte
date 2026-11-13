@@ -2,7 +2,7 @@
   import { onMount } from 'svelte'
   import { VISUAL_BANDS, follow, nextPeak } from '@shared/visualizer'
   import type { Peak, VisualFrame, VisualLayout, VisualLook } from '@shared/visualizer'
-  import { drawBars, drawFlow, drawHairlines, drawRing } from './visualizer-draw'
+  import { drawBars, drawFlow, drawHairlines, drawRing, STRONG } from './visualizer-draw'
 
   /*
    * The Visualizer, drawn (CLAUDE.md §22): what SoundCloud plays, from the frames the audio engine
@@ -30,8 +30,13 @@
      * waveform rising from the bar's edge rather than mirrored about a middle line.
      */
     strip?: boolean
+    /**
+     * The look is the subject of its place, not decoration under text (the view of its own):
+     * drawn at twice the strength.
+     */
+    strong?: boolean
   }
-  let { look, ink, layout, strip = false }: Props = $props()
+  let { look, ink, layout, strip = false, strong = false }: Props = $props()
 
   /** No frame for this long means no sound: let everything fall. */
   const SILENT_AFTER_MS = 150
@@ -94,8 +99,9 @@
     if (place.kind === 'ring')
       drawRing(context, place.sleeve, place.gap, place.reach, levels, ink)
     else if (look === 'bars' && strip) drawHairlines(context, place.area, levels, ink)
-    else if (look === 'bars') drawBars(context, place.area, levels, peakLevels(), ink)
-    else drawFlow(context, place.area, levels, ink, strip)
+    else if (look === 'bars')
+      drawBars(context, place.area, levels, peakLevels(), ink, strong ? STRONG : 1)
+    else drawFlow(context, place.area, levels, ink, strip, strong ? STRONG : 1)
   }
 
   function peakLevels(): number[] {

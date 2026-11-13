@@ -86,7 +86,10 @@ vi.mock('./window', () => ({
   closeShowcase: vi.fn(),
   setVisualStrip: vi.fn(),
   setTrackLoaded: vi.fn(),
-  setAudioStopped: vi.fn()
+  setAudioStopped: vi.fn(),
+  setVisualViewAvailable: vi.fn(),
+  toggleVisualView: vi.fn(),
+  closeVisualView: vi.fn()
 }))
 vi.mock('./audio', () => ({
   startAudioEngine: mocks.startAudioEngine,
@@ -100,7 +103,7 @@ vi.mock('./audio', () => ({
 }))
 vi.mock('./visualizer', () => ({
   forgetVisualPlaces: vi.fn(),
-  getVisualizer: () => ({ showcase: null, strip: null }),
+  getVisualizer: () => ({ showcase: null, strip: null, view: null }),
   onVisualizerChange: vi.fn()
 }))
 vi.mock('./lyrics', () => ({

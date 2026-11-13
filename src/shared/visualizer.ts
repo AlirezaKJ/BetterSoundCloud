@@ -40,28 +40,36 @@ export type VisualFrame = {
 export const VISUAL_LOOKS = ['bars', 'ring', 'wave'] as const
 export type VisualLook = (typeof VISUAL_LOOKS)[number]
 /**
- * Where a visualizer can show: `showcase`, the full-screen view; `strip`, a band under SoundCloud's
- * player controls while browsing (§22).
+ * Where a visualizer can show (§22): `showcase`, the full-screen view; `strip`, bars standing on
+ * SoundCloud's player bar while browsing; `view`, a view of its own over SoundCloud's page area.
  */
-export const VISUAL_PLACES = ['showcase', 'strip'] as const
+export const VISUAL_PLACES = ['showcase', 'strip', 'view'] as const
 export type VisualPlace = (typeof VISUAL_PLACES)[number]
 
 /**
  * Which looks each place can draw. The ring follows the sleeve, which only the showcase has; the
- * strip is a band, so it takes the looks drawn in one.
+ * strip and the view of its own have no sleeve, so they take the looks drawn in a band.
  */
 export const LOOKS_FOR: Readonly<Record<VisualPlace, readonly VisualLook[]>> = {
   showcase: ['bars', 'ring', 'wave'],
-  strip: ['bars', 'wave']
+  strip: ['bars', 'wave'],
+  view: ['bars', 'wave']
 }
 
 /** What a plugin asked for: a look per place, or null where it shows nothing. */
 export type VisualizerConfig = {
   readonly showcase: VisualLook | null
   readonly strip: VisualLook | null
+  readonly view: VisualLook | null
 }
 
-export const NO_VISUALIZER: VisualizerConfig = { showcase: null, strip: null }
+export const NO_VISUALIZER: VisualizerConfig = { showcase: null, strip: null, view: null }
+
+/**
+ * The view of its own, as the player-bar buttons need it: whether it can be opened (the plugin
+ * chose a look for it), and whether it is open, so its button shows pressed.
+ */
+export type VisualViewState = { readonly available: boolean; readonly open: boolean }
 
 /**
  * A plugin's `bsc.audio.visualize` argument, shaped: null asks for nothing; an object names a look
@@ -76,8 +84,19 @@ export function readVisualizerConfig(raw: unknown): VisualizerConfig | null {
     return null
   const showcase = readLook(given['showcase'], 'showcase')
   const strip = readLook(given['strip'], 'strip')
-  if (showcase === undefined || strip === undefined) return null
-  return { showcase, strip }
+  const view = readLook(given['view'], 'view')
+  if (showcase === undefined || strip === undefined || view === undefined) return null
+  return { showcase, strip, view }
+}
+
+/**
+ * The look `step` places along from `current` in a place's looks, wrapping at either end: the
+ * arrow keys in the view of its own. A look the place cannot draw starts from its first.
+ */
+export function stepLook(place: VisualPlace, current: VisualLook, step: number): VisualLook {
+  const looks = LOOKS_FOR[place]
+  const at = Math.max(0, looks.indexOf(current))
+  return looks[(((at + step) % looks.length) + looks.length) % looks.length] ?? current
 }
 
 /** A look for a place, null for none, undefined for nonsense. */
@@ -304,4 +323,32 @@ export function stripAside(
   if (!inside) return false
   const reach = (wasAside ? STRIP_RETREAT : STRIP_APPROACH) * window.zoom
   return pointer.y >= window.stripTop - reach
+}
+
+/*
+ * ── The view of its own ───────────────────────────────────────────────────────────────────────
+ */
+
+/** The row the view's own controls take at its top, which nothing is drawn under. */
+export const VIEW_CONTROLS = 64
+
+/**
+ * In the view of its own, over SoundCloud's page area: the look across the view, inset from its
+ * sides like a page's margins. Bars stand on a margin above the bottom, up to about two thirds of
+ * the view; the waveform runs through the middle of the room below the controls. Null when the
+ * view is too small to draw in.
+ */
+export function viewLayout(
+  look: VisualLook,
+  width: number,
+  height: number
+): VisualLayout | null {
+  const side = Math.min(96, Math.max(24, width * 0.05))
+  const foot = Math.min(80, Math.max(24, height * 0.08))
+  const bottom = height - foot
+  const top = look === 'bars' ? Math.max(VIEW_CONTROLS, bottom - height * 0.66) : VIEW_CONTROLS
+  const area: Box = { left: side, right: width - side, top, bottom }
+  return area.right - area.left >= 120 && area.bottom - area.top >= 40
+    ? { kind: 'band', area }
+    : null
 }

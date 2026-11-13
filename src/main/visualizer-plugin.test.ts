@@ -46,13 +46,14 @@ async function run(settings: Record<string, string>, answer = { reducedMotion: f
 }
 
 describe('the Visualizer plugin', () => {
-  it('has a valid manifest: the audio permission, and bars in both places to start', () => {
+  it('has a valid manifest: the audio permission, and bars in every place to start', () => {
     const result = readManifest(RAW_MANIFEST, 'visualizer')
     if (!result.ok) throw new Error(result.problem)
     expect(result.manifest.permissions).toEqual(['audio'])
     expect(result.manifest.settings).toEqual([
       expect.objectContaining({ key: 'showcase', kind: 'choice', default: 'bars' }),
-      expect.objectContaining({ key: 'strip', kind: 'choice', default: 'bars' })
+      expect.objectContaining({ key: 'strip', kind: 'choice', default: 'bars' }),
+      expect.objectContaining({ key: 'view', kind: 'choice', default: 'bars' })
     ])
   })
 
@@ -70,11 +71,15 @@ describe('the Visualizer plugin', () => {
   })
 
   it('asks for the looks chosen, in a shape main accepts as it is', async () => {
-    const { calls } = await run({ showcase: 'ring', strip: 'wave' })
+    const { calls } = await run({ showcase: 'ring', strip: 'wave', view: 'bars' })
     expect(calls).toEqual([
-      { method: 'audio.visualize', args: [{ showcase: 'ring', strip: 'wave' }] }
+      { method: 'audio.visualize', args: [{ showcase: 'ring', strip: 'wave', view: 'bars' }] }
     ])
-    expect(readVisualizerConfig(calls[0]?.args[0])).toEqual({ showcase: 'ring', strip: 'wave' })
+    expect(readVisualizerConfig(calls[0]?.args[0])).toEqual({
+      showcase: 'ring',
+      strip: 'wave',
+      view: 'bars'
+    })
   })
 
   it('follows the settings as they change, and asks for nothing when both are off', async () => {
@@ -82,10 +87,10 @@ describe('the Visualizer plugin', () => {
     plugin.settings({ showcase: 'wave', strip: 'bars' })
     plugin.settings({ showcase: 'off', strip: 'ring' })
     expect(calls.map((c) => c.args[0])).toEqual([
-      { showcase: 'bars', strip: 'bars' },
-      { showcase: 'wave', strip: 'bars' },
+      { showcase: 'bars', strip: 'bars', view: 'off' },
+      { showcase: 'wave', strip: 'bars', view: 'off' },
       // The ring is not a strip look: it is "off" there.
-      { showcase: 'off', strip: 'off' }
+      { showcase: 'off', strip: 'off', view: 'off' }
     ])
     expect(last()?.lead).toBe('Nothing chosen')
   })
@@ -98,6 +103,10 @@ describe('the Visualizer plugin', () => {
     })
     plugin.settings({ showcase: 'off', strip: 'bars' })
     expect(last()?.detail).toBe('It shows above the player while music plays.')
+    plugin.settings({ showcase: 'bars', strip: 'bars', view: 'wave' })
+    expect(last()?.detail).toBe(
+      'It shows in the full-screen view, above the player and in its own view while music plays.'
+    )
     const message =
       'SoundCloud’s sound couldn’t be captured (NotAllowedError), so SoundCloud plays as normal.'
     plugin.audio({ state: 'stopped', message })

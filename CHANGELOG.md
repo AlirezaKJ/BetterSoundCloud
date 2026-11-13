@@ -27,11 +27,12 @@ Each version's entry is also its release notes on GitHub.
   equaliser: the key moves first, so a bass boost stays on the bass
   ([#124](https://github.com/AlirezaKJ/BetterSoundCloud/issues/124)). Playback speed is not
   possible: SoundCloud's player can't be reached from outside its page.
-- **A visualizer**: what SoundCloud plays, drawn as it plays, in the full-screen view (bars, a
-  fringe around the artwork, or a waveform, in the view's own colours) and standing on the
-  player while you browse (bars or a waveform, stepping aside when you point near them). A built-in plugin, off until you turn it on in **Settings → Plugins**, with a choice for
-  each place, and it listens only while one is on screen. A view of its own and MilkDrop-style
-  visuals are planned.
+- **A visualizer**: what SoundCloud plays, drawn as it plays, in three places. In the full-screen
+  view: bars, a fringe around the artwork, or a waveform, in the view's own colours. Standing on
+  the player while you browse: bars or a waveform, stepping aside when you point near them. And in
+  a view of its own over the page, opened from the player bar, where the arrow keys change the
+  look. A built-in plugin, off until you turn it on in **Settings → Plugins**, with a choice for
+  each place, and it listens only while one is on screen. MilkDrop-style visuals are planned.
 - Plugins can shape the sound too, with the new `audio` permission
   ([guide](docs/CUSTOM_PLUGINS.md)).
 

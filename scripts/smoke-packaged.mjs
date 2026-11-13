@@ -426,6 +426,52 @@ try {
   if (stage) await stage.run('window.bsc.closeShowcase()').catch(() => undefined)
   await wait(2000)
   check('…and the view closed, the engine lets go', (await audioViews()) === 0)
+
+  // Its view of its own: the player bar gets a third button and SoundCloud's bar the room for it
+  // (two buttons are 92px, three 126); opened, it covers the page, the engine listens and its bars
+  // are drawn; closed, the engine lets go. Under reduced motion it is not offered at all.
+  const ownViews = async () =>
+    (await fetch(`http://127.0.0.1:${PORT}/json/list`).then((r) => r.json())).filter((t) =>
+      t.url.includes('/visual-view/index.html')
+    ).length
+  const playerPadding = () =>
+    page.run(`getComputedStyle(document.querySelector('.playControls__wrapper')).paddingRight`)
+  const playerBar = await view((url) => url.includes('/player/index.html'), 5000)
+  const buttons = playerBar
+    ? await playerBar.run(`document.querySelectorAll('button').length`)
+    : 0
+  check(
+    reduced
+      ? '…under reduced motion, the player bar offers no view of its own'
+      : '…its own view gets a player-bar button, and SoundCloud’s bar the room for it',
+    reduced
+      ? buttons === 2 && (await playerPadding()) === '92px'
+      : buttons === 3 && (await playerPadding()) === '126px',
+    `${buttons} buttons, padding ${await playerPadding()}`
+  )
+  await header.run('window.bsc.toggleVisualView()')
+  const own = reduced
+    ? null
+    : await view((url) => url.includes('/visual-view/index.html'), 15000)
+  await wait(2000)
+  const ownLook = own
+    ? await own.run(`document.querySelector('[data-bsc-visualizer]')?.dataset.look ?? ''`)
+    : ''
+  check(
+    reduced
+      ? '…and nothing opens'
+      : '…opened, it covers the page, the engine listens and its bars are drawn',
+    reduced
+      ? (await ownViews()) === 0 && (await audioViews()) === 0
+      : ownLook === 'bars' && (await audioViews()) === 1,
+    `look "${ownLook}", ${await audioViews()} audio view(s)`
+  )
+  if (own) await own.run('window.bsc.closeVisualView()').catch(() => undefined)
+  await wait(2000)
+  check(
+    '…and closed, the engine lets go',
+    (await ownViews()) === 0 && (await audioViews()) === 0
+  )
   await settings.run(`window.bsc.setPluginEnabled('visualizer', false)`)
   await wait(1000)
   check('…and the plugin off, its strip goes too', (await stripViews()) === 0)

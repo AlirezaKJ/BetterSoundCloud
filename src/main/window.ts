@@ -123,6 +123,14 @@ export type Shell = {
    */
   lyrics: WebContentsView | null
   /**
+   * The Visualizer's view of its own (§22): what is heard, over SoundCloud's page area between its
+   * header and play bar. Exists only while open (`toggleVisualView`), and can be opened only while
+   * the plugin chose a look for it (`visualViewAvailable`).
+   */
+  visualView: WebContentsView | null
+  /** Whether the view of its own can be opened: its player-bar button shows exactly then. */
+  visualViewAvailable: boolean
+  /**
    * The full-screen showcase: the playing track's artwork, title, progress and lyrics over the
    * whole screen. Exists only while open (`openShowcase`), and covers every other view.
    */
@@ -260,7 +268,15 @@ const PLAY_CONTROLS_HEIGHT = 48
  * room at its end (in CSS pixels, divided by the zoom).
  */
 export const VISUAL_STRIP_HEIGHT = 40
+/** The player-bar buttons: two of them, lyrics and the showcase. */
 const PLAYER_BUTTONS_WIDTH = 92
+/** A third, the Visualizer's view of its own, while it can be opened: a 30px button and its gap. */
+const PLAYER_BUTTON_STEP = 34
+
+/** The player-bar buttons' width now, which the reservation in SoundCloud's bar must match. */
+function playerButtonsWidth(shell: Shell): number {
+  return PLAYER_BUTTONS_WIDTH + (shell.visualViewAvailable ? PLAYER_BUTTON_STEP : 0)
+}
 
 export function createShell(identity: Identity): Shell {
   // `fullScreen: false`: full screen is only ever the showcase's, which is gone on the next
@@ -338,6 +354,8 @@ export function createShell(identity: Identity): Shell {
     contextMenuRequest: null,
     status: null,
     lyrics: null,
+    visualView: null,
+    visualViewAvailable: false,
     showcase: null,
     showcaseLeavesFullScreen: false,
     pageStatus: null,
@@ -401,7 +419,9 @@ export function createShell(identity: Identity): Shell {
     // stepped aside, it would be an empty strip over the page. It goes on asking, though, so the
     // engine stays aside rather than retrying what failed (§21).
     const visualStripWanted = shell.visualStrip !== null && shell.trackLoaded && !pageHidden
-    const visualStripDrawn = visualStripWanted && !shell.showcase
+    // Drawn only where it can be seen and is not the same thing twice: the showcase covers it, and
+    // the view of its own already shows what it would.
+    const visualStripDrawn = visualStripWanted && !shell.showcase && !shell.visualView
     const visualStripShows = visualStripWanted && !shell.audioStopped
     const visualStripFlipped = visualStripShows !== shell.visualStripShowing
     shell.visualStripShowing = visualStripShows
@@ -482,6 +502,12 @@ export function createShell(identity: Identity): Shell {
       shell.lyrics.setVisible(!pageHidden)
       fitLyricsPane(shell, strip)
     }
+    // The Visualizer's view of its own stands in for SoundCloud's page, so it goes with it too.
+    if (shell.visualView) {
+      shell.visualView.setVisible(!pageHidden)
+      fitVisualView(shell, strip)
+    }
+    const visualViewDrawn = shell.visualView !== null && !pageHidden && !shell.showcase
     // The showcase covers everything, our own bar included.
     if (shell.showcase) shell.showcase.setBounds({ x: 0, y: 0, width, height })
 
@@ -489,6 +515,7 @@ export function createShell(identity: Identity): Shell {
     // while it is drawn; this is a no-op unless that changed.
     if (visualStripFlipped) void applyContentCss(shell, shell.fullWidthLayout, shell.theme)
     setVisualPlaceShown('strip', visualStripDrawn)
+    setVisualPlaceShown('view', visualViewDrawn)
 
     // Only when it actually flips — crossing the width is rare, and re-injecting on every
     // resize tick would rebuild the whole stylesheet dozens of times during a drag.
@@ -740,7 +767,7 @@ async function applyContentCss(shell: Shell, fullWidth: boolean, theme: string):
   // only on screen when the window is wide enough. Reserving for a hidden overlay is the gap
   // with no buttons in it.
   const reserve = shell.embeddedShowing ? Math.round(EMBEDDED_WIDTH / zoom) : null
-  const playerReserve = shell.player ? Math.round(PLAYER_BUTTONS_WIDTH / zoom) : null
+  const playerReserve = shell.player ? Math.round(playerButtonsWidth(shell) / zoom) : null
   const stripReserve = shell.visualStripShowing ? Math.round(VISUAL_STRIP_HEIGHT / zoom) : null
   const compactHeader = shell.compactHeader
   const fitHeader = shell.fitHeader
@@ -1103,10 +1130,11 @@ function fitOverPlayControls(shell: Shell): void {
   const zoom = shell.content.webContents.getZoomFactor()
   const barHeight = Math.round(PLAY_CONTROLS_HEIGHT * zoom)
 
+  const buttonsWidth = playerButtonsWidth(shell)
   const bounds = {
-    x: Math.round(width - PLAYER_BUTTONS_WIDTH),
+    x: Math.round(width - buttonsWidth),
     y: height - barHeight,
-    width: PLAYER_BUTTONS_WIDTH,
+    width: buttonsWidth,
     height: barHeight
   }
   view.setBounds(bounds)
@@ -1157,7 +1185,10 @@ function setPlayerButtons(shell: Shell, enabled: boolean): void {
   shell.window.contentView.addChildView(view)
   fitOverPlayControls(shell)
   sendPageThemeOnLoad(shell, view)
-  view.webContents.once('did-finish-load', () => sendLyricsShown(shell))
+  view.webContents.once('did-finish-load', () => {
+    sendLyricsShown(shell)
+    sendVisualViewState(shell)
+  })
 
   void view.webContents.loadURL(rendererUrl('player'))
 }
@@ -1287,6 +1318,109 @@ export function setAudioStopped(shell: Shell, stopped: boolean): void {
 }
 
 /*
+ * ── The Visualizer's view of its own ───────────────────────────────────────────────────────
+ *
+ * What is heard, over SoundCloud's page area between its header and play bar (§22), on a colour
+ * from the artwork like the showcase. SoundCloud's header and play bar stay usable around it, and
+ * the lyrics pane beside it. Opened from its player-bar button or the right-click menu, only while
+ * the plugin chose a look for it; Escape or its close button closes it.
+ */
+
+export function toggleVisualView(shell: Shell): void {
+  if (shell.visualView) closeVisualView(shell)
+  else openVisualView(shell)
+}
+
+function openVisualView(shell: Shell): void {
+  if (!shell.visualViewAvailable) return
+  const view = new WebContentsView({
+    webPreferences: {
+      preload: join(import.meta.dirname, '../preload/chrome.cjs'),
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+      webSecurity: true,
+      devTools: isDev
+    }
+  })
+  hardenSession(view.webContents.session, shell.identity)
+  routeNewWindowsToBrowser(view.webContents)
+  // Dark Shell Grey, its colour before it knows the artwork's, as the showcase's.
+  view.setBackgroundColor('#121212')
+
+  shell.visualView = view
+  const views = shell.window.contentView
+  views.addChildView(view)
+  // A page status (a hang asks over the page), the settings panel, the right-click menu and the
+  // showcase stay above it.
+  for (const above of [shell.status, shell.settings, shell.contextMenu, shell.showcase]) {
+    if (above) views.addChildView(above)
+  }
+  shell.layout()
+
+  if (isDev) enableDevToolsShortcut(view)
+  void view.webContents.loadURL(rendererUrl('visual-view'))
+  // Focused, so Escape and the arrow keys work straight away.
+  view.webContents.once('did-finish-load', () => {
+    if (!view.webContents.isDestroyed()) view.webContents.focus()
+  })
+  sendVisualViewState(shell)
+}
+
+export function closeVisualView(shell: Shell): void {
+  const view = shell.visualView
+  if (!view) return
+  shell.visualView = null
+  shell.window.contentView.removeChildView(view)
+  // Destroyed rather than hidden, like the lyrics pane: its state lives in main.
+  view.webContents.close()
+  sendVisualViewState(shell)
+  shell.layout()
+  // Back to SoundCloud, so the keyboard works there again without a click.
+  if (!shell.content.webContents.isDestroyed()) shell.content.webContents.focus()
+}
+
+/**
+ * Whether the plugin chose a look for the view of its own. Its player-bar button comes and goes
+ * with it, so the buttons' reserved width does too; with no look, an open view closes.
+ */
+export function setVisualViewAvailable(shell: Shell, available: boolean): void {
+  if (available === shell.visualViewAvailable) return
+  shell.visualViewAvailable = available
+  if (!available) closeVisualView(shell)
+  void applyContentCss(shell, shell.fullWidthLayout, shell.theme)
+  shell.layout()
+  sendVisualViewState(shell)
+}
+
+/** Under SoundCloud's header, above its play bar, beside the lyrics pane while that is open. */
+function fitVisualView(shell: Shell, strip: number): void {
+  const view = shell.visualView
+  if (!view) return
+  const { width, height } = shell.window.getContentBounds()
+  const zoom = shell.content.webContents.getZoomFactor()
+  const top = strip + Math.round(SC_HEADER_HEIGHT * zoom)
+  const bottom = Math.round(PLAY_CONTROLS_HEIGHT * zoom)
+  view.setBounds({
+    x: 0,
+    y: top,
+    width: shell.lyrics ? width - lyricsPaneWidth(width) : width,
+    height: Math.max(0, height - top - bottom)
+  })
+}
+
+/** Tell the player-bar buttons whether the view can be opened and whether it is open. */
+function sendVisualViewState(shell: Shell): void {
+  const view = shell.player
+  if (view && !view.webContents.isDestroyed()) {
+    view.webContents.send(CH.visualViewState, {
+      available: shell.visualViewAvailable,
+      open: shell.visualView !== null
+    })
+  }
+}
+
+/*
  * ── The lyrics pane ────────────────────────────────────────────────────────────────────────
  *
  * Docked at the right of SoundCloud's page, from under its header to above its play bar, so the
@@ -1352,6 +1486,8 @@ export function closeLyrics(shell: Shell): void {
   view.webContents.close()
   setLyricsWanted('pane', false)
   sendLyricsShown(shell)
+  // The strip and the view of its own stopped at the pane; they take the width back.
+  shell.layout()
   // Back to SoundCloud, so the keyboard works there again without a click.
   if (!shell.content.webContents.isDestroyed()) shell.content.webContents.focus()
 }
@@ -1612,6 +1748,7 @@ export function rendererUrl(
     | 'lyrics'
     | 'showcase'
     | 'visual-strip'
+    | 'visual-view'
     | 'audio'
 ): string {
   const devServer = process.env['ELECTRON_RENDERER_URL']

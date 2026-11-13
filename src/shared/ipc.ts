@@ -9,7 +9,7 @@ import type { PluginView } from './plugins'
 import type { LyricsState } from './lyrics'
 import type { UpdateAction, UpdateStatus } from './updates'
 import type { AudioConfig, AudioReport } from './audio'
-import type { VisualFrame, VisualizerConfig } from './visualizer'
+import type { VisualFrame, VisualizerConfig, VisualViewState } from './visualizer'
 import type { GlassStatus } from './glass'
 
 /** Every IPC channel name, in one place. Strings are never written inline. */
@@ -131,7 +131,13 @@ export const CH = {
   visualFrame: 'visualizer:frame',
   visualFrameChanged: 'visualizer:frame-changed',
   visualizerGet: 'visualizer:get',
-  visualizerChanged: 'visualizer:changed'
+  visualizerChanged: 'visualizer:changed',
+  // The Visualizer's view of its own: toggled from the player-bar button (and the right-click
+  // menu, in main); only the view itself closes it. main -> the player-bar buttons: whether it
+  // can be opened and whether it is open.
+  visualViewToggle: 'visualizer:view-toggle',
+  visualViewClose: 'visualizer:view-close',
+  visualViewState: 'visualizer:view-state'
 } as const
 
 /** What a change to a plugin answers: every row as it now is, and why it failed if it did. */
@@ -357,4 +363,13 @@ export type ChromeApi = {
   getVisualizer(): Promise<VisualizerConfig>
   /** …and every change to it: the plugin turned on or off, or its look changed. */
   onVisualizer(cb: (config: VisualizerConfig) => void): () => void
+  /** Open the Visualizer's view of its own, or close it if it is open. From the player bar. */
+  toggleVisualView(): void
+  /** The view of its own closing itself: its close button, or Escape. */
+  closeVisualView(): void
+  /**
+   * The player-bar buttons only: whether the view of its own can be opened (the Visualizer plugin
+   * chose a look for it) and whether it is open. On their load and on every change.
+   */
+  onVisualViewState(cb: (state: VisualViewState) => void): () => void
 }

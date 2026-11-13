@@ -2,20 +2,14 @@
   import { onMount } from 'svelte'
   import { fade } from 'svelte/transition'
   import { lyricClock } from '@shared/lyric-clock'
-  import {
-    artworkColour,
-    artworkSources,
-    formatClock,
-    NEUTRAL_BACKDROP,
-    showcaseBackdrop,
-    showcaseInks
-  } from '@shared/showcase'
-  import type { Rgb, ShowcaseInks } from '@shared/showcase'
+  import { formatClock } from '@shared/showcase'
+  import type { ShowcaseInks } from '@shared/showcase'
   import type { LyricsState } from '@shared/lyrics'
   import type { NowPlaying } from '@shared/now-playing'
   import { NO_VISUALIZER, showcaseLayout } from '@shared/visualizer'
   import type { Box, VisualLayout, VisualLook, VisualizerConfig } from '@shared/visualizer'
   import Visualizer from '../lib/Visualizer.svelte'
+  import { artworkRoom, NEUTRAL_ROOM } from '../lib/artwork-room'
 
   /*
    * The full-screen showcase: the playing track as a record sleeve.
@@ -37,14 +31,12 @@
 
   /** How long the close button and the cursor stay once the pointer stops moving. */
   const CHROME_IDLE_MS = 2500
-  /** The size the artwork is sampled at for its colour. A handful of pixels is plenty. */
-  const SAMPLE = 24
   const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
   let playing = $state<NowPlaying | null>(null)
   let lyrics = $state<LyricsState>({ state: 'idle' })
   let current = $state(-1)
-  let inks = $state<ShowcaseInks>(showcaseInks(NEUTRAL_BACKDROP))
+  let inks = $state<ShowcaseInks>(NEUTRAL_ROOM.inks)
   /** The artwork on screen. It changes only once the next one has loaded, with its colour. */
   let artwork = $state('')
   let chromeShown = $state(true)
@@ -155,45 +147,12 @@
   function loadArtwork(url: string): void {
     if (url === artworkWanted) return
     artworkWanted = url
-    tryArtwork(artworkSources(url), url)
-  }
-
-  function tryArtwork(sources: string[], wanted: string): void {
-    const [source, ...rest] = sources
-    if (!source) {
-      if (wanted !== artworkWanted) return
-      artwork = ''
-      inks = showcaseInks(NEUTRAL_BACKDROP)
-      return
-    }
-    const image = new Image()
-    // SoundCloud's image host answers `Access-Control-Allow-Origin: *` (measured), which is
-    // what lets the artwork's pixels be read for its colour.
-    image.crossOrigin = 'anonymous'
-    image.onload = () => {
-      if (wanted !== artworkWanted) return
-      artwork = source
-      inks = showcaseInks(showcaseBackdrop(sampleColour(image) ?? NEUTRAL_BACKDROP))
-    }
-    image.onerror = () => {
-      tryArtwork(rest, wanted)
-    }
-    image.src = source
-  }
-
-  function sampleColour(image: HTMLImageElement): Rgb | null {
-    try {
-      const canvas = document.createElement('canvas')
-      canvas.width = SAMPLE
-      canvas.height = SAMPLE
-      const context = canvas.getContext('2d', { willReadFrequently: true })
-      if (!context) return null
-      context.drawImage(image, 0, 0, SAMPLE, SAMPLE)
-      return artworkColour(context.getImageData(0, 0, SAMPLE, SAMPLE).data)
-    } catch {
-      // A canvas the browser will not let us read: the neutral backdrop, not a broken view.
-      return null
-    }
+    void artworkRoom(url).then((room) => {
+      // A newer track's artwork was asked for meanwhile: that one wins.
+      if (url !== artworkWanted) return
+      artwork = room.artwork
+      inks = room.inks
+    })
   }
 
   /** Show the close button and the cursor, and hide them again once the pointer rests. */

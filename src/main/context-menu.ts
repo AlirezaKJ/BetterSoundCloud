@@ -12,7 +12,8 @@ import {
   openShowcase,
   rendererUrl,
   toggleLyrics,
-  toggleSettings
+  toggleSettings,
+  toggleVisualView
 } from './window'
 import type { Shell } from './window'
 import { themeChromeView } from './chrome-theme'
@@ -118,7 +119,9 @@ function showContextMenu(shell: Shell, params: ContextMenuParams): void {
     canGoBack: webContents.navigationHistory.canGoBack(),
     canGoForward: webContents.navigationHistory.canGoForward(),
     canInspect: isDev,
-    lyricsOpen: shell.lyrics !== null
+    lyricsOpen: shell.lyrics !== null,
+    visualizerAvailable: shell.visualViewAvailable,
+    visualizerOpen: shell.visualView !== null
   }
   shell.contextMenuRequest = request
 
@@ -219,6 +222,9 @@ export function runContextMenuAction(
       break
     case 'showcase':
       openShowcase(shell)
+      break
+    case 'visualizer':
+      toggleVisualView(shell)
       break
     case 'settings':
       toggleSettings(shell)

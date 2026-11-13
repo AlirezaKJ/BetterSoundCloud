@@ -9,13 +9,20 @@
 
 import type { Box } from '@shared/visualizer'
 
-/** How strongly each part is inked: decoration, so well under the text, but there to be seen. */
+/**
+ * How strongly each part is inked: decoration, so well under the text, but there to be seen. Where
+ * the look is the subject of its place (the view of its own), it is drawn at `strength` times this,
+ * never past full ink.
+ */
 const BAR_ALPHA = 0.3
 const PEAK_ALPHA = 0.7
 /** A peak this low is not drawn: an empty band shows nothing at all, not a stub. */
 const PEAK_FLOOR = 0.015
 /** The share of each bar's slot it fills; the rest is the gap. */
 const BAR_FILL = 0.56
+
+/** Twice the strength: a look that is the subject of its place, not decoration under text. */
+export const STRONG = 2
 
 /**
  * Bars standing on the bottom edge of `area`, one per level, low to high, left to right, each up
@@ -26,7 +33,8 @@ export function drawBars(
   area: Box,
   levels: ArrayLike<number>,
   peaks: ArrayLike<number>,
-  ink: string
+  ink: string,
+  strength = 1
 ): void {
   const count = levels.length
   const width = area.right - area.left
@@ -35,7 +43,7 @@ export function drawBars(
   const bar = Math.max(2, Math.round(slot * BAR_FILL))
   context.fillStyle = ink
 
-  context.globalAlpha = BAR_ALPHA
+  context.globalAlpha = Math.min(1, BAR_ALPHA * strength)
   for (let i = 0; i < count; i++) {
     const tall = Math.round((levels[i] ?? 0) * height)
     if (tall < 1) continue
@@ -43,7 +51,7 @@ export function drawBars(
     context.fillRect(x, area.bottom - tall, bar, tall)
   }
 
-  context.globalAlpha = PEAK_ALPHA
+  context.globalAlpha = Math.min(1, PEAK_ALPHA * strength)
   for (let i = 0; i < count; i++) {
     const peak = peaks[i] ?? 0
     if (peak < PEAK_FLOOR) continue
@@ -124,7 +132,8 @@ export function drawFlow(
   area: Box,
   levels: ArrayLike<number>,
   ink: string,
-  rise = false
+  rise = false,
+  strength = 1
 ): void {
   const count = levels.length
   if (count < 3) return
@@ -162,7 +171,7 @@ export function drawFlow(
   if (!rise) trace(back, -1)
   context.closePath()
   context.fillStyle = ink
-  context.globalAlpha = FLOW_BODY_ALPHA
+  context.globalAlpha = Math.min(1, FLOW_BODY_ALPHA * strength)
   context.fill()
   if (rise) {
     // The outline is the curve alone: closed, it would draw a rule along the bar's edge.
@@ -173,7 +182,7 @@ export function drawFlow(
   context.strokeStyle = ink
   context.lineWidth = 2
   context.lineJoin = 'round'
-  context.globalAlpha = FLOW_LINE_ALPHA
+  context.globalAlpha = Math.min(1, FLOW_LINE_ALPHA * strength)
   context.stroke()
   context.globalAlpha = 1
 }

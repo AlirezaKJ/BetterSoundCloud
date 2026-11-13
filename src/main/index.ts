@@ -26,6 +26,9 @@ import {
   setVisualStrip,
   setTrackLoaded,
   setAudioStopped,
+  setVisualViewAvailable,
+  toggleVisualView,
+  closeVisualView,
   rendererUrl,
   sendFrameCss
 } from './window'
@@ -461,6 +464,7 @@ function showMainWindow(): void {
     // The Visualizer's strip, if the plugin chose one before this window existed (§22).
     setTrackLoaded(next, getNowPlaying() !== null)
     setVisualStrip(next, getVisualizer().strip !== null)
+    setVisualViewAvailable(next, getVisualizer().view !== null)
     if (isDev) checkPageLanguages(next.header, browserIdentity().languages)
     next.window.on('close', (event) => {
       if (quitting || !keepsRunningWhenClosed()) return
@@ -503,6 +507,7 @@ function showMainWindow(): void {
         next.embedded,
         next.player,
         next.visualStrip,
+        next.visualView,
         next.contextMenu,
         next.status,
         next.lyrics,
@@ -691,7 +696,8 @@ function registerIpc(): void {
       shell.contextMenu,
       shell.status,
       shell.lyrics,
-      shell.showcase
+      shell.showcase,
+      shell.visualView
     ].some((view) => view?.webContents === event.sender)
 
   ipcMain.handle(CH.nowPlayingGet, (e) => (fromOurViews(e) ? getNowPlaying() : null))
@@ -815,6 +821,9 @@ function registerIpc(): void {
     shell !== null && event.sender === shell.showcase?.webContents
   const fromVisualStrip = (event: Electron.IpcMainInvokeEvent): boolean =>
     shell !== null && event.sender === shell.visualStrip?.webContents
+  const fromVisualView = (
+    event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent
+  ): boolean => shell !== null && event.sender === shell.visualView?.webContents
   ipcMain.on(CH.lyricsToggle, (e) => {
     if (shell && (fromChrome(e) || e.sender === shell.player?.webContents)) toggleLyrics(shell)
   })
@@ -847,6 +856,15 @@ function registerIpc(): void {
     if (shell && fromShowcase(e)) closeShowcase(shell)
   })
 
+  /** The Visualizer's view of its own. Toggled from the player-bar button; only it closes itself. */
+  ipcMain.on(CH.visualViewToggle, (e) => {
+    if (shell && (fromChrome(e) || e.sender === shell.player?.webContents))
+      toggleVisualView(shell)
+  })
+  ipcMain.on(CH.visualViewClose, (e) => {
+    if (shell && fromVisualView(e)) closeVisualView(shell)
+  })
+
   /** The audio engine's view saying whether its capture works. That view only, shaped first. */
   ipcMain.on(CH.audioReport, (e, raw: unknown) => {
     if (!isAudioView(e.sender)) return
@@ -864,14 +882,18 @@ function registerIpc(): void {
   })
   onVisualFrame((frame) => {
     if (!shell) return
-    const strip = shell.visualStripShowing && !shell.showcase ? shell.visualStrip : null
-    for (const view of [shell.showcase, strip]) {
+    const strip =
+      shell.visualStripShowing && !shell.showcase && !shell.visualView
+        ? shell.visualStrip
+        : null
+    const own = shell.showcase ? null : shell.visualView
+    for (const view of [shell.showcase, strip, own]) {
       if (view && !view.webContents.isDestroyed())
         view.webContents.send(CH.visualFrameChanged, frame)
     }
   })
   ipcMain.handle(CH.visualizerGet, (e) =>
-    fromShowcase(e) || fromVisualStrip(e) ? getVisualizer() : null
+    fromShowcase(e) || fromVisualStrip(e) || fromVisualView(e) ? getVisualizer() : null
   )
   // The strip's band goes while the engine has stepped aside: it would have nothing to draw.
   onAudioStatusChange((status) => {
@@ -879,9 +901,11 @@ function registerIpc(): void {
   })
   onVisualizerChange((config) => {
     if (!shell) return
-    // The strip's view exists while the plugin has chosen a look for it.
+    // The strip's view exists while the plugin has chosen a look for it, and the view of its own
+    // can be opened only then.
     setVisualStrip(shell, config.strip !== null)
-    for (const view of [shell.showcase, shell.visualStrip]) {
+    setVisualViewAvailable(shell, config.view !== null)
+    for (const view of [shell.showcase, shell.visualStrip, shell.visualView]) {
       if (view && !view.webContents.isDestroyed())
         view.webContents.send(CH.visualizerChanged, config)
     }
@@ -1041,7 +1065,8 @@ function broadcastNowPlaying(nowPlaying: NowPlaying | null): void {
     shell.contextMenu,
     shell.status,
     shell.lyrics,
-    shell.showcase
+    shell.showcase,
+    shell.visualView
   ]) {
     if (view && !view.webContents.isDestroyed()) {
       view.webContents.send(CH.nowPlayingChanged, nowPlaying)

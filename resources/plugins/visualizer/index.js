@@ -5,12 +5,12 @@
  * Written only against the `bsc` API, like the Equaliser and Pitch. A plugin has no screen of its
  * own, so this one does not draw: it tells the app which look it wants in each place
  * (`bsc.audio.visualize`), and the app's own views draw it from the audio engine's sound. Its
- * settings are the look in each place: the full-screen view, and the strip above the player.
+ * settings are the look in each place: the full-screen view, the strip above the player, and a
+ * view of its own over SoundCloud's page.
  *
  * It is a plugin, off until turned on, so that it can never be what breaks SoundCloud: turned
  * off, crashed or uninstalled, the app drops its request, nothing is drawn, and the engine stops
- * listening for it. Even on, the engine listens only
- * while a visualizer is on screen.
+ * listening for it. Even on, the engine listens only while a visualizer is on screen.
  */
 
 /** @typedef {import('../../../src/shared/plugin-api').PluginApi} PluginApi */
@@ -19,14 +19,18 @@
 
 /** @type {PluginApi | null} */
 let api = null
-/** @type {{ showcase: VisualLook | 'off', strip: VisualLook | 'off' }} */
-let looks = { showcase: 'off', strip: 'off' }
+/** @type {{ showcase: VisualLook | 'off', strip: VisualLook | 'off', view: VisualLook | 'off' }} */
+let looks = { showcase: 'off', strip: 'off', view: 'off' }
 let reducedMotion = false
 /** @type {AudioStatus} */
 let engine = { state: 'off', message: '' }
 
 /** The looks each place can take; anything else is "off". */
-const LOOKS = { showcase: ['bars', 'ring', 'wave'], strip: ['bars', 'wave'] }
+const LOOKS = {
+  showcase: ['bars', 'ring', 'wave'],
+  strip: ['bars', 'wave'],
+  view: ['bars', 'wave']
+}
 
 module.exports = {
   /** @param {PluginApi} bsc */
@@ -67,7 +71,8 @@ function apply(values) {
   if (!bsc) return
   looks = {
     showcase: lookOf(values['showcase'], LOOKS.showcase),
-    strip: lookOf(values['strip'], LOOKS.strip)
+    strip: lookOf(values['strip'], LOOKS.strip),
+    view: lookOf(values['view'], LOOKS.view)
   }
   bsc.audio
     .visualize(looks)
@@ -81,12 +86,15 @@ function apply(values) {
   showStatus()
 }
 
-/** Where it shows, in words: "in the full-screen view and above the player". */
+/** Where it shows, in words: "in the full-screen view, above the player and in its own view". */
 function placesWords() {
   const places = []
   if (looks.showcase !== 'off') places.push('in the full-screen view')
   if (looks.strip !== 'off') places.push('above the player')
-  return places.join(' and ')
+  if (looks.view !== 'off') places.push('in its own view')
+  const last = places.pop()
+  if (!last) return ''
+  return places.length > 0 ? `${places.join(', ')} and ${last}` : last
 }
 
 /** The line under the plugin in settings. */

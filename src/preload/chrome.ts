@@ -19,7 +19,7 @@ import type { PluginView } from '@shared/plugins'
 import type { LyricsState } from '@shared/lyrics'
 import type { UpdateAction, UpdateStatus } from '@shared/updates'
 import type { AudioConfig, AudioReport } from '@shared/audio'
-import type { VisualFrame, VisualizerConfig } from '@shared/visualizer'
+import type { VisualFrame, VisualizerConfig, VisualViewState } from '@shared/visualizer'
 
 /**
  * Preload for OUR OWN chrome (header, settings, the overlays, the right-click menu). This
@@ -129,7 +129,10 @@ const api: ChromeApi = {
   reportVisualFrame: (frame: VisualFrame) => ipcRenderer.send(CH.visualFrame, frame),
   onVisualFrame: (cb: (frame: VisualFrame) => void) => subscribe(CH.visualFrameChanged, cb),
   getVisualizer: () => ipcRenderer.invoke(CH.visualizerGet) as Promise<VisualizerConfig>,
-  onVisualizer: (cb: (config: VisualizerConfig) => void) => subscribe(CH.visualizerChanged, cb)
+  onVisualizer: (cb: (config: VisualizerConfig) => void) => subscribe(CH.visualizerChanged, cb),
+  toggleVisualView: () => ipcRenderer.send(CH.visualViewToggle),
+  closeVisualView: () => ipcRenderer.send(CH.visualViewClose),
+  onVisualViewState: (cb: (state: VisualViewState) => void) => subscribe(CH.visualViewState, cb)
 }
 
 contextBridge.exposeInMainWorld('bsc', api)

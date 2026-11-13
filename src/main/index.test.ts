@@ -64,7 +64,10 @@ vi.mock('./window', () => ({
   closeShowcase: vi.fn(),
   setVisualStrip: vi.fn(),
   setTrackLoaded: vi.fn(),
-  setAudioStopped: vi.fn()
+  setAudioStopped: vi.fn(),
+  setVisualViewAvailable: vi.fn(),
+  toggleVisualView: vi.fn(),
+  closeVisualView: vi.fn()
 }))
 vi.mock('./audio', () => ({
   startAudioEngine: vi.fn(),
@@ -79,7 +82,7 @@ vi.mock('./audio', () => ({
 }))
 vi.mock('./visualizer', () => ({
   forgetVisualPlaces: vi.fn(),
-  getVisualizer: () => ({ showcase: 'bars', strip: 'bars' }),
+  getVisualizer: () => ({ showcase: 'bars', strip: 'bars', view: 'bars' }),
   onVisualizerChange: vi.fn()
 }))
 vi.mock('./lyrics', () => ({
@@ -745,6 +748,48 @@ describe('main window lifecycle', () => {
     handlerFor('on', CH.lyricsRetry)(fromShowcase)
     expect(lyrics.nudgeLyrics).not.toHaveBeenCalled()
     expect(lyrics.retryLyrics).not.toHaveBeenCalled()
+  })
+
+  it('opens the visualizer’s own view from our own buttons only, and lets only it close itself', async () => {
+    const { app } = await import('electron')
+    const window = await import('./window')
+    app.emit('activate')
+    const shell = mocks.createShell.mock.results.at(-1)!.value as ReturnType<typeof makeShell>
+    const handlerFor = (method: 'on' | 'handle', channel: string) => {
+      const registered = method === 'on' ? mocks.ipcOn : mocks.ipcHandle
+      return registered.mock.calls.find(([name]) => name === channel)![1] as (
+        event: unknown,
+        ...args: unknown[]
+      ) => unknown
+    }
+    const fromPage = { sender: shell.content.webContents }
+    const fromPlayer = { sender: shell.player.webContents }
+    const ownView = { webContents: { ...shell.status.webContents } }
+    Object.assign(shell, { visualView: ownView })
+    const fromOwnView = { sender: ownView.webContents }
+
+    // SoundCloud's page can neither open it nor close it, nor read what the plugin chose.
+    handlerFor('on', CH.visualViewToggle)(fromPage)
+    handlerFor('on', CH.visualViewClose)(fromPage)
+    expect(window.toggleVisualView).not.toHaveBeenCalled()
+    expect(window.closeVisualView).not.toHaveBeenCalled()
+    expect(handlerFor('handle', CH.visualizerGet)(fromPage)).toBeNull()
+
+    // The player-bar button toggles it; the player bar cannot close it outright, the view can.
+    handlerFor('on', CH.visualViewToggle)(fromPlayer)
+    expect(window.toggleVisualView).toHaveBeenCalledOnce()
+    handlerFor('on', CH.visualViewClose)(fromPlayer)
+    expect(window.closeVisualView).not.toHaveBeenCalled()
+    handlerFor('on', CH.visualViewClose)(fromOwnView)
+    expect(window.closeVisualView).toHaveBeenCalledOnce()
+
+    // It reads the plugin's looks and what is playing (for the artwork's colour).
+    expect(handlerFor('handle', CH.visualizerGet)(fromOwnView)).toEqual({
+      showcase: 'bars',
+      strip: 'bars',
+      view: 'bars'
+    })
+    expect(handlerFor('handle', CH.nowPlayingGet)(fromOwnView)).not.toBeUndefined()
   })
 
   it('gives every window the same identity, its header built from the page’s languages', () => {

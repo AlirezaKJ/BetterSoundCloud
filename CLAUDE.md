@@ -180,18 +180,19 @@ There is no BrowserWindow. `createShell()` builds a frameless `BaseWindow` and s
 `WebContentsView`s in it. Our UI is never injected into SoundCloud's page; it is drawn in separate
 views composited above it. Everything is held on the `Shell` object (`src/main/window.ts`).
 
-| `Shell` field | Renderer entry          | Preload       | Lifetime                                                                                                                                                                           |
-| ------------- | ----------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `header`      | `renderer/header`       | `chrome.cjs`  | Always. Hidden (`setVisible(false)`) while SoundCloud owns the top                                                                                                                 |
-| `content`     | soundcloud.com          | `content.cjs` | Always. Loads `https://soundcloud.com/discover` once Widevine is ready (`loadSoundCloud`)                                                                                          |
-| `settings`    | `renderer/settings`     | `chrome.cjs`  | Created on open, destroyed on close (`toggleSettings`/`closeSettings`)                                                                                                             |
-| `embedded`    | `renderer/embedded`     | `chrome.cjs`  | Exists while `appearance.hideMenuBar` is on; window buttons over SoundCloud's header                                                                                               |
-| `player`      | `renderer/player`       | `chrome.cjs`  | Exists while `appearance.playerButtons` is on; buttons at the right end of SoundCloud's play bar                                                                                   |
-| `contextMenu` | `renderer/context-menu` | `chrome.cjs`  | Created once (`attachContextMenu`), hidden between uses                                                                                                                            |
-| `status`      | `renderer/status`       | `chrome.cjs`  | Exists while `pageStatus` is set: SoundCloud's page cannot be shown (`showPageStatus`/`clearPageStatus`)                                                                           |
-| `lyrics`      | `renderer/lyrics`       | `chrome.cjs`  | Exists while the lyrics pane is open (`toggleLyrics`/`closeLyrics`); docked right, between SoundCloud's header and play bar                                                        |
-| `showcase`    | `renderer/showcase`     | `chrome.cjs`  | Exists while the full-screen showcase is open (`openShowcase`/`closeShowcase`); covers the whole window, which goes full screen with it                                            |
-| `visualStrip` | `renderer/visual-strip` | `chrome.cjs`  | Exists while the Visualizer plugin chose a look for the strip (`setVisualStrip`); stands on SoundCloud's player bar while a track is loaded, and steps aside for the pointer (§22) |
+| `Shell` field | Renderer entry          | Preload       | Lifetime                                                                                                                                                                                                        |
+| ------------- | ----------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `header`      | `renderer/header`       | `chrome.cjs`  | Always. Hidden (`setVisible(false)`) while SoundCloud owns the top                                                                                                                                              |
+| `content`     | soundcloud.com          | `content.cjs` | Always. Loads `https://soundcloud.com/discover` once Widevine is ready (`loadSoundCloud`)                                                                                                                       |
+| `settings`    | `renderer/settings`     | `chrome.cjs`  | Created on open, destroyed on close (`toggleSettings`/`closeSettings`)                                                                                                                                          |
+| `embedded`    | `renderer/embedded`     | `chrome.cjs`  | Exists while `appearance.hideMenuBar` is on; window buttons over SoundCloud's header                                                                                                                            |
+| `player`      | `renderer/player`       | `chrome.cjs`  | Exists while `appearance.playerButtons` is on; buttons at the right end of SoundCloud's play bar                                                                                                                |
+| `contextMenu` | `renderer/context-menu` | `chrome.cjs`  | Created once (`attachContextMenu`), hidden between uses                                                                                                                                                         |
+| `status`      | `renderer/status`       | `chrome.cjs`  | Exists while `pageStatus` is set: SoundCloud's page cannot be shown (`showPageStatus`/`clearPageStatus`)                                                                                                        |
+| `lyrics`      | `renderer/lyrics`       | `chrome.cjs`  | Exists while the lyrics pane is open (`toggleLyrics`/`closeLyrics`); docked right, between SoundCloud's header and play bar                                                                                     |
+| `showcase`    | `renderer/showcase`     | `chrome.cjs`  | Exists while the full-screen showcase is open (`openShowcase`/`closeShowcase`); covers the whole window, which goes full screen with it                                                                         |
+| `visualStrip` | `renderer/visual-strip` | `chrome.cjs`  | Exists while the Visualizer plugin chose a look for the strip (`setVisualStrip`); stands on SoundCloud's player bar while a track is loaded, and steps aside for the pointer (§22)                              |
+| `visualView`  | `renderer/visual-view`  | `chrome.cjs`  | Exists while the Visualizer's view of its own is open (`toggleVisualView`/`closeVisualView`), and can open only while the plugin chose a look for it; over SoundCloud's page area, beside the lyrics pane (§22) |
 
 One view of ours is not on the `Shell`: the audio engine's (`renderer/audio`), which is never
 shown and never added to the window. `main/audio.ts` owns it, makes it only while a plugin asks for
@@ -266,50 +267,53 @@ type-only imports are fine.
 `window.bsc` (type `ChromeApi`, implemented in `src/preload/chrome.ts`) exists only in our own
 views:
 
-| Method                                                | Kind           | Main accepts it from (sender check)                                                        |
-| ----------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------ |
-| `platform`                                            | value          | —                                                                                          |
-| `minimize`, `maximizeToggle`, `close`                 | send           | `fromChrome` = header, embedded                                                            |
-| `back`, `forward`, `reload`, `stop`                   | send           | `fromChrome`; `stop` while `NavState.loading` (the main frame is loading)                  |
-| `toggleSettings`, `toggleMenuBar`                     | send           | `fromChrome`                                                                               |
-| `closeSettings`                                       | send           | the settings view only                                                                     |
-| `getSettings`, `setSetting`, `listThemes`             | invoke         | `fromSettingsUi` = header, embedded, settings                                              |
-| `copyTheme`, `openThemesFolder`, `openThemeFile`      | invoke/send    | `fromSettingsUi`; none takes a path                                                        |
-| `getBackgroundPicture`, `chooseBackgroundPicture`     | invoke         | `fromSettingsUi`; main shows the dialog, so no path ever crosses IPC                       |
-| `onThemesChanged`                                     | subscribe      | pushed to the settings view when the themes folder changes                                 |
-| `contextMenuAction`, `goToUrl`, `closeContextMenu`    | send/invoke    | the context-menu view only                                                                 |
-| `getNowPlaying`                                       | invoke         | `fromOurViews` = header, settings, embedded, player, contextMenu, status, lyrics, showcase |
-| `onNavState`                                          | subscribe      | pushed to header                                                                           |
-| `onWindowState`                                       | subscribe      | pushed to header, embedded                                                                 |
-| `onSettingsChanged`                                   | subscribe      | pushed to header, settings (`broadcastSettings`)                                           |
-| `onPageTheme`                                         | subscribe      | pushed to embedded, player, the Visualizer strip (and on their load)                       |
-| `onContextMenu`                                       | subscribe      | pushed to the context-menu view                                                            |
-| `onNowPlaying`                                        | subscribe      | pushed to all eight of our views (`broadcastNowPlaying`)                                   |
-| `toggleLyrics`                                        | send           | `fromChrome`, or the player-bar view                                                       |
-| `closeLyrics`, `retryLyrics`, `nudgeLyrics`           | send           | the lyrics view only; a nudge must be exactly ±0.5                                         |
-| `getLyrics`                                           | invoke         | the lyrics view or the showcase                                                            |
-| `onLyrics`                                            | subscribe      | pushed to the lyrics view and the showcase (`onLyricsChange`)                              |
-| `onLyricsShown`                                       | subscribe      | pushed to the player view: whether the pane is open                                        |
-| `openShowcase`                                        | send           | `fromChrome`, or the player-bar view                                                       |
-| `closeShowcase`                                       | send           | the showcase view only                                                                     |
-| `onAudioConfig`, `reportAudio`                        | subscribe/send | the audio engine's view only (`isAudioView`); reports are shaped by `readAudioReport`      |
-| `reportVisualFrame`                                   | send           | the audio engine's view only (`isAudioView`); every frame shaped by `readVisualFrame`      |
-| `onVisualFrame`                                       | subscribe      | pushed to the showcase and the strip while drawn, about 60 a second                        |
-| `getVisualizer`, `onVisualizer`                       | invoke/sub     | the showcase or the strip (`fromShowcase`, `fromVisualStrip`): the looks the plugin chose  |
-| `pageStatusAction`                                    | send           | the status view only; re-checked against `shell.pageStatus`                                |
-| `onPageStatus`                                        | subscribe      | pushed to the status view (on its load and on every change)                                |
-| `listPlugins`, `setPluginEnabled`, `setPluginSetting` | invoke         | `fromSettingsUi`; the two setters answer `{ plugins, error }`                              |
-| `pluginAction`, `openPluginsFolder`                   | send           | `fromSettingsUi`                                                                           |
-| `onPluginsChanged`                                    | subscribe      | pushed to the settings view while it is open (`broadcastPlugins`)                          |
-| `getSafeMode`                                         | invoke         | `fromSettingsUi`; `true` when started with `--safe-mode`                                   |
-| `getGlassStatus`                                      | invoke         | `fromSettingsUi`; `GlassStatus`: whether Glass is under the window, or why not             |
-| (no method) `CH.focusArrived`                         | pushed         | to the view F6 moved focus into; the chrome preload itself puts focus on a control         |
-| `getWidevineSkipped`                                  | invoke         | `fromSettingsUi`; `true` after "Continue without Widevine", until Widevine arrives         |
-| `resetSettings`, `clearSiteData`                      | invoke         | the settings view only (`fromSettingsView`); each answers whether it worked                |
-| `getPresenceStatus`, `retryPresence`                  | invoke/send    | `fromSettingsUi`                                                                           |
-| `onPresenceStatus`                                    | subscribe      | pushed to the settings view while it is open (`broadcastPresenceStatus`)                   |
-| `getUpdateStatus`, `updateAction`                     | invoke/send    | `fromSettingsUi`; the action must pass `isUpdateAction`                                    |
-| `onUpdateStatus`                                      | subscribe      | pushed to the settings view while it is open (`broadcastUpdateStatus`)                     |
+| Method                                                | Kind           | Main accepts it from (sender check)                                                                    |
+| ----------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------ |
+| `platform`                                            | value          | —                                                                                                      |
+| `minimize`, `maximizeToggle`, `close`                 | send           | `fromChrome` = header, embedded                                                                        |
+| `back`, `forward`, `reload`, `stop`                   | send           | `fromChrome`; `stop` while `NavState.loading` (the main frame is loading)                              |
+| `toggleSettings`, `toggleMenuBar`                     | send           | `fromChrome`                                                                                           |
+| `closeSettings`                                       | send           | the settings view only                                                                                 |
+| `getSettings`, `setSetting`, `listThemes`             | invoke         | `fromSettingsUi` = header, embedded, settings                                                          |
+| `copyTheme`, `openThemesFolder`, `openThemeFile`      | invoke/send    | `fromSettingsUi`; none takes a path                                                                    |
+| `getBackgroundPicture`, `chooseBackgroundPicture`     | invoke         | `fromSettingsUi`; main shows the dialog, so no path ever crosses IPC                                   |
+| `onThemesChanged`                                     | subscribe      | pushed to the settings view when the themes folder changes                                             |
+| `contextMenuAction`, `goToUrl`, `closeContextMenu`    | send/invoke    | the context-menu view only                                                                             |
+| `getNowPlaying`                                       | invoke         | `fromOurViews` = header, settings, embedded, player, contextMenu, status, lyrics, showcase, visualView |
+| `onNavState`                                          | subscribe      | pushed to header                                                                                       |
+| `onWindowState`                                       | subscribe      | pushed to header, embedded                                                                             |
+| `onSettingsChanged`                                   | subscribe      | pushed to header, settings (`broadcastSettings`)                                                       |
+| `onPageTheme`                                         | subscribe      | pushed to embedded, player, the Visualizer strip (and on their load)                                   |
+| `onContextMenu`                                       | subscribe      | pushed to the context-menu view                                                                        |
+| `onNowPlaying`                                        | subscribe      | pushed to all nine of our views (`broadcastNowPlaying`)                                                |
+| `toggleLyrics`                                        | send           | `fromChrome`, or the player-bar view                                                                   |
+| `closeLyrics`, `retryLyrics`, `nudgeLyrics`           | send           | the lyrics view only; a nudge must be exactly ±0.5                                                     |
+| `getLyrics`                                           | invoke         | the lyrics view or the showcase                                                                        |
+| `onLyrics`                                            | subscribe      | pushed to the lyrics view and the showcase (`onLyricsChange`)                                          |
+| `onLyricsShown`                                       | subscribe      | pushed to the player view: whether the pane is open                                                    |
+| `openShowcase`                                        | send           | `fromChrome`, or the player-bar view                                                                   |
+| `closeShowcase`                                       | send           | the showcase view only                                                                                 |
+| `onAudioConfig`, `reportAudio`                        | subscribe/send | the audio engine's view only (`isAudioView`); reports are shaped by `readAudioReport`                  |
+| `reportVisualFrame`                                   | send           | the audio engine's view only (`isAudioView`); every frame shaped by `readVisualFrame`                  |
+| `onVisualFrame`                                       | subscribe      | pushed to the showcase, the strip and the view of its own while drawn, about 60 a second               |
+| `getVisualizer`, `onVisualizer`                       | invoke/sub     | the showcase, the strip or the view (`fromShowcase`, `fromVisualStrip`, `fromVisualView`)              |
+| `toggleVisualView`                                    | send           | `fromChrome`, or the player-bar view                                                                   |
+| `closeVisualView`                                     | send           | the view of its own only                                                                               |
+| `onVisualViewState`                                   | subscribe      | pushed to the player view: whether the view of its own can open, and whether it is open                |
+| `pageStatusAction`                                    | send           | the status view only; re-checked against `shell.pageStatus`                                            |
+| `onPageStatus`                                        | subscribe      | pushed to the status view (on its load and on every change)                                            |
+| `listPlugins`, `setPluginEnabled`, `setPluginSetting` | invoke         | `fromSettingsUi`; the two setters answer `{ plugins, error }`                                          |
+| `pluginAction`, `openPluginsFolder`                   | send           | `fromSettingsUi`                                                                                       |
+| `onPluginsChanged`                                    | subscribe      | pushed to the settings view while it is open (`broadcastPlugins`)                                      |
+| `getSafeMode`                                         | invoke         | `fromSettingsUi`; `true` when started with `--safe-mode`                                               |
+| `getGlassStatus`                                      | invoke         | `fromSettingsUi`; `GlassStatus`: whether Glass is under the window, or why not                         |
+| (no method) `CH.focusArrived`                         | pushed         | to the view F6 moved focus into; the chrome preload itself puts focus on a control                     |
+| `getWidevineSkipped`                                  | invoke         | `fromSettingsUi`; `true` after "Continue without Widevine", until Widevine arrives                     |
+| `resetSettings`, `clearSiteData`                      | invoke         | the settings view only (`fromSettingsView`); each answers whether it worked                            |
+| `getPresenceStatus`, `retryPresence`                  | invoke/send    | `fromSettingsUi`                                                                                       |
+| `onPresenceStatus`                                    | subscribe      | pushed to the settings view while it is open (`broadcastPresenceStatus`)                               |
+| `getUpdateStatus`, `updateAction`                     | invoke/send    | `fromSettingsUi`; the action must pass `isUpdateAction`                                                |
+| `onUpdateStatus`                                      | subscribe      | pushed to the settings view while it is open (`broadcastUpdateStatus`)                                 |
 
 Every `on…` returns an unsubscribe function. A new view that needs one of the gated methods must
 be added to that sender check, and to the matching broadcast list if it needs pushes.
@@ -1132,25 +1136,27 @@ Rules that hold this together:
 ## 22. The Visualizer
 
 ```
-Visualizer plugin --bsc.audio.visualize({ showcase: 'bars'|'ring'|'wave'|'off', strip: 'bars'|'wave'|'off' })-->
+Visualizer plugin --bsc.audio.visualize({ showcase: 'bars'|'ring'|'wave'|'off', strip: …, view: … })-->
   plugins.ts: readVisualizerConfig --> main/visualizer.ts: the look per place (first plugin by id)
 a place drawn on screen --setVisualPlaceShown(place)--> main/visualizer.ts
   showcase: openShowcase / closeShowcase
-  strip: layout(), while its view exists, a track is loaded, the page is up and no showcase covers it
+  strip: layout(), while its view exists, a track is loaded, the page is up and nothing covers it
+  view: layout(), while it is open, the page is up and no showcase covers it
   a place drawn with a look --> setAudioVisual(true) --> main/audio.ts runs the engine
   (even with no filters and no shift), AudioConfig.visual = true
 renderer/audio: an AnalyserNode (FFT 4096) on the output, every ~16 ms on a timer:
   bandLevels --CH.visualFrame--> main: isAudioView, readVisualFrame
-  --CH.visualFrameChanged--> renderer/showcase, renderer/visual-strip
-  --> lib/Visualizer.svelte (canvas, rAF, eased; where it draws from showcaseLayout / stripLayout)
+  --CH.visualFrameChanged--> renderer/showcase, renderer/visual-strip, renderer/visual-view
+  --> lib/Visualizer.svelte (canvas, rAF, eased; where it draws from showcaseLayout / stripLayout /
+      viewLayout)
 ```
 
 Rules that hold this together:
 
 - **A plugin, so it can be turned off.** The maintainer's requirement: it is the built-in
   "Visualizer" plugin (`resources/plugins/visualizer`), off by default, and off, crashed or removed,
-  its request goes (`clearVisualizer`), nothing is drawn, SoundCloud's bar goes back to its own
-  height and the engine stops listening for it. A plugin has no screen, so it only says which look
+  its request goes (`clearVisualizer`), nothing is drawn, its views and its player-bar button go,
+  and the engine stops listening for it. A plugin has no screen, so it only says which look
   it wants where; the app's views draw.
 - **It listens only while it is drawn.** `updateDemand` in main/visualizer.ts asks the engine for
   frames only while a place with a look is on screen. While it listens, SoundCloud's sound goes
@@ -1226,6 +1232,32 @@ bottom of SoundCloud's page. SoundCloud's bar is left exactly as it is.
   the player buttons, so a theme's `@mode` or Glass (always dark) too. White on dark, `#333` on
   light: the exception DESIGN.md allows for overlays on SoundCloud's bars. Coming back after
   stepping aside, it fades in over 180 ms (`visibilitychange`); going, it is gone at once.
-- **Not built yet** (docs/TODO.md, Milestone 11): a view of its own, and MilkDrop (Butterchurn,
-  only if its 3.0 beta runs under our CSP). Each is a new place in `VISUAL_PLACES` with its looks
+
+### The view of its own
+
+What is heard, over SoundCloud's page area between its header and play bar: the `visualView`
+(`renderer/visual-view`), opened from a third player-bar button or "Show visualizer" in the
+right-click menu, both there only while the plugin chose a look for it (`setVisualViewAvailable`,
+from `onVisualizerChange`). Escape or its ✕ closes it.
+
+- **A room painted from the artwork, like the showcase**: one flat colour and its inks
+  (`lib/artwork-room.ts`, shared with the showcase, so its CSP adds `https://*.sndcdn.com` to
+  `img-src` like the showcase's), the look large across it (`viewLayout`) and drawn at twice the
+  strength (`strong`): here the visualizer is the subject, not decoration under text. Nothing
+  loaded or paused, it says so in the middle of the room.
+- **The plugin chooses the look; the view can try another.** A two-button switch at its top
+  (Bars, Waveform), or ← and →, change the look for as long as it is open (`stepLook`); a new
+  choice in the plugin's settings replaces it. The controls and the cursor go once the pointer
+  rests, like the showcase's.
+- **The player bar makes room for its button.** The button comes first, so lyrics and the showcase
+  never move; the buttons' width is 92px, 126 with it (`playerButtonsWidth`), and the reservation
+  in SoundCloud's bar reads the same number, re-applied whenever it can or cannot open. The
+  button is pressed while the view is open (`onVisualViewState`).
+- **`layout()` places it** under SoundCloud's header and above its bar, stopping at the lyrics
+  pane, and hides it with the page. The strip steps back while it is open (the same thing twice);
+  the engine listens for it only while it is drawn, not under the showcase. F6 treats it as the
+  page it covers (`viewFor`/`areaOf` in main/focus-cycle.ts). It closes when the plugin drops
+  its look, and it is focused on opening, so the keys work at once.
+- **Not built yet** (docs/TODO.md, Milestone 11): MilkDrop (Butterchurn, only if its 3.0 beta runs
+  under our CSP), in the showcase and the view of its own. Each is a new place in `VISUAL_PLACES` with its looks
   in `LOOKS_FOR`.

@@ -95,6 +95,10 @@ when one is refused, write down what SoundCloud said rather than retrying.
       the queue, the volume slider and the page above the bar all work; point away and they come
       back. Let a few songs play through: the bars keep going. Open the full-screen view: its bars
       move too. Set "Above the player" to Nothing, then untick the plugin: the bars go each time.
+- [ ] With the Visualizer on and a track playing, press its button in the player bar: a view over
+      the page, coloured from the artwork, with large bars moving to the music. ← and → switch to
+      the waveform and back; Esc closes it. Set "In its own view" to Nothing: the button goes, and
+      the like and queue buttons are still clickable.
 - [ ] Pick each built-in theme with SoundCloud in its light mode and its dark mode.
 - [ ] The portable build too: it unpacks to a new temporary folder on every launch, so the archive's
       integrity check and the `.sig` signature files must survive being moved.

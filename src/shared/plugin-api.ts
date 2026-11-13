@@ -116,7 +116,8 @@ export type PluginApi = {
      * Draw what SoundCloud plays: a look per place, or null for none. Places and looks:
      * `showcase` (the full-screen view): `'bars'` along the bottom, `'ring'` around the sleeve, or
      * `'wave'`, a flowing line through the bands, mirrored about its middle; `strip` (standing on
-     * SoundCloud's player while a track is loaded): `'bars'` or `'wave'`. The app draws
+     * SoundCloud's player while a track is loaded): `'bars'` or `'wave'`; `view` (a view of its
+     * own over SoundCloud's page, opened from the player bar): `'bars'` or `'wave'`. The app draws
      * it; the engine runs only while one is on screen, and reads the sound at the very end of its
      * chain, so it shows what is heard.
      *
@@ -124,7 +125,11 @@ export type PluginApi = {
      * drawn then, and the plugin's status line should say so.
      */
     visualize(
-      config: { showcase?: VisualLook | 'off' | null; strip?: VisualLook | 'off' | null } | null
+      config: {
+        showcase?: VisualLook | 'off' | null
+        strip?: VisualLook | 'off' | null
+        view?: VisualLook | 'off' | null
+      } | null
     ): Promise<{
       reducedMotion: boolean
     }>

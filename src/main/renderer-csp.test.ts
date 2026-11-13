@@ -3,9 +3,10 @@ import { join } from 'node:path'
 import { describe, it, expect } from 'vitest'
 
 /**
- * Every view's CSP is the standard one (CLAUDE.md §6), with two exceptions, each as narrow as it
- * can be: the showcase shows artwork from SoundCloud's image host, and the audio engine compiles
- * WebAssembly for its pitch shifter. A third exception, or a broader one, fails here first.
+ * Every view's CSP is the standard one (CLAUDE.md §6), with two kinds of exception, each as narrow
+ * as it can be: the showcase and the Visualizer's view of its own load artwork from SoundCloud's
+ * image host (for its colour), and the audio engine compiles WebAssembly for its pitch shifter.
+ * Another exception, or a broader one, fails here first.
  */
 
 const STANDARD =
@@ -13,6 +14,10 @@ const STANDARD =
 
 const EXCEPTIONS: Record<string, string> = {
   showcase: STANDARD.replace(
+    "img-src 'self' data:",
+    "img-src 'self' data: https://*.sndcdn.com"
+  ),
+  'visual-view': STANDARD.replace(
     "img-src 'self' data:",
     "img-src 'self' data: https://*.sndcdn.com"
   ),

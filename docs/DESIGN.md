@@ -494,7 +494,8 @@ What SoundCloud plays, drawn as it plays (`src/renderer/lib/Visualizer.svelte`, 
 `visualizer-draw.ts`), from the built-in Visualizer plugin. Opt-in decoration: off until the
 plugin is turned on, so it is the user's choice, like a theme — the anti-reference on consumer
 music-app surface language stands for everything else. It lives in the showcase, which is already
-the Experience surface, and in a quiet strip standing on SoundCloud's player while browsing.
+the Experience surface; in a quiet strip standing on SoundCloud's player while browsing; and in a
+view of its own over SoundCloud's page, which is an Experience surface too.
 
 - **Flat ink on the room's colour.** The showcase's own Ink, mixed down: bars at 30%, peak marks
   at 70%, the waveform at 62%, the fringe at 42%. Decoration sits well under the text it shares
@@ -525,6 +526,16 @@ the Experience surface, and in a quiet strip standing on SoundCloud's player whi
   bar, and fades back in over 180ms once the pointer is well clear, so nothing under it is ever
   out of reach. It goes whenever it would be empty: nothing loaded, the page hidden, or the sound
   engine stepped aside.
+- **The view of its own** is the visualizer as the subject: a room over SoundCloud's page area,
+  painted from the artwork like the showcase (one flat colour, its inks), the look large across it
+  and drawn at twice the decoration's strength (bars 60%, peaks and the line at full ink). Bars
+  stand on a margin above the bottom, up to two thirds of the room; the waveform runs through the
+  middle. At the top, a two-button switch (13px labels, the showing look in ink on a 14% wash,
+  never the accent, which would fight the artwork's colour), the hint "← → change the look · Esc
+  closes" (12px, muted) and ✕ with the danger hover. The controls and the cursor go after 2.5s
+  still, as in the showcase. Nothing loaded: "Nothing is playing" and what to do, in the middle;
+  paused: "Paused". Its player-bar button is a three-bar meter, first in the row so the others
+  never move, pressed while open.
 - **Reduced motion removes it**, rather than freezing it (a still visualizer reads as stuck, as a
   still wait line does), and the plugin's row says "Hidden" and why.
 - Decorative: the canvas is hidden from assistive technology and takes no pointer.
