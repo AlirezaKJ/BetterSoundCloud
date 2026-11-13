@@ -1,0 +1,108 @@
+{
+  "id": "visualizer",
+  "name": "Visualizer",
+  "version": "1.3.0",
+  "author": "BetterSoundCloud",
+  "description": "Draws what SoundCloud plays, as it plays: bars, a flowing line, bars around the artwork, or MilkDrop’s classic presets, in the full-screen view, above the player, and in a view of its own. It listens only while one is on screen, and turned off, nothing of it is left running.",
+  "homepage": "https://github.com/AlirezaKJ/BetterSoundCloud",
+  "main": "index.js",
+  "permissions": ["audio"],
+  "settings": [
+    {
+      "key": "showcase",
+      "kind": "choice",
+      "label": "In the full-screen view",
+      "help": "Open it from the player bar or the right-click menu.",
+      "options": [
+        {
+          "value": "bars",
+          "label": "Bars"
+        },
+        {
+          "value": "ring",
+          "label": "Around the artwork"
+        },
+        {
+          "value": "wave",
+          "label": "Waveform"
+        },
+        {
+          "value": "milkdrop",
+          "label": "MilkDrop"
+        },
+        {
+          "value": "off",
+          "label": "Nothing"
+        }
+      ],
+      "default": "bars"
+    },
+    {
+      "key": "strip",
+      "kind": "choice",
+      "label": "Above the player",
+      "help": "Standing on SoundCloud’s player while a track is loaded. It steps aside when you point near it, so nothing under it is out of reach.",
+      "options": [
+        {
+          "value": "bars",
+          "label": "Bars"
+        },
+        {
+          "value": "wave",
+          "label": "Waveform"
+        },
+        {
+          "value": "off",
+          "label": "Nothing"
+        }
+      ],
+      "default": "bars"
+    },
+    {
+      "key": "view",
+      "kind": "choice",
+      "label": "In its own view",
+      "help": "Fills SoundCloud’s page until you close it. Open it from the player bar or the right-click menu; ← and → change the look there, and ↑ and ↓ MilkDrop’s preset.",
+      "options": [
+        {
+          "value": "bars",
+          "label": "Bars"
+        },
+        {
+          "value": "wave",
+          "label": "Waveform"
+        },
+        {
+          "value": "milkdrop",
+          "label": "MilkDrop"
+        },
+        {
+          "value": "off",
+          "label": "Nothing"
+        }
+      ],
+      "default": "bars"
+    },
+    {
+      "key": "presets",
+      "kind": "choice",
+      "label": "MilkDrop changes preset",
+      "help": "Wherever MilkDrop shows. ↑ and ↓ change it too, in the full-screen view and in its own view.",
+      "options": [
+        {
+          "value": "timed",
+          "label": "Every 30 seconds"
+        },
+        {
+          "value": "track",
+          "label": "With each new track"
+        },
+        {
+          "value": "still",
+          "label": "Only when I change it"
+        }
+      ],
+      "default": "timed"
+    }
+  ]
+}

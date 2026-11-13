@@ -488,6 +488,68 @@ bottom edge. On a tall screen the sleeve sits above the notes, at their width.
   one line saying what to do.
 - **Reduced motion**: no colour change, line movement, fade or glide; everything jumps.
 
+### Visualizer
+
+What SoundCloud plays, drawn as it plays (`src/renderer/lib/Visualizer.svelte`, drawn by
+`visualizer-draw.ts`), from the built-in Visualizer plugin. Opt-in decoration: off until the
+plugin is turned on, so it is the user's choice, like a theme — the anti-reference on consumer
+music-app surface language stands for everything else. It lives in the showcase, which is already
+the Experience surface; in a quiet strip standing on SoundCloud's player while browsing; and in a
+view of its own over SoundCloud's page, which is an Experience surface too.
+
+- **Flat ink on the room's colour.** The showcase's own Ink, mixed down: bars at 30%, peak marks
+  at 70%, the waveform at 62%, the fringe at 42%. Decoration sits well under the text it shares
+  the room with. No glow, no gradient, no blur, never the accent (it marks state).
+- **Square ends**, like the sleeve, the progress rule and the lyric rests. A peak is a 2px rule
+  that holds a moment, then falls back.
+- **Bars** stand on the bottom margin, under the sleeve and its notes and exactly as wide as them,
+  so the readout belongs to the record rather than to the screen: 64 bars, each 56% of its slot,
+  no taller than the room below the sleeve.
+- **Around the artwork** is a fringe, not a ring: 2px hairlines standing out from the sleeve's four
+  edges, three to a band, blended between bands so the outline swells smoothly; bass at the bottom
+  middle, treble at the top, mirrored left and right. A circle would cut into the notes, and thick
+  bars round a square read as a chip's pins. No peak marks: they only cluttered it.
+- **Waveform** is a flowing line, not an oscilloscope: a smooth curve through the band levels,
+  mirrored above and below the middle of the bars' band, a 2px outline at 62% over a flat body at
+  12%, its ends easing into the middle line. The raw wave jumped about with real music
+  (2026-11-12); the levels move like the bars.
+- **Motion is the music's**: a bar rises in about 40ms and falls over about 220ms, eased
+  exponentially, so beats snap and decay like a meter. When the sound stops, everything falls and
+  the drawing stops.
+- **The strip above the player** floats: bars standing on the top edge of SoundCloud's player
+  bar, over the bottom of the page, with no backdrop of their own (the maintainer asked for it on
+  the player, not in it). SoundCloud's icon colours for the page's light or dark (white, or
+  `#333`; the overlay exception). It is peripheral, so it stays quiet: Bars are 2px hairlines
+  every 6px at 50%, blended between bands, with no peak marks, inset 16px like the controls;
+  Waveform rises from the bar's edge, its body filled down to it (mirrored about a middle line it
+  struck through the page's text). It steps aside the moment the pointer comes near it or the
+  bar, and fades back in over 180ms once the pointer is well clear, so nothing under it is ever
+  out of reach. It goes whenever it would be empty: nothing loaded, the page hidden, or the sound
+  engine stepped aside.
+- **The view of its own** is the visualizer as the subject: a room over SoundCloud's page area,
+  painted from the artwork like the showcase (one flat colour, its inks), the look large across it
+  and drawn at twice the decoration's strength (bars 60%, peaks and the line at full ink). Bars
+  stand on a margin above the bottom, up to two thirds of the room; the waveform runs through the
+  middle. At the top, a two-button switch (13px labels, the showing look in ink on a 14% wash,
+  never the accent, which would fight the artwork's colour), the hint "← → change the look · Esc
+  closes" (12px, muted) and ✕ with the danger hover. The controls and the cursor go after 2.5s
+  still, as in the showcase. Nothing loaded: "Nothing is playing" and what to do, in the middle;
+  paused: "Paused". Its player-bar button is a three-bar meter, first in the row so the others
+  never move, pressed while open.
+- **MilkDrop** is the one look that is not ours: MilkDrop's own presets, full colour, filling the
+  room, in the full-screen view and the view of its own (never the strip). In the full-screen view
+  it is multiplied into the room's colour, so nothing it draws is lighter than the room and the
+  text keeps its 7:1: moving light and shade in the artwork's colour, never a light behind the
+  words. In the view of its own it is the subject, at full strength; the controls stand on a plate
+  of the room's colour (10px radius and the one shadow: it floats and takes input), with the
+  preset's name in ink and two chevron buttons (↑ ↓, the same keys); paused, it sinks into the
+  room like the full-screen view's, so "Paused" reads; with nothing loaded it is out of sight. It
+  surfaces over 600ms when it first draws; MilkDrop's own blends (2.7s, 1s when asked) do the
+  rest.
+- **Reduced motion removes it**, rather than freezing it (a still visualizer reads as stuck, as a
+  still wait line does), and the plugin's row says "Hidden" and why.
+- Decorative: the canvas is hidden from assistive technology and takes no pointer.
+
 ### Equaliser curve
 
 An `equaliser` plugin setting (`src/renderer/settings/EqualiserEditor.svelte`), set in under its
@@ -630,7 +692,8 @@ things the user switches on that act on their behalf.
   them itself. With nothing of its own to say, the row says the state: Starting…, Stopped (with
   why), Paused (needs approval), Can’t be turned on, Can’t load.
 - **Its own settings**, while it is on, sit set in under a 1px Hairline rule on the left, as
-  compact rows of their own — so they read as belonging to that plugin and not to the panel.
+  compact rows of their own — so they read as belonging to that plugin and not to the panel. A
+  `choice` setting is the panel's own dropdown, at the same size as its other rows'.
 - **A plugin that cannot work is still listed**, label in Ghost Ink, checkbox disabled, with the
   reason. Hiding it would leave the user wondering where their folder went.
 - **Asking first.** Ticking a plugin from the user's folder does not tick it: a confirmation opens
@@ -775,7 +838,8 @@ are; hover does not.
   sake, an icon rail, dense chrome competing with the content it wraps. Confirmed anti-reference.
 - **Don't** adopt consumer music-app surface language — gradient heroes, artwork bleeding into
   blurred backgrounds, oversized transport controls. SoundCloud already renders all of that one
-  layer below; duplicating it makes the client a skin. Confirmed anti-reference.
+  layer below; duplicating it makes the client a skin. Confirmed anti-reference. The one exception
+  is the user's to turn on: the Visualizer plugin, flat and in the showcase's own ink (above).
 - **Don't** use glassmorphism, backdrop blur, glow, or saturated gradients. They read as a theme
   rather than a tool and destroy legibility in a 32px strip. Confirmed anti-reference. **One
   exception, the user's to choose:** the Glass setting (Windows 11, off by default, kept by the

@@ -26,8 +26,9 @@ function viewFor(shell: Shell, area: FocusArea): WebContentsView | null {
     case 'bar':
       return shell.embeddedShowing ? shell.embedded : shell.header
     case 'page':
-      // The status view stands in for the page, or asks over it when the page hangs.
-      return shell.status ?? shell.content
+      // The status view stands in for the page, or asks over it when the page hangs; the
+      // Visualizer's view of its own covers the page while it is open.
+      return shell.status ?? (pageHidden ? null : shell.visualView) ?? shell.content
     case 'lyrics':
       return pageHidden ? null : shell.lyrics
     case 'player':
@@ -44,7 +45,7 @@ function viewFor(shell: Shell, area: FocusArea): WebContentsView | null {
 function areaOf(shell: Shell, contents: WebContents): FocusArea | null {
   const is = (view: WebContentsView | null): boolean => view?.webContents === contents
   if (is(shell.header) || is(shell.embedded)) return 'bar'
-  if (is(shell.content) || is(shell.status)) return 'page'
+  if (is(shell.content) || is(shell.status) || is(shell.visualView)) return 'page'
   if (is(shell.lyrics)) return 'lyrics'
   if (is(shell.player)) return 'player'
   if (is(shell.settings)) return 'settings'

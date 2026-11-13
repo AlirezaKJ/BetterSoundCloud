@@ -102,6 +102,19 @@ export type PluginSetting =
       default: string
     }
   /**
+   * One of a few choices, drawn by the settings panel as a dropdown. Its value is the chosen
+   * option's `value`; anything else stored falls back to the default.
+   */
+  | {
+      key: string
+      kind: 'choice'
+      label: string
+      help: string
+      /** 2 to 12 options, each a short value and the label the panel shows for it. */
+      options: { value: string; label: string }[]
+      default: string
+    }
+  /**
    * A key shift, drawn by the settings panel as a ruler of semitones. Its value is text, whole
    * semitones: "0", "2", "-3" (src/shared/pitch.ts).
    */
@@ -230,6 +243,8 @@ function readSetting(raw: unknown): PluginSetting | string {
       return { key, kind: 'secret', label, help }
     case 'equaliser':
       return readEqualiserSetting(raw, key, label, help)
+    case 'choice':
+      return readChoiceSetting(raw, key, label, help)
     case 'pitch': {
       const range = raw['range'] ?? OCTAVE
       if (
@@ -248,8 +263,38 @@ function readSetting(raw: unknown): PluginSetting | string {
       return { key, kind: 'pitch', label, help, range, default: value }
     }
     default:
-      return `setting "${key}" needs a "kind" of boolean, string, secret, equaliser or pitch`
+      return `setting "${key}" needs a "kind" of boolean, string, secret, choice, equaliser or pitch`
   }
+}
+
+const MAX_CHOICES = 12
+const CHOICE_VALUE = /^[a-z0-9-]{1,24}$/
+
+function readChoiceSetting(
+  raw: Record<string, unknown>,
+  key: string,
+  label: string,
+  help: string
+): PluginSetting | string {
+  const rawOptions = raw['options']
+  if (!Array.isArray(rawOptions) || rawOptions.length < 2 || rawOptions.length > MAX_CHOICES) {
+    return `setting "${key}" needs "options": 2 to ${MAX_CHOICES} of { value, label }`
+  }
+  const options: { value: string; label: string }[] = []
+  for (const option of rawOptions as unknown[]) {
+    const value = isRecord(option) ? option['value'] : null
+    const optionLabel = isRecord(option) ? text(option['label'], 40) : ''
+    if (typeof value !== 'string' || !CHOICE_VALUE.test(value) || !optionLabel) {
+      return `each option of setting "${key}" needs a "value" of lowercase letters, digits or dashes, and a "label"`
+    }
+    if (options.some((o) => o.value === value))
+      return `option "${value}" appears twice in setting "${key}"`
+    options.push({ value, label: optionLabel })
+  }
+  const given = raw['default']
+  const fallback = options[0]?.value ?? ''
+  const value = options.some((o) => o.value === given) ? (given as string) : fallback
+  return { key, kind: 'choice', label, help, options, default: value }
 }
 
 const MAX_BANDS = 10
@@ -327,6 +372,11 @@ export function coercePluginSetting(setting: PluginSetting, value: unknown): boo
       ? formatSemitones(parseSemitones(value, setting.range))
       : setting.default
   }
+  if (setting.kind === 'choice') {
+    return setting.options.some((option) => option.value === value)
+      ? (value as string)
+      : setting.default
+  }
   return ''
 }
 
@@ -387,7 +437,8 @@ export const PLUGIN_CALLS = [
   'openInBrowser',
   'audio.set',
   'audio.setPitch',
-  'audio.clear'
+  'audio.clear',
+  'audio.visualize'
 ] as const
 export type PluginCall = (typeof PLUGIN_CALLS)[number]
 
@@ -477,6 +528,7 @@ export function callAllowed(method: PluginCall, args: unknown[], granted: string
     case 'audio.set':
     case 'audio.setPitch':
     case 'audio.clear':
+    case 'audio.visualize':
       return granted.includes('audio')
   }
 }

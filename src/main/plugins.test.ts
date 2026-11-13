@@ -35,6 +35,8 @@ const mocks = vi.hoisted(() => ({
   setAudioFilters: vi.fn(),
   setAudioPitch: vi.fn(),
   clearAudio: vi.fn(),
+  setVisualizer: vi.fn(),
+  clearVisualizer: vi.fn(),
   audioListener: null as ((status: { state: string; message: string }) => void) | null,
   children: [] as FakeChild[],
   secrets: new Map<string, string>(),
@@ -60,6 +62,12 @@ vi.mock('./secrets', () => ({
   deleteSecret: (ns: string, key: string) => mocks.secrets.delete(`${ns}/${key}`)
 }))
 vi.mock('./session', () => ({ openInBrowser: mocks.openInBrowser }))
+vi.mock('./visualizer', () => ({
+  setVisualizer: mocks.setVisualizer,
+  clearVisualizer: mocks.clearVisualizer,
+  reducedMotion: () => false,
+  milkdropPossible: () => true
+}))
 vi.mock('./audio', () => ({
   setAudioFilters: mocks.setAudioFilters,
   setAudioPitch: mocks.setAudioPitch,
@@ -441,16 +449,37 @@ describe('shaping the sound', () => {
     expect(mocks.setAudioPitch).toHaveBeenCalledTimes(1)
   })
 
-  it('takes a plugin’s filters away when it is turned off, and when it crashes', async () => {
+  it('passes a plugin’s visualizer on, shaped, and refuses a look that does not exist', async () => {
+    await runningTone()
+    expect(await call('audio.visualize', [{ showcase: 'ring' }], 1)).toMatchObject({
+      ok: true,
+      value: { reducedMotion: false, milkdrop: true }
+    })
+    expect(mocks.setVisualizer).toHaveBeenCalledWith('tone', {
+      showcase: 'ring',
+      strip: null,
+      view: null,
+      presets: 'timed'
+    })
+    expect(await call('audio.visualize', [{ showcase: 'lasers' }], 2)).toMatchObject({
+      ok: false
+    })
+    expect(mocks.setVisualizer).toHaveBeenCalledTimes(1)
+  })
+
+  it('takes a plugin’s filters and visualizer away when it is turned off, and when it crashes', async () => {
     const service = await runningTone()
     service.setPluginEnabled('tone', false)
     expect(mocks.clearAudio).toHaveBeenCalledWith('tone')
+    expect(mocks.clearVisualizer).toHaveBeenCalledWith('tone')
 
     mocks.clearAudio.mockClear()
+    mocks.clearVisualizer.mockClear()
     service.setPluginEnabled('tone', true)
     host().emit('message', { type: 'started' })
     host().emit('exit', 1)
     expect(mocks.clearAudio).toHaveBeenCalledWith('tone')
+    expect(mocks.clearVisualizer).toHaveBeenCalledWith('tone')
   })
 
   it('tells it the engine’s status when it starts and on every change', async () => {

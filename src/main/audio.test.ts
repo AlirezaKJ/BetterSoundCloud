@@ -102,6 +102,69 @@ describe('the audio engine', () => {
     expect(engine.getAudioStatus()).toEqual({ state: 'off', message: '' })
   })
 
+  it('runs for a visualizer on screen alone, with flat filters, and asks its view for frames', async () => {
+    const engine = await load()
+    engine.setAudioFilters('equaliser', FLAT)
+    engine.setAudioVisual(true)
+    const view = loaded()
+    expect(view.webContents.send).toHaveBeenLastCalledWith(
+      'audio:configure',
+      expect.objectContaining({ visual: true, pitch: 0 })
+    )
+    engine.setAudioVisual(false)
+    expect(view.webContents.destroyed).toBe(true)
+    expect(engine.getAudioStatus().state).toBe('off')
+  })
+
+  it('asks for the channels only while MilkDrop is drawn, on the same view', async () => {
+    const engine = await load()
+    engine.setAudioVisual(true)
+    const view = loaded()
+    expect(view.webContents.send).toHaveBeenLastCalledWith(
+      'audio:configure',
+      expect.objectContaining({ visual: true, visualWave: false })
+    )
+    engine.setAudioVisual(true, true)
+    expect(view.webContents.send).toHaveBeenLastCalledWith(
+      'audio:configure',
+      expect.objectContaining({ visual: true, visualWave: true })
+    )
+    expect(mocks.views).toHaveLength(1)
+    engine.setAudioVisual(true, false)
+    expect(view.webContents.send).toHaveBeenLastCalledWith(
+      'audio:configure',
+      expect.objectContaining({ visual: true, visualWave: false })
+    )
+    // No visualizer, no channels: the flag never outlives the visualizer it was for.
+    engine.setAudioVisual(false, true)
+    expect(view.webContents.destroyed).toBe(true)
+  })
+
+  it('passes frames on only while a visualizer is on screen', async () => {
+    const engine = await load()
+    const frames: unknown[] = []
+    engine.onVisualFrame((frame) => frames.push(frame))
+    const frame = { bands: [0.5], wave: null }
+    engine.handleVisualFrame(frame)
+    expect(frames).toHaveLength(0)
+    engine.setAudioVisual(true)
+    engine.handleVisualFrame(frame)
+    expect(frames).toEqual([frame])
+  })
+
+  it('tells its view to stop sending frames when the visualizer leaves but the Equaliser stays', async () => {
+    const engine = await load()
+    engine.setAudioFilters('equaliser', BOOST)
+    engine.setAudioVisual(true)
+    const view = loaded()
+    engine.setAudioVisual(false)
+    expect(view.webContents.destroyed).toBe(false)
+    expect(view.webContents.send).toHaveBeenLastCalledWith(
+      'audio:configure',
+      expect.objectContaining({ visual: false, filters: BOOST })
+    )
+  })
+
   it('captures SoundCloud from a view of its own, and lets go when nothing is asked', async () => {
     const engine = await load()
     engine.setAudioFilters('equaliser', BOOST)
@@ -125,7 +188,9 @@ describe('the audio engine', () => {
       sourceId: 'source-1',
       pitch: 0,
       filters: BOOST,
-      preampDb: -headroomDb(BOOST)
+      preampDb: -headroomDb(BOOST),
+      visual: false,
+      visualWave: false
     })
     engine.handleAudioReport({ kind: 'running' })
     expect(engine.last()?.state).toBe('running')
@@ -233,7 +298,9 @@ describe('the audio engine', () => {
       sourceId: 'source-1',
       pitch: 3,
       filters: [],
-      preampDb: -0
+      preampDb: -0,
+      visual: false,
+      visualWave: false
     })
     engine.setAudioPitch('pitch', 0)
     expect(view.webContents.close).toHaveBeenCalled()

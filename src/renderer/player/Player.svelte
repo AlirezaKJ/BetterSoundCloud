@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import type { PageTheme } from '@shared/page-theme'
+  import type { VisualViewState } from '@shared/visualizer'
 
   /*
    * Our buttons at the right-hand end of SoundCloud's play controls.
@@ -15,7 +16,9 @@
    *
    * The lyrics button opens and closes the lyrics pane, and is pressed while it is open. The
    * showcase button takes the window full screen with the showcase; it has no pressed state,
-   * because the showcase covers it while open.
+   * because the showcase covers it while open. The visualizer button opens the Visualizer's view of
+   * its own over the page, and is there only while that plugin offers it; it comes first, so the
+   * other two never move when it comes and goes (main widens the reservation by the same 34px).
    *
    * The glyph colour follows SOUNDCLOUD's light/dark setting, not ours. This overlay is a
    * separate document composited over their bar, so it cannot inherit their colours the way
@@ -25,6 +28,7 @@
 
   let page = $state<PageTheme>('dark')
   let lyricsShown = $state(false)
+  let visualView = $state<VisualViewState>({ available: false, open: false })
 
   onMount(() => {
     const stopTheme = window.bsc.onPageTheme((t) => {
@@ -33,14 +37,34 @@
     const stopLyrics = window.bsc.onLyricsShown((shown) => {
       lyricsShown = shown
     })
+    const stopVisualView = window.bsc.onVisualViewState((state) => {
+      visualView = state
+    })
     return () => {
       stopTheme()
       stopLyrics()
+      stopVisualView()
     }
   })
 </script>
 
 <div class="player" data-bsc-player-controls class:light={page === 'light'}>
+  {#if visualView.available}
+    <button
+      class="btn"
+      class:on={visualView.open}
+      title={visualView.open ? 'Hide visualizer' : 'Show visualizer'}
+      aria-label="Visualizer"
+      aria-pressed={visualView.open}
+      onclick={() => window.bsc.toggleVisualView()}
+    >
+      <!-- Three bars of a level meter. -->
+      <svg viewBox="0 -960 960 960" aria-hidden="true">
+        <path d="M160-160v-320h160v320H160Zm240 0v-640h160v640H400Zm240 0v-440h160v440H640Z" />
+      </svg>
+    </button>
+  {/if}
+
   <button
     class="btn"
     class:on={lyricsShown}

@@ -35,6 +35,10 @@ export type ContextMenuRequest = {
   canInspect: boolean
   /** Whether the lyrics pane is open, so the item can say "Hide lyrics" instead. */
   lyricsOpen: boolean
+  /** Whether the Visualizer's view of its own can be opened (its plugin chose a look for it). */
+  visualizerAvailable: boolean
+  /** Whether it is open, so the item can say "Hide visualizer" instead. */
+  visualizerOpen: boolean
 }
 
 /**
@@ -60,6 +64,7 @@ export const CONTEXT_MENU_ACTIONS = [
   'copy-clean-page-link',
   'lyrics',
   'showcase',
+  'visualizer',
   'settings',
   'sign-out',
   'inspect'

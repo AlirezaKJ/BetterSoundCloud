@@ -227,6 +227,17 @@ export async function runPlugin(start: PluginStart, bridge: Bridge): Promise<Run
         requirePermission('audio', 'bsc.audio.clear')
         await bridge.call('audio.clear', [])
       },
+      visualize: async (config: unknown) => {
+        requirePermission('audio', 'bsc.audio.visualize')
+        // Main shapes and checks it (readVisualizerConfig); a refusal comes back as a rejection.
+        const answer = await bridge.call('audio.visualize', [config])
+        const given = typeof answer === 'object' && answer !== null ? answer : {}
+        return {
+          reducedMotion: 'reducedMotion' in given && given.reducedMotion === true,
+          // Only a plain "no" stops it: an older main that does not answer draws it as asked.
+          milkdrop: !('milkdrop' in given && given.milkdrop === false)
+        }
+      },
       onStatus: (listener: (status: AudioStatus) => void) => {
         requirePermission('audio', 'bsc.audio.onStatus')
         const unsubscribe = subscribe(audioListeners, listener)

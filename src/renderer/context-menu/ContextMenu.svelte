@@ -51,7 +51,8 @@
     lyrics:
       'M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zM6 11a6 6 0 0 0 12 0M12 17v4M9 21h6',
     code: 'M8 7 3 12l5 5M16 7l5 5-5 5M14 4l-4 16',
-    'full-screen': 'M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5'
+    'full-screen': 'M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5',
+    visualizer: 'M5 19v-5M9.5 19V7M14 19v-9M18.5 19V4'
   }
 
   type IconName = keyof typeof ICONS
@@ -164,11 +165,20 @@
     page.push({ action: 'go-to', label: 'Go to URL…', icon: 'go' })
     groups.push(page)
 
-    groups.push([
+    const views: Item[] = [
       { action: 'lyrics', label: r.lyricsOpen ? 'Hide lyrics' : 'Show lyrics', icon: 'lyrics' },
-      { action: 'showcase', label: 'Full-screen showcase', icon: 'full-screen' },
-      { action: 'settings', label: 'Settings', icon: 'settings' }
-    ])
+      { action: 'showcase', label: 'Full-screen showcase', icon: 'full-screen' }
+    ]
+    // Only while the Visualizer plugin offers a view of its own.
+    if (r.visualizerAvailable) {
+      views.push({
+        action: 'visualizer',
+        label: r.visualizerOpen ? 'Hide visualizer' : 'Show visualizer',
+        icon: 'visualizer'
+      })
+    }
+    views.push({ action: 'settings', label: 'Settings', icon: 'settings' })
+    groups.push(views)
     groups.push([{ action: 'sign-out', label: 'Sign out', icon: 'sign-out' }])
     if (r.canInspect)
       groups.push([{ action: 'inspect', label: 'Inspect element', icon: 'code' }])

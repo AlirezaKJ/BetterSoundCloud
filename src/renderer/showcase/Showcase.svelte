@@ -2,17 +2,16 @@
   import { onMount } from 'svelte'
   import { fade } from 'svelte/transition'
   import { lyricClock } from '@shared/lyric-clock'
-  import {
-    artworkColour,
-    artworkSources,
-    formatClock,
-    NEUTRAL_BACKDROP,
-    showcaseBackdrop,
-    showcaseInks
-  } from '@shared/showcase'
-  import type { Rgb, ShowcaseInks } from '@shared/showcase'
+  import { formatClock } from '@shared/showcase'
+  import type { ShowcaseInks } from '@shared/showcase'
   import type { LyricsState } from '@shared/lyrics'
   import type { NowPlaying } from '@shared/now-playing'
+  import { NO_VISUALIZER, showcaseLayout } from '@shared/visualizer'
+  import type { Box, VisualLayout, VisualLook, VisualizerConfig } from '@shared/visualizer'
+  import Visualizer from '../lib/Visualizer.svelte'
+  import MilkDrop from '../lib/MilkDrop.svelte'
+  import { hardwareWebgl } from '../lib/milkdrop'
+  import { artworkRoom, NEUTRAL_ROOM } from '../lib/artwork-room'
 
   /*
    * The full-screen showcase: the playing track as a record sleeve.
@@ -26,18 +25,21 @@
    * up while the showcase is open (the same ones the pane shows). It keeps time with the pane's
    * clock (`lyricClock`), so the two can never disagree. It never touches SoundCloud's page and
    * cannot control playback; leaving it changes nothing but the window.
+   *
+   * With the Visualizer plugin on, what is playing is drawn behind it all as well (§22), in the
+   * look the plugin chose for here: bars under the sleeve and its notes, bars round the sleeve, a
+   * waveform line, or MilkDrop filling the room, multiplied into its colour so the text keeps its
+   * contrast (↑ and ↓ change its preset). Off, or under reduced motion, there is nothing extra.
    */
 
   /** How long the close button and the cursor stay once the pointer stops moving. */
   const CHROME_IDLE_MS = 2500
-  /** The size the artwork is sampled at for its colour. A handful of pixels is plenty. */
-  const SAMPLE = 24
   const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
   let playing = $state<NowPlaying | null>(null)
   let lyrics = $state<LyricsState>({ state: 'idle' })
   let current = $state(-1)
-  let inks = $state<ShowcaseInks>(showcaseInks(NEUTRAL_BACKDROP))
+  let inks = $state<ShowcaseInks>(NEUTRAL_ROOM.inks)
   /** The artwork on screen. It changes only once the next one has loaded, with its colour. */
   let artwork = $state('')
   let chromeShown = $state(true)
@@ -48,6 +50,14 @@
   let prompter = $state<HTMLElement | null>(null)
   /** Bumped when the lyric area changes size, so the lines are measured again. */
   let resized = $state(0)
+  /** The Visualizer plugin's choice for here; nothing while it is off. */
+  let visualizer = $state<VisualizerConfig>(NO_VISUALIZER)
+  /** MilkDrop could not start here (or has no graphics card to run on): Bars take its place. */
+  let milkdropFailed = $state(!hardwareWebgl())
+  let milkdrop = $state<{ step(by: number): void } | null>(null)
+  let sleeve = $state<HTMLElement | null>(null)
+  let art = $state<HTMLElement | null>(null)
+  let notes = $state<HTMLElement | null>(null)
 
   let artworkWanted = ''
   let last = { elapsed: -1, playing: false }
@@ -80,6 +90,12 @@
     const stopLyrics = window.bsc.onLyrics((next) => {
       showLyrics(next)
     })
+    const stopVisualizer = window.bsc.onVisualizer((next) => {
+      visualizer = next
+    })
+    void window.bsc.getVisualizer().then((next) => {
+      if (next as unknown) visualizer = next
+    })
     void window.bsc.getNowPlaying().then((next) => {
       notePlaying(next)
     })
@@ -89,6 +105,8 @@
 
     const onKey = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') window.bsc.closeShowcase()
+      else if (event.key === 'ArrowDown') milkdrop?.step(1)
+      else if (event.key === 'ArrowUp') milkdrop?.step(-1)
       else wake()
     }
     window.addEventListener('keydown', onKey)
@@ -104,6 +122,7 @@
     return () => {
       stopPlaying()
       stopLyrics()
+      stopVisualizer()
       clock.stop()
       if (idleTimer) clearTimeout(idleTimer)
       observer.disconnect()
@@ -136,45 +155,12 @@
   function loadArtwork(url: string): void {
     if (url === artworkWanted) return
     artworkWanted = url
-    tryArtwork(artworkSources(url), url)
-  }
-
-  function tryArtwork(sources: string[], wanted: string): void {
-    const [source, ...rest] = sources
-    if (!source) {
-      if (wanted !== artworkWanted) return
-      artwork = ''
-      inks = showcaseInks(NEUTRAL_BACKDROP)
-      return
-    }
-    const image = new Image()
-    // SoundCloud's image host answers `Access-Control-Allow-Origin: *` (measured), which is
-    // what lets the artwork's pixels be read for its colour.
-    image.crossOrigin = 'anonymous'
-    image.onload = () => {
-      if (wanted !== artworkWanted) return
-      artwork = source
-      inks = showcaseInks(showcaseBackdrop(sampleColour(image) ?? NEUTRAL_BACKDROP))
-    }
-    image.onerror = () => {
-      tryArtwork(rest, wanted)
-    }
-    image.src = source
-  }
-
-  function sampleColour(image: HTMLImageElement): Rgb | null {
-    try {
-      const canvas = document.createElement('canvas')
-      canvas.width = SAMPLE
-      canvas.height = SAMPLE
-      const context = canvas.getContext('2d', { willReadFrequently: true })
-      if (!context) return null
-      context.drawImage(image, 0, 0, SAMPLE, SAMPLE)
-      return artworkColour(context.getImageData(0, 0, SAMPLE, SAMPLE).data)
-    } catch {
-      // A canvas the browser will not let us read: the neutral backdrop, not a broken view.
-      return null
-    }
+    void artworkRoom(url).then((room) => {
+      // A newer track's artwork was asked for meanwhile: that one wins.
+      if (url !== artworkWanted) return
+      artwork = room.artwork
+      inks = room.inks
+    })
   }
 
   /** Show the close button and the cursor, and hide them again once the pointer rests. */
@@ -195,6 +181,27 @@
     const line = prompter.querySelector<HTMLElement>(`[data-line="${index}"]`)
     shift = line ? line.offsetTop : 0
   })
+  /** Where the visualizer draws: measured from the sleeve and its notes, on every frame. */
+  function visualizerLayout(look: VisualLook): VisualLayout | null {
+    const sleeveBox = boxOf(art)
+    const notesBox = boxOf(notes)
+    const bothBox = boxOf(sleeve)
+    if (!sleeveBox || !notesBox || !bothBox) return null
+    return showcaseLayout(
+      look,
+      sleeveBox,
+      notesBox,
+      bothBox,
+      window.innerWidth,
+      window.innerHeight
+    )
+  }
+
+  function boxOf(element: HTMLElement | null): Box | null {
+    if (!element) return null
+    const { left, top, right, bottom } = element.getBoundingClientRect()
+    return { left, top, right, bottom }
+  }
 </script>
 
 <main
@@ -207,8 +214,25 @@
   style:--faint={inks.faint}
   data-bsc-showcase
 >
-  <div class="sleeve">
-    <div class="art" data-bsc-showcase-artwork>
+  {#if visualizer.showcase === 'milkdrop' && !milkdropFailed}
+    <!-- Multiplied into the room's colour: nothing it draws is lighter than the room, so every
+         word here keeps the contrast it has on the room alone. -->
+    <MilkDrop
+      bind:this={milkdrop}
+      presets={visualizer.presets}
+      track={playing ? playing.url || `${playing.artist}\n${playing.title}` : ''}
+      running={playing?.playing ?? false}
+      hidden={!playing}
+      shade
+      onfail={() => (milkdropFailed = true)}
+    />
+  {:else if visualizer.showcase}
+    {@const look = visualizer.showcase === 'milkdrop' ? 'bars' : visualizer.showcase}
+    <Visualizer {look} ink={inks.ink} layout={() => visualizerLayout(look)} />
+  {/if}
+
+  <div class="sleeve" bind:this={sleeve}>
+    <div class="art" bind:this={art} data-bsc-showcase-artwork>
       {#key artwork}
         {#if artwork}
           <img
@@ -221,7 +245,7 @@
       {/key}
     </div>
 
-    <div class="notes" data-bsc-showcase-notes>
+    <div class="notes" bind:this={notes} data-bsc-showcase-notes>
       {#if playing}
         <h1>{playing.title || 'Untitled track'}</h1>
         {#if playing.artist}<p class="artist">{playing.artist}</p>{/if}
@@ -347,6 +371,9 @@
   }
 
   .sleeve {
+    /* Above the visualizer's canvas, which sits behind everything. */
+    position: relative;
+    z-index: 1;
     display: grid;
     grid-template-columns: var(--art) minmax(0, min(38vw, 880px));
     gap: var(--gap);

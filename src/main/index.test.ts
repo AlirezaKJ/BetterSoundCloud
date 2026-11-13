@@ -6,6 +6,8 @@ import type * as IdentityModule from '@shared/identity'
 const mocks = vi.hoisted(() => {
   return {
     handleAudioReport: vi.fn(),
+    handleVisualFrame: vi.fn(),
+    setVisualViewLook: vi.fn(),
     audioView: { id: 'the audio engine view' },
     createShell: vi.fn(),
     loadSoundCloud: vi.fn(),
@@ -60,15 +62,30 @@ vi.mock('./window', () => ({
   toggleLyrics: vi.fn(),
   closeLyrics: vi.fn(),
   openShowcase: vi.fn(),
-  closeShowcase: vi.fn()
+  closeShowcase: vi.fn(),
+  setVisualStrip: vi.fn(),
+  setTrackLoaded: vi.fn(),
+  setAudioStopped: vi.fn(),
+  setVisualViewAvailable: vi.fn(),
+  toggleVisualView: vi.fn(),
+  closeVisualView: vi.fn()
 }))
 vi.mock('./audio', () => ({
   startAudioEngine: vi.fn(),
   attachAudioEngine: vi.fn(),
   detachAudioEngine: vi.fn(),
   handleAudioReport: mocks.handleAudioReport,
+  handleVisualFrame: mocks.handleVisualFrame,
+  onVisualFrame: vi.fn(),
+  onAudioStatusChange: vi.fn(),
   // The audio engine's view is the one object it names; nothing else may report.
   isAudioView: (contents: unknown) => contents === mocks.audioView
+}))
+vi.mock('./visualizer', () => ({
+  forgetVisualPlaces: vi.fn(),
+  getVisualizer: () => ({ showcase: 'bars', strip: 'bars', view: 'bars', presets: 'timed' }),
+  onVisualizerChange: vi.fn(),
+  setVisualViewLook: mocks.setVisualViewLook
 }))
 vi.mock('./lyrics', () => ({
   getLyricsState: () => ({ state: 'idle' }),
@@ -667,6 +684,38 @@ describe('main window lifecycle', () => {
     expect(mocks.handleAudioReport).toHaveBeenCalledWith({ kind: 'silence', silent: true })
   })
 
+  it('takes visualizer frames from the audio engine’s view only, and only whole ones', async () => {
+    const { app } = await import('electron')
+    app.emit('activate')
+    const shell = mocks.createShell.mock.results.at(-1)!.value as ReturnType<typeof makeShell>
+    const send = mocks.ipcOn.mock.calls.find(([name]) => name === CH.visualFrame)![1] as (
+      event: unknown,
+      raw: unknown
+    ) => void
+    const frame = { bands: new Array<number>(64).fill(0.25) }
+    mocks.handleVisualFrame.mockClear()
+
+    send({ sender: shell.content.webContents }, frame)
+    send({ sender: shell.header.webContents }, frame)
+    expect(mocks.handleVisualFrame).not.toHaveBeenCalled()
+
+    send({ sender: mocks.audioView }, { bands: [1] })
+    expect(mocks.handleVisualFrame).not.toHaveBeenCalled()
+    send({ sender: mocks.audioView }, frame)
+    expect(mocks.handleVisualFrame).toHaveBeenCalledWith({ ...frame, wave: null })
+
+    // MilkDrop's channels come through whole, or the frame does not come through at all.
+    const left = new Uint8Array(1024).fill(128)
+    const right = new Uint8Array(1024).fill(128)
+    send({ sender: mocks.audioView }, { ...frame, wave: { left, right } })
+    expect(mocks.handleVisualFrame).toHaveBeenLastCalledWith({
+      ...frame,
+      wave: { left, right }
+    })
+    send({ sender: mocks.audioView }, { ...frame, wave: { left, right: new Uint8Array(3) } })
+    expect(mocks.handleVisualFrame).toHaveBeenCalledTimes(2)
+  })
+
   it('opens the showcase from our own buttons only, and lets only the showcase close it', async () => {
     const { app } = await import('electron')
     const window = await import('./window')
@@ -712,6 +761,57 @@ describe('main window lifecycle', () => {
     handlerFor('on', CH.lyricsRetry)(fromShowcase)
     expect(lyrics.nudgeLyrics).not.toHaveBeenCalled()
     expect(lyrics.retryLyrics).not.toHaveBeenCalled()
+  })
+
+  it('opens the visualizer’s own view from our own buttons only, and lets only it close itself', async () => {
+    const { app } = await import('electron')
+    const window = await import('./window')
+    app.emit('activate')
+    const shell = mocks.createShell.mock.results.at(-1)!.value as ReturnType<typeof makeShell>
+    const handlerFor = (method: 'on' | 'handle', channel: string) => {
+      const registered = method === 'on' ? mocks.ipcOn : mocks.ipcHandle
+      return registered.mock.calls.find(([name]) => name === channel)![1] as (
+        event: unknown,
+        ...args: unknown[]
+      ) => unknown
+    }
+    const fromPage = { sender: shell.content.webContents }
+    const fromPlayer = { sender: shell.player.webContents }
+    const ownView = { webContents: { ...shell.status.webContents } }
+    Object.assign(shell, { visualView: ownView })
+    const fromOwnView = { sender: ownView.webContents }
+
+    // SoundCloud's page can neither open it nor close it, nor read what the plugin chose.
+    handlerFor('on', CH.visualViewToggle)(fromPage)
+    handlerFor('on', CH.visualViewClose)(fromPage)
+    expect(window.toggleVisualView).not.toHaveBeenCalled()
+    expect(window.closeVisualView).not.toHaveBeenCalled()
+    expect(handlerFor('handle', CH.visualizerGet)(fromPage)).toBeNull()
+
+    // The player-bar button toggles it; the player bar cannot close it outright, the view can.
+    handlerFor('on', CH.visualViewToggle)(fromPlayer)
+    expect(window.toggleVisualView).toHaveBeenCalledOnce()
+    handlerFor('on', CH.visualViewClose)(fromPlayer)
+    expect(window.closeVisualView).not.toHaveBeenCalled()
+    handlerFor('on', CH.visualViewClose)(fromOwnView)
+    expect(window.closeVisualView).toHaveBeenCalledOnce()
+
+    // It reads the plugin's looks and what is playing (for the artwork's colour).
+    expect(handlerFor('handle', CH.visualizerGet)(fromOwnView)).toEqual({
+      showcase: 'bars',
+      strip: 'bars',
+      view: 'bars',
+      presets: 'timed'
+    })
+    expect(handlerFor('handle', CH.nowPlayingGet)(fromOwnView)).not.toBeUndefined()
+
+    // It says which look it draws, and only a look it can draw; nobody else may say.
+    handlerFor('on', CH.visualViewLook)(fromPlayer, 'milkdrop')
+    handlerFor('on', CH.visualViewLook)(fromOwnView, 'ring')
+    handlerFor('on', CH.visualViewLook)(fromOwnView, { look: 'bars' })
+    expect(mocks.setVisualViewLook).not.toHaveBeenCalled()
+    handlerFor('on', CH.visualViewLook)(fromOwnView, 'milkdrop')
+    expect(mocks.setVisualViewLook).toHaveBeenCalledWith('milkdrop')
   })
 
   it('gives every window the same identity, its header built from the page’s languages', () => {

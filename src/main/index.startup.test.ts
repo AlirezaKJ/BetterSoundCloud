@@ -83,14 +83,29 @@ vi.mock('./window', () => ({
   toggleLyrics: vi.fn(),
   closeLyrics: vi.fn(),
   openShowcase: vi.fn(),
-  closeShowcase: vi.fn()
+  closeShowcase: vi.fn(),
+  setVisualStrip: vi.fn(),
+  setTrackLoaded: vi.fn(),
+  setAudioStopped: vi.fn(),
+  setVisualViewAvailable: vi.fn(),
+  toggleVisualView: vi.fn(),
+  closeVisualView: vi.fn()
 }))
 vi.mock('./audio', () => ({
   startAudioEngine: mocks.startAudioEngine,
   attachAudioEngine: mocks.attachAudioEngine,
   detachAudioEngine: vi.fn(),
   handleAudioReport: vi.fn(),
+  handleVisualFrame: vi.fn(),
+  onVisualFrame: vi.fn(),
+  onAudioStatusChange: vi.fn(),
   isAudioView: () => false
+}))
+vi.mock('./visualizer', () => ({
+  forgetVisualPlaces: vi.fn(),
+  getVisualizer: () => ({ showcase: null, strip: null, view: null, presets: 'timed' }),
+  onVisualizerChange: vi.fn(),
+  setVisualViewLook: vi.fn()
 }))
 vi.mock('./lyrics', () => ({
   getLyricsState: () => ({ state: 'idle' }),

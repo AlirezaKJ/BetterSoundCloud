@@ -33,6 +33,21 @@ if (!exe || !existsSync(exe)) {
 }
 
 const PORT = 9333
+
+// Something else already answering on the port would be driven instead of the app this starts:
+// a dev app run with `--remoteDebuggingPort 9333` once had its theme, Minimal navigation and
+// full-screen view changed by this script, on its real profile (2026-11-12). Refuse instead.
+const taken = await fetch(`http://127.0.0.1:${PORT}/json/version`)
+  .then(() => true)
+  .catch(() => false)
+if (taken) {
+  console.error(
+    `Something already answers on port ${PORT} (another app with remote debugging?). ` +
+      'Close it first: this script would drive it instead of the packed app.'
+  )
+  process.exit(2)
+}
+
 const profile = mkdtempSync(join(tmpdir(), 'bsc-smoke-'))
 const results = []
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -61,6 +76,13 @@ class View {
       } else if (data.method === 'Runtime.exceptionThrown') {
         this.exceptions.push(data.params.exceptionDetails.exception?.description ?? 'error')
       }
+    }
+    // A view that closes itself (the lyrics pane's closeLyrics, the showcase's closeShowcase) can
+    // go before its answer is sent; that call then answers nothing rather than hanging the run
+    // (it did, 2026-11-12).
+    this.socket.onclose = () => {
+      for (const resolve of this.pending.values()) resolve({})
+      this.pending.clear()
     }
   }
 
@@ -349,6 +371,157 @@ try {
   await settings.run(`window.bsc.setPluginEnabled('equaliser', false)`)
   await wait(1500)
   check('…and both off, the engine lets go', (await audioViews()) === 0)
+
+  // The Visualizer: on, it runs no engine until the full-screen view shows; there, the engine
+  // listens and the view draws on a canvas; closed, the engine lets go. Under reduced motion it is
+  // hidden and runs nothing at all.
+  const visualizer = () =>
+    settings.run(
+      `window.bsc.listPlugins().then((list) => { const p = list.find((x) => x.id === 'visualizer'); return p && { state: p.state, lead: p.status && p.status.lead, problem: p.status && p.status.problem } })`
+    )
+  check('the bundled Visualizer plugin is found, off', (await visualizer())?.state === 'off')
+  await settings.run(`window.bsc.setPluginEnabled('visualizer', true)`)
+  await wait(2000)
+  const ready = await visualizer()
+  check(
+    '…on, it runs no audio engine until something shows it',
+    ready?.state === 'running' && (await audioViews()) === 0,
+    JSON.stringify(ready)
+  )
+  // Its strip above the player waits for a track: the view is made, but with nothing loaded
+  // (signed out, here) the page makes no room for it. A track playing is a check by hand.
+  const stripViews = async () =>
+    (await fetch(`http://127.0.0.1:${PORT}/json/list`).then((r) => r.json())).filter((t) =>
+      t.url.includes('/visual-strip/index.html')
+    ).length
+  const appPadding = () =>
+    page.run(`getComputedStyle(document.querySelector('#app')).paddingBottom`)
+  check(
+    '…its strip above the player waits for a track, with SoundCloud’s page left alone',
+    (await stripViews()) === 1 && (await appPadding()) === '0px',
+    `${await stripViews()} strip view(s), #app padding ${await appPadding()}`
+  )
+  await settings.run(`window.bsc.setPluginSetting('visualizer', 'strip', 'off')`)
+  await wait(1000)
+  check('…set to nothing there, the strip goes', (await stripViews()) === 0)
+  await settings.run(`window.bsc.setPluginSetting('visualizer', 'strip', 'bars')`)
+  await header.run('window.bsc.openShowcase()')
+  const stage = await view((url) => url.includes('/showcase/index.html'), 15000)
+  await wait(3000)
+  const reduced = stage
+    ? await stage.run(`matchMedia('(prefers-reduced-motion: reduce)').matches`)
+    : false
+  const look = stage
+    ? await stage.run(`document.querySelector('[data-bsc-visualizer]')?.dataset.look ?? ''`)
+    : ''
+  check(
+    reduced
+      ? '…under reduced motion, the full-screen view draws none and the engine stays off'
+      : '…in the full-screen view, the engine listens and its bars are drawn',
+    reduced
+      ? look === '' && (await audioViews()) === 0
+      : look === 'bars' && (await audioViews()) === 1,
+    `look "${look}", ${await audioViews()} audio view(s)`
+  )
+  if (stage) await stage.run('window.bsc.closeShowcase()').catch(() => undefined)
+  await wait(2000)
+  check('…and the view closed, the engine lets go', (await audioViews()) === 0)
+
+  // Its view of its own: the player bar gets a third button and SoundCloud's bar the room for it
+  // (two buttons are 92px, three 126); opened, it covers the page, the engine listens and its bars
+  // are drawn; closed, the engine lets go. Under reduced motion it is not offered at all.
+  const ownViews = async () =>
+    (await fetch(`http://127.0.0.1:${PORT}/json/list`).then((r) => r.json())).filter((t) =>
+      t.url.includes('/visual-view/index.html')
+    ).length
+  const playerPadding = () =>
+    page.run(`getComputedStyle(document.querySelector('.playControls__wrapper')).paddingRight`)
+  const playerBar = await view((url) => url.includes('/player/index.html'), 5000)
+  const buttons = playerBar
+    ? await playerBar.run(`document.querySelectorAll('button').length`)
+    : 0
+  check(
+    reduced
+      ? '…under reduced motion, the player bar offers no view of its own'
+      : '…its own view gets a player-bar button, and SoundCloud’s bar the room for it',
+    reduced
+      ? buttons === 2 && (await playerPadding()) === '92px'
+      : buttons === 3 && (await playerPadding()) === '126px',
+    `${buttons} buttons, padding ${await playerPadding()}`
+  )
+  await header.run('window.bsc.toggleVisualView()')
+  const own = reduced
+    ? null
+    : await view((url) => url.includes('/visual-view/index.html'), 15000)
+  await wait(2000)
+  const ownLook = own
+    ? await own.run(`document.querySelector('[data-bsc-visualizer]')?.dataset.look ?? ''`)
+    : ''
+  check(
+    reduced
+      ? '…and nothing opens'
+      : '…opened, it covers the page, the engine listens and its bars are drawn',
+    reduced
+      ? (await ownViews()) === 0 && (await audioViews()) === 0
+      : ownLook === 'bars' && (await audioViews()) === 1,
+    `look "${ownLook}", ${await audioViews()} audio view(s)`
+  )
+  if (own) await own.run('window.bsc.closeVisualView()').catch(() => undefined)
+  await wait(2000)
+  check(
+    '…and closed, the engine lets go',
+    (await ownViews()) === 0 && (await audioViews()) === 0
+  )
+
+  // MilkDrop: Butterchurn's presets compile to WebAssembly under the CSP of the views that draw
+  // it, in the packed build, in its own view and in the full-screen view; the engine listens for
+  // them. Nothing plays here, so it loads and waits out of sight. "ready" means a preset compiled:
+  // a refused one leaves it "failed", and Bars in its place.
+  if (!reduced) {
+    const milkdropIn = async (target) => {
+      for (let tries = 0; tries < 30; tries++) {
+        const state = await target.run(
+          `document.querySelector('[data-bsc-milkdrop]')?.dataset.bscMilkdrop ?? ''`
+        )
+        if (state && state !== 'loading') return state
+        await wait(500)
+      }
+      return 'still loading'
+    }
+    await settings.run(`window.bsc.setPluginSetting('visualizer', 'view', 'milkdrop')`)
+    await wait(1000)
+    const row = await visualizer()
+    await header.run('window.bsc.toggleVisualView()')
+    const drop = await view((url) => url.includes('/visual-view/index.html'), 15000)
+    const dropState = drop ? await milkdropIn(drop) : 'no view'
+    check(
+      '…MilkDrop in its own view: its presets compile under the view’s CSP',
+      dropState === 'ready' && (await audioViews()) === 1 && !row?.problem,
+      `${dropState}, ${await audioViews()} audio view(s)${row?.problem ? `, ${row.problem}` : ''}`
+    )
+    check(
+      'no uncaught errors in the visualizer’s own view',
+      (drop?.exceptions.length ?? 0) === 0,
+      drop?.exceptions[0]
+    )
+    if (drop) await drop.run('window.bsc.closeVisualView()').catch(() => undefined)
+    await settings.run(`window.bsc.setPluginSetting('visualizer', 'showcase', 'milkdrop')`)
+    await wait(1000)
+    await header.run('window.bsc.openShowcase()')
+    const hall = await view((url) => url.includes('/showcase/index.html'), 15000)
+    const hallState = hall ? await milkdropIn(hall) : 'no view'
+    check(
+      '…and in the full-screen view',
+      hallState === 'ready' && (hall?.exceptions.length ?? 0) === 0,
+      `${hallState}${hall?.exceptions[0] ? `, ${hall.exceptions[0]}` : ''}`
+    )
+    if (hall) await hall.run('window.bsc.closeShowcase()').catch(() => undefined)
+    await wait(2000)
+    check('…and both closed, the engine lets go', (await audioViews()) === 0)
+  }
+  await settings.run(`window.bsc.setPluginEnabled('visualizer', false)`)
+  await wait(1000)
+  check('…and the plugin off, its strip goes too', (await stripViews()) === 0)
 
   check(
     'no uncaught errors in the header',

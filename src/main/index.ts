@@ -23,6 +23,12 @@ import {
   closeLyrics,
   openShowcase,
   closeShowcase,
+  setVisualStrip,
+  setTrackLoaded,
+  setAudioStopped,
+  setVisualViewAvailable,
+  toggleVisualView,
+  closeVisualView,
   rendererUrl,
   sendFrameCss
 } from './window'
@@ -30,10 +36,20 @@ import {
   attachAudioEngine,
   detachAudioEngine,
   handleAudioReport,
+  handleVisualFrame,
   isAudioView,
+  onAudioStatusChange,
+  onVisualFrame,
   startAudioEngine
 } from './audio'
+import {
+  forgetVisualPlaces,
+  getVisualizer,
+  onVisualizerChange,
+  setVisualViewLook
+} from './visualizer'
 import { readAudioReport } from '@shared/audio'
+import { LOOKS_FOR, readVisualFrame } from '@shared/visualizer'
 import {
   getLyricsState,
   noticeNowPlaying,
@@ -450,6 +466,10 @@ function showMainWindow(): void {
   if (!shell) {
     const next = createShell(browserIdentity())
     shell = next
+    // The Visualizer's strip, if the plugin chose one before this window existed (§22).
+    setTrackLoaded(next, getNowPlaying() !== null)
+    setVisualStrip(next, getVisualizer().strip !== null)
+    setVisualViewAvailable(next, getVisualizer().view !== null)
     if (isDev) checkPageLanguages(next.header, browserIdentity().languages)
     next.window.on('close', (event) => {
       if (quitting || !keepsRunningWhenClosed()) return
@@ -482,6 +502,8 @@ function showMainWindow(): void {
       setNowPlaying(null)
       // Its own view is not the window's: the engine closes it, and waits for the next window.
       detachAudioEngine()
+      // Nothing of the window is on screen any more, so no visualizer is either.
+      forgetVisualPlaces()
       // BaseWindow does not own the lifetime of its WebContentsViews.
       for (const view of [
         next.header,
@@ -489,6 +511,8 @@ function showMainWindow(): void {
         next.settings,
         next.embedded,
         next.player,
+        next.visualStrip,
+        next.visualView,
         next.contextMenu,
         next.status,
         next.lyrics,
@@ -677,7 +701,8 @@ function registerIpc(): void {
       shell.contextMenu,
       shell.status,
       shell.lyrics,
-      shell.showcase
+      shell.showcase,
+      shell.visualView
     ].some((view) => view?.webContents === event.sender)
 
   ipcMain.handle(CH.nowPlayingGet, (e) => (fromOurViews(e) ? getNowPlaying() : null))
@@ -785,6 +810,8 @@ function registerIpc(): void {
   // `--bsc-cover` for themes: the artwork of what is playing, once per track.
   onNowPlayingChange((nowPlaying) => {
     if (shell) setContentCover(shell, nowPlaying?.artwork ?? '')
+    // SoundCloud shows its player bar while a track is loaded, and the Visualizer's strip with it.
+    if (shell) setTrackLoaded(shell, nowPlaying !== null)
     // The lyrics service only acts on a different track; the pane follows the clock itself.
     noticeNowPlaying(nowPlaying)
   })
@@ -797,6 +824,11 @@ function registerIpc(): void {
     shell !== null && event.sender === shell.lyrics?.webContents
   const fromShowcase = (event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent): boolean =>
     shell !== null && event.sender === shell.showcase?.webContents
+  const fromVisualStrip = (event: Electron.IpcMainInvokeEvent): boolean =>
+    shell !== null && event.sender === shell.visualStrip?.webContents
+  const fromVisualView = (
+    event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent
+  ): boolean => shell !== null && event.sender === shell.visualView?.webContents
   ipcMain.on(CH.lyricsToggle, (e) => {
     if (shell && (fromChrome(e) || e.sender === shell.player?.webContents)) toggleLyrics(shell)
   })
@@ -829,11 +861,64 @@ function registerIpc(): void {
     if (shell && fromShowcase(e)) closeShowcase(shell)
   })
 
+  /** The Visualizer's view of its own. Toggled from the player-bar button; only it closes itself. */
+  ipcMain.on(CH.visualViewToggle, (e) => {
+    if (shell && (fromChrome(e) || e.sender === shell.player?.webContents))
+      toggleVisualView(shell)
+  })
+  ipcMain.on(CH.visualViewClose, (e) => {
+    if (shell && fromVisualView(e)) closeVisualView(shell)
+  })
+  ipcMain.on(CH.visualViewLook, (e, raw: unknown) => {
+    if (!fromVisualView(e)) return
+    const look = LOOKS_FOR.view.find((one) => one === raw)
+    if (look) setVisualViewLook(look)
+  })
+
   /** The audio engine's view saying whether its capture works. That view only, shaped first. */
   ipcMain.on(CH.audioReport, (e, raw: unknown) => {
     if (!isAudioView(e.sender)) return
     const report = readAudioReport(raw)
     if (report) handleAudioReport(report)
+  })
+
+  // The Visualizer (§22): what the engine plays, frame by frame, to the views drawing it. From the
+  // engine's view only, every frame shaped first; to the showcase, and to the strip under the
+  // player while it is drawn (the showcase covers it while open).
+  ipcMain.on(CH.visualFrame, (e, raw: unknown) => {
+    if (!isAudioView(e.sender)) return
+    const frame = readVisualFrame(raw)
+    if (frame) handleVisualFrame(frame)
+  })
+  onVisualFrame((frame) => {
+    if (!shell) return
+    const strip =
+      shell.visualStripShowing && !shell.showcase && !shell.visualView
+        ? shell.visualStrip
+        : null
+    const own = shell.showcase ? null : shell.visualView
+    for (const view of [shell.showcase, strip, own]) {
+      if (view && !view.webContents.isDestroyed())
+        view.webContents.send(CH.visualFrameChanged, frame)
+    }
+  })
+  ipcMain.handle(CH.visualizerGet, (e) =>
+    fromShowcase(e) || fromVisualStrip(e) || fromVisualView(e) ? getVisualizer() : null
+  )
+  // The strip's band goes while the engine has stepped aside: it would have nothing to draw.
+  onAudioStatusChange((status) => {
+    if (shell) setAudioStopped(shell, status.state === 'stopped')
+  })
+  onVisualizerChange((config) => {
+    if (!shell) return
+    // The strip's view exists while the plugin has chosen a look for it, and the view of its own
+    // can be opened only then.
+    setVisualStrip(shell, config.strip !== null)
+    setVisualViewAvailable(shell, config.view !== null)
+    for (const view of [shell.showcase, shell.visualStrip, shell.visualView]) {
+      if (view && !view.webContents.isDestroyed())
+        view.webContents.send(CH.visualizerChanged, config)
+    }
   })
 
   ipcMain.handle(CH.settingsSet, (e, key: unknown, value: unknown) => {
@@ -990,7 +1075,8 @@ function broadcastNowPlaying(nowPlaying: NowPlaying | null): void {
     shell.contextMenu,
     shell.status,
     shell.lyrics,
-    shell.showcase
+    shell.showcase,
+    shell.visualView
   ]) {
     if (view && !view.webContents.isDestroyed()) {
       view.webContents.send(CH.nowPlayingChanged, nowPlaying)
