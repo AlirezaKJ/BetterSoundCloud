@@ -1172,6 +1172,8 @@ Rules that hold this together:
   frames only while a place with a look is on screen. While it listens, SoundCloud's sound goes
   through the engine, with its 0.1 s delay and its rules for stepping aside (§21). The strip is on
   screen whenever a track is loaded, so with it chosen, the engine runs for the whole session.
+  Starting and stopping it moves the sound 0.1 s later and back; heard with real music in a
+  signed build, nobody noticed a skip (the maintainer, 2026-11-13), so it stays on demand.
 - **The tap is at the end of the chain**, after Pitch and the Equaliser, so the bars show what is
   heard and stay in step with it. The engine's other analyser, before the shifter, is the silence
   check and nothing else.
