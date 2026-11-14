@@ -412,6 +412,12 @@ export function createShell(identity: Identity): Shell {
     const compactHeader = embeddedShows && cssWidth < COMPACT_HEADER_WIDTH
     const fitHeader = embeddedShows && cssWidth < FIT_HEADER_WIDTH
     const strip = embeddedShows ? 0 : HEADER_HEIGHT
+    // Settings stands in for SoundCloud's page while it is open, and our own bar is above it
+    // whatever the bar setting says, so the window can always be moved and closed and the gear
+    // closes Settings again. The bar is laid over the page's top edge rather than pushing the page
+    // down: moved, SoundCloud's page would jump under Settings as it fades in and out.
+    const settingsOpen = shell.settings !== null
+    const barShows = !embeddedShows || settingsOpen
     // The Visualizer's strip is wanted with SoundCloud's player bar, which shows while a track is
     // loaded, and goes with the page like the other overlays on SoundCloud's bars; drawn only
     // where it can be seen (the showcase covers it while open). It asks the engine for sound
@@ -421,16 +427,17 @@ export function createShell(identity: Identity): Shell {
     const visualStripWanted = shell.visualStrip !== null && shell.trackLoaded && !pageHidden
     // Drawn only where it can be seen and is not the same thing twice: the showcase covers it, and
     // the view of its own already shows what it would.
-    const visualStripDrawn = visualStripWanted && !shell.showcase && !shell.visualView
+    const visualStripDrawn =
+      visualStripWanted && !shell.showcase && !shell.visualView && !settingsOpen
     const visualStripShows = visualStripWanted && !shell.audioStopped
     const visualStripFlipped = visualStripShows !== shell.visualStripShowing
     shell.visualStripShowing = visualStripShows
     if (process.platform === 'darwin') {
       // Native buttons stay on the left in both header modes; their coordinates are
       // window pixels, even when SoundCloud's header is zoomed.
-      const barHeight = embeddedShows
-        ? SC_HEADER_HEIGHT * content.webContents.getZoomFactor()
-        : HEADER_HEIGHT
+      const barHeight = barShows
+        ? HEADER_HEIGHT
+        : SC_HEADER_HEIGHT * content.webContents.getZoomFactor()
       window.setWindowButtonPosition({ x: 12, y: Math.round((barHeight - 14) / 2) })
     }
 
@@ -447,19 +454,20 @@ export function createShell(identity: Identity): Shell {
     // `setVisible(false)` withdraws the region, and unlike removing the child view it keeps
     // the view parented with its renderer and IPC subscriptions alive, so toggling the bar
     // back is still instant and reloads nothing.
-    header.setVisible(!embeddedShows)
-    header.setBounds({ x: 0, y: 0, width, height: strip })
+    header.setVisible(barShows)
+    header.setBounds({ x: 0, y: 0, width, height: barShows ? HEADER_HEIGHT : 0 })
     content.setBounds({ x: 0, y: strip, width, height: height - strip })
-    // The settings panel only exists while it is open, so check before resizing it.
-    if (shell.settings) fitBelowHeader(window, shell.settings, strip)
+    // Settings only exists while it is open, so check before resizing it. Always under our bar.
+    if (shell.settings) fitBelowHeader(window, shell.settings, HEADER_HEIGHT)
     // The menu view is attached after the shell is built, so it too can be absent here.
     if (shell.contextMenu) fitBelowHeader(window, shell.contextMenu, strip)
     // The page-status view covers exactly what SoundCloud's page does.
     if (shell.status) fitBelowHeader(window, shell.status, strip)
     if (shell.embedded) {
       // With the header hidden until pointed at, our window buttons hide and come back with it.
+      // Under Settings, our own bar has the window buttons.
       shell.embedded.setVisible(
-        embeddedShows && (!shell.autoHideHeader || shell.headerRevealed)
+        embeddedShows && !settingsOpen && (!shell.autoHideHeader || shell.headerRevealed)
       )
       fitOverSoundCloudHeader(shell, embeddedShows)
     }
@@ -507,7 +515,8 @@ export function createShell(identity: Identity): Shell {
       shell.visualView.setVisible(!pageHidden)
       fitVisualView(shell, strip)
     }
-    const visualViewDrawn = shell.visualView !== null && !pageHidden && !shell.showcase
+    const visualViewDrawn =
+      shell.visualView !== null && !pageHidden && !shell.showcase && !settingsOpen
     // The showcase covers everything, our own bar included.
     if (shell.showcase) shell.showcase.setBounds({ x: 0, y: 0, width, height })
 
@@ -656,11 +665,10 @@ export function toggleSettings(shell: Shell): void {
   shell.settings = view
   shell.window.contentView.addChildView(view)
   themeChromeView(view, 'settings')
-  // `embeddedShowing`, not `hideMenuBar`: those differ in exactly the fallback case, where the
-  // setting is on but the window is too narrow to honour it. Re-deriving it here would place
-  // the panel at y=0 over our own bar — including the window buttons — until the next resize.
-  // A second place deciding "is our bar showing" is the fault this whole change removed.
-  fitBelowHeader(shell.window, view, shell.embeddedShowing ? 0 : HEADER_HEIGHT)
+  // layout() places it, and brings our own bar back above it while it is open. Deciding either
+  // here as well would be a second place deciding "is our bar showing", the fault the
+  // narrow-window work removed.
+  shell.layout()
 
   if (isDev) enableDevToolsShortcut(view)
 
@@ -681,6 +689,9 @@ export function closeSettings(shell: Shell): void {
   shell.settings = null
   shell.settingsOpener = null
   shell.window.contentView.removeChildView(view)
+  // Our bar goes again if SoundCloud's header had it, and the window buttons over that header
+  // come back, before focus is handed back to them.
+  shell.layout()
   // Destroy rather than keep it hidden: a settings panel is opened rarely and briefly,
   // so holding a renderer process for the rest of the session is the wrong trade.
   view.webContents.close()

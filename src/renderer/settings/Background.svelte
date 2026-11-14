@@ -159,7 +159,7 @@
   {#each SLIDERS as slider (slider.key)}
     {@const def = SETTINGS[slider.key]}
     {@const shown = dragging?.key === slider.key ? dragging.value : values[slider.key]}
-    <div class="slider" class:off={source === 'none'}>
+    <div class="slider" class:off={source === 'none'} data-bsc-setting={slider.key}>
       <div class="label">
         <label for={slider.key}>{def.label}</label>
         {#if 'help' in def && def.help}<p class="help">{def.help}</p>{/if}
@@ -193,9 +193,9 @@
 
   .intro {
     margin: 8px 0 0;
-    max-width: 60ch;
-    font-size: 12px;
-    line-height: 1.4;
+    max-width: 70ch;
+    font-size: 13px;
+    line-height: 1.45;
     color: var(--bsc-text-secondary);
   }
 
@@ -234,6 +234,13 @@
     font-size: 12px;
     line-height: 1.4;
     color: var(--bsc-text-secondary);
+  }
+
+  /* What it does: read, not glanced at, like every row's explanation in Settings (13px). */
+  .help {
+    max-width: 70ch;
+    font-size: 13px;
+    line-height: 1.45;
   }
 
   .problem {

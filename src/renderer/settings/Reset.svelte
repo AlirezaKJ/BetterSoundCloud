@@ -164,6 +164,13 @@
     color: var(--bsc-text-secondary);
   }
 
+  /* What it does: read, not glanced at, like every row's explanation in Settings (13px). */
+  .help {
+    max-width: 70ch;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
   .result {
     color: var(--bsc-text-primary);
   }

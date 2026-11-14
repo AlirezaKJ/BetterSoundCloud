@@ -4,6 +4,10 @@ Each version's entry is also its release notes on GitHub.
 
 ## Unreleased
 
+- **Settings is a page now**, not a small box: it fills the window under the top bar, with the
+  sections down the side, and every setting says what it does in a sentence or two. **Search**
+  at the top of the sidebar (Ctrl+F) finds any setting, theme or plugin and takes you to it. The
+  sidebar's foot shows the version you have and links to GitHub and to report a problem.
 - **Import browser sign-in** (Settings → Advanced): signed in to SoundCloud with Google in your
   browser? Export soundcloud.com's cookies with Cookie-Editor and choose the file; the app takes
   the sign-in from it and nothing else.

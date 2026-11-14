@@ -47,14 +47,14 @@ describe('layout() owns every view position', () => {
     const body = layoutBody()
     expect(body).toContain('fitVisualView(shell, strip)')
     expect(body).toContain('shell.visualView.setVisible(!pageHidden)')
-    // The engine listens for it only while it is drawn…
-    expect(body).toContain(
-      'const visualViewDrawn = shell.visualView !== null && !pageHidden && !shell.showcase'
+    // The engine listens for it only while it is drawn, and Settings, opaque, hides it…
+    expect(body).toMatch(
+      /const visualViewDrawn =\s+shell\.visualView !== null && !pageHidden && !shell\.showcase && !settingsOpen/
     )
     expect(body).toContain("setVisualPlaceShown('view', visualViewDrawn)")
     // …and the strip steps back while it is open: it would draw the same thing twice.
-    expect(body).toContain(
-      'const visualStripDrawn = visualStripWanted && !shell.showcase && !shell.visualView'
+    expect(body).toMatch(
+      /const visualStripDrawn =\s+visualStripWanted && !shell\.showcase && !shell\.visualView/
     )
     // Closing the lyrics pane gives the strip and the view their width back.
     const close = SRC.slice(SRC.indexOf('export function closeLyrics'))
@@ -88,7 +88,9 @@ describe('layout() owns every view position', () => {
     // Gone while the engine has stepped aside, but still asking for sound, so the engine stays
     // aside instead of retrying what failed (§21).
     expect(body).toContain('const visualStripShows = visualStripWanted && !shell.audioStopped')
-    expect(body).toContain('const visualStripDrawn = visualStripWanted && !shell.showcase')
+    expect(body).toMatch(/const visualStripDrawn =\s+visualStripWanted && !shell\.showcase/)
+    // Settings is opaque and covers it, so it is not drawn while Settings is open either.
+    expect(body).toMatch(/const visualStripDrawn =\s+[^\n]*!settingsOpen/)
     // The page's room for it is re-decided whenever it comes or goes, from the same flag…
     expect(body).toMatch(/if \(visualStripFlipped\) void applyContentCss\(/)
     expect(SRC).toMatch(/stripReserve = shell\.visualStripShowing \?/)
@@ -119,6 +121,23 @@ describe('layout() owns every view position', () => {
     // the fallback case, and placed the settings panel over our own bar.
     const outsideLayout = SRC.replace(layoutBody(), '')
     expect(outsideLayout).not.toMatch(/hideMenuBar \? 0 : HEADER_HEIGHT/)
+  })
+
+  it('brings our own bar back above Settings, without moving SoundCloud’s page', () => {
+    // Settings stands in for the page; the window must stay movable and closable, and the gear
+    // must close it, whatever the bar setting says. The page keeps its place under it, so it does
+    // not jump as Settings fades.
+    const body = layoutBody()
+    expect(body).toContain('const barShows = !embeddedShows || settingsOpen')
+    expect(body).toContain('header.setVisible(barShows)')
+    expect(body).toContain(
+      'content.setBounds({ x: 0, y: strip, width, height: height - strip })'
+    )
+    expect(body).toContain('fitBelowHeader(window, shell.settings, HEADER_HEIGHT)')
+    expect(body).toMatch(/shell\.embedded\.setVisible\(\s+embeddedShows && !settingsOpen/)
+    // Opening and closing it re-run the layout, which alone decides the bar.
+    expect(functionBody('toggleSettings')).toContain('shell.layout()')
+    expect(functionBody('closeSettings')).toContain('shell.layout()')
   })
 
   it('keeps the page-status view over the content area, with our own bar back above it', () => {

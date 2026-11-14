@@ -65,7 +65,7 @@
   <!-- Named on screen, not only for screen readers: the section's switches sit directly above,
        and without a heading the first of them reads as one more choice in this list. -->
   <h2 class="group" id="theme-group" data-bsc-themes-heading>Theme</h2>
-  <div class="list" role="radiogroup" aria-labelledby="theme-group">
+  <div class="list" role="radiogroup" aria-labelledby="theme-group" data-bsc-theme-list>
     <div class="row" class:selected={selected === NONE} data-bsc-theme={NONE}>
       <label for="theme-none">
         <span class="name">None</span>
@@ -197,6 +197,13 @@
     font-size: 12px;
     line-height: 1.4;
     color: var(--bsc-text-secondary);
+  }
+
+  /* What it does: read, not glanced at, like every row's explanation in Settings (13px). */
+  .help {
+    max-width: 70ch;
+    font-size: 13px;
+    line-height: 1.45;
   }
 
   .problem {

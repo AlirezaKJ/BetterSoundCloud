@@ -154,6 +154,7 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CU
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `shared/ipc.ts`             | `CH` (every channel name), `ChromeApi` (the `window.bsc` type), `NavState`, `WindowState`                                                                                            |
 | `shared/settings-schema.ts` | `SETTINGS`, `SECTIONS`, `Settings`, `SettingKey`, `coerce`, `coerceAll`, `defaults`                                                                                                  |
+| `shared/settings-search.ts` | Search in Settings: `searchSettings()` (every word, name matches first), `markMatches()`, `OTHER_ENTRIES` (the buttons and keys that are not schema rows)                            |
 | `shared/now-playing.ts`     | `PlayerReading`, `NowPlaying`, `readNowPlaying()` and its cleaners                                                                                                                   |
 | `shared/page-theme.ts`      | `PageTheme`, `detectPageTheme()`, `overlayTheme()` (a theme's `@mode` beats SoundCloud's setting)                                                                                    |
 | `shared/context-menu.ts`    | `ContextMenuRequest`, `CONTEXT_MENU_ACTIONS`, `cleanUrl`, `shortUrl`, `elide`                                                                                                        |
@@ -184,9 +185,9 @@ views composited above it. Everything is held on the `Shell` object (`src/main/w
 
 | `Shell` field | Renderer entry          | Preload       | Lifetime                                                                                                                                                                                                        |
 | ------------- | ----------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `header`      | `renderer/header`       | `chrome.cjs`  | Always. Hidden (`setVisible(false)`) while SoundCloud owns the top                                                                                                                                              |
+| `header`      | `renderer/header`       | `chrome.cjs`  | Always. Hidden (`setVisible(false)`) while SoundCloud owns the top, except while Settings is open                                                                                                               |
 | `content`     | soundcloud.com          | `content.cjs` | Always. Loads `https://soundcloud.com/discover` once Widevine is ready (`loadSoundCloud`)                                                                                                                       |
-| `settings`    | `renderer/settings`     | `chrome.cjs`  | Created on open, destroyed on close (`toggleSettings`/`closeSettings`)                                                                                                                                          |
+| `settings`    | `renderer/settings`     | `chrome.cjs`  | Created on open, destroyed on close (`toggleSettings`/`closeSettings`); a page over everything below our bar, which shows while it is open                                                                      |
 | `embedded`    | `renderer/embedded`     | `chrome.cjs`  | Exists while `appearance.hideMenuBar` is on; window buttons over SoundCloud's header                                                                                                                            |
 | `player`      | `renderer/player`       | `chrome.cjs`  | Exists while `appearance.playerButtons` is on; buttons at the right end of SoundCloud's play bar                                                                                                                |
 | `contextMenu` | `renderer/context-menu` | `chrome.cjs`  | Created once (`attachContextMenu`), hidden between uses                                                                                                                                                         |
@@ -225,7 +226,14 @@ Rules that hold this together:
 - **While a page status hides SoundCloud's page, our own bar comes back** and the `embedded` and
   `player` overlays hide: there is no SoundCloud header or play bar under them. `layout()` derives
   this from `hidesPage(shell.pageStatus)`. A hang is the exception — it is a dialog over a page
-  that is still there, like settings.
+  that is still there.
+- **While Settings is open, our own bar shows above it** whatever the bar setting says
+  (`barShows` in `layout()`), so the window can always be moved and closed and the gear closes
+  it, and Settings always sits at `HEADER_HEIGHT`. The bar is laid over the top of SoundCloud's
+  page instead of pushing it down: `content` keeps its bounds, or the page would jump under
+  Settings as it fades. The window buttons over SoundCloud's header hide under it, and F6's
+  "bar" is ours (`viewFor`). Settings is opaque, so the Visualizer's strip and view of its own
+  count as not drawn while it is open, and the engine stops listening for them (§22).
 - `BaseWindow` does not own its views: the `closed` handler in `index.ts` closes each view's
   `webContents` explicitly. A new view goes in that list.
 - Closing hides the window, keeping playback alive, on macOS always and elsewhere while "Minimize
@@ -556,6 +564,20 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
   it once on load and saves the result.
 - The **Plugins** section is not schema-driven: plugins are found on disk, so `Settings.svelte`
   renders `Plugins.svelte` for it, fed by `listPlugins` / `onPluginsChanged` (§16).
+- **Settings is a page** (decided by the maintainer 2026-11-14): a 220px sidebar (search, the
+  sections, the version and two links at its foot) and one column of rows up to 720px wide, each
+  with its name, its `help` at 13px and its control. **A `help` is one or two short sentences**,
+  what the setting does and the one thing worth knowing, never a paragraph (the maintainer's
+  rule): every one was redrafted to it on that date.
+- **Search** (Ctrl+F) finds every setting by its label and `help`, the themes and plugins by
+  name and description (read as a search starts), and `OTHER_ENTRIES` (shared/settings-search.ts)
+  for the buttons and keys components draw. Choosing a match opens its section and focuses the
+  row's control, found by a selector: `data-bsc-setting={key}` on schema rows (and Background's
+  sliders), `data-bsc-theme`, `data-bsc-plugin`, `data-bsc-theme-list`, `data-bsc-background`,
+  or an `OTHER_ENTRIES` target. A row drawn without one of these cannot be found; a new
+  component row adds its attribute, and its entry if it is not a schema setting
+  (`settings-search-rows.test.ts` reads the components to keep the two equal). Escape clears a
+  search first, then closes.
 - `statusFrom: 'discord'` puts a live line under the control saying whether the feature behind
   it is working right now (`renderer/settings/DiscordStatus.svelte`, words from
   `describePresenceStatus`). Use it wherever a ticked box can be true while the feature cannot
@@ -690,7 +712,10 @@ context menu have the shortcut; embedded and player do not).
   (no shared chunk) when a build exists — run `npx electron-vite build` after touching preloads.
 - **Renderers in a browser:** open `http://localhost:5173/<entry>/index.html` from the dev server,
   define a mock `window.bsc`, then `await import('/<entry>/main.ts?remount=1')` to mount against
-  the mock. Note that synthetic Enter does not submit forms there; use `form.requestSubmit()`.
+  the mock. `electron-vite dev --rendererOnly` still starts the app on the dev profile (measured
+  2026-11-14); to serve the renderers with no app at all, run Vite's own `createServer` with
+  `root: 'src/renderer'`, the svelte plugin (`configFile: svelte.config.js`) and the `@shared` /
+  `@renderer` aliases. Note that synthetic Enter does not submit forms there; use `form.requestSubmit()`.
 - **Main-process paths in the real app** are verified from the dev log tags above.
 - **The packaged app** is checked by `npm run smoke:packaged` (`scripts/smoke-packaged.mjs`): it
   launches `release/win-unpacked` with `--user-data-dir` on a temporary profile — Electron honours

@@ -26,6 +26,11 @@ typography:
     fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
     fontSize: '13px'
     fontWeight: 400
+  explanation:
+    fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
+    fontSize: '13px'
+    fontWeight: 400
+    lineHeight: 1.45
   caption:
     fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
     fontSize: '12px'
@@ -64,7 +69,7 @@ components:
     textColor: '{colors.text-secondary}'
     typography: '{typography.label}'
     rounded: '{rounded.sm}'
-    padding: '8px 10px'
+    padding: '7px 10px'
   nav-item-active:
     backgroundColor: '{colors.bg-hover}'
     textColor: '{colors.text-primary}'
@@ -74,11 +79,18 @@ components:
     typography: '{typography.label}'
     rounded: '{rounded.sm}'
     padding: '6px 8px'
-  panel:
+  settings-page:
     backgroundColor: '{colors.bg-primary}'
-    rounded: '{rounded.md}'
-    width: '760px'
-    height: '560px'
+    textColor: '{colors.text-primary}'
+  settings-sidebar:
+    backgroundColor: '{colors.bg-primary}'
+    width: '220px'
+  settings-search:
+    backgroundColor: '{colors.bg-secondary}'
+    textColor: '{colors.text-primary}'
+    typography: '{typography.label}'
+    rounded: '{rounded.sm}'
+    height: '30px'
 ---
 
 # Design System: BetterSoundCloud
@@ -90,8 +102,9 @@ components:
 BetterSoundCloud is a frame around someone else's picture. SoundCloud's own web app renders
 every piece of music UI — the player, the waveforms, the artwork, the navigation — inside a
 content view that this design system deliberately never touches. What we own is a 32px strip
-along the top, a settings panel that floats over it, and future overlays. That is the entire
-canvas, and the frame's job is to hold the picture without competing with it.
+along the top, a settings page that stands in for SoundCloud's below it, and future
+overlays. That is the entire canvas, and the frame's job is to hold the picture without
+competing with it.
 
 This produces a system that is almost aggressively restrained. There is no display type, no
 hero, no imagery, no gradient, and no decorative colour anywhere. Controls are transparent
@@ -139,7 +152,7 @@ frontmatter above records the light default.
 
 The greys carry the entire interface. Each pair is light / dark.
 
-- **Shell Grey** (`#f2f2f2` / `#121212`): The chrome background and the settings panel body.
+- **Shell Grey** (`#f2f2f2` / `#121212`): The chrome background and the Settings page.
   The surface the user actually looks at.
 - **Field White** (`#ffffff` / `#1c1c1c`): One step of separation from the shell, used for
   inputs and selects so a control reads as inset rather than painted on.
@@ -158,8 +171,8 @@ The greys carry the entire interface. Each pair is light / dark.
 - **Danger Red** (`#d33`): Reserved entirely for the close button's hover state, where it turns
   a red field with white glyph. It is the one moment of saturated colour in the product, and it
   is a warning, not decoration.
-- **Scrim** (`rgb(0 0 0 / 45%)`): Dims SoundCloud behind the settings panel. Not a surface —
-  a modality signal.
+- **Scrim** (`rgb(0 0 0 / 45%)`): Dims SoundCloud behind a dialog — the Go to URL prompt, the
+  "not responding" dialog. Not a surface — a modality signal.
 
 ### Named Rules
 
@@ -184,10 +197,14 @@ personality the frame should not have and a runtime network load the renderer's 
 
 ### Hierarchy
 
-- **Title** (600, 15px): The settings panel heading. The largest text in the entire product.
+- **Title** (600, 15px): A Settings section's title. The largest text in the entire product.
 - **Body** (400, 14px): Setting names — the primary reading size in the panel.
 - **Label** (400, 13px): Navigation items, inputs, selects. The dense working tier.
-- **Caption** (400, 12px, line-height 1.4): Help text under a setting, and the window title in
+- **Explanation** (400, 13px, line-height 1.45, at most 70ch): What a setting does, under its
+  name in every Settings row and under each search match. It is read, not glanced at, so it sits
+  one step above Caption (it was the 12px Caption until 2026-11-14). Always Muted Ink.
+- **Caption** (400, 12px, line-height 1.4): When a setting takes effect, status lines and launch
+  notices, the version and links at the foot of the Settings sidebar, and the window title in
   the chrome strip (500 weight there). Always Muted Ink.
 - **Overline** (600, 11px, +0.03em, uppercase): One use only — the "Not implemented yet" badge.
 
@@ -212,27 +229,35 @@ part of the same block, `clamp(16px, min(1.3vw, 2.3vh), 26px)` in Muted Ink; lyr
 the hint, the credit, the close button — keeps the 15px ceiling. Like the Lyrics Exception, it does
 not transfer.
 
+**The Two Sentences Rule** (the maintainer's, 2026-11-14). A setting's explanation is one or two
+short sentences, never a paragraph. When it takes effect is not part of it: that is the row's own
+Caption note.
+
 **The System Stack Rule.** No webfonts, ever. The chrome inherits the OS UI font so it belongs
 to the window; the CSP on every renderer blocks remote font loads regardless.
 
 ## Layout
 
-Two independent surfaces, never one page.
+Two independent surfaces, each in its own view, never one page.
 
 **The chrome strip** is a fixed 32px row: a flex line of `[back · forward · reload]`, a centred
 elided title that takes the remaining space, and `[settings · minimize · maximize · close]` on
 the right. It is a window drag region, and every interactive child opts back out with
 `-webkit-app-region: no-drag`. It does not scroll, wrap, or change height at any window size.
 
-**The settings panel** is a centred card, `min(760px, 100% − 48px)` by
-`min(560px, 100% − 48px)`, laid out as a two-column grid — a 160px navigation rail beside a
-scrolling content column — with a header row spanning both. Only the content column scrolls; the
-card itself never does.
+**The settings page** covers everything below the 32px bar, which shows above it while it is
+open even when the user hid it, so the window can always be moved and closed and the gear closes
+it again. It is a two-column grid: a 220px sidebar, full height, beside the content. The content
+is a 56px title row that stays put, then a scrolling column of rows up to 720px wide, 40px in
+from the sidebar, with 56px of room under the last row. The search field's row is the title row's
+56px, so the field and the title share a centre line. Only the column and, when it runs out of
+room, the section list scroll; the page itself never does.
 
 Spacing is an observed rhythm rather than an enforced scale: 2px between adjacent chrome
-buttons, 4px in the chrome flex line, 8–12px inside controls, 16–20px for panel padding, and a
-48px minimum breathing margin around the floating card. Setting rows are 12px vertical padding
-separated by hairlines, with the last row's border removed.
+buttons, 4px in the chrome flex line, 8–12px inside controls, 16px inside the Prompt, and 40px
+between the Settings sidebar and its column. Settings rows are 14px vertical padding with 24px
+between the name and the control (the Themes and Background lists keep 12px), separated by
+hairlines, with the last row's border removed.
 
 ### Named Rules
 
@@ -247,10 +272,10 @@ Surfaces do not float. Separation is done with 1px hairline borders and a single
 between the shell and field colours — nothing in the chrome or the panel body carries a shadow.
 
 A shadow appears in exactly one circumstance: something has floated above the application and
-taken over input. Today that is the settings panel, the right-click menu, the Go to URL
-prompt and the "not responding" dialog; tomorrow it is any dialog or overlay. The page-status
-surface is deliberately not on that list: when it stands in for SoundCloud's page it IS the
-page, so it is flat. For a dialog, two things arrive together — a
+taken over input. Today that is the right-click menu, the Go to URL prompt and the "not
+responding" dialog; tomorrow it is any dialog or overlay. The page-status surface and the
+Settings page are deliberately not on that list: when they stand in for SoundCloud's page they
+ARE the page, so they are flat. For a dialog, two things arrive together — a
 scrim dimming everything behind, and a two-layer shadow under the floating surface. A
 transient popup — the context menu — gets the shadow alone: it takes input, but any click
 dismisses it, and dimming the page for something that brief would read as noise.
@@ -278,9 +303,9 @@ Rectangles with two radii and nothing else.
 
 - **6px** on every control: chrome buttons, navigation items, inputs, selects, the panel's close
   button. Enough to read as a soft target, not enough to read as a pill.
-- **10px** on the surfaces that float: the settings card, the context menu and the Go to URL
-  prompt. The menu's 10px is its 6px item radius plus its 4px padding, so the corners are
-  concentric rather than a third number.
+- **10px** on the surfaces that float: the context menu and the Go to URL prompt. The menu's
+  10px is its 6px item radius plus its 4px padding, so the corners are concentric rather than a
+  third number. Settings is a page, not a floating surface, so it has no corner at all.
 
 There are no pills, no circles, no asymmetric corners, no clipping shapes, and no decorative
 geometry anywhere. Borders are always 1px and always the Hairline alpha token.
@@ -317,18 +342,33 @@ Chrome buttons are the signature component and set the tone for everything else.
 
 ### Navigation
 
-The settings rail — a vertical stack of section buttons, 2px apart.
+The Settings sidebar — 220px, full height, a Hairline down its right edge: the search field at
+its top (Settings search, below), then a vertical stack of section buttons, 2px apart, then the
+foot. The sections are words, no icons.
 
-- **Rest:** transparent, Muted Ink, 13px, left-aligned, 8px × 10px padding, 6px radius.
+- **Rest:** transparent, Muted Ink, 13px, left-aligned, 7px × 10px padding, 6px radius.
 - **Hover:** Hover Wash.
 - **Active:** Hover Wash plus Ink text at 600 weight. Weight, not colour, carries selection.
 - Labels are written out, never derived from a key. Capitalising identifiers produced "Lastfm";
   the section list now stores real names.
+- **While searching**, no section is shown as active: the column is showing matches, not a
+  section.
+- **The foot**, above a Hairline: "BetterSoundCloud" and the version running, in tabular figures,
+  then two links, GitHub and Report a problem, in 12px Muted Ink at line-height 1.6. They look like
+  links at rest — a quiet underline at 45% of their ink, 2px below — and go to Ink with a full
+  underline on hover.
 
 ### Inputs / Fields
 
 - **Style:** Field White background, 1px Hairline border, 6px radius, 6px × 8px padding, 13px
   text, 140px minimum width so a row of controls aligns down the right edge.
+- **Unit:** a number that counts something ("%") shows its unit in 12px Muted Ink beside the
+  field, and the field narrows to 120px so the control still spans 140px.
+- **Search:** the Field at 30px tall in the Settings sidebar's 56px top row, with a 15px stroked
+  magnifier inside its left edge in Muted Ink, the accent caret, and "Search settings" as its
+  placeholder in Muted Ink. While it is empty and unfocused, a key chip at its right says
+  "Ctrl+F" ("⌘F" on macOS); while it holds text, our own clear ✕ takes that place — a 22px button
+  with the Hover Wash, a 15px stroked cross — instead of Chromium's.
 - **Checkbox:** 16×16 native control with `accent-color` set to SoundCloud Orange — the second
   and last place the accent appears.
 - **Disabled:** 50% opacity and a `not-allowed` cursor, paired with the Overline badge in the
@@ -336,12 +376,63 @@ The settings rail — a vertical stack of section buttons, 2px apart.
 
 ### Cards / Containers
 
+The surfaces that float: the context menu, the Go to URL prompt and the "not responding" dialog.
+
 - **Corner Style:** 10px.
-- **Background:** Shell Grey, opaque, over a scrimmed page.
+- **Background:** Shell Grey, opaque, over a scrimmed page for a dialog, over the page itself for
+  the menu.
 - **Border:** 1px Hairline, in addition to the shadow — the border is what keeps the edge legible
   in dark mode where the shadow largely disappears.
-- **Internal Padding:** 10–16px in the header row, 16px × 20px in the content column.
+- **Internal Padding:** 16px in the Prompt, 4px in the menu.
 - **Shadow Strategy:** the Overlay shadow, per Elevation & Depth.
+- **Settings is not a card** (since 2026-11-14): it is a page, flat and opaque, with no corner,
+  border, shadow or scrim of its own.
+
+### Settings page
+
+Settings (`src/renderer/settings/Settings.svelte`), in a view of its own covering everything
+below our bar. It stands in for SoundCloud's page, like the page-status surface, rather than
+floating over it.
+
+- **Flat and opaque:** Shell Grey, no scrim, no shadow. Our 32px bar shows above it while it is
+  open, even when the user hid the bar.
+- **The title row:** 56px, the section's Title ("Search" while searching) 40px in from the
+  sidebar, and the close button at the window's top right: 28px square, 6px radius, a 15px cross
+  in Muted Ink, Danger Red with a white glyph on hover. The row stays put while the column scrolls
+  and gains a Hairline beneath it once rows pass under it.
+- **Rows:** the name (Body, line-height 1.4), the Explanation under it, then any timing note and
+  status line at Caption size; the control at the column's right edge, level with the name. A
+  Hairline between rows. The rows drawn by their own components — themes, the background,
+  plugins, the reset rows, the sign-in import — use the same 13px Explanation.
+- **Escape** clears a search first; with no search, it closes Settings.
+- **Focus:** every control on the page has the 2px `--bsc-focus` ring: inset on buttons, fields
+  and search matches, 2px outside on checkboxes and the foot's links.
+
+### Settings search
+
+The field at the top of the sidebar looks through the name and explanation of every setting,
+every theme and plugin, and the rows drawn by hand (the sign-in import, the reset buttons, the
+window's keys in Shortcuts). Every word typed must appear, in any order, ignoring case and
+accents.
+
+- **The matches take the column's place**, under the title "Search": a count line ("3 matches",
+  Caption, tabular figures), then the matches grouped by section, each group under the theme
+  list's group heading (13px, 600, Muted Ink, a Hairline beneath). A section with a match in a
+  name comes first, and within a section, matches by name come first; otherwise the order is the
+  sidebar's.
+- **Each match is a row you press:** the name at 14px, its explanation beneath at 13px Muted Ink,
+  a 15px chevron in Muted Ink at the right. The words searched for are 600 weight in Ink — weight,
+  never the accent, which marks state. The Hover Wash on hover, reaching 12px past the column at
+  the control radius so the text stays aligned; Hairlines between matches, inside that inset.
+- **Nothing found:** "Nothing matches “…”." at 14px, 600, then one Explanation line saying what
+  search looks through and suggesting a single word.
+- **Choosing a match** opens its section and lands on its row, scrolled to the middle, with focus
+  on its control (a radio group's chosen option, as Tab would land). When that control is
+  disabled, the row itself takes focus, ringed 2px in `--bsc-focus` 4px outside it at the control
+  radius, so the keyboard and a screen reader are where the eye is.
+- **Keys:** Ctrl+F (⌘F) focuses and selects the field from anywhere on the page; Enter takes the
+  first match; ↓ moves into the matches and ↑ / ↓ through them, ↑ from the first going back to the
+  field; Escape clears, and a second Escape closes Settings.
 
 ### Context Menu
 
@@ -371,7 +462,7 @@ The right-click menu over SoundCloud's page. It lives in its own transparent vie
 The Go to URL prompt, and the model for any small dialog that asks for one thing.
 
 - A 460px card at `top: 96px`, centred, 16px padding, the Overlay shadow, and — because it is a
-  dialog — the scrim. It enters with the settings panel's 180ms fly.
+  dialog — the scrim. It enters with the dialogs' 180ms fly (Motion).
 - A Body-size label, then one Field with the accent caret and a transparent "Go" button
   beside it, then a Caption help line beneath that doubles as the error line. Errors are
   written in Ink, not red, and say what to try; the field's text is reselected so the next
@@ -430,7 +521,7 @@ below. 360px wide, never more than two fifths of the window.
 - **Flat, because it does not take over input**: Shell Grey, one 1px Hairline down its left edge,
   no shadow, no scrim. It is a pane, not a dialog.
 - **Header**: the track's title (Title, 15px 600, ellipsized), the uploader in Caption beneath, and
-  the settings panel's close button (Danger Red on hover).
+  the Settings close button (Danger Red on hover).
 - **Lines**: the Lyrics Exception's 20px. Every line is Muted Ink; the line being sung is Ink at 600. Weight and ink carry it — no accent, no bar, no glow, no scale. Colour changes over 160ms
   ease-out; nothing else moves but the scroll. The current line rests a third of the way down,
   reached with a smooth scroll. A pause between lines is a 24px Hairline rest that widens to 48px
@@ -601,7 +692,8 @@ the same bar, the same point, the same tag, so the two plugins read as one famil
 
 A setting whose feature does not exist yet renders as a full row — label, help text, and a real
 control — with the control disabled and an Overline badge reading **NOT IMPLEMENTED YET** beneath
-the help text. The label drops to Ghost Ink.
+the help text. The label drops to Ghost Ink. A checkbox is drawn unchecked whatever its default,
+so it never claims that something which does not exist yet is on.
 
 This exists because the settings schema is written ahead of the features, and a toggle that
 silently does nothing is worse than one that admits it. It is the clearest visual expression of
@@ -699,7 +791,7 @@ things the user switches on that act on their behalf.
 - **Asking first.** Ticking a plugin from the user's folder does not tick it: a confirmation opens
   inside that row — Field White behind a Hairline, 6px radius, inset rather than floating — with
   the permissions again in Ink at 13px, one honest sentence about trust, and **Turn on** / Cancel.
-  Not a dialog on top of the settings dialog: the question belongs to the row. Escape closes it
+  Not a dialog on top of Settings: the question belongs to the row. Escape closes it
   and only it. **Turn on** is the default, at 600 weight, because inside a Field White box the
   tonal step that marks a default elsewhere disappears.
 - **The footer** holds "Open plugins folder" and the plain statement of what the separate process
@@ -766,10 +858,12 @@ show the focus ring. The authors' guide says so; the shipped themes meet 3:1.
 
 ### Motion
 
-One motion pattern, used only for modality. The settings panel enters with a 180ms
-`cubic-bezier` ease-out — a 14px upward fly paired with a fade — while the scrim fades in over
-the same duration. Exit reverses it. `prefers-reduced-motion: reduce` sets the duration to 0
-rather than substituting a different animation.
+One motion pattern, used only for modality. A dialog — the Go to URL prompt, the "not
+responding" dialog — enters with a 180ms `cubic-bezier` ease-out — a 14px upward fly paired with
+a fade — while the scrim fades in over the same duration. Settings, a page rather than a dialog,
+fades in and out as a whole over the same 180ms, with no fly: nothing floats, so nothing rises.
+`prefers-reduced-motion: reduce` sets the duration to 0 rather than substituting a different
+animation.
 
 Everything else is instant. Hover states have no transition; the wash appears on the frame it is
 needed.
@@ -796,12 +890,14 @@ it), the lyrics pane, the player buttons — whichever are there. While Settings
 only between Settings and the bar.
 
 - **Landing in one of our views draws the ring**: on the control it last had, the one it marks
-  `data-bsc-focus-first` (Settings: the section showing), or its first. `focus({ focusVisible:
+  `data-bsc-focus-first` (Settings: the section showing, or the search field while searching),
+  or its first. `focus({ focusVisible:
 true })`, because a view last used with the mouse draws no ring for a plain `focus()`.
 - **Landing on SoundCloud's page only focuses it**; Tab then goes through the page's own controls.
 - **Closing Settings gives focus back** to where it came from, usually the bar's Settings button.
 - **Settings → Shortcuts lists both keys**, as two rows with key chips: Field White behind a
-  Hairline, 6px radius, the system font at 12px.
+  Hairline, 6px radius, the system font at 12px. The same chip, tighter and in Muted Ink, is the
+  search field's "Ctrl+F" hint.
 
 ### Forced colours
 
