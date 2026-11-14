@@ -62,6 +62,10 @@ const api: ChromeApi = {
   /** Themes available on disk right now, for the theme picker. Read-only. */
   listThemes: () => ipcRenderer.invoke(CH.themesList) as Promise<ThemeSummary[]>,
   onThemesChanged: (cb: (themes: ThemeSummary[]) => void) => subscribe(CH.themesChanged, cb),
+  getThemePictures: () =>
+    ipcRenderer.invoke(CH.themePicturesGet) as Promise<Record<string, string>>,
+  onThemePicturesChanged: (cb: (pictures: Record<string, string>) => void) =>
+    subscribe(CH.themePicturesChanged, cb),
   copyTheme: (id: string) => ipcRenderer.invoke(CH.themeCopy, id) as Promise<{ error: string }>,
   openThemesFolder: () => ipcRenderer.send(CH.themesOpenFolder),
   openThemeFile: (id: string) => ipcRenderer.send(CH.themeOpenFile, id),
@@ -94,6 +98,9 @@ const api: ChromeApi = {
   getSafeMode: () => ipcRenderer.invoke(CH.safeModeGet) as Promise<boolean>,
   getGlassStatus: () => ipcRenderer.invoke(CH.glassStatusGet) as Promise<GlassStatus>,
   getWidevineSkipped: () => ipcRenderer.invoke(CH.widevineSkippedGet) as Promise<boolean>,
+  getSettingsAtLaunch: () =>
+    ipcRenderer.invoke(CH.settingsAtLaunch) as Promise<Partial<Settings>>,
+  restartApp: () => ipcRenderer.send(CH.appRestart),
   resetSettings: () => ipcRenderer.invoke(CH.settingsReset) as Promise<boolean>,
   clearSiteData: () => ipcRenderer.invoke(CH.siteDataClear) as Promise<boolean>,
   importBrowserSession: () =>

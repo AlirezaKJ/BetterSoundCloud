@@ -104,8 +104,8 @@ src/preload/    chrome.ts   -> window.bsc for OUR views (contextBridge)
 src/renderer/   Svelte 5. One folder per view, each with index.html + main.ts + Component.svelte.
                 tokens.css (design tokens), lib/ (shared components)
 src/shared/     Pure TypeScript shared by main, preload and renderer. No Electron, no DOM.
-resources/      Shipped at runtime: engine.bin (ad blocker), themes/, plugins/, minimal-nav.css,
-                soundcloud-palette-{dark,light}.css (§17), icon.png
+resources/      Shipped at runtime: engine.bin (ad blocker), themes/, theme-pictures/ (§17),
+                plugins/, minimal-nav.css, soundcloud-palette-{dark,light}.css (§17), icon.png
 scripts/        Blocker engine build, VMP signing hooks, the packaged smoke check, the fuse check,
                 the Electron pin check (verify-electron.mjs), the backlog page (todo-overview.mjs)
 docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CUSTOM_PLUGINS.md,
@@ -131,6 +131,7 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CU
 | `main/content-css.ts`              | `buildContentCss()`: the one stylesheet injected into SoundCloud's page (pure, tested)                                                                             |
 | `main/window-glass.ts`             | Loads the Windows addon and enables or disables the native backdrop (§17)                                                                                          |
 | `main/themes.ts`                   | `listThemes()`, `findTheme()`, hot reload (`watchUserThemes`), editable copies, `soundCloudPaletteCss()`; reads `resources/themes/` and `<userData>/themes/` (§17) |
+| `main/theme-pictures.ts`           | A picture of SoundCloud's page wearing each theme for the gallery: shipped ones, then the user's own, taken a few seconds after a theme is on screen (§17)         |
 | `main/background.ts`               | The Background setting's own picture: the open dialog, shrinking it to our JPEG in the profile, `pictureDataUri()`, `pictureThumbnail()` (§17)                     |
 | `main/chrome-theme.ts`             | A theme's `chrome` sections into our own views: `themeChromeView()`, `setChromeTheme()`                                                                            |
 | `main/blocker.ts` + `net-rules.ts` | Ad/tracker blocking and the never-filter allowlist                                                                                                                 |
@@ -154,6 +155,9 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CU
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `shared/ipc.ts`             | `CH` (every channel name), `ChromeApi` (the `window.bsc` type), `NavState`, `WindowState`                                                                                            |
 | `shared/settings-schema.ts` | `SETTINGS`, `SECTIONS`, `Settings`, `SettingKey`, `coerce`, `coerceAll`, `defaults`                                                                                                  |
+| `shared/changelog.ts`       | `changelogEntry()`: one version's entry of CHANGELOG.md as plain blocks, for Settings → About's "What's new" (never markup)                                                          |
+| `shared/theme-pictures.ts`  | `pictureBox()`, `composeLayers()` (our views' captures into one picture of the whole window), `mostlyOneColour()` (a page that has not drawn yet)                                    |
+| `shared/settings-search.ts` | Search in Settings: `searchSettings()` (every word, name matches first), `markMatches()`, `OTHER_ENTRIES` (the buttons and keys that are not schema rows)                            |
 | `shared/now-playing.ts`     | `PlayerReading`, `NowPlaying`, `readNowPlaying()` and its cleaners                                                                                                                   |
 | `shared/page-theme.ts`      | `PageTheme`, `detectPageTheme()`, `overlayTheme()` (a theme's `@mode` beats SoundCloud's setting)                                                                                    |
 | `shared/context-menu.ts`    | `ContextMenuRequest`, `CONTEXT_MENU_ACTIONS`, `cleanUrl`, `shortUrl`, `elide`                                                                                                        |
@@ -184,9 +188,9 @@ views composited above it. Everything is held on the `Shell` object (`src/main/w
 
 | `Shell` field | Renderer entry          | Preload       | Lifetime                                                                                                                                                                                                        |
 | ------------- | ----------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `header`      | `renderer/header`       | `chrome.cjs`  | Always. Hidden (`setVisible(false)`) while SoundCloud owns the top                                                                                                                                              |
+| `header`      | `renderer/header`       | `chrome.cjs`  | Always. Hidden (`setVisible(false)`) while SoundCloud owns the top, except while Settings is open                                                                                                               |
 | `content`     | soundcloud.com          | `content.cjs` | Always. Loads `https://soundcloud.com/discover` once Widevine is ready (`loadSoundCloud`)                                                                                                                       |
-| `settings`    | `renderer/settings`     | `chrome.cjs`  | Created on open, destroyed on close (`toggleSettings`/`closeSettings`)                                                                                                                                          |
+| `settings`    | `renderer/settings`     | `chrome.cjs`  | Created on open, destroyed on close (`toggleSettings`/`closeSettings`); a page over everything below our bar, which shows while it is open                                                                      |
 | `embedded`    | `renderer/embedded`     | `chrome.cjs`  | Exists while `appearance.hideMenuBar` is on; window buttons over SoundCloud's header                                                                                                                            |
 | `player`      | `renderer/player`       | `chrome.cjs`  | Exists while `appearance.playerButtons` is on; buttons at the right end of SoundCloud's play bar                                                                                                                |
 | `contextMenu` | `renderer/context-menu` | `chrome.cjs`  | Created once (`attachContextMenu`), hidden between uses                                                                                                                                                         |
@@ -225,7 +229,14 @@ Rules that hold this together:
 - **While a page status hides SoundCloud's page, our own bar comes back** and the `embedded` and
   `player` overlays hide: there is no SoundCloud header or play bar under them. `layout()` derives
   this from `hidesPage(shell.pageStatus)`. A hang is the exception — it is a dialog over a page
-  that is still there, like settings.
+  that is still there.
+- **While Settings is open, our own bar shows above it** whatever the bar setting says
+  (`barShows` in `layout()`), so the window can always be moved and closed and the gear closes
+  it, and Settings always sits at `HEADER_HEIGHT`. The bar is laid over the top of SoundCloud's
+  page instead of pushing it down: `content` keeps its bounds, or the page would jump under
+  Settings as it fades. The window buttons over SoundCloud's header hide under it, and F6's
+  "bar" is ours (`viewFor`). Settings is opaque, so the Visualizer's strip and view of its own
+  count as not drawn while it is open, and the engine stops listening for them (§22).
 - `BaseWindow` does not own its views: the `closed` handler in `index.ts` closes each view's
   `webContents` explicitly. A new view goes in that list.
 - Closing hides the window, keeping playback alive, on macOS always and elsewhere while "Minimize
@@ -269,54 +280,57 @@ type-only imports are fine.
 `window.bsc` (type `ChromeApi`, implemented in `src/preload/chrome.ts`) exists only in our own
 views:
 
-| Method                                                | Kind           | Main accepts it from (sender check)                                                                    |
-| ----------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------ |
-| `platform`                                            | value          | —                                                                                                      |
-| `minimize`, `maximizeToggle`, `close`                 | send           | `fromChrome` = header, embedded                                                                        |
-| `back`, `forward`, `reload`, `stop`                   | send           | `fromChrome`; `stop` while `NavState.loading` (the main frame is loading)                              |
-| `toggleSettings`, `toggleMenuBar`                     | send           | `fromChrome`                                                                                           |
-| `closeSettings`                                       | send           | the settings view only                                                                                 |
-| `getSettings`, `setSetting`, `listThemes`             | invoke         | `fromSettingsUi` = header, embedded, settings                                                          |
-| `copyTheme`, `openThemesFolder`, `openThemeFile`      | invoke/send    | `fromSettingsUi`; none takes a path                                                                    |
-| `getBackgroundPicture`, `chooseBackgroundPicture`     | invoke         | `fromSettingsUi`; main shows the dialog, so no path ever crosses IPC                                   |
-| `onThemesChanged`                                     | subscribe      | pushed to the settings view when the themes folder changes                                             |
-| `contextMenuAction`, `goToUrl`, `closeContextMenu`    | send/invoke    | the context-menu view only                                                                             |
-| `getNowPlaying`                                       | invoke         | `fromOurViews` = header, settings, embedded, player, contextMenu, status, lyrics, showcase, visualView |
-| `onNavState`                                          | subscribe      | pushed to header                                                                                       |
-| `onWindowState`                                       | subscribe      | pushed to header, embedded                                                                             |
-| `onSettingsChanged`                                   | subscribe      | pushed to header, settings (`broadcastSettings`)                                                       |
-| `onPageTheme`                                         | subscribe      | pushed to embedded, player, the Visualizer strip (and on their load)                                   |
-| `onContextMenu`                                       | subscribe      | pushed to the context-menu view                                                                        |
-| `onNowPlaying`                                        | subscribe      | pushed to all nine of our views (`broadcastNowPlaying`)                                                |
-| `toggleLyrics`                                        | send           | `fromChrome`, or the player-bar view                                                                   |
-| `closeLyrics`, `retryLyrics`, `nudgeLyrics`           | send           | the lyrics view only; a nudge must be exactly ±0.5                                                     |
-| `getLyrics`                                           | invoke         | the lyrics view or the showcase                                                                        |
-| `onLyrics`                                            | subscribe      | pushed to the lyrics view and the showcase (`onLyricsChange`)                                          |
-| `onLyricsShown`                                       | subscribe      | pushed to the player view: whether the pane is open                                                    |
-| `openShowcase`                                        | send           | `fromChrome`, or the player-bar view                                                                   |
-| `closeShowcase`                                       | send           | the showcase view only                                                                                 |
-| `onAudioConfig`, `reportAudio`                        | subscribe/send | the audio engine's view only (`isAudioView`); reports are shaped by `readAudioReport`                  |
-| `reportVisualFrame`                                   | send           | the audio engine's view only (`isAudioView`); every frame shaped by `readVisualFrame`                  |
-| `onVisualFrame`                                       | subscribe      | to the showcase, the strip and the view of its own while drawn, ~60 a second; channels for MilkDrop    |
-| `getVisualizer`, `onVisualizer`                       | invoke/sub     | the showcase, the strip or the view (`fromShowcase`, `fromVisualStrip`, `fromVisualView`)              |
-| `toggleVisualView`                                    | send           | `fromChrome`, or the player-bar view                                                                   |
-| `closeVisualView`                                     | send           | the view of its own only                                                                               |
-| `reportVisualViewLook`                                | send           | the view of its own only; one of its looks, so the engine sends MilkDrop the channels                  |
-| `onVisualViewState`                                   | subscribe      | pushed to the player view: whether the view of its own can open, and whether it is open                |
-| `pageStatusAction`                                    | send           | the status view only; re-checked against `shell.pageStatus`                                            |
-| `onPageStatus`                                        | subscribe      | pushed to the status view (on its load and on every change)                                            |
-| `listPlugins`, `setPluginEnabled`, `setPluginSetting` | invoke         | `fromSettingsUi`; the two setters answer `{ plugins, error }`                                          |
-| `pluginAction`, `openPluginsFolder`                   | send           | `fromSettingsUi`                                                                                       |
-| `onPluginsChanged`                                    | subscribe      | pushed to the settings view while it is open (`broadcastPlugins`)                                      |
-| `getSafeMode`                                         | invoke         | `fromSettingsUi`; `true` when started with `--safe-mode`                                               |
-| `getGlassStatus`                                      | invoke         | `fromSettingsUi`; `GlassStatus`: whether Glass is under the window, or why not                         |
-| (no method) `CH.focusArrived`                         | pushed         | to the view F6 moved focus into; the chrome preload itself puts focus on a control                     |
-| `getWidevineSkipped`                                  | invoke         | `fromSettingsUi`; `true` after "Continue without Widevine", until Widevine arrives                     |
-| `resetSettings`, `clearSiteData`                      | invoke         | the settings view only (`fromSettingsView`); each answers whether it worked                            |
-| `getPresenceStatus`, `retryPresence`                  | invoke/send    | `fromSettingsUi`                                                                                       |
-| `onPresenceStatus`                                    | subscribe      | pushed to the settings view while it is open (`broadcastPresenceStatus`)                               |
-| `getUpdateStatus`, `updateAction`                     | invoke/send    | `fromSettingsUi`; the action must pass `isUpdateAction`                                                |
-| `onUpdateStatus`                                      | subscribe      | pushed to the settings view while it is open (`broadcastUpdateStatus`)                                 |
+| Method                                                | Kind           | Main accepts it from (sender check)                                                                      |
+| ----------------------------------------------------- | -------------- | -------------------------------------------------------------------------------------------------------- |
+| `platform`                                            | value          | —                                                                                                        |
+| `minimize`, `maximizeToggle`, `close`                 | send           | `fromChrome` = header, embedded                                                                          |
+| `back`, `forward`, `reload`, `stop`                   | send           | `fromChrome`; `stop` while `NavState.loading`; `reload` from the settings view too ("Reload SoundCloud") |
+| `toggleSettings`, `toggleMenuBar`                     | send           | `fromChrome`                                                                                             |
+| `closeSettings`                                       | send           | the settings view only                                                                                   |
+| `getSettings`, `setSetting`, `listThemes`             | invoke         | `fromSettingsUi` = header, embedded, settings                                                            |
+| `copyTheme`, `openThemesFolder`, `openThemeFile`      | invoke/send    | `fromSettingsUi`; none takes a path                                                                      |
+| `getBackgroundPicture`, `chooseBackgroundPicture`     | invoke         | `fromSettingsUi`; main shows the dialog, so no path ever crosses IPC                                     |
+| `getThemePictures`, `onThemePicturesChanged`          | invoke/sub     | `fromSettingsUi`; `data:` JPEGs by theme id, pushed to the settings view when one is taken (§17)         |
+| `onThemesChanged`                                     | subscribe      | pushed to the settings view when the themes folder changes                                               |
+| `contextMenuAction`, `goToUrl`, `closeContextMenu`    | send/invoke    | the context-menu view only                                                                               |
+| `getNowPlaying`                                       | invoke         | `fromOurViews` = header, settings, embedded, player, contextMenu, status, lyrics, showcase, visualView   |
+| `onNavState`                                          | subscribe      | pushed to header                                                                                         |
+| `onWindowState`                                       | subscribe      | pushed to header, embedded                                                                               |
+| `onSettingsChanged`                                   | subscribe      | pushed to header, settings (`broadcastSettings`)                                                         |
+| `onPageTheme`                                         | subscribe      | pushed to embedded, player, the Visualizer strip (and on their load)                                     |
+| `onContextMenu`                                       | subscribe      | pushed to the context-menu view                                                                          |
+| `onNowPlaying`                                        | subscribe      | pushed to all nine of our views (`broadcastNowPlaying`)                                                  |
+| `toggleLyrics`                                        | send           | `fromChrome`, or the player-bar view                                                                     |
+| `closeLyrics`, `retryLyrics`, `nudgeLyrics`           | send           | the lyrics view only; a nudge must be exactly ±0.5                                                       |
+| `getLyrics`                                           | invoke         | the lyrics view or the showcase                                                                          |
+| `onLyrics`                                            | subscribe      | pushed to the lyrics view and the showcase (`onLyricsChange`)                                            |
+| `onLyricsShown`                                       | subscribe      | pushed to the player view: whether the pane is open                                                      |
+| `openShowcase`                                        | send           | `fromChrome`, or the player-bar view                                                                     |
+| `closeShowcase`                                       | send           | the showcase view only                                                                                   |
+| `onAudioConfig`, `reportAudio`                        | subscribe/send | the audio engine's view only (`isAudioView`); reports are shaped by `readAudioReport`                    |
+| `reportVisualFrame`                                   | send           | the audio engine's view only (`isAudioView`); every frame shaped by `readVisualFrame`                    |
+| `onVisualFrame`                                       | subscribe      | to the showcase, the strip and the view of its own while drawn, ~60 a second; channels for MilkDrop      |
+| `getVisualizer`, `onVisualizer`                       | invoke/sub     | the showcase, the strip or the view (`fromShowcase`, `fromVisualStrip`, `fromVisualView`)                |
+| `toggleVisualView`                                    | send           | `fromChrome`, or the player-bar view                                                                     |
+| `closeVisualView`                                     | send           | the view of its own only                                                                                 |
+| `reportVisualViewLook`                                | send           | the view of its own only; one of its looks, so the engine sends MilkDrop the channels                    |
+| `onVisualViewState`                                   | subscribe      | pushed to the player view: whether the view of its own can open, and whether it is open                  |
+| `pageStatusAction`                                    | send           | the status view only; re-checked against `shell.pageStatus`                                              |
+| `onPageStatus`                                        | subscribe      | pushed to the status view (on its load and on every change)                                              |
+| `listPlugins`, `setPluginEnabled`, `setPluginSetting` | invoke         | `fromSettingsUi`; the two setters answer `{ plugins, error }`                                            |
+| `pluginAction`, `openPluginsFolder`                   | send           | `fromSettingsUi`                                                                                         |
+| `onPluginsChanged`                                    | subscribe      | pushed to the settings view while it is open (`broadcastPlugins`)                                        |
+| `getSafeMode`                                         | invoke         | `fromSettingsUi`; `true` when started with `--safe-mode`                                                 |
+| `getSettingsAtLaunch`                                 | invoke         | `fromSettingsUi`; the `applies: 'restart'` settings as this launch read them                             |
+| `restartApp`                                          | send           | the settings view only; `relaunchAfterQuit()` then quit ("Restart now")                                  |
+| `getGlassStatus`                                      | invoke         | `fromSettingsUi`; `GlassStatus`: whether Glass is under the window, or why not                           |
+| (no method) `CH.focusArrived`                         | pushed         | to the view F6 moved focus into; the chrome preload itself puts focus on a control                       |
+| `getWidevineSkipped`                                  | invoke         | `fromSettingsUi`; `true` after "Continue without Widevine", until Widevine arrives                       |
+| `resetSettings`, `clearSiteData`                      | invoke         | the settings view only (`fromSettingsView`); each answers whether it worked                              |
+| `getPresenceStatus`, `retryPresence`                  | invoke/send    | `fromSettingsUi`                                                                                         |
+| `onPresenceStatus`                                    | subscribe      | pushed to the settings view while it is open (`broadcastPresenceStatus`)                                 |
+| `getUpdateStatus`, `updateAction`                     | invoke/send    | `fromSettingsUi`; the action must pass `isUpdateAction`                                                  |
+| `onUpdateStatus`                                      | subscribe      | pushed to the settings view while it is open (`broadcastUpdateStatus`)                                   |
 
 Every `on…` returns an unsubscribe function. A new view that needs one of the gated methods must
 be added to that sender check, and to the matching broadcast list if it needs pushes.
@@ -352,8 +366,9 @@ Each view is `src/renderer/<entry>/{index.html, main.ts, <Name>.svelte}`.
   this CSP**: a view that shows artwork must add exactly that origin to its own `img-src`, nothing
   broader. The audio engine's view adds `'wasm-unsafe-eval'` to `script-src` for its pitch
   shifter (§21), which allows WebAssembly and nothing else; the showcase and the Visualizer's
-  view of its own add it too, for MilkDrop's presets (§22). `renderer-csp.test.ts` holds every
-  view to the standard policy or its one named exception.
+  view of its own add it too, for MilkDrop's presets (§22). Settings adds the artwork host for the
+  Discord card's preview and the Background's tile. `renderer-csp.test.ts` holds every view to the
+  standard policy or its one named exception.
 - Svelte 5 runes only: `$state`, `$derived`, `$effect`, `$props`. Event attributes (`onclick`), not
   `on:click`. Subscribe in `onMount` and return the cleanup:
 
@@ -410,14 +425,17 @@ Each view is `src/renderer/<entry>/{index.html, main.ts, <Name>.svelte}`.
 ### Design rules for our UI (full spec: `docs/DESIGN.md`)
 
 - Colour only through `--bsc-*` tokens in `src/renderer/tokens.css`; each is defined for light and
-  dark. A literal hex elsewhere is a bug — except `#fff` on the close button's danger hover, and
-  overlays that must match SoundCloud's own bar colours.
+  dark. A literal hex elsewhere is a bug — except `#fff` on the close button's danger hover and on
+  the switch's knob over the accent, the Light or dark pictures (`SettingFigure.svelte`), drawn in
+  each mode's own token values whatever the panel is in, and overlays that must match SoundCloud's
+  own bar colours.
 - Theming contract: `--bsc-*` tokens plus `data-bsc-*` attributes on every themable region are the
   public API for user themes. Add `data-bsc-…` to new regions. Never rely on Svelte's hash classes.
   No Shadow DOM anywhere.
 - System font stack only, no webfonts. Nothing larger than 15px. Sizes: 15 title, 14 body, 13
   label, 12 caption, 11 uppercase overline (only for "Not implemented yet").
-- Two radii: 6px for controls, 10px for floating surfaces. One shadow
+- Two radii: 6px for controls, 10px for floating surfaces (a switch's knob and a slider's are
+  3px, concentric inside the 6px track; the one slider style is tokens.css's). One shadow
   (`0 12px 40px rgb(0 0 0 / 35%), 0 2px 8px rgb(0 0 0 / 20%)`), only on things that float and take
   input; dialogs add the scrim `rgb(0 0 0 / 45%)`, transient menus do not.
 - Chrome buttons: 30×26, transparent at rest, `--bsc-bg-hover` wash on hover, no transition,
@@ -538,17 +556,35 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
 `src/shared/settings-schema.ts` is the single source of truth. **Adding a setting is one entry in
 `SETTINGS`** — the type, the settings form, defaults and validation all follow.
 
-- Kinds: `boolean`, `number` (`min`, `max`, `step`), `enum` (`options`, `labels`), `string`. An
-  enum drawn as an ordinary row must label every option, or the dropdown shows raw values
-  (pinned).
+- Kinds: `boolean` (drawn as a switch, `Switch.svelte`), `number` (`min`, `max`, `step`; `unit`
+  prints "%" beside it, `slider: true` draws the Background's slider instead of a typed field),
+  `enum` (`options`, `labels`; `tiles: true` draws a picture per option instead of a dropdown),
+  `string`. An enum drawn as an ordinary row must label every option, or the dropdown shows raw
+  values (pinned).
+- **How a row reads** (the maintainer's choices, 2026-11-14): `group` puts a heading over a run of
+  settings in their section (a group's settings must be next to each other in the schema);
+  `figure` draws the window beside the row as all the layout settings have it now, the part
+  this setting controls in Ink (`SettingFigure.svelte`), so the drawings agree and switching one
+  changes them all. A setting changed from its
+  default gets a 2px accent mark in the gutter and a "Reset" beside its name. One with `applies`
+  offers "Restart now" (`restartApp`, once its value differs from `getSettingsAtLaunch`) or
+  "Reload SoundCloud" (changed while Settings is open).
+- **Ctrl+, (⌘, on macOS) opens and closes Settings** from any view (`watchSettingsKey` in
+  index.ts, read in `before-input-event` like F6); while Settings has the keyboard it hears the
+  key itself, so it fades out. Settings → Shortcuts lists it, with Ctrl+F.
+- **About** is a section with no settings (`about` in `SECTIONS`, `About.svelte`): the version and
+  the update line, the links, "What's new" from CHANGELOG.md (bundled with `?raw`, read by
+  `changelogEntry`), what it is built with. **Discord** opens with a preview of the card friends
+  see (`DiscordCard.svelte`), built by the same `buildActivity` that sends it, in our colours.
 - `wired: false` while nothing reads the setting yet; the panel shows it disabled with "Not
   implemented yet". When you make main read it, remove `wired: false` and update the pinned list
   in `settings-schema.test.ts`.
 - `applies: 'reload' | 'restart'` when the effect is not immediate. Never write timing into `help`
   prose — a test forbids it.
-- The **Themes** section is half schema-driven: `Settings.svelte` draws its schema rows (the
-  `appearance.minimalNavigation` switch) with the same `settingRow` snippet as every other section,
-  then `Background.svelte` the background group, then `Themes.svelte` the theme list. A setting a
+- The **Themes** section is half schema-driven: `Themes.svelte` draws the theme list first (the
+  maintainer's order, 2026-11-14), then `Settings.svelte` the schema rows (Minimal navigation,
+  Glass, Glass tint) under "With every theme" with the same `settingRow` snippet as every other
+  section, then `Background.svelte` the background group. A setting a
   component draws says so with `drawnBy: 'themes' | 'background'` and gets no ordinary row; it is
   still stored, coerced and defaulted from the schema. Only the Themes section may use it (pinned).
 - **Stored values carry a version** (`SETTINGS_VERSION`). When a setting's meaning changes, bump
@@ -556,6 +592,22 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
   it once on load and saves the result.
 - The **Plugins** section is not schema-driven: plugins are found on disk, so `Settings.svelte`
   renders `Plugins.svelte` for it, fed by `listPlugins` / `onPluginsChanged` (§16).
+- **Settings is a page** (decided by the maintainer 2026-11-14): a 220px sidebar (search, the
+  sections with a 15px line icon each, the version at its foot, which opens About) and one column of rows up to 720px wide, each
+  with its name, its `help` at 13px and its control. **A `help` is one or two short sentences**,
+  what the setting does and the one thing worth knowing, never a paragraph (the maintainer's
+  rule): every one was redrafted to it on that date.
+- **Search** (Ctrl+F) finds every setting by its label and `help`, the themes and plugins by
+  name and description and each plugin's own settings (read as a search starts; a plugin's
+  settings land on its switch while it is off, since they are drawn only while it is on), and
+  `OTHER_ENTRIES` (shared/settings-search.ts) for the buttons and keys components draw. Choosing a match opens its section and focuses the
+  row's control, found by a selector: `data-bsc-setting={key}` on schema rows (and Background's
+  sliders), `data-bsc-theme`, `data-bsc-plugin`, `data-bsc-plugin-setting`, `data-bsc-theme-list`,
+  `data-bsc-background`,
+  or an `OTHER_ENTRIES` target. A row drawn without one of these cannot be found; a new
+  component row adds its attribute, and its entry if it is not a schema setting
+  (`settings-search-rows.test.ts` reads the components to keep the two equal). Escape clears a
+  search first, then closes.
 - `statusFrom: 'discord'` puts a live line under the control saying whether the feature behind
   it is working right now (`renderer/settings/DiscordStatus.svelte`, words from
   `describePresenceStatus`). Use it wherever a ticked box can be true while the feature cannot
@@ -690,7 +742,10 @@ context menu have the shortcut; embedded and player do not).
   (no shared chunk) when a build exists — run `npx electron-vite build` after touching preloads.
 - **Renderers in a browser:** open `http://localhost:5173/<entry>/index.html` from the dev server,
   define a mock `window.bsc`, then `await import('/<entry>/main.ts?remount=1')` to mount against
-  the mock. Note that synthetic Enter does not submit forms there; use `form.requestSubmit()`.
+  the mock. `electron-vite dev --rendererOnly` still starts the app on the dev profile (measured
+  2026-11-14); to serve the renderers with no app at all, run Vite's own `createServer` with
+  `root: 'src/renderer'`, the svelte plugin (`configFile: svelte.config.js`) and the `@shared` /
+  `@renderer` aliases. Note that synthetic Enter does not submit forms there; use `form.requestSubmit()`.
 - **Main-process paths in the real app** are verified from the dev log tags above.
 - **The packaged app** is checked by `npm run smoke:packaged` (`scripts/smoke-packaged.mjs`): it
   launches `release/win-unpacked` with `--user-data-dir` on a temporary profile — Electron honours
@@ -830,6 +885,22 @@ Rules that hold this together:
   `resources/minimal-nav.css`, read by `minimalNavigationCss()`). `buildContentCss` puts it right
   after the theme and before the layout rules, so it layers on any theme. It was a theme until
   settings version 2; `upgradeValues` moves a stored `minimal-nav` theme onto the switch.
+- **The gallery shows each theme as a picture of SoundCloud wearing it** (the maintainer's choice,
+  2026-11-14; `main/theme-pictures.ts`). The built-in themes ship one (`resources/theme-pictures`):
+  **the maintainer's own screenshots** (2026-11-15), the app full screen at 1920×1080, shrunk to a
+  720px JPEG at quality 82. They replaced generated ones the maintainer did not like; there is no
+  script for them. When a built-in theme changes, ask the maintainer for a new screenshot. A
+  picture is **the whole window, never a corner of it** (the maintainer, 2026-11-14: "the whole
+  interface. not zoomed in"): SoundCloud's page and our bar over it while it shows, each captured
+  where `layout()` put it and put together (`composeLayers`); Settings, the panels and overlays
+  are left out. Once a theme has been on, the user's own window takes its picture's place: 4 s
+  after a theme change or a load, while that theme is still on, the page shows (no page status,
+  no glass, a visible window) and its CSS (or the framing, `FRAMING`) differs from the last
+  picture's, main captures, skips a page that is still one flat colour, and stores a 720px JPEG
+  in `<userData>/theme-pictures`. The pictures never leave the computer. The cards are 16:9.
+  A window Windows reports as covered (behind others, the screen locked or asleep) cannot be
+  captured, "Current display surface not available for capture" (measured 2026-11-15): that
+  picture is taken at the next change instead.
 - **One setting, `appearance.theme`, in its own Settings section** (`Themes.svelte`, not a schema
   row). Changing it, or saving any file in the user's themes folder, re-applies everywhere at once:
   `watchUserThemes` (a 150ms trailing debounce) calls `applyLiveSettings`, which re-reads from disk.

@@ -25,7 +25,7 @@
       "kind": "boolean",
       "default": true,
       "label": "Read “Artist - Title” track names",
-      "help": "Many tracks are uploaded by a label or a fan, so the uploader isn’t the artist. This splits names like “Daft Punk - One More Time”. It can guess wrong when a title itself contains a dash."
+      "help": "Many tracks are uploaded by a label or a fan, so this takes the artist from names like “Daft Punk - One More Time”. It can guess wrong when a title itself contains a dash."
     },
     {
       "key": "apiKey",

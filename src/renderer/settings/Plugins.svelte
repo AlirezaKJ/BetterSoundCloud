@@ -5,6 +5,7 @@
   import StatusText from './StatusText.svelte'
   import EqualiserEditor from './EqualiserEditor.svelte'
   import PitchEditor from './PitchEditor.svelte'
+  import Switch from './Switch.svelte'
 
   /*
    * The Plugins section: every plugin, built in or dropped into the plugins folder.
@@ -213,7 +214,7 @@
               {#if setting.kind === 'equaliser' || setting.kind === 'pitch'}
                 <!-- A curve or a ruler needs the row's whole width: its name and help above, the
                      editor below. -->
-                <div class="setting wide">
+                <div class="setting wide" data-bsc-plugin-setting={setting.key}>
                   <div class="setting-label">
                     <span class="setting-name" id={`${id}-label`}>{setting.label}</span>
                     {#if setting.help}<p class="help">{setting.help}</p>{/if}
@@ -241,18 +242,16 @@
                   {/if}
                 </div>
               {:else}
-                <div class="setting">
+                <div class="setting" data-bsc-plugin-setting={setting.key}>
                   <div class="setting-label">
                     <label for={id}>{setting.label}</label>
                     {#if setting.help}<p class="help">{setting.help}</p>{/if}
                   </div>
                   {#if setting.kind === 'boolean'}
-                    <input
+                    <Switch
                       {id}
-                      type="checkbox"
                       checked={value === true}
-                      onchange={(e) =>
-                        setSetting(plugin.id, setting.key, e.currentTarget.checked)}
+                      onchange={(on: boolean) => setSetting(plugin.id, setting.key, on)}
                     />
                   {:else if setting.kind === 'choice'}
                     <select
@@ -294,12 +293,11 @@
       </div>
 
       <div class="control">
-        <input
+        <Switch
           id={`plugin-${plugin.source}-${plugin.id}`}
-          type="checkbox"
           checked={plugin.enabled}
           disabled={!canToggle}
-          onchange={(e) => toggle(plugin, e.currentTarget)}
+          onchange={(_on: boolean, box: HTMLInputElement) => toggle(plugin, box)}
         />
       </div>
     </div>
@@ -368,6 +366,13 @@
     margin-top: 8px;
   }
 
+  /* What it does: read, not glanced at, like every row's explanation in Settings (13px). */
+  .help {
+    max-width: 70ch;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
   .problem {
     color: var(--bsc-text-primary);
   }
@@ -403,12 +408,6 @@
 
   .control {
     flex: 0 0 auto;
-  }
-
-  input[type='checkbox'] {
-    width: 16px;
-    height: 16px;
-    accent-color: var(--bsc-accent);
   }
 
   input:disabled {

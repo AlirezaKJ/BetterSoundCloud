@@ -23,7 +23,9 @@ const EXCEPTIONS: Record<string, string> = {
   // Both draw MilkDrop (Butterchurn), whose presets compile to WebAssembly.
   showcase: WASM(ARTWORK(STANDARD)),
   'visual-view': WASM(ARTWORK(STANDARD)),
-  audio: WASM(STANDARD)
+  audio: WASM(STANDARD),
+  // The playing track's artwork, on the Discord card's preview and the Background's tile.
+  settings: ARTWORK(STANDARD)
 }
 
 const RENDERER = join(import.meta.dirname, '../renderer')

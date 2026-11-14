@@ -41,6 +41,8 @@
 
   let values = $state<Settings | null>(null)
   let themes = $state<ThemeSummary[]>([])
+  /** The playing track's artwork, for the artwork tile's picture; empty while nothing plays. */
+  let artwork = $state('')
   let thumbnail = $state<string | null>(null)
   let problem = $state('')
   let choosing = $state(false)
@@ -60,6 +62,12 @@
       ? backgroundSource(values['appearance.background'], needing !== null)
       : 'none'
   )
+  /** What the chosen tile does, or why None cannot be chosen, under the tiles. */
+  const chosenHelp = $derived(
+    needing && !glassOn
+      ? `Not with ${needing.name}: the theme is made to sit on a background, so it shows the playing track’s artwork instead.`
+      : (SOURCES.find((option) => option.value === source)?.help ?? '')
+  )
 
   onMount(() => {
     // Subscribe first, then read, so no change can slip between the two.
@@ -76,9 +84,14 @@
       if (list as ThemeSummary[] | null) themes = list
     })
     void window.bsc.getBackgroundPicture().then((preview) => (thumbnail = preview))
+    const stopPlaying = window.bsc.onNowPlaying((np) => {
+      artwork = np?.artwork ?? ''
+    })
+    void window.bsc.getNowPlaying().then((np) => (artwork = np?.artwork ?? ''))
     return () => {
       stopSettings()
       stopThemes()
+      stopPlaying()
     }
   })
 
@@ -114,21 +127,19 @@
     </p>
   {/if}
 
-  <div class="list" role="radiogroup" aria-labelledby="background-group" data-bsc-background>
+  <!-- A tile per choice: a small page with the picture blurred and faded behind it, as the
+       Background draws it (the maintainer's choice, 2026-11-14). -->
+  <div class="tiles" role="radiogroup" aria-labelledby="background-group" data-bsc-background>
     {#each SOURCES as option (option.value)}
-      {@const id = `background-${option.value}`}
       {@const unavailable = glassOn || (option.value === 'none' && needing !== null)}
-      <div class="row" class:selected={source === option.value} class:unavailable>
-        <label for={id}>
-          <span class="name">{option.name}</span>
-          <span class="help">
-            {unavailable && !glassOn
-              ? `Not with ${needing?.name}: the theme is made to sit on a background, so it shows the playing track’s artwork instead.`
-              : option.help}
-          </span>
-        </label>
+      {@const image =
+        option.value === 'artwork'
+          ? artwork
+          : option.value === 'picture'
+            ? (thumbnail ?? '')
+            : ''}
+      <label class="tile" class:chosen={source === option.value} class:unavailable>
         <input
-          {id}
           type="radio"
           name="background"
           value={option.value}
@@ -136,30 +147,43 @@
           checked={source === option.value}
           onchange={() => set('appearance.background', option.value)}
         />
-
-        {#if option.value === 'picture'}
-          <div class="picture">
-            {#if thumbnail}
-              <img src={thumbnail} alt="Your background" />
+        <span class="tile-picture">
+          <span class="page" class:empty={!image && option.value !== 'none'}>
+            {#if image}
+              <img class="behind" src={image} alt="" referrerpolicy="no-referrer" />
+            {:else if option.value !== 'none'}
+              <span class="missing"
+                >{option.value === 'artwork' ? 'Nothing playing' : 'No picture yet'}</span
+              >
             {/if}
-            <div>
-              <!-- Not while Glass is on: choosing also selects the picture, which would not show. -->
-              <button type="button" disabled={choosing || glassOn} onclick={choosePicture}>
-                {thumbnail ? 'Choose another picture…' : 'Choose a picture…'}
-              </button>
-              {#if !thumbnail}<p class="help">No picture chosen yet.</p>{/if}
-              {#if problem}<p class="problem" role="alert">{problem}</p>{/if}
-            </div>
-          </div>
-        {/if}
-      </div>
+            <svg viewBox="0 0 120 76" aria-hidden="true">
+              <rect class="bar" x="0" y="0" width="120" height="10" />
+              <rect class="block" x="22" y="20" width="16" height="16" />
+              <rect class="block" x="44" y="20" width="16" height="16" />
+              <rect class="block" x="66" y="20" width="16" height="16" />
+              <path class="line" d="M22 43h12M44 43h10M66 43h13M22 52h40M22 58h28" />
+              <rect class="bar" x="0" y="66" width="120" height="10" />
+            </svg>
+          </span>
+        </span>
+        <span class="tile-name">{option.name}</span>
+      </label>
     {/each}
+  </div>
+  {#if chosenHelp && !glassOn}<p class="intro">{chosenHelp}</p>{/if}
+
+  <div class="chooser">
+    <!-- Not while Glass is on: choosing also selects the picture, which would not show. -->
+    <button type="button" disabled={choosing || glassOn} onclick={choosePicture}>
+      {thumbnail ? 'Choose another picture…' : 'Choose a picture…'}
+    </button>
+    {#if problem}<p class="problem" role="alert">{problem}</p>{/if}
   </div>
 
   {#each SLIDERS as slider (slider.key)}
     {@const def = SETTINGS[slider.key]}
     {@const shown = dragging?.key === slider.key ? dragging.value : values[slider.key]}
-    <div class="slider" class:off={source === 'none'}>
+    <div class="slider" class:off={source === 'none'} data-bsc-setting={slider.key}>
       <div class="label">
         <label for={slider.key}>{def.label}</label>
         {#if 'help' in def && def.help}<p class="help">{def.help}</p>{/if}
@@ -172,6 +196,7 @@
         step={def.step}
         disabled={source === 'none'}
         value={values[slider.key]}
+        style:--bsc-range-fill={`${((shown - def.min) / (def.max - def.min)) * 100}%`}
         oninput={(e) => (dragging = { key: slider.key, value: e.currentTarget.valueAsNumber })}
         onchange={(e) => release(slider.key, e.currentTarget.valueAsNumber)}
       />
@@ -193,39 +218,21 @@
 
   .intro {
     margin: 8px 0 0;
-    max-width: 60ch;
-    font-size: 12px;
-    line-height: 1.4;
+    max-width: 70ch;
+    font-size: 13px;
+    line-height: 1.45;
     color: var(--bsc-text-secondary);
   }
 
-  .row {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    column-gap: 16px;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--bsc-border);
-  }
-
-  label {
+  .label {
     display: flex;
     flex-direction: column;
     gap: 2px;
     min-width: 0;
+  }
+
+  label {
     cursor: default;
-  }
-
-  .name {
-    font-size: 14px;
-  }
-
-  /* Weight, not colour, carries selection — the settings rail's rule. The radio carries the accent. */
-  .row.selected .name {
-    font-weight: 600;
-  }
-
-  .row.unavailable .name {
-    color: var(--bsc-text-disabled);
   }
 
   .help,
@@ -236,16 +243,16 @@
     color: var(--bsc-text-secondary);
   }
 
+  /* What it does: read, not glanced at, like every row's explanation in Settings (13px). */
+  .help {
+    max-width: 70ch;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
   .problem {
     margin-top: 6px;
     color: var(--bsc-text-primary);
-  }
-
-  input[type='radio'] {
-    width: 16px;
-    height: 16px;
-    margin: 2px 0 0;
-    accent-color: var(--bsc-accent);
   }
 
   input:focus-visible {
@@ -253,26 +260,136 @@
     outline-offset: 2px;
   }
 
-  .picture {
-    grid-column: 1 / -1;
+  /* The Light or dark tiles (Settings.svelte): a picture per choice, the chosen one ringed. */
+  .tiles {
     display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    margin-top: 10px;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 14px;
   }
 
-  .picture .help {
-    margin-top: 6px;
+  .tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    cursor: pointer;
   }
 
-  /* A control-radius preview behind a hairline, so a very dark or very light picture still has
-     an edge against the panel. */
-  img {
-    width: 120px;
-    height: 68px;
-    object-fit: cover;
-    border: 1px solid var(--bsc-border);
+  .tile.unavailable {
+    cursor: not-allowed;
+  }
+
+  .tile input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .tile-picture {
+    display: block;
+    padding: 3px;
+    border: 2px solid transparent;
     border-radius: var(--bsc-radius);
+  }
+
+  .tile:hover:not(.unavailable) .tile-picture {
+    border-color: var(--bsc-border);
+  }
+
+  .tile.chosen .tile-picture {
+    border-color: var(--bsc-accent);
+  }
+
+  .tile:has(input:focus-visible) .tile-picture {
+    outline: 2px solid var(--bsc-focus);
+    outline-offset: 3px;
+  }
+
+  .tile.unavailable .tile-picture {
+    opacity: 0.5;
+  }
+
+  .tile-name {
+    padding-left: 5px;
+    font-size: 13px;
+    color: var(--bsc-text-secondary);
+  }
+
+  .tile.chosen .tile-name {
+    color: var(--bsc-text-primary);
+    font-weight: 600;
+  }
+
+  .tile.unavailable .tile-name {
+    color: var(--bsc-text-disabled);
+  }
+
+  /* A small SoundCloud page, square like a print, with the picture blurred and faded behind its
+     rows: what the Background does, at a glance. */
+  .page {
+    position: relative;
+    display: block;
+    width: 120px;
+    height: 76px;
+    overflow: hidden;
+    border: 1px solid var(--bsc-border);
+    background: var(--bsc-bg-secondary);
+  }
+
+  .page svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .behind {
+    position: absolute;
+    inset: -8px;
+    width: calc(100% + 16px);
+    height: calc(100% + 16px);
+    object-fit: cover;
+    filter: blur(5px);
+    opacity: 0.6;
+  }
+
+  /* No artwork or picture to show yet: the page drawing steps back behind the words. */
+  .page.empty svg {
+    opacity: 0.3;
+  }
+
+  .missing {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding-top: 14px;
+    font-size: 12px;
+    color: var(--bsc-text-secondary);
+  }
+
+  .bar {
+    fill: color-mix(in srgb, var(--bsc-text-secondary) 14%, transparent);
+  }
+
+  .block {
+    fill: color-mix(in srgb, var(--bsc-text-secondary) 26%, transparent);
+  }
+
+  .line {
+    fill: none;
+    stroke: color-mix(in srgb, var(--bsc-text-secondary) 60%, transparent);
+    stroke-width: 1.4;
+    stroke-linecap: round;
+  }
+
+  .chooser {
+    margin-top: 12px;
+    padding-bottom: 4px;
   }
 
   .slider {
@@ -293,10 +410,9 @@
     color: var(--bsc-text-disabled);
   }
 
+  /* The slider itself is tokens.css's, one across our views. */
   input[type='range'] {
     width: 100%;
-    margin: 0;
-    accent-color: var(--bsc-accent);
   }
 
   output {

@@ -36,9 +36,8 @@
   <div class="label">
     <p class="name">Import browser sign-in</p>
     <p class="help">
-      Signed in to SoundCloud in your browser? Export soundcloud.com’s cookies as JSON with the
-      Cookie-Editor extension, then choose the file. Only the sign-in is taken from it. Delete
-      the file afterwards: anyone who has it is signed in as you.
+      Brings in your browser’s SoundCloud sign-in from a Cookie-Editor JSON export, and nothing
+      else. Then delete the file: anyone who has it is signed in as you.
     </p>
     {#if line}
       <div class="result" role="status">
@@ -76,6 +75,13 @@
     font-size: 12px;
     line-height: 1.4;
     color: var(--bsc-text-secondary);
+  }
+
+  /* What it does: read, not glanced at, like every row's explanation in Settings (13px). */
+  .help {
+    max-width: 70ch;
+    font-size: 13px;
+    line-height: 1.45;
   }
   .control {
     flex: 0 0 auto;

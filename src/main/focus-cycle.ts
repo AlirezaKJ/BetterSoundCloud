@@ -24,7 +24,8 @@ function viewFor(shell: Shell, area: FocusArea): WebContentsView | null {
   const pageHidden = shell.pageStatus !== null && hidesPage(shell.pageStatus)
   switch (area) {
     case 'bar':
-      return shell.embeddedShowing ? shell.embedded : shell.header
+      // Our own bar is back while Settings is open, over the window buttons on SoundCloud's header.
+      return shell.embeddedShowing && !shell.settings ? shell.embedded : shell.header
     case 'page':
       // The status view stands in for the page, or asks over it when the page hangs; the
       // Visualizer's view of its own covers the page while it is open.

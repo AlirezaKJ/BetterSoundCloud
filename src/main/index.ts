@@ -74,6 +74,7 @@ import {
 } from './page-status'
 import {
   describeComponentsError,
+  hidesPage,
   installedWidevineVersion,
   isPageStatusAction
 } from '@shared/page-status'
@@ -95,6 +96,7 @@ import {
   setAudioAdBlocking
 } from './blocker'
 import type { Shell } from './window'
+import { SETTINGS, SETTING_KEYS } from '@shared/settings-schema'
 import type { Settings } from '@shared/settings-schema'
 import * as settings from './settings-store'
 import {
@@ -104,8 +106,11 @@ import {
   NO_THEME,
   openThemeFile,
   openThemesFolder,
+  themeCss,
   watchUserThemes
 } from './themes'
+import { noteThemeOnPage, themePictures } from './theme-pictures'
+import { relaunchAfterQuit } from './relaunch'
 import { isSoundCloudUrl, readNowPlaying } from '@shared/now-playing'
 import type { NowPlaying } from '@shared/now-playing'
 import { getNowPlaying, logTrackLinks, onNowPlayingChange, setNowPlaying } from './now-playing'
@@ -275,6 +280,17 @@ if (!HARDWARE_ACCELERATION) {
 }
 
 /**
+ * The settings that only apply on restart, as this launch read them (not as safe mode bent
+ * them), so Settings can offer "Restart now" beside one that has changed since.
+ */
+const SETTINGS_AT_LAUNCH = Object.fromEntries(
+  SETTING_KEYS.filter((key) => {
+    const def = SETTINGS[key]
+    return 'applies' in def && def.applies === 'restart'
+  }).map((key) => [key, settings.get(key)])
+) as Partial<Settings>
+
+/**
  * Widevine, the DRM module SoundCloud's protected tracks need. Castlabs' Electron downloads it
  * on first launch, and it must be registered before SoundCloud's page makes any EME call.
  *
@@ -422,6 +438,7 @@ if (!app.requestSingleInstanceLock()) {
       if (!SAFE_MODE) loadBlockerEngine()
       // Before the first view exists, so every view takes part in F6 from its first key.
       watchFocusKeys(() => shell)
+      watchSettingsKey()
       showMainWindow()
       createTray(showMainWindow)
       // Plugins belong to the app, not the window, and none of them needs SoundCloud's page.
@@ -488,6 +505,8 @@ function showMainWindow(): void {
     // is drawn. Until then nothing is playing — and if the bar never turns up (a SoundCloud
     // redesign), that is still the truth rather than the last track hanging around forever.
     next.content.webContents.on('did-navigate', () => setNowPlaying(null))
+    // A picture of the page wearing its theme, for Settings → Themes, once it has settled.
+    next.content.webContents.on('did-finish-load', notePagePicture)
     next.content.webContents.on('render-process-gone', () => setNowPlaying(null))
     // Where the user goes, for "Where you left off" at the next launch.
     rememberLastPage(next.content.webContents)
@@ -605,7 +624,9 @@ function registerIpc(): void {
   })
 
   ipcMain.on(CH.navReload, (e) => {
-    if (fromChrome(e)) shell?.content.webContents.reload()
+    // Settings too: its "Reload SoundCloud" beside a setting that applies to the next page load.
+    const fromSettings = shell !== null && e.sender === shell.settings?.webContents
+    if (fromChrome(e) || fromSettings) shell?.content.webContents.reload()
   })
 
   ipcMain.on(CH.navStop, (e) => {
@@ -714,6 +735,13 @@ function registerIpc(): void {
   ipcMain.handle(CH.safeModeGet, (e) => (fromSettingsUi(e) ? SAFE_MODE : null))
   // And whether Glass is really under the window, so a ticked box never silently does nothing.
   ipcMain.handle(CH.glassStatusGet, (e) => (fromSettingsUi(e) ? glassStatus() : null))
+  ipcMain.handle(CH.settingsAtLaunch, (e) => (fromSettingsUi(e) ? SETTINGS_AT_LAUNCH : null))
+  ipcMain.on(CH.appRestart, (e) => {
+    // The settings view's "Restart now" only. Never `app.relaunch()` directly (relaunch.ts).
+    if (shell === null || e.sender !== shell.settings?.webContents) return
+    relaunchAfterQuit()
+    app.quit()
+  })
   // And whether this launch went on without Widevine, so skipping tracks are not a surprise.
   ipcMain.handle(CH.widevineSkippedGet, (e) =>
     fromSettingsUi(e) ? widevine.state === 'skipped' : null
@@ -766,6 +794,9 @@ function registerIpc(): void {
   // The CSS never leaves main — the panel only needs enough to draw a list, and shipping a
   // whole stylesheet over IPC for every render would be waste.
   ipcMain.handle(CH.themesList, (e) => (fromSettingsUi(e) ? themeSummaries() : null))
+  ipcMain.handle(CH.themePicturesGet, (e) =>
+    fromSettingsUi(e) ? currentThemePictures() : null
+  )
   ipcMain.handle(CH.themeCopy, (e, id: unknown) => {
     if (!fromSettingsUi(e) || typeof id !== 'string') return { error: 'Not allowed.' }
     try {
@@ -1252,6 +1283,72 @@ function applyLiveSettings(): void {
   setContentPicture(shell, currentBackground() === 'picture' ? pictureDataUri() : '')
   // After setContentAppearance, which is what puts the glass under the window or takes it away.
   applyChromeTheme()
+  notePagePicture()
+}
+
+/** Every theme's picture for the gallery, None's included (main/theme-pictures.ts). */
+function currentThemePictures(): Record<string, string> {
+  return themePictures([NO_THEME, ...listThemes().map((theme) => theme.id)])
+}
+
+/**
+ * The page is wearing its theme: in a moment, take a picture of the whole window if it has none
+ * of this CSS yet.
+ * Only while the page itself is on screen as the theme draws it: not on glass (the picture would
+ * show the glass, not the theme), not behind a page status, not in a hidden window.
+ */
+function notePagePicture(): void {
+  const current = shell
+  if (!current) return
+  const id = selectedTheme()
+  noteThemeOnPage({
+    page: current.content.webContents,
+    // The whole window: SoundCloud's page, and our bar over it while it shows.
+    frame: () => {
+      const { width, height } = current.window.getContentBounds()
+      const views = [
+        { contents: current.content.webContents, bounds: current.content.getBounds() }
+      ]
+      if (current.header.getVisible()) {
+        views.push({ contents: current.header.webContents, bounds: current.header.getBounds() })
+      }
+      return { width, height, views }
+    },
+    id,
+    css: id === NO_THEME ? '' : themeCss(id),
+    canTake: () =>
+      shell === current &&
+      selectedTheme() === id &&
+      !current.glass &&
+      !(current.pageStatus && hidesPage(current.pageStatus)) &&
+      current.window.isVisible() &&
+      !current.window.isMinimized() &&
+      isSoundCloudUrl(current.content.webContents.getURL()),
+    onSaved: () => {
+      const view = shell?.settings
+      if (view && !view.webContents.isDestroyed()) {
+        view.webContents.send(CH.themePicturesChanged, currentThemePictures())
+      }
+    }
+  })
+}
+
+/**
+ * Ctrl+, (⌘, on macOS) opens Settings from anywhere in the window, and closes it, as in VS Code,
+ * Slack and Discord. Settings hears it itself while it has the keyboard, so it can fade out; the
+ * showcase covers everything, so Settings would open unseen under it.
+ */
+function watchSettingsKey(): void {
+  app.on('web-contents-created', (_event, contents) => {
+    contents.on('before-input-event', (event, input) => {
+      if (input.type !== 'keyDown' || input.key !== ',' || input.alt || input.shift) return
+      const mac = process.platform === 'darwin'
+      if (mac ? !input.meta || input.control : !input.control || input.meta) return
+      if (!shell || shell.showcase || contents === shell.settings?.webContents) return
+      event.preventDefault()
+      toggleSettings(shell)
+    })
+  })
 }
 
 /** What the Background shows: the setting, unless the selected theme needs one (`@background`). */

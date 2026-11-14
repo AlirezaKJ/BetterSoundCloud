@@ -30,3 +30,7 @@ Thumbs.db
 # Built by `npm run native:build` (scripts/build-native.mjs) on Windows; never committed.
 /native/window-glass/build/
 /resources/native/
+
+# The impeccable design tool: its hook cache and review screenshots are per machine.
+.impeccable/hook.cache.json
+.impeccable/review/

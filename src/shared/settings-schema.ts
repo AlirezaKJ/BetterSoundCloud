@@ -17,7 +17,9 @@ export const SECTIONS = [
   'discord',
   'plugins',
   'shortcuts',
-  'advanced'
+  'advanced',
+  // No settings of its own: the version, what is new in it, and where to report a problem.
+  'about'
 ] as const
 
 export type Section = (typeof SECTIONS)[number]
@@ -33,7 +35,8 @@ export const SECTION_LABELS: Record<Section, string> = {
   discord: 'Discord',
   plugins: 'Plugins',
   shortcuts: 'Shortcuts',
-  advanced: 'Advanced'
+  advanced: 'Advanced',
+  about: 'About'
 }
 
 /** Rendered under a control whose effect is not immediate. */
@@ -90,6 +93,17 @@ type Base = {
    * between machines keeps it.
    */
   readonly platforms?: readonly ('win32' | 'darwin' | 'linux')[]
+  /**
+   * The heading this setting sits under in its section, so a long section reads in groups
+   * ("Window", "Player"). A group's settings must be next to each other here; the panel starts a
+   * new heading wherever the group changes.
+   */
+  readonly group?: string
+  /**
+   * A small drawing of the window beside the row, showing what the setting changes. It follows
+   * the setting, so switching it shows the difference (renderer/settings/SettingFigure.svelte).
+   */
+  readonly figure?: 'hide-bar' | 'auto-hide' | 'stretch-bars' | 'minimal-nav' | 'player-buttons'
 }
 
 export type SettingDef =
@@ -100,6 +114,10 @@ export type SettingDef =
       readonly min: number
       readonly max: number
       readonly step?: number
+      /** Printed beside the field, so the number says what it counts ("%"). */
+      readonly unit?: string
+      /** Drawn as a slider with its value beside it, like the Background's, not a typed field. */
+      readonly slider?: true
     })
   | (Base & { readonly kind: 'string'; readonly default: string })
   | (Base & {
@@ -108,6 +126,8 @@ export type SettingDef =
       readonly options: readonly string[]
       /** What the panel shows for each option. A dropdown it draws must name every one (pinned). */
       readonly labels?: Readonly<Record<string, string>>
+      /** Drawn as a row of picture tiles, one per option, instead of a dropdown (SettingFigure). */
+      readonly tiles?: true
     })
 
 export const SETTINGS = {
@@ -126,7 +146,7 @@ export const SETTINGS = {
     },
     label: 'On startup, open',
     section: 'general',
-    help: 'Where you left off reopens the SoundCloud page you last had open.'
+    help: 'The SoundCloud page you see first. Where you left off opens the page you last had open.'
   },
   // Read when the window closes (`keepsRunningWhenClosed` in index.ts), so it applies at once.
   'general.minimizeToTray': {
@@ -134,11 +154,11 @@ export const SETTINGS = {
     default: false,
     label: 'Minimize to tray on close',
     section: 'general',
+    // macOS always keeps the app running when its window closes, so the switch would do nothing.
+    platforms: ['win32', 'linux'],
     help:
-      'Closing the window keeps BetterSoundCloud running, and playing, in the system tray: ' +
-      'click its icon to bring the window back, or choose Quit from its menu. Where there is ' +
-      'no tray icon, as on some Linux desktops, open BetterSoundCloud again instead. On macOS ' +
-      'the app always keeps running when its window closes.'
+      'Closing the window keeps the music playing. Click the tray icon, or open ' +
+      'BetterSoundCloud again, to bring it back; Quit in the tray menu ends it.'
   },
   // The key keeps its old name so stored values carry over; it now governs downloading and
   // installing as well as checking (main/updater.ts).
@@ -150,39 +170,32 @@ export const SETTINGS = {
     statusFrom: 'updates',
     help:
       'Downloads new versions from GitHub in the background and installs them when you quit. ' +
-      'Off, nothing is checked or downloaded until you ask.'
+      'When it’s off, nothing is checked until you ask.'
   },
 
-  'appearance.zoomFactor': {
-    kind: 'number',
-    default: 100,
-    min: 10,
-    max: 500,
-    step: 5,
-    label: 'Zoom',
-    section: 'appearance',
-    help: 'Percent.'
-  },
+  // Pictures rather than a dropdown: a light window, a dark one, and the two together.
   'appearance.colorScheme': {
     kind: 'enum',
     default: 'system',
     options: ['system', 'light', 'dark'],
     labels: { system: 'System', light: 'Light', dark: 'Dark' },
-    label: 'Appearance',
+    tiles: true,
+    label: 'Light or dark',
     section: 'appearance',
     help:
-      'Applies to BetterSoundCloud’s own chrome, and to SoundCloud’s page wherever it ' +
-      'follows the system light or dark preference.'
+      'For BetterSoundCloud’s own bar and panels, and for SoundCloud’s page when it follows ' +
+      'your computer. System matches your computer’s setting.'
   },
   'appearance.hideMenuBar': {
     kind: 'boolean',
     default: false,
     label: 'Hide the BetterSoundCloud bar',
     section: 'appearance',
+    group: 'Window',
+    figure: 'hide-bar',
     help:
-      'Gives the whole window to SoundCloud and moves the window buttons into its own ' +
-      'header. Toggle it from the expand button at either end — the top bar, or ' +
-      'SoundCloud’s header once it is hidden.'
+      'Gives the whole window to SoundCloud and moves the window buttons into its header. ' +
+      'The expand button on either bar turns it on and off.'
   },
   // A browser's compact mode (Zen's, the user's reference): main watches the pointer and slides
   // SoundCloud's header in when it touches the top edge (`watchAutoHideHeader` in window.ts).
@@ -191,31 +204,48 @@ export const SETTINGS = {
     default: false,
     label: 'Hide the top bar until you point at it',
     section: 'appearance',
+    group: 'Window',
+    figure: 'auto-hide',
     help:
-      'SoundCloud’s header and the window buttons slide out of sight, and come back when the ' +
-      'pointer touches the top edge of the window. Hides the BetterSoundCloud bar as well.'
+      'SoundCloud’s header slides out of sight and comes back when the pointer touches the ' +
+      'top of the window. Hides the BetterSoundCloud bar too.'
+  },
+  'appearance.zoomFactor': {
+    kind: 'number',
+    default: 100,
+    min: 10,
+    max: 500,
+    step: 5,
+    unit: '%',
+    label: 'Zoom',
+    section: 'appearance',
+    group: 'SoundCloud’s page',
+    help: 'Makes SoundCloud’s page bigger or smaller, in percent. BetterSoundCloud’s own bar and panels keep their size.'
   },
   'appearance.fullWidthLayout': {
     kind: 'boolean',
     default: true,
     label: 'Stretch the SoundCloud bars',
     section: 'appearance',
+    group: 'SoundCloud’s page',
+    figure: 'stretch-bars',
     help:
-      'SoundCloud centres its top menu and bottom player at 1240px. This stretches those ' +
-      'two bars to the window width. Page content keeps its own layout.'
+      'Stretches SoundCloud’s top menu and player across the whole window, instead of ' +
+      '1240px in the middle. The page itself keeps its own layout.'
   },
-  // On by default since the lyrics button works (2026-10-28). The full-screen button is not
-  // built yet and is drawn disabled, saying so. Independent of `hideMenuBar`: that setting owns
-  // the header overlay because that overlay carries the only way back, which has nothing to do
-  // with the player.
+  // On by default since the lyrics button works (2026-10-28). Independent of `hideMenuBar`: that
+  // setting owns the header overlay because that overlay carries the only way back, which has
+  // nothing to do with the player.
   'appearance.playerButtons': {
     kind: 'boolean',
     default: true,
     label: 'Show extra buttons in the player bar',
     section: 'appearance',
+    group: 'Player',
+    figure: 'player-buttons',
     help:
-      'Adds a lyrics button to the right of SoundCloud’s play controls, and a full-screen ' +
-      'button that is not built yet. Lyrics are also in the right-click menu.'
+      'Adds buttons for the lyrics and the full-screen view beside SoundCloud’s play ' +
+      'controls, and one for the Visualizer while its plugin is on.'
   },
 
   // Not a theme: it goes on top of whichever theme is selected, so it can be combined with any
@@ -225,10 +255,11 @@ export const SETTINGS = {
     default: false,
     label: 'Minimal navigation',
     section: 'themes',
+    group: 'With every theme',
+    figure: 'minimal-nav',
     help:
       'Shows Home, Feed and Library in SoundCloud’s header as icons and hides the upsells ' +
-      'beside them, so the header carries the same links in about half the width. Works with ' +
-      'every theme.'
+      'beside them. Works with every theme.'
   },
 
   // v0.7.x's "Custom Background" (its custombg plugin), done without touching SoundCloud's page:
@@ -242,8 +273,8 @@ export const SETTINGS = {
     section: 'themes',
     drawnBy: 'background',
     help:
-      'A picture behind SoundCloud’s page, blurred and faded into the page colour. It shows ' +
-      'through everywhere except the header, the player and your theme’s own panels.'
+      'A picture behind SoundCloud’s page, blurred and faded into the page’s colour. The ' +
+      'header, the player and your theme’s own panels stay as they are.'
   },
   'appearance.backgroundBlur': {
     kind: 'number',
@@ -276,14 +307,13 @@ export const SETTINGS = {
     default: false,
     label: 'Glass',
     section: 'themes',
+    group: 'With every theme',
     platforms: ['win32'],
     statusFrom: 'glass',
     help:
-      'SoundCloud’s page and the bars around it sit on a live, blurred view of whatever is ' +
-      'behind the window, and stay that way when another window is in front. The glass is ' +
-      'dark, so SoundCloud shows in its dark colours while it is on. Works with every theme, ' +
-      'and takes the place of the Background; a theme’s own panels keep their colours. Needs ' +
-      'Windows 11 and hardware acceleration.'
+      'A live blur of whatever is behind the window, under SoundCloud and its bars, which ' +
+      'show in their dark colours. Takes the place of the Background; needs Windows 11 and ' +
+      'hardware acceleration.'
   },
   // 35% by default, the darkest tint at which a light wallpaper still visibly shows through while
   // SoundCloud's grey secondary text stays readable over a white one (checked by eye, 2026-11-10).
@@ -293,8 +323,11 @@ export const SETTINGS = {
     min: 0,
     max: 90,
     step: 5,
+    unit: '%',
+    slider: true,
     label: 'Glass tint',
     section: 'themes',
+    group: 'With every theme',
     platforms: ['win32'],
     help: 'How dark the glass is: clear at 0%, nearly solid at 90%. Raise it over a bright desktop.'
   },
@@ -310,9 +343,7 @@ export const SETTINGS = {
     // choice among files on disk, each with a description and swatches, not one dropdown.
     section: 'themes',
     drawnBy: 'themes',
-    help:
-      'Restyles SoundCloud’s page. Drop a .css file in the themes folder in your ' +
-      'BetterSoundCloud data directory to add your own.'
+    help: 'Restyles SoundCloud’s page. Add your own by putting a .css file in the themes folder.'
   },
 
   'discord.enabled': {
@@ -322,7 +353,7 @@ export const SETTINGS = {
     section: 'discord',
     statusFrom: 'discord',
     help:
-      'Shows the track you’re playing on your Discord profile. Needs the Discord desktop app ' +
+      'Shows the track you’re playing on your Discord profile. Needs the Discord app ' +
       'running on this computer.'
   },
   'discord.showWhenPaused': {
@@ -330,7 +361,7 @@ export const SETTINGS = {
     default: false,
     label: 'Keep showing presence while paused',
     section: 'discord',
-    help: 'When this is off, your Discord status clears as soon as you pause.'
+    help: 'Leaves the track on your Discord profile while it’s paused. When it’s off, it clears as soon as you pause.'
   },
 
   'shortcuts.mediaKeys': {
@@ -338,9 +369,8 @@ export const SETTINGS = {
     default: true,
     label: 'Respond to media keys',
     section: 'shortcuts',
-    help:
-      'Will be handled by SoundCloud’s own Media Session handlers — BetterSoundCloud ' +
-      'will not synthesise clicks on the player.',
+    group: 'Playback',
+    help: 'Play, pause and skip with your keyboard’s media keys.',
     wired: false
   },
 
@@ -354,10 +384,10 @@ export const SETTINGS = {
     default: true,
     label: 'Skip the audio ads between tracks',
     section: 'advanced',
+    group: 'Ad blocking',
     help:
-      'Blocks the request SoundCloud makes when an audio ad is due, so the ad never loads. ' +
-      'Works on its own — the filter-list blocker below does not need to be on. Takes effect ' +
-      'from the next ad; one already playing will finish.'
+      'Stops the audio ads between tracks from loading; one already playing finishes. ' +
+      'Works without the blocker below.'
   },
 
   // Off by default, deliberately. v0.7.x fetched 14 filter lists at every launch inside a
@@ -370,6 +400,7 @@ export const SETTINGS = {
     default: false,
     label: 'Block other ads and trackers',
     section: 'advanced',
+    group: 'Ad blocking',
     // `reload`, unlike the audio-ad setting above. This one governs scripts rather than one
     // endpoint: switching it ON cannot unload trackers the page has already run, and
     // switching it OFF cannot fetch back what was blocked earlier in the document's life —
@@ -378,8 +409,8 @@ export const SETTINGS = {
     // someone does when a page looks broken.
     applies: 'reload',
     help:
-      'Blocks display ads and third-party tracking scripts using filter lists. Sign-in, ' +
-      'anti-bot checks and playback are never filtered. Audio ads have their own setting above.'
+      'Blocks display ads and tracking scripts. Sign-in, SoundCloud’s bot check and ' +
+      'playback are never blocked.'
   },
 
   'advanced.hardwareAcceleration': {
@@ -387,10 +418,11 @@ export const SETTINGS = {
     default: true,
     label: 'Hardware acceleration',
     section: 'advanced',
+    group: 'Performance',
     applies: 'restart',
     help:
-      'Lets the GPU decode audio and draw the page. Turn it off only if you see visual ' +
-      'glitches or the window renders blank.'
+      'Lets the graphics card draw the window; Glass and MilkDrop need it. Turn it off only ' +
+      'if the window flickers or stays blank.'
   }
 } as const satisfies Record<string, SettingDef>
 

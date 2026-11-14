@@ -131,3 +131,63 @@ body {
 ::-webkit-scrollbar-thumb:active {
   background: var(--bsc-accent);
 }
+
+/*
+ * One slider across our views (Settings' Glass tint, the Background's Blur and Strength): a
+ * square-ended 4px rule, the accent up to the value (`--bsc-range-fill`, which the view sets),
+ * and a squared 12px knob with the switch's 3px corners, ringed in the page colour. Chromium's own
+ * is a round knob on a pill, which the system's two radii and no pills rule out.
+ */
+input[type='range'] {
+  height: 16px;
+  margin: 0;
+  background: transparent;
+  appearance: none;
+  cursor: pointer;
+}
+
+input[type='range']::-webkit-slider-runnable-track {
+  height: 4px;
+  background: linear-gradient(
+    to right,
+    var(--bsc-accent) var(--bsc-range-fill, 0%),
+    var(--bsc-text-disabled) var(--bsc-range-fill, 0%)
+  );
+}
+
+input[type='range']::-webkit-slider-thumb {
+  width: 12px;
+  height: 12px;
+  margin-top: -4px;
+  border-radius: 3px;
+  background: var(--bsc-accent);
+  box-shadow: 0 0 0 2px var(--bsc-bg-primary);
+  appearance: none;
+}
+
+input[type='range']:disabled {
+  cursor: not-allowed;
+}
+
+input[type='range']:disabled::-webkit-slider-runnable-track {
+  background: var(--bsc-text-disabled);
+}
+
+input[type='range']:disabled::-webkit-slider-thumb {
+  background: var(--bsc-text-disabled);
+}
+
+@media (forced-colors: active) {
+  input[type='range'] {
+    forced-color-adjust: none;
+  }
+
+  input[type='range']::-webkit-slider-runnable-track {
+    background: CanvasText;
+  }
+
+  input[type='range']::-webkit-slider-thumb {
+    background: Highlight;
+    box-shadow: 0 0 0 2px Canvas;
+  }
+}
