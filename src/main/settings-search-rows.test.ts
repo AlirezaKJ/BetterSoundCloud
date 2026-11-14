@@ -13,7 +13,9 @@ import { OTHER_ENTRIES } from '@shared/settings-search'
 const SETTINGS_DIR = join(import.meta.dirname, '..', 'renderer', 'settings')
 const read = (file: string): string => readFileSync(join(SETTINGS_DIR, file), 'utf8')
 
-const ALL = ['Settings.svelte', 'BrowserSession.svelte', 'Reset.svelte'].map(read).join('\n')
+const ALL = ['Settings.svelte', 'BrowserSession.svelte', 'Reset.svelte', 'About.svelte']
+  .map(read)
+  .join('\n')
 
 describe('what search finds outside the schema', () => {
   it('is named as the panel names it', () => {
@@ -33,7 +35,7 @@ describe('what search finds outside the schema', () => {
     expect(read('Background.svelte')).toContain('data-bsc-setting={slider.key}')
     expect(read('Background.svelte')).toContain('data-bsc-background>')
     expect(read('Themes.svelte')).toContain('data-bsc-theme-list')
-    expect(read('Themes.svelte')).toContain('data-bsc-theme={theme.id}')
+    expect(read('Themes.svelte')).toContain('data-bsc-theme={id}')
     expect(read('Plugins.svelte')).toContain('data-bsc-plugin={plugin.id}')
     // A plugin's own settings, both the ordinary rows and the wide ones (a curve, a ruler).
     expect(read('Plugins.svelte').split('data-bsc-plugin-setting={setting.key}').length).toBe(3)

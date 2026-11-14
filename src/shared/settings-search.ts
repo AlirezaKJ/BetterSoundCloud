@@ -132,6 +132,18 @@ export const OTHER_ENTRIES: readonly SearchEntry[] = [
     target: attributeSelector('data-bsc-settings-key', 'previous-part')
   },
   {
+    section: 'shortcuts',
+    name: 'Open or close Settings',
+    text: 'Ctrl+, (⌘, on a Mac), from anywhere in the window.',
+    target: attributeSelector('data-bsc-settings-key', 'open-settings')
+  },
+  {
+    section: 'shortcuts',
+    name: 'Search settings',
+    text: 'Ctrl+F (⌘F on a Mac), while Settings is open.',
+    target: attributeSelector('data-bsc-settings-key', 'search-settings')
+  },
+  {
     section: 'advanced',
     name: 'Import browser sign-in',
     text: 'Sign in with the account you use in your browser, from a cookie export of soundcloud.com.',
@@ -150,5 +162,17 @@ export const OTHER_ENTRIES: readonly SearchEntry[] = [
       'Signs you out of SoundCloud. Try this first if SoundCloud keeps saying you’ve been ' +
       'blocked, or its page won’t load properly.',
     target: attributeSelector('data-bsc-settings-reset', 'site-data')
+  },
+  {
+    section: 'about',
+    name: 'What’s new',
+    text: 'What changed in this version: its release notes.',
+    target: '[data-bsc-about-whats-new]'
+  },
+  {
+    section: 'about',
+    name: 'Report a problem',
+    text: 'Open the project’s issues on GitHub. Also the version you have, and its updates.',
+    target: '[data-bsc-about-links]'
   }
 ]

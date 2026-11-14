@@ -150,7 +150,13 @@ vi.mock('./themes', () => ({
   copyThemeToUserFolder: vi.fn(),
   openThemesFolder: vi.fn(),
   openThemeFile: vi.fn(),
+  themeCss: () => '',
   watchUserThemes: vi.fn()
+}))
+// Pictures of the page wearing its theme: the real one takes them a few seconds after a load.
+vi.mock('./theme-pictures', () => ({
+  noteThemeOnPage: vi.fn(),
+  themePictures: () => ({})
 }))
 vi.mock('./plugins', () => ({
   startPlugins: vi.fn(),

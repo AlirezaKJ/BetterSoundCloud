@@ -6,8 +6,15 @@ Each version's entry is also its release notes on GitHub.
 
 - **Settings is a page now**, not a small box: it fills the window under the top bar, with the
   sections down the side, and every setting says what it does in a sentence or two. **Search**
-  at the top of the sidebar (Ctrl+F) finds any setting, theme or plugin and takes you to it. The
-  sidebar's foot shows the version you have and links to GitHub and to report a problem.
+  at the top of the sidebar (Ctrl+F) finds any setting, theme or plugin and takes you to it.
+  **Ctrl+,** opens and closes it from anywhere.
+- **Themes are pictures**: each one in Settings → Themes shows the whole app wearing it, and
+  once you've tried a theme, the picture is your own window in it. Light or dark, and the Background,
+  are picture tiles too, and the layout settings show a small drawing of what they change.
+- **Switches** for every on/off setting. A setting you've changed is marked, with **Reset** to put
+  it back, and one that waits for a restart or a reload offers to do it now.
+- **About** (in Settings): the version and its updates, what's new in it, and where to report a
+  problem. **Discord** shows the card your friends see, with what's playing now.
 - **Import browser sign-in** (Settings → Advanced): signed in to SoundCloud with Google in your
   browser? Export soundcloud.com's cookies with Cookie-Editor and choose the file; the app takes
   the sign-in from it and nothing else.

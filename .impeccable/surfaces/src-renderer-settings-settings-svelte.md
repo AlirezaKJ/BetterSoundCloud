@@ -38,11 +38,32 @@ column's right edge, a hairline between rows.
 FORM: sidebar and reading column, pinned by the maintainer (no roll). Signature interaction:
 search, where matches come grouped by section with the matched words in bold, and choosing one
 lands on its row with focus on its control. Motion: one 180ms fade of the whole page, in and out.
-seed: none (structure pinned by the maintainer). No roll ran, per the playbook: "Never run the
+seed: none (structure pinned by the maintainer, in their words: "replace the small settings
+menu we currently have, with a fullscreen one … it should have a sidebar just like the one we have
+now, for each setting section"). No roll ran, per the playbook: "Never run the
 script for a local extension or a precisely specified narrow request; shape those directly", and
 "a user- or brief-pinned direction beats the roll, always"
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+
+## Round three — 2026-11-14
+
+The maintainer asked to make Settings friendlier and more polished, looking at modern apps, with
+real images for each theme as the example, and chose all twelve proposals:
+
+- A theme gallery of pictures of the app wearing each theme: shipped for the built-ins, then
+  the user's own window once a theme has been on ("captured as you use them"). Each picture is
+  the whole window, two cards to a row ("actual fullscreen photos, to show the whole interface.
+  not zoomed in ones", 2026-11-14).
+- Picture tiles for Light or dark and the Background; line drawings beside the layout settings,
+  drawn in the setting's current state.
+- Squared switches (6px track, 3px knob: concentric, no third radius); a changed setting marked
+  in the gutter with Reset; Restart now / Reload SoundCloud; group headings inside sections.
+- Section icons; About (version, updates, What's new from the changelog, links); the Discord
+  card's preview; Ctrl+, opens Settings.
+
+The world is unchanged: Shell Grey, hairlines, system font, nothing over 15px, the accent only for
+state (focus, on, chosen, changed).
 
 ## Open
 

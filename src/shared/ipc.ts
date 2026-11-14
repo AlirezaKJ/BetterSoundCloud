@@ -35,6 +35,9 @@ export const CH = {
   themesList: 'themes:list',
   // The Themes section: the list changes when a file in the themes folder does.
   themesChanged: 'themes:changed',
+  // The Themes section's pictures (main/theme-pictures.ts), and again when one is taken.
+  themePicturesGet: 'themes:pictures-get',
+  themePicturesChanged: 'themes:pictures-changed',
   themeCopy: 'themes:copy',
   themesOpenFolder: 'themes:open-folder',
   themeOpenFile: 'themes:open-file',
@@ -79,6 +82,10 @@ export const CH = {
   widevineSkippedGet: 'app:widevine-skipped-get',
   // settings renderer -> main. Whether there is glass under the window, and why not.
   glassStatusGet: 'app:glass-status-get',
+  // settings renderer -> main. The settings that apply on restart, as this launch read them;
+  // and the "Restart now" button beside one that has changed since.
+  settingsAtLaunch: 'settings:at-launch',
+  appRestart: 'app:restart',
 
   // settings renderer -> main. The two buttons under Advanced: settings back to their defaults,
   // and SoundCloud's cookies, storage and cache cleared (which signs the user out).
@@ -170,6 +177,7 @@ export type ChromeApi = {
   close(): void
   back(): void
   forward(): void
+  /** Reload SoundCloud's page: the bar's button, and Settings' "Reload SoundCloud". */
   reload(): void
   /** Stop SoundCloud's page loading: the reload button, while `NavState.loading` is true. */
   stop(): void
@@ -191,6 +199,13 @@ export type ChromeApi = {
    * a deleted one. The selected theme re-applies itself at the same moment.
    */
   onThemesChanged(cb: (themes: ThemeSummary[]) => void): () => void
+  /**
+   * A picture of SoundCloud's page wearing each theme, as `data:` URIs by theme id: the user's
+   * own once that theme has been on, else the one shipped for a built-in, else none.
+   */
+  getThemePictures(): Promise<Record<string, string>>
+  /** The pictures again, each time a new one is taken (a theme on screen for the first time). */
+  onThemePicturesChanged(cb: (pictures: Record<string, string>) => void): () => void
   /** Copy a built-in theme into the themes folder to edit it. Answers why, if it could not. */
   copyTheme(id: string): Promise<{ error: string }>
   openThemesFolder(): void
@@ -266,6 +281,15 @@ export type ChromeApi = {
    * must say so. It can only change while the status view covers the page, so read once.
    */
   getWidevineSkipped(): Promise<boolean>
+
+  /**
+   * The settings that only apply on restart (`applies: 'restart'`), with the values this launch
+   * read, so the panel offers "Restart now" beside one that has changed since. Fixed for the life
+   * of the app, so read once.
+   */
+  getSettingsAtLaunch(): Promise<Partial<Settings>>
+  /** Quit and start again, for a setting that applies on restart. The settings view only. */
+  restartApp(): void
 
   /**
    * Put every schema setting back to its default, after the user confirmed it in the panel.

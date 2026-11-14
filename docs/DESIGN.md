@@ -91,6 +91,30 @@ components:
     typography: '{typography.label}'
     rounded: '{rounded.sm}'
     height: '30px'
+  switch:
+    backgroundColor: '{colors.bg-secondary}'
+    rounded: '{rounded.sm}'
+    width: '34px'
+    height: '20px'
+  switch-on:
+    backgroundColor: '{colors.accent}'
+  picture-tile:
+    backgroundColor: 'transparent'
+    rounded: '{rounded.sm}'
+    padding: '3px'
+  setting-figure:
+    width: '120px'
+    height: '76px'
+  theme-card:
+    textColor: '{colors.text-primary}'
+    typography: '{typography.body}'
+    width: '240px'
+  discord-card:
+    backgroundColor: '{colors.bg-secondary}'
+    textColor: '{colors.text-primary}'
+    rounded: '{rounded.sm}'
+    padding: '12px'
+    width: '340px'
 ---
 
 # Design System: BetterSoundCloud
@@ -110,7 +134,8 @@ This produces a system that is almost aggressively restrained. There is no displ
 hero, no imagery, no gradient, and no decorative colour anywhere. Controls are transparent
 until you hover them. The largest text in the product is 15px, outside two named exceptions
 for content read at a distance: lyric lines, and the full-screen showcase. The accent appears only where
-something is focused, selected, or on. A user should be able to look at this app all day and
+something is focused, selected, on, or changed from its default, and in a slider's fill up to its
+value. A user should be able to look at this app all day and
 never notice the chrome — and then find every control exactly where they left it the moment
 they reach for one.
 
@@ -140,8 +165,9 @@ frontmatter above records the light default.
 
 - **SoundCloud Orange** (`#e64d00` / `#f50`): The accent, inherited from the host application
   rather than invented for this one. It signals kinship — this is a SoundCloud client, not a
-  separate product wearing SoundCloud as a data source. It appears on focus rings, the checkbox
-  tick and "on" states, and nowhere else. Dark mode uses SoundCloud's own `#f50` (5.8:1 on Shell
+  separate product wearing SoundCloud as a data source. It appears on focus rings, a switch that is
+  on, the ring round a chosen picture tile or theme card, the mark beside a changed setting and a
+  slider's fill, and nowhere else. Dark mode uses SoundCloud's own `#f50` (5.8:1 on Shell
   Grey); light mode deepens it one step, because `#f50` is only 2.86:1 on `#f2f2f2`, under the 3:1
   a focus ring or a state mark needs (measured 2026-10-29, pinned by a test). SoundCloud's page
   keeps its own orange either way.
@@ -181,8 +207,10 @@ selected, on — and never decorates. If orange appears somewhere that is not a 
 
 **The Two-Mode Rule.** Every colour exists twice and is consumed only through a
 `--bsc-*` custom property. A literal hex outside `tokens.css` is a bug: it will be correct in
-one mode and wrong in the other. The single sanctioned exception is `#fff` on the danger hover,
-which must stay white in both modes.
+one mode and wrong in the other. The sanctioned exceptions are `#fff` on the danger hover and on
+the knob of a switch that is on (white on the accent, like the close button's glyph on its red),
+which must stay white in both modes; and the pictures of a mode on the Light or dark tiles, which
+draw that mode's own values from `tokens.css` whatever the panel is in (Theme pictures).
 
 ## Typography
 
@@ -199,12 +227,13 @@ personality the frame should not have and a runtime network load the renderer's 
 
 - **Title** (600, 15px): A Settings section's title. The largest text in the entire product.
 - **Body** (400, 14px): Setting names — the primary reading size in the panel.
-- **Label** (400, 13px): Navigation items, inputs, selects. The dense working tier.
+- **Label** (400, 13px): Navigation items, inputs, selects. The dense working tier. At 600 in
+  Muted Ink with a Hairline beneath, it is the group heading inside a Settings section.
 - **Explanation** (400, 13px, line-height 1.45, at most 70ch): What a setting does, under its
   name in every Settings row and under each search match. It is read, not glanced at, so it sits
   one step above Caption (it was the 12px Caption until 2026-11-14). Always Muted Ink.
 - **Caption** (400, 12px, line-height 1.4): When a setting takes effect, status lines and launch
-  notices, the version and links at the foot of the Settings sidebar, and the window title in
+  notices, the version at the foot of the Settings sidebar, the Reset beside a changed setting's name, and the window title in
   the chrome strip (500 weight there). Always Muted Ink.
 - **Overline** (600, 11px, +0.03em, uppercase): One use only — the "Not implemented yet" badge.
 
@@ -256,8 +285,13 @@ room, the section list scroll; the page itself never does.
 Spacing is an observed rhythm rather than an enforced scale: 2px between adjacent chrome
 buttons, 4px in the chrome flex line, 8–12px inside controls, 16px inside the Prompt, and 40px
 between the Settings sidebar and its column. Settings rows are 14px vertical padding with 24px
-between the name and the control (the Themes and Background lists keep 12px), separated by
+between the name and the control (the Background's sliders keep 12px), separated by
 hairlines, with the last row's border removed.
+
+A layout setting's row holds its drawing (120×76) between the text and the control, 24px from
+each. Picture tiles sit 16px apart. The theme gallery is a grid of cards at least 240px wide, two
+to a row in the 720px column, 18px between rows and 14px between cards: a picture of the whole
+window needs the room.
 
 ### Named Rules
 
@@ -302,13 +336,20 @@ understood, it is a dialog and should behave like one.
 Rectangles with two radii and nothing else.
 
 - **6px** on every control: chrome buttons, navigation items, inputs, selects, the panel's close
-  button. Enough to read as a soft target, not enough to read as a pill.
+  button, a switch's track, a picture tile's frame. Enough to read as a soft target, not enough to read as a pill.
 - **10px** on the surfaces that float: the context menu and the Go to URL prompt. The menu's
   10px is its 6px item radius plus its 4px padding, so the corners are concentric rather than a
   third number. Settings is a page, not a floating surface, so it has no corner at all.
+- **3px** on the knob of a switch and of a slider, and it is a derivation, not a third radius: a
+  switch's 6px track less the 3px between it and the knob, so the corners are concentric, as the
+  menu's 10 = 6 + 4 is (2026-11-14). The line drawings give their window the same corners.
+- **Square** on a picture of a page: a theme card's picture and the Background tile's small page
+  are prints, like the showcase's sleeve, so they have no corners; the tile frame round them keeps
+  the control radius.
 
 There are no pills, no circles, no asymmetric corners, no clipping shapes, and no decorative
-geometry anywhere. Borders are always 1px and always the Hairline alpha token.
+geometry anywhere. Borders are always 1px and always the Hairline alpha token, with two that carry state: a switch
+that is off is outlined in Muted Ink, and a picture tile's frame is a 2px ring (Theme pictures).
 
 Icons are a matched family: 24-unit viewBox rendered at 15×15, `fill: none`, `stroke:
 currentcolor`, 1.6 stroke width (1.8 on the panel's close button), round caps and joins. They
@@ -344,7 +385,9 @@ Chrome buttons are the signature component and set the tone for everything else.
 
 The Settings sidebar — 220px, full height, a Hairline down its right edge: the search field at
 its top (Settings search, below), then a vertical stack of section buttons, 2px apart, then the
-foot. The sections are words, no icons.
+foot. Each section has a 15px line icon beside its name, 10px from it, in the system's icon style
+(since 2026-11-14): the name is what is read, the icon what the eye finds. The name is always
+there; it is not an icon rail.
 
 - **Rest:** transparent, Muted Ink, 13px, left-aligned, 7px × 10px padding, 6px radius.
 - **Hover:** Hover Wash.
@@ -353,10 +396,9 @@ foot. The sections are words, no icons.
   the section list now stores real names.
 - **While searching**, no section is shown as active: the column is showing matches, not a
   section.
-- **The foot**, above a Hairline: "BetterSoundCloud" and the version running, in tabular figures,
-  then two links, GitHub and Report a problem, in 12px Muted Ink at line-height 1.6. They look like
-  links at rest — a quiet underline at 45% of their ink, 2px below — and go to Ink with a full
-  underline on hover.
+- **The foot**, above a Hairline: only "BetterSoundCloud" and the version running, in tabular
+  figures, 12px Muted Ink, as a quiet button with the Hover Wash and Ink on hover. It opens About,
+  where the GitHub and Report a problem links moved (2026-11-14).
 
 ### Inputs / Fields
 
@@ -364,17 +406,26 @@ foot. The sections are words, no icons.
   text, 140px minimum width so a row of controls aligns down the right edge.
 - **Unit:** a number that counts something ("%") shows its unit in 12px Muted Ink beside the
   field, and the field narrows to 120px so the control still spans 140px.
-- **Slider:** a number that reads better dragged than typed (Glass tint) is the Background's
-  slider: a 180px native range in the accent, then its value with its unit in a 48px column, 13px
-  tabular Muted Ink, right-aligned. The value follows the drag; it is stored on release. Its focus
-  ring sits 2px outside it.
+- **Slider:** a number that reads better dragged than typed (Glass tint, the Background's Blur
+  and Strength), one style for every view, in `tokens.css`: a 4px square-ended rule, the accent up
+  to the value (`--bsc-range-fill`, which the view sets) and Ghost Ink beyond it, and a 12px knob
+  in the accent with the switch's 3px corners, ringed 2px in Shell Grey. It replaces Chromium's
+  round knob on a pill (2026-11-14). Disabled, rule and knob go to Ghost Ink. In a settings row it
+  is 180px, then its value with its unit in a 48px column, 13px tabular Muted Ink, right-aligned.
+  The value follows the drag; it is stored on release. Its focus ring sits 2px outside it.
 - **Search:** the Field at 30px tall in the Settings sidebar's 56px top row, with a 15px stroked
   magnifier inside its left edge in Muted Ink, the accent caret, and "Search settings" as its
   placeholder in Muted Ink. While it is empty and unfocused, a key chip at its right says
   "Ctrl+F" ("⌘F" on macOS); while it holds text, our own clear ✕ takes that place — a 22px button
   with the Hover Wash, a 15px stroked cross — instead of Chromium's.
-- **Checkbox:** 16×16 native control with `accent-color` set to SoundCloud Orange — the second
-  and last place the accent appears.
+- **Switch** (`Switch.svelte`, since 2026-11-14, the maintainer's choice after Windows' and
+  Apple's settings): every on/off setting, in the schema's rows and the plugin rows. A real
+  checkbox underneath with `role="switch"`. Squared, to keep the Two Radii Rule and no pills: a
+  34×20 track at 6px, a 12px knob at 3px, 3px in from the track. Off: the track Field White,
+  outlined in Muted Ink, with a Muted Ink knob on the left, as Windows draws it. On: the track in
+  the accent, a white knob on the right. The knob slides over 120ms (Motion). Disabled: 50%
+  opacity. Focus: the 2px ring, 2px outside. It applies at once; a setting that waits for a
+  restart or a reload says so in its note.
 - **Disabled:** 50% opacity and a `not-allowed` cursor, paired with the Overline badge in the
   label column.
 
@@ -407,10 +458,23 @@ floating over it.
 - **Rows:** the name (Body, line-height 1.4), the Explanation under it, then any timing note and
   status line at Caption size; the control at the column's right edge, level with the name. A
   Hairline between rows. The rows drawn by their own components — themes, the background,
-  plugins, the reset rows, the sign-in import — use the same 13px Explanation.
+  plugins, the reset rows, the sign-in import — use the same 13px Explanation. A layout setting's
+  row carries its drawing (Theme pictures) before the control.
+- **Group headings** inside a section, from the schema's `group` ("Window", "SoundCloud’s page",
+  "Player", "With every theme"…): Label size at 600 in Muted Ink, a Hairline beneath, wherever the
+  group changes from the row before. The same heading names the rows drawn by hand ("Your sign-in
+  and data", "Moving around") and each section's matches in search.
+- **A changed setting** (since 2026-11-14) is marked by a 2px accent bar in the gutter, 14px left
+  of the row's text and as tall as it, and a "Reset" text button beside its name: 12px Muted Ink
+  with the links' quiet underline, Ink on hover, its accessible name saying what it goes back to. This is
+  VS Code's mark, the maintainer's explicit choice: the bar is a state, so it is the accent, and it
+  marks a changed setting and nothing else — never a card, a notice or a heading.
+- **Restart now / Reload SoundCloud:** a setting that waits for a restart or a reload, once
+  changed, gets the Prompt's button at 13px under its timing note, which does it now.
 - **Escape** clears a search first; with no search, it closes Settings.
 - **Focus:** every control on the page has the 2px `--bsc-focus` ring: inset on buttons, fields
-  and search matches, 2px outside on checkboxes and the foot's links.
+  and search matches, 2px outside on switches, sliders and links, 3px outside a picture tile's
+  frame and 4px outside a theme card's.
 
 ### Settings search
 
@@ -422,8 +486,8 @@ plugin's switch, and its explanation ends "Shown once Visualizer is on." Every w
 accents.
 
 - **The matches take the column's place**, under the title "Search": a count line ("3 matches",
-  Caption, tabular figures), then the matches grouped by section, each group under the theme
-  list's group heading (13px, 600, Muted Ink, a Hairline beneath). A section with a match in a
+  Caption, tabular figures), then the matches grouped by section, each group under the
+  group heading (13px, 600, Muted Ink, a Hairline beneath). A section with a match in a
   name comes first, and within a section, matches by name come first; otherwise the order is the
   sidebar's.
 - **Each match is a row you press:** the name at 14px, its explanation beneath at 13px Muted Ink,
@@ -514,9 +578,9 @@ One treatment across both surfaces — our own panels and the SoundCloud view.
 - **Thumb:** 4px radius. `--bsc-text-disabled` in our own UI; mid-grey alpha
   (`rgb(128 128 128 / 40%)`) on SoundCloud's page, because our tokens do not exist on their
   origin and their theme may be either light or dark.
-- **Hover and active:** the accent. This is the one place the accent appears outside focus
-  and selection, and it still obeys the Borrowed Accent Rule — grabbing a scrollbar is a
-  state, not decoration.
+- **Hover and active:** the accent. With a slider's fill, this is where the accent appears
+  outside focus, selection and "on", and it still obeys the Borrowed Accent Rule — grabbing a
+  scrollbar is a state, not decoration.
 
 ### Lyrics pane
 
@@ -698,8 +762,8 @@ the same bar, the same point, the same tag, so the two plugins read as one famil
 
 A setting whose feature does not exist yet renders as a full row — label, help text, and a real
 control — with the control disabled and an Overline badge reading **NOT IMPLEMENTED YET** beneath
-the help text. The label drops to Ghost Ink. A checkbox is drawn unchecked whatever its default,
-so it never claims that something which does not exist yet is on.
+the help text. The label drops to Ghost Ink. A switch is drawn off whatever its default, so
+it never claims that something which does not exist yet is on, and it is never marked changed.
 
 This exists because the settings schema is written ahead of the features, and a toggle that
 silently does nothing is worse than one that admits it. It is the clearest visual expression of
@@ -713,7 +777,7 @@ whether a feature that does exist is working right now — for settings whose an
 without the setting changing. Today that is Discord presence, which needs the Discord app to be
 running (`statusFrom: 'discord'` in the schema, `src/renderer/settings/DiscordStatus.svelte`), and
 Glass, which needs Windows 11 and hardware acceleration (`statusFrom: 'glass'`,
-`GlassStatus.svelte`). Glass's line appears only while the box is ticked and there is no glass
+`GlassStatus.svelte`). Glass's line appears only while its switch is on and there is no glass
 ("Off in safe mode", "Not showing"): working glass shows itself.
 
 - **Under the help text**, in the label column: one Caption line. The state comes first, in two
@@ -727,7 +791,24 @@ Glass, which needs Windows 11 and hardware acceleration (`statusFrom: 'glass'`,
 - **"Try now"** appears only where trying again can change the answer: the Prompt's button at
   13px. A press holds "Looking for Discord…" for 600ms, because the real attempt fails in
   milliseconds and the press would otherwise look like it did nothing.
-- Switched off, it shows nothing: the unticked box already says so.
+- Switched off, it shows nothing: the switch already says so.
+
+### Discord card
+
+Above the Discord section's rows (`src/renderer/settings/DiscordCard.svelte`, since 2026-11-14):
+what friends see, built by the same function that sends it (`buildActivity`), so the preview and
+Discord cannot disagree.
+
+- **In our colours, not Discord's:** Field White behind a Hairline, 6px radius, 12px padding, at
+  most 340px wide. "Listening to BetterSoundCloud" (12px, 600, Muted Ink); then the 64px artwork at
+  the control radius with our 20px badge in its corner, the title (14px, 600) and the uploader
+  (13px, Muted Ink), each ellipsized, and a 2px Ink rule over a Hairline track between the times in
+  tabular figures; then Discord's buttons as words in a Hairline box.
+- **Nothing on it can be pressed.** It is a preview; its buttons are words in a box.
+- **Its caption beneath**, one Caption line: "What your friends see on your Discord profile, right
+  now."
+- **No card, in words:** in 13px Muted Ink, why there is none — Rich Presence off, nothing
+  playing, or paused ("Paused: the card clears until you play again.").
 
 ### The safe-mode notice
 
@@ -776,12 +857,29 @@ The status line under "Update automatically" in General (`UpdateStatus.svelte`, 
   do: an update ready, or one this copy can only be told about. None while the panel is open.
   Clicking it opens Settings.
 
+### About
+
+Settings → About (`src/renderer/settings/About.svelte`, since 2026-11-14): a section with no
+settings, opened from its icon in the list or from the version at the sidebar's foot.
+
+- **The app**: its 56px icon beside "BetterSoundCloud" at the Title size, and one Caption line in
+  tabular figures, the version, the licence and the author, separated by middle dots.
+- **The update line** (above), then the links in 13px Muted Ink, separated by middle dots: GitHub,
+  Report a problem, Every version's notes. They look like links at rest — a quiet underline at 45%
+  of their ink, 2px below — and go to Ink with a full underline on hover.
+- **"What's new in 0.8.0"**, a group heading, then that version's entry from CHANGELOG.md drawn as
+  text, never as markup: its headings at 14px 600 in Ink, its paragraphs and items at 13px Muted
+  Ink, line-height 1.5, at most 70ch; each item after the 6×1px dash the plugin rows use; bold in
+  Ink at 600. A version whose notes are not in the app says so and links to GitHub.
+- **"Built with"**, a group heading, then one paragraph naming what the app ships and where the
+  licences are.
+
 ### Plugin rows
 
 Settings → Plugins (`src/renderer/settings/Plugins.svelte`), and the model for any list of
 things the user switches on that act on their behalf.
 
-- **One row per plugin**, the settings-row shape: a label column and the checkbox on the right.
+- **One row per plugin**, the settings-row shape: a label column and the switch on the right.
   Down the label column: the name (Body), a Caption meta line ("Built in · 1.0.0 · Author" or
   "From your plugins folder · …"), the description, then **what it can do** — one permission per
   line, each after a 6×1px dash in currentcolor, the system's hairline as a list mark instead of
@@ -793,9 +891,9 @@ things the user switches on that act on their behalf.
 - **Its own settings**, while it is on, sit set in under a 1px Hairline rule on the left, as
   compact rows of their own — so they read as belonging to that plugin and not to the panel. A
   `choice` setting is the panel's own dropdown, at the same size as its other rows'.
-- **A plugin that cannot work is still listed**, label in Ghost Ink, checkbox disabled, with the
+- **A plugin that cannot work is still listed**, label in Ghost Ink, switch disabled, with the
   reason. Hiding it would leave the user wondering where their folder went.
-- **Asking first.** Ticking a plugin from the user's folder does not tick it: a confirmation opens
+- **Asking first.** Switching on a plugin from the user's folder does not switch it on: a confirmation opens
   inside that row — Field White behind a Hairline, 6px radius, inset rather than floating — with
   the permissions again in Ink at 13px, one honest sentence about trust, and **Turn on** / Cancel.
   Not a dialog on top of Settings: the question belongs to the row. Escape closes it
@@ -828,42 +926,85 @@ settings** and **Clear cache and site data**. Buttons, not settings, and neither
 ### Theme rows
 
 Settings → Themes (`src/renderer/settings/Themes.svelte`). A single choice among files, so it is a
-radio group, and the arrow keys move through it.
+radio group, and the arrow keys move through it. Since 2026-11-14 it is a gallery of cards, not a
+list of rows: the maintainer's choice, after Obsidian's theme screenshots, since what a theme
+looks like is a picture, not a sentence.
 
-- **The theme list comes first** (the maintainer's order, 2026-11-14: it is the section's main
-  choice, and under the other rows no theme showed on a short window), under a Label-size heading,
-  "Theme", in the secondary ink, which is also the radio group's accessible name. Its footer
-  follows it.
-- **The switches come next**, under a heading of the same kind, "With every theme", so they never
-  read as part of the list or its footer: ordinary settings rows drawn by `Settings.svelte`
+- **The gallery comes first** (the maintainer's order, 2026-11-14: it is the section's main
+  choice, and under the other rows no theme showed on a short window), with no visible heading:
+  the page's title already says Themes, and "Theme" stays the radio group's accessible name. Its
+  footer follows it.
+- **The switches come next**, under a group heading, "With every theme", so they never read as
+  part of the gallery or its footer: ordinary settings rows drawn by `Settings.svelte`
   (`appearance.minimalNavigation`, then Glass and Glass tint on Windows, right above the
   Background they take the place of).
-- **The Background group comes last** (`Background.svelte`): a "Background" heading like the
-  theme list's, one Caption line saying where it shows, a radio group — None, the playing track's
-  artwork, a picture of your own — and two sliders, Blur and Strength, each with its value in
-  tabular figures at the right. The sliders are disabled while None is chosen. The picture row
-  carries a 120×68 preview behind a Hairline at the control radius, and "Choose a picture…" /
-  "Choose another picture…". Choosing a picture also selects it. While the selected theme needs a
+- **The Background group comes last** (`Background.svelte`): a "Background" group heading, one
+  Explanation line saying where it shows, a radio group of three picture tiles — None, the playing
+  track's artwork, a picture of your own (Theme pictures) — then "Choose a picture…" / "Choose
+  another picture…", and two sliders, Blur and Strength, each with its value in tabular figures at
+  the right. The sliders are disabled while None is chosen. Choosing a picture also selects it.
+  While Glass is on, the tiles are unavailable and one line says the glass is the background. While the selected theme needs a
   background (Glassmorphism), None is disabled and its caption says why, and the choice shown as on
   is the one in effect — the artwork — not the stored None.
-- **"None" heads the list**, always: no theme on top of SoundCloud's own look. It is a choice, not
-  an absence.
-- **One row per theme**, the settings-row shape with the radio on the right: the name (Body; 600
-  when chosen — weight carries selection, the accent stays on the radio), a Caption meta line
-  ("Built in · 2.0.0 · Author", "Yours", "Yours — your copy of a built-in theme"), the
-  description, then **swatches**: up to five 14px square chips of the theme's `@preview` colours,
-  each behind a 1px Hairline so a near-white or near-black chip still shows. Square because neither
-  of the system's two radii suits a 14px chip, and a third would be a new concept.
-- **The chosen row carries its one action**, so the list stays quiet: "Make an editable copy" for a
-  built-in theme, "Open file" for one of yours, each with a Caption line saying that saved changes
-  show at once.
-- **A missing theme says so** in Ink below the list, rather than silently falling back.
+- **"None" heads the gallery**, always: no theme on top of SoundCloud's own look ("SoundCloud’s
+  own look", its meta line says). It is a choice, not an absence.
+- **One card per theme**: its picture (Theme pictures) in the tile frame, the name (Body; 600 when
+  chosen — weight carries selection, the accent stays on the ring), a Caption meta line ("Built in ·
+  2.0.0 · Author", "Yours", "Yours — your copy of a built-in theme"), then the whole description at
+  the Explanation's size, never cut off.
+- **The chosen card** is ringed in the accent; hover rings a card in Hairline. Keyboard focus is
+  the 2px ring 4px outside the picture, clear of the chosen ring, so where the keyboard is and
+  what is chosen read as two things.
+- **No picture yet:** the theme's `@preview` colours as equal bands filling the picture's shape,
+  with a "No picture yet" chip in its bottom-left corner (Field White, the control radius, Muted
+  Ink); a theme with no colours either gets a Field White blank saying the same. Each stays until
+  the theme has been on.
+- **The chosen theme's one action sits under the gallery**, above a Hairline, so every card stays
+  the same height: "Make an editable copy" for a built-in theme, "Open <name>’s file" for one of
+  yours, each with an Explanation line saying that saved changes show at once.
+- **A missing theme says so** in Ink below the gallery, rather than silently falling back.
 - **The footer** holds "Open themes folder" and one honest sentence: themes are CSS and cannot run
   code, but a picture loaded from the internet on SoundCloud's page tells that site you use it.
 
 A theme may recolour our windows through the `--bsc-*` tokens. That is the point of the token API,
 and it is also how a theme can break the one thing the accent is for: a theme's accent must still
 show the focus ring. The authors' guide says so; the shipped themes meet 3:1.
+
+### Theme pictures
+
+Pictures of how the window will look, wherever a choice is about looks (the maintainer's choice,
+2026-11-14): the Light or dark tiles, the Background's tiles, the theme gallery's pictures, and the
+line drawings beside the layout settings. They show; the words still say.
+
+- **The tile frame:** a 2px ring with 3px of air round the picture, at the control radius:
+  transparent at rest, Hairline on hover, the accent when chosen. The keyboard's ring sits 3px
+  outside it (4px on a theme card). The name beneath, 13px Muted Ink, goes to Ink at 600 when
+  chosen. The radio stays underneath for the keyboard and screen readers. A choice that cannot be
+  made right now is at half strength, its name in Ghost Ink.
+- **Light or dark** (`appearance.colorScheme`, `tiles` in the schema) is three tiles instead of a
+  dropdown: our own window in light, in dark, and for System the dark one with the light one laid
+  over its left. **A picture of a mode is drawn in that mode's own colours whatever the panel is
+  in** — `tokens.css`'s light and dark values, written out in that one place — so Light looks light
+  in a dark panel.
+- **The Background's tiles** are a small SoundCloud page, square like a print, with the artwork or
+  your picture blurred and faded behind its rows, as the Background draws it. With nothing to
+  show, the page steps back behind the words: "Nothing playing", "No picture yet".
+- **A theme's picture** is the whole window wearing it, 16:9, behind a Hairline: our bar over
+  SoundCloud's whole page, never a corner of it (the maintainer: the whole interface, not zoomed
+  in). The built-ins ship one, the maintainer's own full-screen screenshots at 1920×1080; once a
+  theme has been on, the user's own window wearing it takes that
+  picture's place, and again whenever its CSS changes. A window of another shape loses its
+  edges in the card, never its top. A page that has not drawn yet, almost all one colour, is
+  never kept. Settings, the panels and the overlays are never pictured.
+- **The line drawings** (`SettingFigure.svelte`), 120×76, beside a layout setting's row: a window
+  with our bar on top, SoundCloud's header, its page and its player bar. 1.4 strokes with round
+  ends in mixes of Muted Ink; our bar a shade darker than SoundCloud's header, so the two never
+  read as one band; the part the row's setting controls in Ink. Decorative: hidden from assistive
+  technology, since the row's words say it all.
+
+**The Same Window Rule.** Every layout drawing is the same window, as all the layout settings have
+it right now, so the drawings never disagree and changing one setting changes them all. A drawing
+shows the state, never a picture of the setting on its own.
 
 ### Motion
 
@@ -876,6 +1017,10 @@ animation.
 
 Everything else is instant. Hover states have no transition; the wash appears on the frame it is
 needed.
+
+**The switch's knob is a second small state motion** (2026-11-14): it slides across the track
+over 120ms (`cubic-bezier(0.2, 0.8, 0.2, 1)`), so on and off read as a movement, not a flicker.
+The track's colour changes at once. Reduced motion removes the slide.
 
 **The one exception is the wait line** on the page-status surface: a 120×2px Hairline track with
 a Muted Ink segment crossing it every 1.4s, shown only while something is in progress. A message
@@ -904,7 +1049,10 @@ only between Settings and the bar.
 true })`, because a view last used with the mouse draws no ring for a plain `focus()`.
 - **Landing on SoundCloud's page only focuses it**; Tab then goes through the page's own controls.
 - **Closing Settings gives focus back** to where it came from, usually the bar's Settings button.
-- **Settings → Shortcuts lists both keys**, as two rows with key chips: Field White behind a
+- **Ctrl+, (⌘, on macOS) opens Settings and closes it** from anywhere in the window, as in most
+  apps (2026-11-14). Closing by it fades out like Escape.
+- **Settings → Shortcuts lists the keys**, F6 and Shift+F6 under "Moving around", Ctrl+, and
+  Ctrl+F under "Settings", as rows with key chips: Field White behind a
   Hairline, 6px radius, the system font at 12px. The same chip, tighter and in Muted Ink, is the
   search field's "Ctrl+F" hint.
 
@@ -914,8 +1062,9 @@ In a Windows contrast theme the system's colours replace ours. `tokens.css` maps
 a system colour there (Canvas, CanvasText, Highlight, GrayText), so what is drawn with a
 background, a border or an outline keeps the user's colours rather than sinking into Canvas: the
 focus ring is Highlight, hairlines and key chips CanvasText, disabled controls GrayText. Hover
-washes and the close button's red go to transparent. In a contrast theme, focus shows where you
-are; hover does not.
+washes and the close button's red go to transparent. A switch and a slider keep exact
+system colours there: a CanvasText track and knob, Highlight when on, so the state still shows.
+In a contrast theme, focus shows where you are; hover does not.
 
 ## Do's and Don'ts
 

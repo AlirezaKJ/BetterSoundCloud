@@ -5,6 +5,7 @@
   import StatusText from './StatusText.svelte'
   import EqualiserEditor from './EqualiserEditor.svelte'
   import PitchEditor from './PitchEditor.svelte'
+  import Switch from './Switch.svelte'
 
   /*
    * The Plugins section: every plugin, built in or dropped into the plugins folder.
@@ -247,12 +248,10 @@
                     {#if setting.help}<p class="help">{setting.help}</p>{/if}
                   </div>
                   {#if setting.kind === 'boolean'}
-                    <input
+                    <Switch
                       {id}
-                      type="checkbox"
                       checked={value === true}
-                      onchange={(e) =>
-                        setSetting(plugin.id, setting.key, e.currentTarget.checked)}
+                      onchange={(on: boolean) => setSetting(plugin.id, setting.key, on)}
                     />
                   {:else if setting.kind === 'choice'}
                     <select
@@ -294,12 +293,11 @@
       </div>
 
       <div class="control">
-        <input
+        <Switch
           id={`plugin-${plugin.source}-${plugin.id}`}
-          type="checkbox"
           checked={plugin.enabled}
           disabled={!canToggle}
-          onchange={(e) => toggle(plugin, e.currentTarget)}
+          onchange={(_on: boolean, box: HTMLInputElement) => toggle(plugin, box)}
         />
       </div>
     </div>
@@ -410,12 +408,6 @@
 
   .control {
     flex: 0 0 auto;
-  }
-
-  input[type='checkbox'] {
-    width: 16px;
-    height: 16px;
-    accent-color: var(--bsc-accent);
   }
 
   input:disabled {

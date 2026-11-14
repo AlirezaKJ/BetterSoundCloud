@@ -6,7 +6,8 @@
     SECTION_LABELS,
     SETTINGS,
     SETTING_KEYS,
-    APPLIES_NOTES
+    APPLIES_NOTES,
+    defaults
   } from '@shared/settings-schema'
   import type { Section, SettingDef, SettingKey, Settings } from '@shared/settings-schema'
   import { attributeSelector, OTHER_ENTRIES, searchSettings } from '@shared/settings-search'
@@ -21,6 +22,11 @@
   import Background from './Background.svelte'
   import Reset from './Reset.svelte'
   import BrowserSession from './BrowserSession.svelte'
+  import Switch from './Switch.svelte'
+  import SettingFigure from './SettingFigure.svelte'
+  import type { FigureName, WindowLayout } from './setting-figure'
+  import About from './About.svelte'
+  import DiscordCard from './DiscordCard.svelte'
 
   /*
    * Settings is a page that stands in for SoundCloud's while it is open: everything below our bar,
@@ -40,8 +46,36 @@
 
   const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const DURATION = REDUCED_MOTION ? 0 : 180
-  const SEARCH_KEY = window.bsc.platform === 'darwin' ? '⌘F' : 'Ctrl+F'
-  const REPOSITORY = 'https://github.com/AlirezaKJ/BetterSoundCloud'
+  const MAC = window.bsc.platform === 'darwin'
+  const SEARCH_KEY = MAC ? '⌘F' : 'Ctrl+F'
+  /** What every setting starts as, so a changed one can be marked and put back. */
+  const DEFAULTS = defaults()
+
+  /**
+   * A 15px line icon for each section, in the system's icon style (24-unit box, 1.6 stroke, round
+   * ends), beside its name: the name is still what is read, the icon what the eye finds.
+   */
+  const ICONS: Record<Section, string> = {
+    // Three sliders.
+    general: 'M4 7h9M17 7h3M4 17h3M11 17h9M15 5v4M9 15v4',
+    // A circle, half of it set apart: light or dark.
+    appearance: 'M12 4a8 8 0 1 0 0 16a8 8 0 1 0 0-16M12 4v16M12 8h4M12 12h6M12 16h4',
+    // A painter's palette with its three dabs.
+    themes:
+      'M12 4a8 8 0 1 0 0 16c1 0 1.5-.6 1.5-1.4 0-.8-.6-1.2-.6-2 0-.9.7-1.6 1.6-1.6H17a3 3 0 0 0 3-3c0-4.4-3.6-8-8-8zM8 11h.01M10.5 7.5h.01M15 8h.01',
+    // A card speaking: presence.
+    discord:
+      'M5 5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-9l-4 3v-3H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM8 9h8M8 12h5',
+    // A plug.
+    plugins: 'M9 3v5M15 3v5M7 8h10v3a5 5 0 0 1-10 0V8zM12 16v5',
+    // A keyboard.
+    shortcuts: 'M3 7h18v10H3zM7 11h.01M11 11h.01M15 11h.01M8 14h8',
+    // A flask.
+    advanced:
+      'M9 3h6M10 3v6l-5 8.5A1.7 1.7 0 0 0 6.5 20h11a1.7 1.7 0 0 0 1.5-2.5L14 9V3M7.5 14h9',
+    // Information.
+    about: 'M12 4a8 8 0 1 0 0 16a8 8 0 1 0 0-16M12 11v5M12 8h.01'
+  }
 
   let open = $state(false)
   let values = $state<Settings | null>(null)
@@ -61,6 +95,10 @@
   let scrolled = $state(false)
   /** A slider being dragged: its value shows beside it, and is stored when it is let go. */
   let sliding = $state<{ key: SettingKey; value: number } | null>(null)
+  /** The settings that apply on restart, as this launch read them: "Restart now" once changed. */
+  let atLaunch = $state<Partial<Settings>>({})
+  /** Settings changed while Settings is open that apply to the next page load: "Reload". */
+  let reloadDue = $state<SettingKey[]>([])
 
   let searchField = $state<HTMLInputElement | null>(null)
   let scroller = $state<HTMLElement | null>(null)
@@ -77,6 +115,58 @@
 
   /** Drawn by its own component (`drawnBy` in the schema), so it gets no ordinary row. */
   const drawnElsewhere = (key: SettingKey): boolean => 'drawnBy' in SETTINGS[key]
+
+  /**
+   * A section's ordinary rows, each with the heading to draw above it: its group's, where the
+   * group changes from the row before (`group` in the schema).
+   */
+  const rowsIn = (section: Section): { key: SettingKey; heading: string }[] => {
+    let previous = ''
+    return keysIn(section)
+      .filter((key) => !drawnElsewhere(key))
+      .map((key) => {
+        const def: SettingDef = SETTINGS[key]
+        const group = def.group ?? ''
+        const heading = group !== previous ? group : ''
+        previous = group
+        return { key, heading }
+      })
+  }
+
+  /** The setting is not what it started as, so its row is marked and offers Reset. */
+  const changed = (key: SettingKey): boolean =>
+    values !== null && JSON.stringify(values[key]) !== JSON.stringify(DEFAULTS[key])
+
+  /** A setting's default in words, for its Reset button's name: "on", "Home", "100%". */
+  const defaultWords = (key: SettingKey): string => {
+    const def: SettingDef = SETTINGS[key]
+    const value = DEFAULTS[key]
+    if (typeof value === 'boolean') return value ? 'on' : 'off'
+    if (def.kind === 'enum') return optionLabel(key, String(value))
+    if (def.kind === 'number') return `${value}${def.unit ?? ''}`
+    return String(value) || 'empty'
+  }
+
+  /** The picture on a Light or dark tile. */
+  /** The window as the layout settings have it now: every drawing beside a row shows it. */
+  const windowLayout = $derived<WindowLayout | null>(
+    values
+      ? {
+          barHidden: values['appearance.hideMenuBar'] || values['appearance.autoHideHeader'],
+          autoHide: values['appearance.autoHideHeader'],
+          stretched: values['appearance.fullWidthLayout'],
+          minimalNavigation: values['appearance.minimalNavigation'],
+          playerButtons: values['appearance.playerButtons']
+        }
+      : null
+  )
+
+  /** How far along its range a slider's value is, for the filled part of its rule. */
+  const fill = (value: number, min: number, max: number): string =>
+    `${max > min ? ((value - min) / (max - min)) * 100 : 0}%`
+
+  const tileFigure = (option: string): FigureName =>
+    option === 'light' ? 'mode-light' : option === 'dark' ? 'mode-dark' : 'mode-system'
 
   /** How a dropdown option reads: its label from the schema, which every drawn option has. */
   const optionLabel = (key: SettingKey, option: string): string => {
@@ -146,10 +236,15 @@
         // A search is cleared first, so a second Escape closes Settings.
         if (searching) clearSearch()
         else requestClose()
-      } else if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'f') {
+      } else if ((MAC ? e.metaKey : e.ctrlKey) && !e.altKey && e.key.toLowerCase() === 'f') {
         e.preventDefault()
         searchField?.focus()
         searchField?.select()
+      } else if ((MAC ? e.metaKey : e.ctrlKey) && !e.altKey && !e.shiftKey && e.key === ',') {
+        // The key that opened Settings closes it (main leaves it to this page while Settings has
+        // the keyboard), so it fades out like Escape.
+        e.preventDefault()
+        requestClose()
       }
     }
     window.addEventListener('keydown', onKey)
@@ -158,6 +253,7 @@
     void window.bsc.getSafeMode().then((on) => (safeMode = on))
     void window.bsc.getWidevineSkipped().then((skipped) => (withoutWidevine = skipped))
     void window.bsc.getUpdateStatus().then((status) => (version = status.current))
+    void window.bsc.getSettingsAtLaunch().then((launch) => (atLaunch = launch))
     const stopWatching = window.bsc.onSettingsChanged((s) => {
       values = s
     })
@@ -190,8 +286,29 @@
   async function update(key: SettingKey, value: unknown): Promise<void> {
     // Main re-validates and returns the authoritative snapshot; we never assume our
     // local write was accepted verbatim (a number outside its bounds comes back clamped).
+    const before = values?.[key]
     values = await window.bsc.setSetting(key, value)
+    const def: SettingDef = SETTINGS[key]
+    if (def.applies === 'reload' && values[key] !== before && !reloadDue.includes(key)) {
+      reloadDue = [...reloadDue, key]
+    }
   }
+
+  /** "Restart now" or "Reload SoundCloud", beside a setting that waits for one. */
+  function applyNow(key: SettingKey, when: 'reload' | 'restart'): void {
+    if (when === 'restart') {
+      window.bsc.restartApp()
+      return
+    }
+    window.bsc.reload()
+    reloadDue = reloadDue.filter((k) => k !== key)
+  }
+
+  /** Whether a setting that applies later is waiting for its restart or reload right now. */
+  const due = (key: SettingKey, when: 'reload' | 'restart'): boolean =>
+    when === 'restart'
+      ? key in atLaunch && values !== null && atLaunch[key] !== values[key]
+      : reloadDue.includes(key)
 
   function toTop(): void {
     if (scroller) scroller.scrollTop = 0
@@ -252,7 +369,7 @@
     const control =
       row.querySelector<HTMLElement>('input:checked:not(:disabled)') ??
       row.querySelector<HTMLElement>(
-        'input:not(:disabled), select:not(:disabled), button:not(:disabled)'
+        'input:not(:disabled), select:not(:disabled), button:not(:disabled), a[href]'
       )
     if (control) {
       control.focus({ focusVisible: true } as FocusOptions)
@@ -302,9 +419,26 @@
     <!-- `as const` narrows each entry to its literal shape, so entries that are
          wired have no `wired` property at all — hence the `in` guard. -->
     {@const pending = 'wired' in def && def.wired === false}
-    <div class="row" class:pending data-bsc-setting={key}>
+    {@const isChanged = !pending && changed(key)}
+    {@const tiles = def.kind === 'enum' && 'tiles' in def && def.tiles}
+    <div class="row" class:pending class:changed={isChanged} data-bsc-setting={key}>
       <div class="label">
-        <label for={key}>{def.label}</label>
+        <div class="name-line">
+          {#if tiles}
+            <span class="name" id={`${key}-name`}>{def.label}</span>
+          {:else}
+            <label for={key}>{def.label}</label>
+          {/if}
+          <!-- Changed from its default (VS Code's mark, the maintainer's choice): put it back. -->
+          {#if isChanged}
+            <button
+              class="reset"
+              aria-label={`Reset “${def.label}” to ${defaultWords(key)}`}
+              title={`Back to ${defaultWords(key)}`}
+              onclick={() => update(key, DEFAULTS[key])}>Reset</button
+            >
+          {/if}
+        </div>
         {#if 'help' in def && def.help}<p class="help">{def.help}</p>{/if}
         <!--
           Honesty about what does not exist yet. The schema is written ahead of the
@@ -315,10 +449,16 @@
         <!--
           Timing, for the few settings whose effect is not immediate. A caption rather
           than a second badge: DESIGN.md reserves the Overline treatment for the
-          "not implemented yet" badge alone.
+          "not implemented yet" badge alone. Once the setting has changed and is waiting, the
+          way to apply it now: "Restart now", "Reload SoundCloud".
         -->
         {#if 'applies' in def && def.applies}
           <p class="note">{APPLIES_NOTES[def.applies]}</p>
+          {#if !pending && due(key, def.applies)}
+            <button class="apply" onclick={() => applyNow(key, def.applies)}
+              >{def.applies === 'restart' ? 'Restart now' : 'Reload SoundCloud'}</button
+            >
+          {/if}
         {/if}
         <!--
           Whether the feature behind the control is working right now, for the settings
@@ -327,75 +467,114 @@
         {#if 'statusFrom' in def && def.statusFrom === 'discord'}<DiscordStatus />{/if}
         {#if 'statusFrom' in def && def.statusFrom === 'updates'}<UpdateStatus />{/if}
         {#if 'statusFrom' in def && def.statusFrom === 'glass'}<GlassStatus />{/if}
-      </div>
 
-      <div class="control">
-        {#if def.kind === 'boolean'}
-          <input
-            id={key}
-            type="checkbox"
-            disabled={pending}
-            checked={!pending && (values[key] as boolean)}
-            onchange={(e) => update(key, e.currentTarget.checked)}
-          />
-        {:else if def.kind === 'number' && 'slider' in def && def.slider}
-          <!-- The Background's slider, so the two in the Themes section look and work alike. -->
-          <input
-            id={key}
-            type="range"
-            class="slider"
-            disabled={pending}
-            min={def.min}
-            max={def.max}
-            step={def.step ?? 1}
-            value={values[key] as number}
-            oninput={(e) => (sliding = { key, value: e.currentTarget.valueAsNumber })}
-            onchange={async (e) => {
-              await update(key, e.currentTarget.valueAsNumber)
-              sliding = null
-            }}
-          />
-          <output for={key}
-            >{sliding?.key === key ? sliding.value : values[key]}{'unit' in def
-              ? def.unit
-              : ''}</output
-          >
-        {:else if def.kind === 'number'}
-          <input
-            id={key}
-            type="number"
-            disabled={pending}
-            min={def.min}
-            max={def.max}
-            step={def.step ?? 1}
-            value={values[key] as number}
-            onchange={(e) => update(key, e.currentTarget.valueAsNumber)}
-          />
-          {#if 'unit' in def && def.unit}<span class="unit" aria-hidden="true">{def.unit}</span
-            >{/if}
-        {:else if def.kind === 'enum'}
-          <select
-            id={key}
-            disabled={pending}
-            value={values[key] as string}
-            onchange={(e) => update(key, e.currentTarget.value)}
-          >
+        {#if tiles && def.kind === 'enum'}
+          <!-- A picture per choice, instead of a dropdown: a light window, a dark one, both. -->
+          <div class="tiles" role="radiogroup" aria-labelledby={`${key}-name`}>
             {#each def.options as option (option)}
-              <option value={option}>{optionLabel(key, option)}</option>
+              <label class="tile" class:chosen={values[key] === option}>
+                <input
+                  type="radio"
+                  name={key}
+                  value={option}
+                  checked={values[key] === option}
+                  onchange={() => update(key, option)}
+                />
+                <span class="tile-picture"><SettingFigure name={tileFigure(option)} /></span>
+                <span class="tile-name">{optionLabel(key, option)}</span>
+              </label>
             {/each}
-          </select>
-        {:else}
-          <input
-            id={key}
-            type="text"
-            disabled={pending}
-            value={values[key] as string}
-            onchange={(e) => update(key, e.currentTarget.value)}
-          />
+          </div>
         {/if}
       </div>
+
+      <!-- What the setting changes, drawn in the state it is in now. -->
+      {#if 'figure' in def && def.figure}
+        <SettingFigure name={def.figure} layout={windowLayout} />
+      {/if}
+
+      {#if !tiles}
+        <div class="control">
+          {#if def.kind === 'boolean'}
+            <Switch
+              id={key}
+              checked={!pending && (values[key] as boolean)}
+              disabled={pending}
+              onchange={(on: boolean) => update(key, on)}
+            />
+          {:else if def.kind === 'number' && 'slider' in def && def.slider}
+            <!-- The Background's slider, so the two in the Themes section look and work alike. -->
+            <input
+              id={key}
+              type="range"
+              class="slider"
+              disabled={pending}
+              min={def.min}
+              max={def.max}
+              step={def.step ?? 1}
+              value={values[key] as number}
+              style:--bsc-range-fill={fill(
+                sliding?.key === key ? sliding.value : (values[key] as number),
+                def.min,
+                def.max
+              )}
+              oninput={(e) => (sliding = { key, value: e.currentTarget.valueAsNumber })}
+              onchange={async (e) => {
+                await update(key, e.currentTarget.valueAsNumber)
+                sliding = null
+              }}
+            />
+            <output for={key}
+              >{sliding?.key === key ? sliding.value : values[key]}{'unit' in def
+                ? def.unit
+                : ''}</output
+            >
+          {:else if def.kind === 'number'}
+            <input
+              id={key}
+              type="number"
+              disabled={pending}
+              min={def.min}
+              max={def.max}
+              step={def.step ?? 1}
+              value={values[key] as number}
+              onchange={(e) => update(key, e.currentTarget.valueAsNumber)}
+            />
+            {#if 'unit' in def && def.unit}<span class="unit" aria-hidden="true"
+                >{def.unit}</span
+              >{/if}
+          {:else if def.kind === 'enum'}
+            <select
+              id={key}
+              disabled={pending}
+              value={values[key] as string}
+              onchange={(e) => update(key, e.currentTarget.value)}
+            >
+              {#each def.options as option (option)}
+                <option value={option}>{optionLabel(key, option)}</option>
+              {/each}
+            </select>
+          {:else}
+            <input
+              id={key}
+              type="text"
+              disabled={pending}
+              value={values[key] as string}
+              onchange={(e) => update(key, e.currentTarget.value)}
+            />
+          {/if}
+        </div>
+      {/if}
     </div>
   {/if}
+{/snippet}
+
+<!-- A section's rows, with a heading wherever their group changes. -->
+{#snippet sectionRows(section: Section)}
+  {#each rowsIn(section) as { key, heading } (key)}
+    {#if heading}<h2 class="group">{heading}</h2>{/if}
+    {@render settingRow(key)}
+  {/each}
 {/snippet}
 
 <!-- A run of text with the searched-for words in bold. -->
@@ -454,20 +633,16 @@
             data-bsc-focus-first={!searching && active === section ? '' : undefined}
             onclick={() => showSection(section)}
           >
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d={ICONS[section]} /></svg>
             {SECTION_LABELS[section]}
           </button>
         {/each}
       </nav>
 
-      <div class="about" data-bsc-settings-about>
-        <p>
+      <div class="foot" data-bsc-settings-about>
+        <button class="version-link" onclick={() => showSection('about')}>
           BetterSoundCloud{#if version}&nbsp;<span class="version">{version}</span>{/if}
-        </p>
-        <p>
-          <a href={REPOSITORY} target="_blank" rel="noreferrer">GitHub</a>
-          <span aria-hidden="true">·</span>
-          <a href={`${REPOSITORY}/issues`} target="_blank" rel="noreferrer">Report a problem</a>
-        </p>
+        </button>
       </div>
     </div>
 
@@ -549,35 +724,33 @@
           {:else if active === 'plugins'}
             <!-- Not schema-driven: plugins are found on disk, so their rows are too. -->
             <Plugins />
+          {:else if active === 'about'}
+            <About />
           {:else if active === 'themes'}
-            <!-- The section's main choice first (the maintainer's, 2026-11-14): the themes, which
-                 are files with descriptions and swatches (Themes.svelte). Then the switches that
-                 work with any theme: Minimal navigation, and Glass with its tint on Windows, right
-                 above the Background it takes the place of (Background.svelte, a preview and
-                 sliders). Settings with `drawnBy` belong to those two components, so they get no
-                 row here. -->
+            <!-- The section's main choice first (the maintainer's, 2026-11-14): the theme gallery,
+                 pictures of SoundCloud wearing each theme (Themes.svelte). Then the switches that
+                 work with any theme, under "With every theme": Minimal navigation, and Glass with
+                 its tint on Windows, right above the Background it takes the place of
+                 (Background.svelte). Settings with `drawnBy` belong to those two components. -->
             <Themes />
-            {#if values}
-              <h2 class="group" data-bsc-settings-group="any-theme">With every theme</h2>
-              {#each keysIn('themes').filter((k) => !drawnElsewhere(k)) as key (key)}
-                {@render settingRow(key)}
-              {/each}
-            {/if}
+            {#if values}{@render sectionRows('themes')}{/if}
             <Background />
           {:else if !values}
             <p class="loading">Loading…</p>
           {:else}
-            {#each keysIn(active).filter((k) => !drawnElsewhere(k)) as key (key)}
-              {@render settingRow(key)}
-            {/each}
+            <!-- The card Discord shows your friends, filled with what is playing now. -->
+            {#if active === 'discord'}<DiscordCard {values} />{/if}
+            {@render sectionRows(active)}
             {#if active === 'advanced'}
+              <h2 class="group">Your sign-in and data</h2>
               <BrowserSession />
               <!-- Reset settings, and clear SoundCloud's data: buttons that ask first, not settings. -->
               <Reset />
             {/if}
             {#if active === 'shortcuts'}
-              <!-- Keys built into the window (main/focus-cycle.ts). Not settings, so not schema
-                   rows, but listed where people look for keys. -->
+              <!-- Keys built into the window (main/focus-cycle.ts, Ctrl+, in index.ts). Not
+                   settings, so not schema rows, but listed where people look for keys. -->
+              <h2 class="group">Moving around</h2>
               <div class="row" data-bsc-settings-key="next-part">
                 <div class="label">
                   <p class="name">Move focus to the next part of the window</p>
@@ -592,6 +765,18 @@
               <div class="row" data-bsc-settings-key="previous-part">
                 <div class="label"><p class="name">Move focus back</p></div>
                 <div class="control keys"><kbd>Shift</kbd> <kbd>F6</kbd></div>
+              </div>
+              <h2 class="group">Settings</h2>
+              <div class="row" data-bsc-settings-key="open-settings">
+                <div class="label">
+                  <p class="name">Open or close Settings</p>
+                  <p class="help">From anywhere in the window, as in most apps.</p>
+                </div>
+                <div class="control keys"><kbd>{MAC ? '⌘' : 'Ctrl'}</kbd> <kbd>,</kbd></div>
+              </div>
+              <div class="row" data-bsc-settings-key="search-settings">
+                <div class="label"><p class="name">Search settings</p></div>
+                <div class="control keys"><kbd>{MAC ? '⌘' : 'Ctrl'}</kbd> <kbd>F</kbd></div>
               </div>
             {/if}
           {/if}
@@ -725,6 +910,9 @@
 
   nav button {
     flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
     padding: 7px 10px;
     border: 0;
     border-radius: var(--bsc-radius);
@@ -734,6 +922,17 @@
     font-size: 13px;
     text-align: left;
     cursor: pointer;
+  }
+
+  nav svg {
+    flex: 0 0 auto;
+    width: 15px;
+    height: 15px;
+    fill: none;
+    stroke: currentcolor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
   nav button:hover {
@@ -746,33 +945,32 @@
     font-weight: 600;
   }
 
-  .about {
-    padding: 12px 22px 14px;
+  /* The version, quietly, at the sidebar's foot: it opens About. */
+  .foot {
+    padding: 10px 12px 12px;
     border-top: 1px solid var(--bsc-border);
-    font-size: 12px;
-    line-height: 1.6;
-    color: var(--bsc-text-secondary);
   }
 
-  .about p {
-    margin: 0;
+  .version-link {
+    width: 100%;
+    padding: 6px 10px;
+    border: 0;
+    border-radius: var(--bsc-radius);
+    background: transparent;
+    color: var(--bsc-text-secondary);
+    font: inherit;
+    font-size: 12px;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .version-link:hover {
+    background: var(--bsc-bg-hover);
+    color: var(--bsc-text-primary);
   }
 
   .version {
     font-variant-numeric: tabular-nums;
-  }
-
-  /* Links that look like links at rest: a quiet underline, full ink on hover. */
-  .about a {
-    color: inherit;
-    text-decoration: underline;
-    text-decoration-color: color-mix(in srgb, currentcolor 45%, transparent);
-    text-underline-offset: 2px;
-  }
-
-  .about a:hover {
-    color: var(--bsc-text-primary);
-    text-decoration-color: currentcolor;
   }
 
   /* ── The content: the section's title, then its rows ──────────────────────────────── */
@@ -855,8 +1053,114 @@
   }
 
   .label {
+    position: relative;
     flex: 1;
     min-width: 0;
+  }
+
+  /* Changed from its default: a 2px accent mark in the gutter beside the name, as VS Code marks
+     a changed setting. It is state (the maintainer's choice), so the accent. */
+  .row.changed .label::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    bottom: 2px;
+    left: -14px;
+    width: 2px;
+    background: var(--bsc-accent);
+  }
+
+  .name-line {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  /* Reset and the apply buttons: quiet text actions that belong to their row. */
+  .reset {
+    padding: 0 2px;
+    border: 0;
+    border-radius: var(--bsc-radius);
+    background: transparent;
+    color: var(--bsc-text-secondary);
+    font: inherit;
+    font-size: 12px;
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, currentcolor 45%, transparent);
+    text-underline-offset: 2px;
+    cursor: pointer;
+  }
+
+  .reset:hover {
+    color: var(--bsc-text-primary);
+    text-decoration-color: currentcolor;
+  }
+
+  /* The Prompt's button (DESIGN.md), at 13px: "Restart now", "Reload SoundCloud". */
+  .apply {
+    margin-top: 8px;
+    padding: 4px 12px;
+    border: 1px solid var(--bsc-border);
+    border-radius: var(--bsc-radius);
+    background: var(--bsc-bg-secondary);
+    color: var(--bsc-text-primary);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .apply:hover {
+    background: var(--bsc-bg-hover);
+  }
+
+  /* Light or dark: a picture per choice, the chosen one ringed in the accent. */
+  .tiles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 12px;
+  }
+
+  .tile {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    cursor: pointer;
+  }
+
+  .tile input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .tile-picture {
+    display: block;
+    padding: 3px;
+    border: 2px solid transparent;
+    border-radius: var(--bsc-radius);
+  }
+
+  .tile:hover .tile-picture {
+    border-color: var(--bsc-border);
+  }
+
+  .tile.chosen .tile-picture {
+    border-color: var(--bsc-accent);
+  }
+
+  .tile-name {
+    padding-left: 5px;
+    font-size: 13px;
+    color: var(--bsc-text-secondary);
+  }
+
+  .tile.chosen .tile-name {
+    color: var(--bsc-text-primary);
+    font-weight: 600;
   }
 
   label,
@@ -928,8 +1232,6 @@
   /* A slider setting: Background.svelte's slider, so the two read as one control. */
   .control input[type='range'] {
     width: 180px;
-    margin: 0;
-    accent-color: var(--bsc-accent);
   }
 
   .control output {
@@ -954,13 +1256,6 @@
     margin-left: 6px;
     font-size: 12px;
     color: var(--bsc-text-secondary);
-  }
-
-  input[type='checkbox'] {
-    width: 16px;
-    height: 16px;
-    margin: 2px 0 0;
-    accent-color: var(--bsc-accent);
   }
 
   /* A key, as printed on it: a field's surface and hairline, in the system font like the rest. */
@@ -1135,14 +1430,20 @@
     outline-offset: -2px;
   }
 
-  .control input[type='checkbox']:focus-visible,
   .control input[type='range']:focus-visible {
     outline-offset: 2px;
   }
 
-  .about a:focus-visible {
+  .version-link:focus-visible,
+  .reset:focus-visible,
+  .apply:focus-visible {
     outline: 2px solid var(--bsc-focus);
-    outline-offset: 2px;
+    outline-offset: -2px;
+  }
+
+  .tile:has(input:focus-visible) .tile-picture {
+    outline: 2px solid var(--bsc-focus);
+    outline-offset: 3px;
   }
 
   /* A row search landed on that has nothing to press right now (`go`). */
