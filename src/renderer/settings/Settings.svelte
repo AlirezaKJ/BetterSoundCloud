@@ -59,6 +59,8 @@
   let plugins = $state<readonly PluginView[]>([])
   /** The column has scrolled under the title, which then gets a hairline to sit on. */
   let scrolled = $state(false)
+  /** A slider being dragged: its value shows beside it, and is stored when it is let go. */
+  let sliding = $state<{ key: SettingKey; value: number } | null>(null)
 
   let searchField = $state<HTMLInputElement | null>(null)
   let scroller = $state<HTMLElement | null>(null)
@@ -108,6 +110,23 @@
       text: plugin.description,
       target: attributeSelector('data-bsc-plugin', plugin.id)
     })),
+    // A plugin's own settings are drawn only while it is on (Plugins.svelte), so a match lands on
+    // the setting then, and on the plugin's switch otherwise, saying so.
+    ...plugins.flatMap((plugin) =>
+      plugin.settings.map(({ setting }) => {
+        const row = attributeSelector('data-bsc-plugin', plugin.id)
+        return {
+          section: 'plugins' as const,
+          name: `${plugin.name}: ${setting.label}`,
+          text: plugin.enabled
+            ? setting.help
+            : [setting.help, `Shown once ${plugin.name} is on.`].filter(Boolean).join(' '),
+          target: plugin.enabled
+            ? `${row} ${attributeSelector('data-bsc-plugin-setting', setting.key)}`
+            : row
+        }
+      })
+    ),
     ...OTHER_ENTRIES
   ])
 
@@ -319,6 +338,28 @@
             checked={!pending && (values[key] as boolean)}
             onchange={(e) => update(key, e.currentTarget.checked)}
           />
+        {:else if def.kind === 'number' && 'slider' in def && def.slider}
+          <!-- The Background's slider, so the two in the Themes section look and work alike. -->
+          <input
+            id={key}
+            type="range"
+            class="slider"
+            disabled={pending}
+            min={def.min}
+            max={def.max}
+            step={def.step ?? 1}
+            value={values[key] as number}
+            oninput={(e) => (sliding = { key, value: e.currentTarget.valueAsNumber })}
+            onchange={async (e) => {
+              await update(key, e.currentTarget.valueAsNumber)
+              sliding = null
+            }}
+          />
+          <output for={key}
+            >{sliding?.key === key ? sliding.value : values[key]}{'unit' in def
+              ? def.unit
+              : ''}</output
+          >
         {:else if def.kind === 'number'}
           <input
             id={key}
@@ -452,18 +493,22 @@
         <div class="column">
           {#if safeMode}
             <!-- On every section, because the settings it overrides live in three of them. -->
-            <p class="notice" role="status" data-bsc-settings-safe-mode>
-              <strong>Safe mode is on.</strong> Hardware acceleration, ad blocking and your theme
-              are off for this launch, whatever the settings below say. Nothing has been changed:
-              quit and start BetterSoundCloud normally to use them again.
-            </p>
+            <div class="notice" role="status" data-bsc-settings-safe-mode>
+              <p>
+                <strong>Safe mode is on.</strong> Hardware acceleration, ad blocking and your theme
+                are off for this launch, whatever the settings below say. Nothing has been changed:
+                quit and start BetterSoundCloud normally to use them again.
+              </p>
+            </div>
           {/if}
           {#if withoutWidevine}
             <!-- So a track that greys out and skips now reads as expected, not as the old bug. -->
-            <p class="notice" role="status" data-bsc-settings-without-widevine>
-              <strong>Protected tracks won’t play yet.</strong> Widevine couldn’t be downloaded at
-              startup; BetterSoundCloud keeps trying, and restarting it tries straight away.
-            </p>
+            <div class="notice" role="status" data-bsc-settings-without-widevine>
+              <p>
+                <strong>Protected tracks won’t play yet.</strong> Widevine couldn’t be downloaded
+                at startup; BetterSoundCloud keeps trying, and restarting it tries straight away.
+              </p>
+            </div>
           {/if}
 
           {#if searching}
@@ -482,7 +527,7 @@
                 </p>
                 {#each groups as group (group.section)}
                   <h2 class="group">{SECTION_LABELS[group.section]}</h2>
-                  {#each group.hits as hit (hit.entry.target)}
+                  {#each group.hits as hit (`${hit.entry.target} ${hit.entry.name}`)}
                     <button
                       class="hit"
                       data-bsc-settings-hit
@@ -505,18 +550,20 @@
             <!-- Not schema-driven: plugins are found on disk, so their rows are too. -->
             <Plugins />
           {:else if active === 'themes'}
-            <!-- The section's switches, which work with any theme: Minimal navigation, and Glass
-                 with its tint on Windows, right above the Background it takes the place of; then
-                 the background, which needs a preview and sliders (Background.svelte); then the
-                 themes themselves, which are files with descriptions and swatches (Themes.svelte).
-                 Settings with `drawnBy` belong to those two components, so they get no row here. -->
+            <!-- The section's main choice first (the maintainer's, 2026-11-14): the themes, which
+                 are files with descriptions and swatches (Themes.svelte). Then the switches that
+                 work with any theme: Minimal navigation, and Glass with its tint on Windows, right
+                 above the Background it takes the place of (Background.svelte, a preview and
+                 sliders). Settings with `drawnBy` belong to those two components, so they get no
+                 row here. -->
+            <Themes />
             {#if values}
+              <h2 class="group" data-bsc-settings-group="any-theme">With every theme</h2>
               {#each keysIn('themes').filter((k) => !drawnElsewhere(k)) as key (key)}
                 {@render settingRow(key)}
               {/each}
             {/if}
             <Background />
-            <Themes />
           {:else if !values}
             <p class="loading">Loading…</p>
           {:else}
@@ -878,6 +925,22 @@
     font-size: 13px;
   }
 
+  /* A slider setting: Background.svelte's slider, so the two read as one control. */
+  .control input[type='range'] {
+    width: 180px;
+    margin: 0;
+    accent-color: var(--bsc-accent);
+  }
+
+  .control output {
+    width: 48px;
+    margin-left: 12px;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    color: var(--bsc-text-secondary);
+  }
+
   /* What a number counts, beside its field, like the Background sliders' values. The field gives
      up the unit's room, so the control is still 140px and lines up with the dropdowns. */
   input[type='number']:has(+ .unit) {
@@ -940,6 +1003,11 @@
   /* Both at once (safe mode, and no Widevine): one hairline between them, as between rows. */
   .notice + .notice {
     padding-top: 12px;
+  }
+
+  .notice p {
+    max-width: 80ch;
+    margin: 0;
   }
 
   .notice strong {
@@ -1067,7 +1135,8 @@
     outline-offset: -2px;
   }
 
-  .control input[type='checkbox']:focus-visible {
+  .control input[type='checkbox']:focus-visible,
+  .control input[type='range']:focus-visible {
     outline-offset: 2px;
   }
 

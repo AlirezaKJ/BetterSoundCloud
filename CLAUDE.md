@@ -546,7 +546,8 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
 `src/shared/settings-schema.ts` is the single source of truth. **Adding a setting is one entry in
 `SETTINGS`** — the type, the settings form, defaults and validation all follow.
 
-- Kinds: `boolean`, `number` (`min`, `max`, `step`), `enum` (`options`, `labels`), `string`. An
+- Kinds: `boolean`, `number` (`min`, `max`, `step`; `unit` prints "%" beside it, `slider: true`
+  draws the Background's slider instead of a typed field), `enum` (`options`, `labels`), `string`. An
   enum drawn as an ordinary row must label every option, or the dropdown shows raw values
   (pinned).
 - `wired: false` while nothing reads the setting yet; the panel shows it disabled with "Not
@@ -554,9 +555,10 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
   in `settings-schema.test.ts`.
 - `applies: 'reload' | 'restart'` when the effect is not immediate. Never write timing into `help`
   prose — a test forbids it.
-- The **Themes** section is half schema-driven: `Settings.svelte` draws its schema rows (the
-  `appearance.minimalNavigation` switch) with the same `settingRow` snippet as every other section,
-  then `Background.svelte` the background group, then `Themes.svelte` the theme list. A setting a
+- The **Themes** section is half schema-driven: `Themes.svelte` draws the theme list first (the
+  maintainer's order, 2026-11-14), then `Settings.svelte` the schema rows (Minimal navigation,
+  Glass, Glass tint) under "With every theme" with the same `settingRow` snippet as every other
+  section, then `Background.svelte` the background group. A setting a
   component draws says so with `drawnBy: 'themes' | 'background'` and gets no ordinary row; it is
   still stored, coerced and defaulted from the schema. Only the Themes section may use it (pinned).
 - **Stored values carry a version** (`SETTINGS_VERSION`). When a setting's meaning changes, bump
@@ -570,10 +572,12 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
   what the setting does and the one thing worth knowing, never a paragraph (the maintainer's
   rule): every one was redrafted to it on that date.
 - **Search** (Ctrl+F) finds every setting by its label and `help`, the themes and plugins by
-  name and description (read as a search starts), and `OTHER_ENTRIES` (shared/settings-search.ts)
-  for the buttons and keys components draw. Choosing a match opens its section and focuses the
+  name and description and each plugin's own settings (read as a search starts; a plugin's
+  settings land on its switch while it is off, since they are drawn only while it is on), and
+  `OTHER_ENTRIES` (shared/settings-search.ts) for the buttons and keys components draw. Choosing a match opens its section and focuses the
   row's control, found by a selector: `data-bsc-setting={key}` on schema rows (and Background's
-  sliders), `data-bsc-theme`, `data-bsc-plugin`, `data-bsc-theme-list`, `data-bsc-background`,
+  sliders), `data-bsc-theme`, `data-bsc-plugin`, `data-bsc-plugin-setting`, `data-bsc-theme-list`,
+  `data-bsc-background`,
   or an `OTHER_ENTRIES` target. A row drawn without one of these cannot be found; a new
   component row adds its attribute, and its entry if it is not a schema setting
   (`settings-search-rows.test.ts` reads the components to keep the two equal). Escape clears a

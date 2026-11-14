@@ -102,6 +102,8 @@ export type SettingDef =
       readonly step?: number
       /** Printed beside the field, so the number says what it counts ("%"). */
       readonly unit?: string
+      /** Drawn as a slider with its value beside it, like the Background's, not a typed field. */
+      readonly slider?: true
     })
   | (Base & { readonly kind: 'string'; readonly default: string })
   | (Base & {
@@ -293,6 +295,7 @@ export const SETTINGS = {
     max: 90,
     step: 5,
     unit: '%',
+    slider: true,
     label: 'Glass tint',
     section: 'themes',
     platforms: ['win32'],

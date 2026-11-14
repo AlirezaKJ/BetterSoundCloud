@@ -364,6 +364,10 @@ foot. The sections are words, no icons.
   text, 140px minimum width so a row of controls aligns down the right edge.
 - **Unit:** a number that counts something ("%") shows its unit in 12px Muted Ink beside the
   field, and the field narrows to 120px so the control still spans 140px.
+- **Slider:** a number that reads better dragged than typed (Glass tint) is the Background's
+  slider: a 180px native range in the accent, then its value with its unit in a 48px column, 13px
+  tabular Muted Ink, right-aligned. The value follows the drag; it is stored on release. Its focus
+  ring sits 2px outside it.
 - **Search:** the Field at 30px tall in the Settings sidebar's 56px top row, with a 15px stroked
   magnifier inside its left edge in Muted Ink, the accent caret, and "Search settings" as its
   placeholder in Muted Ink. While it is empty and unfocused, a key chip at its right says
@@ -411,8 +415,10 @@ floating over it.
 ### Settings search
 
 The field at the top of the sidebar looks through the name and explanation of every setting,
-every theme and plugin, and the rows drawn by hand (the sign-in import, the reset buttons, the
-window's keys in Shortcuts). Every word typed must appear, in any order, ignoring case and
+every theme and plugin, each plugin's own settings (named "Visualizer: In the full-screen view"),
+and the rows drawn by hand (the sign-in import, the reset buttons, the window's keys in
+Shortcuts). A plugin's settings show only while it is on, so while it is off its match lands on the
+plugin's switch, and its explanation ends "Shown once Visualizer is on." Every word typed must appear, in any order, ignoring case and
 accents.
 
 - **The matches take the column's place**, under the title "Search": a count line ("3 matches",
@@ -731,8 +737,9 @@ panel must say so rather than show controls that silently do nothing.
 
 - **At the top of the content column, on every section**, since the settings it overrides live in
   three of them. The status line's shape at Caption size: "Safe mode is on." in Ink at 600, then
-  what is off, that nothing was changed, and how to leave it, in Muted Ink. A hairline below
-  separates it from the first row. `role="status"`, `data-bsc-settings-safe-mode`.
+  what is off, that nothing was changed, and how to leave it, in Muted Ink, at most 80ch wide. A
+  hairline below, across the column, separates it from the first row. `role="status"`,
+  `data-bsc-settings-safe-mode`.
 - **No colour, no icon, no button.** It is information, not an alarm, and leaving safe mode means
   quitting and starting normally, which no button here can do better.
 
@@ -823,13 +830,15 @@ settings** and **Clear cache and site data**. Buttons, not settings, and neither
 Settings → Themes (`src/renderer/settings/Themes.svelte`). A single choice among files, so it is a
 radio group, and the arrow keys move through it.
 
-- **The section's switches come first**, as ordinary settings rows drawn by `Settings.svelte`
-  (`appearance.minimalNavigation`, which works with any theme, then Glass and Glass tint on
-  Windows, right above the Background they take the place of). A switch that is part of no theme
-  sits above the list, and a Label-size heading, "Theme", in the secondary ink names the list
-  under it (it is also the radio group's accessible name), so the switch never reads as one of the
-  choices.
-- **The Background group comes next** (`Background.svelte`): a "Background" heading like the
+- **The theme list comes first** (the maintainer's order, 2026-11-14: it is the section's main
+  choice, and under the other rows no theme showed on a short window), under a Label-size heading,
+  "Theme", in the secondary ink, which is also the radio group's accessible name. Its footer
+  follows it.
+- **The switches come next**, under a heading of the same kind, "With every theme", so they never
+  read as part of the list or its footer: ordinary settings rows drawn by `Settings.svelte`
+  (`appearance.minimalNavigation`, then Glass and Glass tint on Windows, right above the
+  Background they take the place of).
+- **The Background group comes last** (`Background.svelte`): a "Background" heading like the
   theme list's, one Caption line saying where it shows, a radio group — None, the playing track's
   artwork, a picture of your own — and two sliders, Blur and Strength, each with its value in
   tabular figures at the right. The sliders are disabled while None is chosen. The picture row

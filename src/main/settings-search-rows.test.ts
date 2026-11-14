@@ -35,5 +35,7 @@ describe('what search finds outside the schema', () => {
     expect(read('Themes.svelte')).toContain('data-bsc-theme-list')
     expect(read('Themes.svelte')).toContain('data-bsc-theme={theme.id}')
     expect(read('Plugins.svelte')).toContain('data-bsc-plugin={plugin.id}')
+    // A plugin's own settings, both the ordinary rows and the wide ones (a curve, a ruler).
+    expect(read('Plugins.svelte').split('data-bsc-plugin-setting={setting.key}').length).toBe(3)
   })
 })

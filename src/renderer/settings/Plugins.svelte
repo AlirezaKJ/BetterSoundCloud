@@ -213,7 +213,7 @@
               {#if setting.kind === 'equaliser' || setting.kind === 'pitch'}
                 <!-- A curve or a ruler needs the row's whole width: its name and help above, the
                      editor below. -->
-                <div class="setting wide">
+                <div class="setting wide" data-bsc-plugin-setting={setting.key}>
                   <div class="setting-label">
                     <span class="setting-name" id={`${id}-label`}>{setting.label}</span>
                     {#if setting.help}<p class="help">{setting.help}</p>{/if}
@@ -241,7 +241,7 @@
                   {/if}
                 </div>
               {:else}
-                <div class="setting">
+                <div class="setting" data-bsc-plugin-setting={setting.key}>
                   <div class="setting-label">
                     <label for={id}>{setting.label}</label>
                     {#if setting.help}<p class="help">{setting.help}</p>{/if}
