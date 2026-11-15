@@ -11,6 +11,7 @@ import type { UpdateAction, UpdateStatus } from './updates'
 import type { AudioConfig, AudioReport } from './audio'
 import type { VisualFrame, VisualizerConfig, VisualLook, VisualViewState } from './visualizer'
 import type { GlassStatus } from './glass'
+import type { ShortcutStatus } from './shortcuts'
 
 /** Every IPC channel name, in one place. Strings are never written inline. */
 export const CH = {
@@ -82,6 +83,11 @@ export const CH = {
   widevineSkippedGet: 'app:widevine-skipped-get',
   // settings renderer -> main. Whether there is glass under the window, and why not.
   glassStatusGet: 'app:glass-status-get',
+  // settings renderer <-> main. Settings → Shortcuts: what the playback and volume keys can do here
+  // and which keys another app holds; and the recorder saying it is listening for a new key.
+  shortcutStatusGet: 'shortcuts:status-get',
+  shortcutStatusChanged: 'shortcuts:status-changed',
+  shortcutRecording: 'shortcuts:recording',
   // settings renderer -> main. The settings that apply on restart, as this launch read them;
   // and the "Restart now" button beside one that has changed since.
   settingsAtLaunch: 'settings:at-launch',
@@ -279,6 +285,20 @@ export type ChromeApi = {
    * settings change rather than being pushed.
    */
   getGlassStatus(): Promise<GlassStatus>
+
+  /**
+   * Settings → Shortcuts: whether the playback and volume keys can reach SoundCloud on this
+   * computer, and which of the user's keys another app already holds (so they work only while our
+   * window is in front). Read once, then follow `onShortcutStatus`; it changes when the keys do.
+   */
+  getShortcutStatus(): Promise<ShortcutStatus>
+  onShortcutStatus(cb: (status: ShortcutStatus) => void): () => void
+  /**
+   * The key recorder is listening for a new key (true), or has stopped (false). While it listens,
+   * main answers no shortcut, in the window or from other apps, so the recorder hears every key.
+   * The settings view only.
+   */
+  recordingShortcut(on: boolean): void
 
   /**
    * Whether the user pressed "Continue without Widevine" on "Couldn’t set up playback" this

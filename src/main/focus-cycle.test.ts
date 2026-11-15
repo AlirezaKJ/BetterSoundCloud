@@ -1,14 +1,10 @@
 import { EventEmitter } from 'node:events'
 import { describe, it, expect, vi } from 'vitest'
-import { app } from 'electron'
 import { CH } from '@shared/ipc'
 import type { PageStatus } from '@shared/page-status'
-import { watchFocusKeys } from './focus-cycle'
+import { moveFocusFrom } from './focus-cycle'
 
-vi.mock('electron', async () => {
-  const { EventEmitter } = await import('node:events')
-  return { app: new EventEmitter() }
-})
+// Which keys move focus is main/shortcuts.ts's (and its tests'); this is where focus goes.
 
 type FakeView = {
   webContents: EventEmitter & {
@@ -17,14 +13,12 @@ type FakeView = {
   }
 }
 
-/** A view, announced the way Electron announces every new webContents. */
 function makeView(): FakeView {
   const webContents = Object.assign(new EventEmitter(), {
     focus: vi.fn(),
     send: vi.fn(),
     isDestroyed: () => false
   })
-  app.emit('web-contents-created', {}, webContents)
   return { webContents }
 }
 
@@ -43,7 +37,6 @@ type FakeShell = {
 }
 
 let shell: FakeShell | null = null
-watchFocusKeys(() => shell as never)
 
 function makeShell(parts: Partial<FakeShell> = {}): FakeShell {
   shell = {
@@ -63,23 +56,9 @@ function makeShell(parts: Partial<FakeShell> = {}): FakeShell {
   return shell
 }
 
-/** Press a key in a view; answers whether main kept it from the page. */
-function press(view: FakeView, key = 'F6', modifiers: Record<string, boolean> = {}): boolean {
-  const preventDefault = vi.fn()
-  view.webContents.emit(
-    'before-input-event',
-    { preventDefault },
-    {
-      type: 'keyDown',
-      key,
-      shift: false,
-      control: false,
-      alt: false,
-      meta: false,
-      ...modifiers
-    }
-  )
-  return preventDefault.mock.calls.length > 0
+/** The focus key pressed in a view (Shift+F6 with `backwards`); answers whether focus moved. */
+function press(view: FakeView, backwards = false): boolean {
+  return moveFocusFrom(shell as never, view.webContents as never, backwards)
 }
 
 /** Which of the views has just been given focus. */
@@ -93,8 +72,8 @@ function focused(s: FakeShell): string | null {
   return hit?.[0] ?? null
 }
 
-describe('F6', () => {
-  it('moves from our bar to SoundCloud’s page and back, keeping the key from the page', () => {
+describe('moving focus (F6)', () => {
+  it('moves from our bar to SoundCloud’s page and back', () => {
     const s = makeShell()
     expect(press(s.header)).toBe(true)
     expect(focused(s)).toBe('content')
@@ -118,7 +97,7 @@ describe('F6', () => {
     press(s.player!)
     expect(focused(s)).toBe('header')
 
-    press(s.header, 'F6', { shift: true })
+    press(s.header, true)
     expect(focused(s)).toBe('player')
   })
 
@@ -162,10 +141,8 @@ describe('F6', () => {
     expect(focused(s)).toBe('header')
   })
 
-  it('leaves every other key, F6 with Ctrl, and the full-screen showcase alone', () => {
+  it('leaves the full-screen showcase its key: nothing moves from there', () => {
     const s = makeShell({ showcase: makeView() })
-    expect(press(s.header, 'F5')).toBe(false)
-    expect(press(s.header, 'F6', { control: true })).toBe(false)
     expect(press(s.showcase!)).toBe(false)
     expect(focused(s)).toBeNull()
   })

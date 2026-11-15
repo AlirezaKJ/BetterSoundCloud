@@ -11,6 +11,7 @@ import type { SettingKey, Settings } from '@shared/settings-schema'
 import type { ThemeSummary } from '@shared/themes'
 import type { PageTheme } from '@shared/page-theme'
 import type { GlassStatus } from '@shared/glass'
+import type { ShortcutStatus } from '@shared/shortcuts'
 import type { ContextMenuAction, ContextMenuRequest, GoToUrlResult } from '@shared/context-menu'
 import type { NowPlaying } from '@shared/now-playing'
 import type { PageStatus, PageStatusAction } from '@shared/page-status'
@@ -97,6 +98,10 @@ const api: ChromeApi = {
 
   getSafeMode: () => ipcRenderer.invoke(CH.safeModeGet) as Promise<boolean>,
   getGlassStatus: () => ipcRenderer.invoke(CH.glassStatusGet) as Promise<GlassStatus>,
+  getShortcutStatus: () => ipcRenderer.invoke(CH.shortcutStatusGet) as Promise<ShortcutStatus>,
+  onShortcutStatus: (cb: (status: ShortcutStatus) => void) =>
+    subscribe(CH.shortcutStatusChanged, cb),
+  recordingShortcut: (on: boolean) => ipcRenderer.send(CH.shortcutRecording, on === true),
   getWidevineSkipped: () => ipcRenderer.invoke(CH.widevineSkippedGet) as Promise<boolean>,
   getSettingsAtLaunch: () =>
     ipcRenderer.invoke(CH.settingsAtLaunch) as Promise<Partial<Settings>>,

@@ -10,6 +10,8 @@
  * Adding a setting means adding one entry here and nothing else.
  */
 
+import { joinKeys, parseKeys } from './shortcuts'
+
 export const SECTIONS = [
   'general',
   'appearance',
@@ -75,17 +77,19 @@ type Base = {
    * running and connected. `updates`: what the updater is doing, with its one button (check,
    * download, restart to install, open the download page). `glass`: why there is no glass under
    * the window while the box is ticked (safe mode, hardware acceleration off, before Windows 11).
+   * `playback`, `volume`: why a group of shortcuts cannot reach SoundCloud on this computer.
    * A ticked box over a feature that cannot work right now is a control that silently does
    * nothing — the line is how the panel says so.
    */
-  readonly statusFrom?: 'discord' | 'updates' | 'glass'
+  readonly statusFrom?: 'discord' | 'updates' | 'glass' | 'playback' | 'volume'
   /**
    * Drawn by its own component in the settings panel instead of as an ordinary row, because a
    * plain control would not do: `themes` is the theme list (Themes.svelte), `background` the
-   * background picker with its preview (Background.svelte). The value is still stored, coerced
-   * and defaulted from this schema like every other setting.
+   * background picker with its preview (Background.svelte), `keys` a shortcut's "Also in other
+   * apps" switch, drawn inside that shortcut's row (its `anywhere`). The value is still stored,
+   * coerced and defaulted from this schema like every other setting.
    */
-  readonly drawnBy?: 'themes' | 'background'
+  readonly drawnBy?: 'themes' | 'background' | 'keys'
   /**
    * The only platforms where the setting can do anything, when it is not all of them. The panel
    * leaves the row out elsewhere rather than offer a switch that silently does nothing (the same
@@ -120,6 +124,21 @@ export type SettingDef =
       readonly slider?: true
     })
   | (Base & { readonly kind: 'string'; readonly default: string })
+  | (Base & {
+      /**
+       * A shortcut: up to two key combinations, separated by a space, or '' for none
+       * (src/shared/shortcuts.ts says how they are written). Drawn as key chips you press to record
+       * new keys (ShortcutKeys.svelte); main listens for them (main/shortcuts.ts).
+       */
+      readonly kind: 'keys'
+      readonly default: string
+      /**
+       * The boolean setting saying whether these keys also work while another app is in front
+       * (`globalShortcut`), drawn in this row. Only the playback and volume keys have one: a key
+       * that reloads or zooms SoundCloud's page means nothing from another app.
+       */
+      readonly anywhere?: string
+    })
   | (Base & {
       readonly kind: 'enum'
       readonly default: string
@@ -364,14 +383,205 @@ export const SETTINGS = {
     help: 'Leaves the track on your Discord profile while it’s paused. When it’s off, it clears as soon as you pause.'
   },
 
-  'shortcuts.mediaKeys': {
-    kind: 'boolean',
-    default: true,
-    label: 'Respond to media keys',
+  // Shortcuts (main/shortcuts.ts). The playback and volume keys reach SoundCloud the way the
+  // keyboard's media keys do, through the system's media controls (main/playback.ts): nothing is
+  // typed into SoundCloud's page. They start with no keys, since the media keys already work. Each
+  // has an "Also in other apps" switch, on by default, because reaching SoundCloud from a game or
+  // another window is what they are for (#127). Windows and Linux only: there is no macOS build.
+  'shortcuts.playPause': {
+    kind: 'keys',
+    default: '',
+    anywhere: 'shortcuts.playPause.anywhere',
+    label: 'Play or pause',
     section: 'shortcuts',
     group: 'Playback',
-    help: 'Play, pause and skip with your keyboard’s media keys.',
-    wired: false
+    platforms: ['win32', 'linux'],
+    statusFrom: 'playback',
+    help: 'Plays or pauses what SoundCloud is playing.'
+  },
+  'shortcuts.playPause.anywhere': {
+    kind: 'boolean',
+    default: true,
+    label: 'Play or pause from other apps',
+    section: 'shortcuts',
+    platforms: ['win32', 'linux'],
+    drawnBy: 'keys'
+  },
+  'shortcuts.nextTrack': {
+    kind: 'keys',
+    default: '',
+    anywhere: 'shortcuts.nextTrack.anywhere',
+    label: 'Next track',
+    section: 'shortcuts',
+    group: 'Playback',
+    platforms: ['win32', 'linux'],
+    help: 'Skips to the next track, as SoundCloud’s own button does.'
+  },
+  'shortcuts.nextTrack.anywhere': {
+    kind: 'boolean',
+    default: true,
+    label: 'Next track from other apps',
+    section: 'shortcuts',
+    platforms: ['win32', 'linux'],
+    drawnBy: 'keys'
+  },
+  'shortcuts.previousTrack': {
+    kind: 'keys',
+    default: '',
+    anywhere: 'shortcuts.previousTrack.anywhere',
+    label: 'Previous track',
+    section: 'shortcuts',
+    group: 'Playback',
+    platforms: ['win32', 'linux'],
+    help: 'Goes back a track, as SoundCloud’s own button does.'
+  },
+  'shortcuts.previousTrack.anywhere': {
+    kind: 'boolean',
+    default: true,
+    label: 'Previous track from other apps',
+    section: 'shortcuts',
+    platforms: ['win32', 'linux'],
+    drawnBy: 'keys'
+  },
+  // BetterSoundCloud's own volume in the system mixer: SoundCloud's slider is in its page, which
+  // nothing may touch.
+  'shortcuts.volumeUp': {
+    kind: 'keys',
+    default: '',
+    anywhere: 'shortcuts.volumeUp.anywhere',
+    label: 'Volume up',
+    section: 'shortcuts',
+    group: 'Volume',
+    platforms: ['win32', 'linux'],
+    statusFrom: 'volume',
+    help: 'Turns BetterSoundCloud up by 5% in your system’s volume mixer.'
+  },
+  'shortcuts.volumeUp.anywhere': {
+    kind: 'boolean',
+    default: true,
+    label: 'Volume up from other apps',
+    section: 'shortcuts',
+    platforms: ['win32', 'linux'],
+    drawnBy: 'keys'
+  },
+  'shortcuts.volumeDown': {
+    kind: 'keys',
+    default: '',
+    anywhere: 'shortcuts.volumeDown.anywhere',
+    label: 'Volume down',
+    section: 'shortcuts',
+    group: 'Volume',
+    platforms: ['win32', 'linux'],
+    help: 'Turns BetterSoundCloud down by 5% in your system’s volume mixer.'
+  },
+  'shortcuts.volumeDown.anywhere': {
+    kind: 'boolean',
+    default: true,
+    label: 'Volume down from other apps',
+    section: 'shortcuts',
+    platforms: ['win32', 'linux'],
+    drawnBy: 'keys'
+  },
+  'shortcuts.mute': {
+    kind: 'keys',
+    default: '',
+    anywhere: 'shortcuts.mute.anywhere',
+    label: 'Mute',
+    section: 'shortcuts',
+    group: 'Volume',
+    platforms: ['win32', 'linux'],
+    help: 'Mutes BetterSoundCloud, or unmutes it. Other apps keep their sound.'
+  },
+  'shortcuts.mute.anywhere': {
+    kind: 'boolean',
+    default: true,
+    label: 'Mute from other apps',
+    section: 'shortcuts',
+    platforms: ['win32', 'linux'],
+    drawnBy: 'keys'
+  },
+  // The window's own keys, only while it is in front: read in `before-input-event`, before any
+  // page sees them (main/shortcuts.ts).
+  'shortcuts.reload': {
+    kind: 'keys',
+    default: 'CommandOrControl+R F5',
+    label: 'Reload SoundCloud',
+    section: 'shortcuts',
+    group: 'SoundCloud’s page',
+    help: 'Loads SoundCloud’s page again.'
+  },
+  // ⌘[ and ⌘] beside Alt+arrows: Safari's and Chrome's back and forward on a Mac.
+  'shortcuts.back': {
+    kind: 'keys',
+    default: 'Alt+Left CommandOrControl+[',
+    label: 'Back',
+    section: 'shortcuts',
+    group: 'SoundCloud’s page',
+    help: 'Goes back a page, like the arrow in the top bar.'
+  },
+  'shortcuts.forward': {
+    kind: 'keys',
+    default: 'Alt+Right CommandOrControl+]',
+    label: 'Forward',
+    section: 'shortcuts',
+    group: 'SoundCloud’s page',
+    help: 'Goes forward a page again.'
+  },
+  'shortcuts.zoomIn': {
+    kind: 'keys',
+    default: 'CommandOrControl+= CommandOrControl+numadd',
+    label: 'Zoom in',
+    section: 'shortcuts',
+    group: 'SoundCloud’s page',
+    help: 'Makes SoundCloud’s page bigger, one step at a time, as in a browser. It changes Zoom in Appearance.'
+  },
+  'shortcuts.zoomOut': {
+    kind: 'keys',
+    default: 'CommandOrControl+- CommandOrControl+numsub',
+    label: 'Zoom out',
+    section: 'shortcuts',
+    group: 'SoundCloud’s page',
+    help: 'Makes SoundCloud’s page smaller.'
+  },
+  'shortcuts.zoomReset': {
+    kind: 'keys',
+    default: 'CommandOrControl+0 CommandOrControl+num0',
+    label: 'Actual size',
+    section: 'shortcuts',
+    group: 'SoundCloud’s page',
+    help: 'Puts SoundCloud’s page back to 100%.'
+  },
+  'shortcuts.focusNext': {
+    kind: 'keys',
+    default: 'F6',
+    label: 'Next part of the window',
+    section: 'shortcuts',
+    group: 'Moving around',
+    help: 'Moves the keyboard from the top bar to SoundCloud’s page, then the lyrics pane and the player buttons when they’re open.'
+  },
+  'shortcuts.focusPrevious': {
+    kind: 'keys',
+    default: 'Shift+F6',
+    label: 'Previous part of the window',
+    section: 'shortcuts',
+    group: 'Moving around',
+    help: 'The same parts of the window, the other way round.'
+  },
+  'shortcuts.openSettings': {
+    kind: 'keys',
+    default: 'CommandOrControl+,',
+    label: 'Open or close Settings',
+    section: 'shortcuts',
+    group: 'Settings',
+    help: 'From anywhere in the window, as in most apps.'
+  },
+  'shortcuts.searchSettings': {
+    kind: 'keys',
+    default: 'CommandOrControl+F',
+    label: 'Search settings',
+    section: 'shortcuts',
+    group: 'Settings',
+    help: 'Finds a setting by its name or what it does. Works while Settings is open.'
   },
 
   // On by default, unlike the filter-list blocker below. This one is a single request to a
@@ -448,6 +658,7 @@ export type SettingKey = keyof typeof SETTINGS
  *   { kind: 'number' }                       -> number
  *   { kind: 'enum', options: ['a', 'b'] }    -> 'a' | 'b'
  *   { kind: 'string' }                       -> string
+ *   { kind: 'keys' }                         -> string
  */
 type ValueOf<Def> = Def extends { kind: 'boolean' }
   ? boolean
@@ -455,7 +666,7 @@ type ValueOf<Def> = Def extends { kind: 'boolean' }
     ? number
     : Def extends { kind: 'enum'; options: readonly (infer Option)[] }
       ? Option
-      : Def extends { kind: 'string' }
+      : Def extends { kind: 'string' | 'keys' }
         ? string
         : never
 
@@ -499,6 +710,15 @@ export function coerce<K extends SettingKey>(key: K, value: unknown): Settings[K
 
     case 'string':
       return (typeof value === 'string' ? value : def.default) as Settings[K]
+
+    case 'keys': {
+      // '' is a choice (no keys); a string with nothing usable in it is not, so it gets the default.
+      if (typeof value !== 'string') return def.default as Settings[K]
+      const keys = parseKeys(value)
+      return (
+        keys.length > 0 || value.trim() === '' ? joinKeys(keys) : def.default
+      ) as Settings[K]
+    }
   }
 }
 

@@ -120,7 +120,10 @@ installed Node.js for you (in `~/.nvm`), remove it only if nothing else of yours
   turned off.
 - **You choose what opens at startup**: Home, Feed, Library, or where you left off. Closing the
   window can keep it playing in the tray instead of quitting.
-- **Keyboard**: F6 moves between the bar at the top, SoundCloud's page and the lyrics pane.
+- **Keyboard shortcuts you choose**: play, pause, skip and change the volume with keys you set,
+  even while another app is in front, and change any of the window's own keys (reload, back,
+  zoom, F6 to move between the bar, SoundCloud's page and the lyrics pane) in Settings → Shortcuts.
+  Play, pause and skip are in the tray menu too.
 
 ### What it looks like
 
@@ -155,7 +158,6 @@ These were in 0.7.x and are planned, but are not in 0.8.0:
 - the track downloader
 - the CSS and JavaScript editor (a theme file covers CSS for now)
 - proxy settings
-- play, pause and skip from the tray icon
 - the Gruvbox theme
 - bringing your 0.7.x settings across
 

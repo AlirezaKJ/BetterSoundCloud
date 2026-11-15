@@ -1,4 +1,3 @@
-import { app } from 'electron'
 import type { WebContents, WebContentsView } from 'electron'
 import { CH } from '@shared/ipc'
 import { hidesPage } from '@shared/page-status'
@@ -7,15 +6,12 @@ import type { FocusArea } from '@shared/focus-cycle'
 import type { Shell } from './window'
 
 /*
- * F6 and Shift+F6, in every view of the window: keyboard focus moves to the next part of it, in
- * the order src/shared/focus-cycle.ts gives.
+ * F6 and Shift+F6 (or whatever keys Settings → Shortcuts gives them), in every view of the window:
+ * keyboard focus moves to the next part of it, in the order src/shared/focus-cycle.ts gives.
  *
- * The key is read here, in `before-input-event`, before any page sees it — SoundCloud's included,
- * which it never reaches. Nothing is written to that page and no input is made up for it: focusing
- * a view is the window's business, like clicking into it.
- *
- * One listener per view, attached as each view is made (`web-contents-created`), so a view added
- * later takes part without anyone remembering to wire it.
+ * The keys are heard by main/shortcuts.ts, in `before-input-event`, before any page sees them —
+ * SoundCloud's included, which they never reach. Nothing is written to that page and no input is
+ * made up for it: focusing a view is the window's business, like clicking into it.
  */
 
 /** The view standing for each part of the window right now, or null while it is not there. */
@@ -75,17 +71,17 @@ export function moveFocus(shell: Shell, from: FocusArea, backwards: boolean): vo
   if (view !== shell.content) view.webContents.send(CH.focusArrived)
 }
 
-/** Listen for F6 in every view from now on. `currentShell` is the window there is, if any. */
-export function watchFocusKeys(currentShell: () => Shell | null): void {
-  app.on('web-contents-created', (_event, contents) => {
-    contents.on('before-input-event', (event, input) => {
-      if (input.type !== 'keyDown' || input.key !== 'F6') return
-      if (input.control || input.alt || input.meta) return
-      const shell = currentShell()
-      const from = shell ? areaOf(shell, contents) : null
-      if (!shell || !from) return
-      event.preventDefault()
-      moveFocus(shell, from, input.shift)
-    })
-  })
+/**
+ * Move focus from the view a key was pressed in to the next part of the window, or the one before.
+ * Answers whether it moved: the showcase and the right-click menu keep the key to themselves.
+ */
+export function moveFocusFrom(
+  shell: Shell,
+  contents: WebContents,
+  backwards: boolean
+): boolean {
+  const from = areaOf(shell, contents)
+  if (!from) return false
+  moveFocus(shell, from, backwards)
+  return true
 }

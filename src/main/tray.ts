@@ -1,28 +1,42 @@
 import { join } from 'node:path'
 import { app, Menu, Tray } from 'electron'
+import { getNowPlaying, onNowPlayingChange } from './now-playing'
+import type { PlaybackAction } from './playback'
 
 /**
  * The tray icon and its right-click menu.
  *
- * The playback items are deliberately disabled. Nothing can control SoundCloud's player
- * yet — that needs the in-page audio monitor and a decision on how playback is driven,
- * which the safety contract constrains (no synthetic clicks on SoundCloud's controls).
- * A greyed item that says what it will do beats one that silently does nothing; the
- * settings panel makes the same promise with its "Not implemented yet" rows.
+ * Its playback items go through main/playback.ts, as the playback shortcuts do: the system's
+ * media controls, pressed for our own media session, so SoundCloud's own handlers run and
+ * nothing is clicked in its page. They are enabled only while there is a track to act on, and
+ * only where playback control works (Windows and Linux): a greyed item that says what it will do
+ * beats one that silently does nothing.
  */
 
 // Module scope on purpose. A Tray that nothing references is garbage collected and the
 // icon disappears from the tray with no error.
 let tray: Tray | null = null
 
-function buildMenu(showWindow: () => void): Menu {
+type Controls = {
+  /** Play or pause, skip, or go back (main/playback.ts). */
+  press: (action: PlaybackAction) => void
+  /** Whether playback control works here. */
+  ready: () => boolean
+}
+
+function buildMenu(showWindow: () => void, controls: Controls): Menu {
+  const nowPlaying = getNowPlaying()
+  const canPlay = controls.ready() && nowPlaying !== null
   return Menu.buildFromTemplate([
     { label: 'Show BetterSoundCloud', click: showWindow },
     { type: 'separator' },
-    // Enabled once playback control exists. See docs/TODO.md.
-    { label: 'Play', enabled: false },
-    { label: 'Skip', enabled: false },
-    { label: 'Previous Song', enabled: false },
+    {
+      label: nowPlaying?.playing ? 'Pause' : 'Play',
+      enabled: canPlay,
+      click: () => controls.press('playPause')
+    },
+    { label: 'Next track', enabled: canPlay, click: () => controls.press('next') },
+    { label: 'Previous track', enabled: canPlay, click: () => controls.press('previous') },
     { type: 'separator' },
     { label: 'Quit', click: () => app.quit() }
   ])
@@ -45,10 +59,21 @@ function trayIconPath(): string {
   return join(import.meta.dirname, '../../resources', name)
 }
 
-export function createTray(showWindow: () => void): void {
+export function createTray(showWindow: () => void, controls: Controls): void {
   tray = new Tray(trayIconPath())
   tray.setToolTip('BetterSoundCloud')
-  tray.setContextMenu(buildMenu(showWindow))
+  tray.setContextMenu(buildMenu(showWindow, controls))
+
+  // The menu says Pause while SoundCloud plays and Play while it does not, and its items are
+  // enabled only with a track loaded. It is built again only when one of those changes, not on
+  // every tick of the clock.
+  let shown = ''
+  onNowPlayingChange((nowPlaying) => {
+    const state = nowPlaying === null ? 'none' : nowPlaying.playing ? 'playing' : 'paused'
+    if (state === shown || !tray) return
+    shown = state
+    tray.setContextMenu(buildMenu(showWindow, controls))
+  })
 
   // Windows and macOS raise the window on a plain click. Linux tray implementations
   // often deliver no click event at all, which is why "Show BetterSoundCloud" is the
