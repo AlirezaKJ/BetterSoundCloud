@@ -142,6 +142,7 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CU
 | `main/go-to-url.ts`                | `resolveGoToUrl()` for the menu's "Go to URL" prompt                                                                                                               |
 | `main/focus-cycle.ts`              | F6 / Shift+F6 in every view (`watchFocusKeys`, read in `before-input-event`), moving focus between the bar, the page and our panels                                |
 | `main/start-page.ts`               | "On startup, open": `startUrl()` for the first load, `rememberLastPage()` keeps `<userData>/last-page.json` for "Where you left off"                               |
+| `main/onboarding.ts`               | The first-run welcome's record in the profile (`<userData>/onboarding.json`): `shouldOnboard()`, `recordOnboardingFinished()` (§9)                                 |
 | `main/plugins.ts`                  | The plugin service: finds plugins, records approvals, runs each in its own process, answers its calls (§16)                                                        |
 | `main/plugin-host.ts`              | The entry point of a plugin's own utility process: relays messages, makes its https requests                                                                       |
 | `main/plugin-sandbox.ts`           | `runPlugin()`: the `vm` context and the `bsc` API. No Electron, so it is tested directly                                                                           |
@@ -162,6 +163,7 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CU
 | `shared/page-theme.ts`      | `PageTheme`, `detectPageTheme()`, `overlayTheme()` (a theme's `@mode` beats SoundCloud's setting)                                                                                    |
 | `shared/context-menu.ts`    | `ContextMenuRequest`, `CONTEXT_MENU_ACTIONS`, `cleanUrl`, `shortUrl`, `elide`                                                                                                        |
 | `shared/start-page.ts`      | `START_PAGE_URLS`, `startPageUrl()`, `pageToRemember()` (only soundcloud.com pages; never `/logout` or a sign-in step)                                                               |
+| `shared/onboarding.ts`      | `needsOnboarding()`, `readOnboardingRecord()`: whether a launch opens with the welcome (a profile with no settings yet, or left unfinished)                                          |
 | `shared/focus-cycle.ts`     | `focusCycle()`, `nextFocusArea()`: the order F6 moves through                                                                                                                        |
 | `shared/presence.ts`        | `Activity`, `buildActivity()` (the Discord card), `sameActivity()`, `PRESENCE_LOGO`                                                                                                  |
 | `shared/lyrics.ts`          | `LyricsState`, `parseLrc()`, `currentLineIndex()`, `playbackPosition()`, `lyricsQueries()`, `bestMatch()`                                                                            |
@@ -191,6 +193,7 @@ views composited above it. Everything is held on the `Shell` object (`src/main/w
 | `header`      | `renderer/header`       | `chrome.cjs`  | Always. Hidden (`setVisible(false)`) while SoundCloud owns the top, except while Settings is open                                                                                                               |
 | `content`     | soundcloud.com          | `content.cjs` | Always. Loads `https://soundcloud.com/discover` once Widevine is ready (`loadSoundCloud`)                                                                                                                       |
 | `settings`    | `renderer/settings`     | `chrome.cjs`  | Created on open, destroyed on close (`toggleSettings`/`closeSettings`); a page over everything below our bar, which shows while it is open                                                                      |
+| `onboarding`  | `renderer/onboarding`   | `chrome.cjs`  | Exists while the first-run welcome is open (`openOnboarding`/`closeOnboarding`): on a profile's first launch, and from Settings → About; a page below our bar, like Settings, which opens above it              |
 | `embedded`    | `renderer/embedded`     | `chrome.cjs`  | Exists while `appearance.hideMenuBar` is on; window buttons over SoundCloud's header                                                                                                                            |
 | `player`      | `renderer/player`       | `chrome.cjs`  | Exists while `appearance.playerButtons` is on; buttons at the right end of SoundCloud's play bar                                                                                                                |
 | `contextMenu` | `renderer/context-menu` | `chrome.cjs`  | Created once (`attachContextMenu`), hidden between uses                                                                                                                                                         |
@@ -230,7 +233,9 @@ Rules that hold this together:
   `player` overlays hide: there is no SoundCloud header or play bar under them. `layout()` derives
   this from `hidesPage(shell.pageStatus)`. A hang is the exception — it is a dialog over a page
   that is still there.
-- **While Settings is open, our own bar shows above it** whatever the bar setting says
+- **While Settings or the first-run welcome is open, our own bar shows above it** whatever the
+  bar setting says (`ourPageOpen` in `layout()`; the welcome is laid out exactly as Settings is,
+  and stacked above the page status and the overlays, with Settings above it)
   (`barShows` in `layout()`), so the window can always be moved and closed and the gear closes
   it, and Settings always sits at `HEADER_HEIGHT`. The bar is laid over the top of SoundCloud's
   page instead of pushing it down: `content` keeps its bounds, or the page would jump under
@@ -287,7 +292,7 @@ views:
 | `back`, `forward`, `reload`, `stop`                   | send           | `fromChrome`; `stop` while `NavState.loading`; `reload` from the settings view too ("Reload SoundCloud") |
 | `toggleSettings`, `toggleMenuBar`                     | send           | `fromChrome`                                                                                             |
 | `closeSettings`                                       | send           | the settings view only                                                                                   |
-| `getSettings`, `setSetting`, `listThemes`             | invoke         | `fromSettingsUi` = header, embedded, settings                                                            |
+| `getSettings`, `setSetting`, `listThemes`             | invoke         | `fromSettingsUi` = header, embedded, settings, onboarding                                                |
 | `copyTheme`, `openThemesFolder`, `openThemeFile`      | invoke/send    | `fromSettingsUi`; none takes a path                                                                      |
 | `getBackgroundPicture`, `chooseBackgroundPicture`     | invoke         | `fromSettingsUi`; main shows the dialog, so no path ever crosses IPC                                     |
 | `getThemePictures`, `onThemePicturesChanged`          | invoke/sub     | `fromSettingsUi`; `data:` JPEGs by theme id, pushed to the settings view when one is taken (§17)         |
@@ -296,7 +301,7 @@ views:
 | `getNowPlaying`                                       | invoke         | `fromOurViews` = header, settings, embedded, player, contextMenu, status, lyrics, showcase, visualView   |
 | `onNavState`                                          | subscribe      | pushed to header                                                                                         |
 | `onWindowState`                                       | subscribe      | pushed to header, embedded                                                                               |
-| `onSettingsChanged`                                   | subscribe      | pushed to header, settings (`broadcastSettings`)                                                         |
+| `onSettingsChanged`                                   | subscribe      | pushed to header, settings, onboarding (`broadcastSettings`)                                             |
 | `onPageTheme`                                         | subscribe      | pushed to embedded, player, the Visualizer strip (and on their load)                                     |
 | `onContextMenu`                                       | subscribe      | pushed to the context-menu view                                                                          |
 | `onNowPlaying`                                        | subscribe      | pushed to all nine of our views (`broadcastNowPlaying`)                                                  |
@@ -319,10 +324,13 @@ views:
 | `onPageStatus`                                        | subscribe      | pushed to the status view (on its load and on every change)                                              |
 | `listPlugins`, `setPluginEnabled`, `setPluginSetting` | invoke         | `fromSettingsUi`; the two setters answer `{ plugins, error }`                                            |
 | `pluginAction`, `openPluginsFolder`                   | send           | `fromSettingsUi`                                                                                         |
-| `onPluginsChanged`                                    | subscribe      | pushed to the settings view while it is open (`broadcastPlugins`)                                        |
+| `onPluginsChanged`                                    | subscribe      | pushed to the settings view and the welcome while open (`broadcastPlugins`)                              |
 | `getSafeMode`                                         | invoke         | `fromSettingsUi`; `true` when started with `--safe-mode`                                                 |
 | `getSettingsAtLaunch`                                 | invoke         | `fromSettingsUi`; the `applies: 'restart'` settings as this launch read them                             |
 | `restartApp`                                          | send           | the settings view only; `relaunchAfterQuit()` then quit ("Restart now")                                  |
+| `importBrowserSession`                                | invoke         | the settings view, or the welcome's sign-in step; main shows the file dialog                             |
+| `finishOnboarding`                                    | send           | the welcome only; closes it, then SoundCloud's sign-in page when asked (`firstPage`)                     |
+| `openOnboarding`                                      | send           | the settings view only ("Show the welcome again" in About)                                               |
 | `getGlassStatus`                                      | invoke         | `fromSettingsUi`; `GlassStatus`: whether Glass is under the window, or why not                           |
 | (no method) `CH.focusArrived`                         | pushed         | to the view F6 moved focus into; the chrome preload itself puts focus on a control                       |
 | `getWidevineSkipped`                                  | invoke         | `fromSettingsUi`; `true` after "Continue without Widevine", until Widevine arrives                       |
@@ -432,8 +440,9 @@ Each view is `src/renderer/<entry>/{index.html, main.ts, <Name>.svelte}`.
 - Theming contract: `--bsc-*` tokens plus `data-bsc-*` attributes on every themable region are the
   public API for user themes. Add `data-bsc-…` to new regions. Never rely on Svelte's hash classes.
   No Shadow DOM anywhere.
-- System font stack only, no webfonts. Nothing larger than 15px. Sizes: 15 title, 14 body, 13
-  label, 12 caption, 11 uppercase overline (only for "Not implemented yet").
+- System font stack only, no webfonts. Nothing larger than 15px, outside the named exceptions
+  (lyric lines, the showcase, the welcome's questions). Sizes: 15 title, 14 body, 13 label, 12
+  caption, 11 uppercase overline (only for "Not implemented yet").
 - Two radii: 6px for controls, 10px for floating surfaces (a switch's knob and a slider's are
   3px, concentric inside the 6px track; the one slider style is tokens.css's). One shadow
   (`0 12px 40px rgb(0 0 0 / 35%), 0 2px 8px rgb(0 0 0 / 20%)`), only on things that float and take
@@ -592,6 +601,19 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
   it once on load and saves the result.
 - The **Plugins** section is not schema-driven: plugins are found on disk, so `Settings.svelte`
   renders `Plugins.svelte` for it, fed by `listPlugins` / `onPluginsChanged` (§16).
+- **The first-run welcome** (`renderer/onboarding`, asked for by the maintainer 2026-11-15, after
+  Zen's and Helium's): one question per screen, a large question and picture tiles, Enter keeps
+  the answer shown and moves on, 1–9 pick a tile, Skip setup is always there. **The questions are
+  data, in `renderer/onboarding/steps.ts`**: add, remove or reword one there; each answer lists
+  the settings it writes, written at once through `setSetting` (or `setPluginEnabled` for a
+  plugin), and the tile shown as chosen is the one matching what is stored. It shows on a
+  profile's first launch (no `settings.json` yet: `FIRST_RUN` in index.ts, read before anything
+  opens the store) and again while unfinished; a profile that already had settings never sees it
+  unasked, and Settings → About opens it again. Its last step hands over to SoundCloud's own
+  sign-in page, `https://soundcloud.com/signin`, a page load and never a click (as the first page
+  if Widevine is not ready yet), or to the browser sign-in import; a changed page ad blocker
+  reloads SoundCloud as it closes. A step with `platforms` shows only there (Glass on Windows,
+  the tray on Windows and Linux).
 - **Settings is a page** (decided by the maintainer 2026-11-14): a 220px sidebar (search, the
   sections with a 15px line icon each, the version at its foot, which opens About) and one column of rows up to 720px wide, each
   with its name, its `help` at 13px and its control. **A `help` is one or two short sentences**,

@@ -76,6 +76,8 @@ vi.mock('./window', () => ({
   loadSoundCloud: mocks.loadSoundCloud,
   toggleSettings: vi.fn(),
   closeSettings: vi.fn(),
+  openOnboarding: vi.fn(),
+  closeOnboarding: vi.fn(),
   setContentAppearance: mocks.setContentAppearance,
   setPageTheme: vi.fn(),
   setContentCover: vi.fn(),
@@ -167,6 +169,11 @@ vi.mock('./plugins', () => ({
   setPluginSetting: vi.fn(),
   runPluginAction: vi.fn(),
   openPluginsFolder: vi.fn()
+}))
+// The real one writes the welcome's record into the profile; the welcome has its own tests.
+vi.mock('./onboarding', () => ({
+  shouldOnboard: () => false,
+  recordOnboardingFinished: vi.fn()
 }))
 // The real one would connect to the Discord app on whatever machine runs the tests.
 vi.mock('./presence', () => ({

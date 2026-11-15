@@ -1,0 +1,17 @@
+/** The welcome's line drawings (OnboardingFigure.svelte), one per answer that has a picture. */
+export type OnboardingFigureName =
+  | 'ads-audio'
+  | 'ads-all'
+  | 'ads-none'
+  | 'glass-off'
+  | 'glass-on'
+  | 'discord-on'
+  | 'discord-off'
+  | 'close-quit'
+  | 'close-tray'
+  | 'start-home'
+  | 'start-feed'
+  | 'start-library'
+  | 'start-last'
+  | 'lastfm-on'
+  | 'lastfm-off'

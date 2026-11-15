@@ -36,6 +36,7 @@ type FakeShell = {
   lyrics: FakeView | null
   player: FakeView | null
   settings: FakeView | null
+  onboarding: FakeView | null
   showcase: FakeView | null
   embeddedShowing: boolean
   pageStatus: PageStatus | null
@@ -53,6 +54,7 @@ function makeShell(parts: Partial<FakeShell> = {}): FakeShell {
     lyrics: null,
     player: null,
     settings: null,
+    onboarding: null,
     showcase: null,
     embeddedShowing: false,
     pageStatus: null,
@@ -134,6 +136,17 @@ describe('F6', () => {
     expect(focused(s)).toBe('settings')
     press(s.settings!)
     expect(focused(s)).toBe('header')
+  })
+
+  it('keeps to the welcome and the bar while the welcome is open, and Settings wins over it', () => {
+    const s = makeShell({ onboarding: makeView(), player: makeView() })
+    press(s.header)
+    expect(focused(s)).toBe('onboarding')
+    press(s.onboarding!)
+    expect(focused(s)).toBe('header')
+    s.settings = makeView()
+    press(s.header)
+    expect(focused(s)).toBe('settings')
   })
 
   it('goes to the status view when it stands in for the page, and skips what it hides', () => {

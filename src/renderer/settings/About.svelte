@@ -57,6 +57,13 @@
   <a href={`${REPOSITORY}/releases`} target="_blank" rel="noreferrer">Every version’s notes</a>
 </p>
 
+<!-- The first-run welcome, again: its questions are all settings, so nothing here is lost. -->
+<div class="welcome" data-bsc-about-welcome>
+  <button type="button" onclick={() => window.bsc.openOnboarding()}
+    >Show the welcome again</button
+  >
+</div>
+
 <h2 class="group" data-bsc-about-whats-new>
   {version ? `What’s new in ${version}` : 'What’s new'}
 </h2>
@@ -125,6 +132,31 @@
     margin: 10px 0 0;
     font-size: 13px;
     color: var(--bsc-text-secondary);
+  }
+
+  .welcome {
+    margin-top: 16px;
+  }
+
+  /* The panel's one button language: the Prompt's button at 13px, as the update line's. */
+  .welcome button {
+    padding: 4px 12px;
+    border: 1px solid var(--bsc-border);
+    border-radius: var(--bsc-radius);
+    background: transparent;
+    color: var(--bsc-text-primary);
+    font: inherit;
+    font-size: 13px;
+    cursor: default;
+  }
+
+  .welcome button:hover {
+    background: var(--bsc-bg-hover);
+  }
+
+  .welcome button:focus-visible {
+    outline: 2px solid var(--bsc-focus);
+    outline-offset: -2px;
   }
 
   /* The theme list's group heading, as Settings uses for every group. */

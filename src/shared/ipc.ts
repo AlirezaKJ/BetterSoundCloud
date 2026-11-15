@@ -93,6 +93,11 @@ export const CH = {
   siteDataClear: 'app:site-data-clear',
   browserSessionImport: 'app:browser-session-import',
 
+  // The first-run welcome (renderer/onboarding): its last step closes it, saying whether
+  // SoundCloud's sign-in comes next; Settings → About opens it again.
+  onboardingFinish: 'onboarding:finish',
+  onboardingOpen: 'onboarding:open',
+
   // settings renderer <-> main. The updater: its status, and the one button that status offers.
   updateStatusGet: 'updates:status-get',
   updateStatusChanged: 'updates:status-changed',
@@ -310,6 +315,15 @@ export type ChromeApi = {
    * when main refused the sender. The settings view only.
    */
   importBrowserSession(): Promise<BrowserSessionImport | null>
+
+  /**
+   * The welcome is done: close it, and open SoundCloud's own sign-in page next when `signIn` is
+   * true (a page load, as typing its address would be; nothing is clicked on SoundCloud's page).
+   * The onboarding view only.
+   */
+  finishOnboarding(signIn: boolean): void
+  /** Show the first-run welcome again, from Settings → About. The settings view only. */
+  openOnboarding(): void
 
   /**
    * What the updater is doing: idle, checking, up to date, a version available, downloading (with

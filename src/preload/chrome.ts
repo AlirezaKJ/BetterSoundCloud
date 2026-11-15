@@ -105,6 +105,8 @@ const api: ChromeApi = {
   clearSiteData: () => ipcRenderer.invoke(CH.siteDataClear) as Promise<boolean>,
   importBrowserSession: () =>
     ipcRenderer.invoke(CH.browserSessionImport) as Promise<BrowserSessionImport | null>,
+  finishOnboarding: (signIn: boolean) => ipcRenderer.send(CH.onboardingFinish, signIn),
+  openOnboarding: () => ipcRenderer.send(CH.onboardingOpen),
 
   getUpdateStatus: () => ipcRenderer.invoke(CH.updateStatusGet) as Promise<UpdateStatus>,
   onUpdateStatus: (cb: (status: UpdateStatus) => void) => subscribe(CH.updateStatusChanged, cb),

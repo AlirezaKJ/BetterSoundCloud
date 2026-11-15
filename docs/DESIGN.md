@@ -41,6 +41,12 @@ typography:
     fontSize: '11px'
     fontWeight: 600
     letterSpacing: '0.03em'
+  welcome-question:
+    fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
+    fontSize: 'clamp(36px, 4.2vw, 56px)'
+    fontWeight: 650
+    lineHeight: 1.08
+    letterSpacing: '-0.02em'
 rounded:
   sm: '6px'
   md: '10px'
@@ -115,6 +121,39 @@ components:
     rounded: '{rounded.sm}'
     padding: '12px'
     width: '340px'
+  welcome-page:
+    backgroundColor: '{colors.bg-primary}'
+    textColor: '{colors.text-primary}'
+    padding: 'clamp(32px, 9vh, 96px) clamp(24px, 9vw, 160px) 40px'
+  welcome-question:
+    textColor: '{colors.text-primary}'
+    typography: '{typography.welcome-question}'
+    width: '22ch'
+  welcome-tile:
+    backgroundColor: 'transparent'
+    textColor: '{colors.text-primary}'
+    rounded: '{rounded.sm}'
+    padding: '3px'
+    width: '320px'
+  welcome-tile-words:
+    backgroundColor: '{colors.bg-secondary}'
+    textColor: '{colors.text-primary}'
+    rounded: '3px'
+    padding: '14px 16px'
+    width: '240px'
+  button-continue:
+    backgroundColor: '{colors.text-primary}'
+    textColor: '{colors.bg-primary}'
+    typography: '{typography.body}'
+    rounded: '{rounded.sm}'
+    padding: '0 16px'
+    height: '34px'
+  welcome-progress-segment:
+    backgroundColor: '{colors.border}'
+    width: '16px'
+    height: '2px'
+  welcome-progress-segment-done:
+    backgroundColor: '{colors.text-primary}'
 ---
 
 # Design System: BetterSoundCloud
@@ -132,8 +171,9 @@ competing with it.
 
 This produces a system that is almost aggressively restrained. There is no display type, no
 hero, no imagery, no gradient, and no decorative colour anywhere. Controls are transparent
-until you hover them. The largest text in the product is 15px, outside two named exceptions
-for content read at a distance: lyric lines, and the full-screen showcase. The accent appears only where
+until you hover them. The largest text in the product is 15px, outside three named exceptions:
+lyric lines and the full-screen showcase, read at a distance, and the first-run welcome's
+questions, read like a page's headline. The accent appears only where
 something is focused, selected, on, or changed from its default, and in a slider's fill up to its
 value. A user should be able to look at this app all day and
 never notice the chrome — and then find every control exactly where they left it the moment
@@ -210,7 +250,10 @@ selected, on — and never decorates. If orange appears somewhere that is not a 
 one mode and wrong in the other. The sanctioned exceptions are `#fff` on the danger hover and on
 the knob of a switch that is on (white on the accent, like the close button's glyph on its red),
 which must stay white in both modes; and the pictures of a mode on the Light or dark tiles, which
-draw that mode's own values from `tokens.css` whatever the panel is in (Theme pictures).
+draw that mode's own values from `tokens.css` whatever the panel is in (Theme pictures). Since
+2026-11-15, one more of the same kind: the welcome's drawing of Glass, drawn in Glass's own dark
+tint and the dark palette's inks whatever the panel is in, because Glass is always dark (Theme
+pictures, "The welcome's line drawings").
 
 ## Typography
 
@@ -241,7 +284,8 @@ personality the frame should not have and a runtime network load the renderer's 
 
 **The 15px Ceiling Rule.** Nothing in BetterSoundCloud's own UI is larger than 15px. The frame
 has no headlines because the frame has nothing to announce. If a surface seems to need display
-type, it probably belongs to SoundCloud's view, not ours.
+type, it probably belongs to SoundCloud's view, not ours. It has three named exceptions, each
+bound to one surface — the Lyrics, Showcase and Welcome Exceptions below — and none transfers.
 
 **The Lyrics Exception** (approved 2026-10-28). One tier sits above the ceiling: **lyric lines, 20px,
 line-height 1.4**, in the lyrics pane only. Lyrics are not chrome; they are the content of that
@@ -257,6 +301,13 @@ part of the same block, `clamp(16px, min(1.3vw, 2.3vh), 26px)` in Muted Ink; lyr
 `clamp(22px, min(2.2vw, 3.9vh), 44px)` at 600, line-height 1.22. Everything else there — the clock,
 the hint, the credit, the close button — keeps the 15px ceiling. Like the Lyrics Exception, it does
 not transfer.
+
+**The Welcome Exception** (approved by the maintainer 2026-11-15). The first-run welcome asks one
+question per screen, and the question is read like a page's headline: **the question titles
+only**, `clamp(36px, 4.2vw, 56px)` at 650, line-height 1.08, −0.02em, balanced, at most 22ch.
+Everything else on the welcome keeps the scale: the lead under the question 15px Muted Ink at
+most 66ch, an answer's name 15px, its detail 13px, and the foot 14px (its buttons), 13px (Skip
+setup) and 12px (the step count). Like the other two, it does not transfer.
 
 **The Two Sentences Rule** (the maintainer's, 2026-11-14). A setting's explanation is one or two
 short sentences, never a paragraph. When it takes effect is not part of it: that is the row's own
@@ -287,6 +338,15 @@ buttons, 4px in the chrome flex line, 8–12px inside controls, 16px inside the 
 between the Settings sidebar and its column. Settings rows are 14px vertical padding with 24px
 between the name and the control (the Background's sliders keep 12px), separated by
 hairlines, with the last row's border removed.
+
+**The first-run welcome** covers everything below the bar, as Settings does: a scrolling body
+over a foot pinned to the bottom, both on one gutter, `clamp(24px, 9vw, 160px)`, so the question
+and the Back button share a left edge. The body starts `clamp(32px, 9vh, 96px)` down; the answers
+come `clamp(28px, 5vh, 48px)` under the lead, 16px apart across and 20px between rows. Picture
+answers are up to 320px each, every one in a single row (up to four), so none ever wraps behind
+the foot at the first window size or the smallest (800×600); word answers are up to 240px, two to a
+row under an 860px window. The themes are two rows of three, at most 840px, to fit 1366×768
+without scrolling.
 
 A layout setting's row holds its drawing (120×76) between the text and the control, 24px from
 each. Picture tiles sit 16px apart. The theme gallery is a grid of cards at least 240px wide, two
@@ -342,7 +402,9 @@ Rectangles with two radii and nothing else.
   third number. Settings is a page, not a floating surface, so it has no corner at all.
 - **3px** on the knob of a switch and of a slider, and it is a derivation, not a third radius: a
   switch's 6px track less the 3px between it and the knob, so the corners are concentric, as the
-  menu's 10 = 6 + 4 is (2026-11-14). The line drawings give their window the same corners.
+  menu's 10 = 6 + 4 is (2026-11-14). The line drawings give their window the same corners, and
+  the welcome's word answers (2026-11-15) give their Field White panel the same 3px inside the 6px
+  tile frame: the same derivation, not a third radius.
 - **Square** on a picture of a page: a theme card's picture and the Background tile's small page
   are prints, like the showcase's sleeve, so they have no corners; the tile frame round them keeps
   the control radius.
@@ -380,6 +442,14 @@ Chrome buttons are the signature component and set the tone for everything else.
   no history.
 - **Close, hover:** the one exception — the field fills Danger Red and the glyph turns white.
 - **Cursor:** `default`, not `pointer`. These are window chrome, not web links.
+- **The one filled button** (2026-11-15): the first-run welcome's Continue, and nothing else. An
+  Ink fill and border, Shell Grey text at 600, the Prompt's button's 34px height, 16px sides and 6px
+  radius, and an "Enter" key chip after the label (12px at 400, 10px from it, a 1px border of the
+  Shell Grey at 45%). Hover mixes the fill 14% toward Shell Grey; disabled is 60% opacity. Its
+  emphasis comes from the neutrals, never the accent, which stays for state; in a contrast theme it
+  is ButtonText with ButtonFace text. Everywhere else, a default action is the tonal step or 600
+  weight (Page status, Plugin rows); the fill is kept for the welcome's way forward, where the next
+  move must never be in doubt.
 
 ### Navigation
 
@@ -867,12 +937,66 @@ settings, opened from its icon in the list or from the version at the sidebar's 
 - **The update line** (above), then the links in 13px Muted Ink, separated by middle dots: GitHub,
   Report a problem, Every version's notes. They look like links at rest — a quiet underline at 45%
   of their ink, 2px below — and go to Ink with a full underline on hover.
+- **"Show the welcome again"** (2026-11-15), under the links: the Prompt's button at 13px, on its
+  own (the maintainer removed the line naming its questions). Its questions are all settings, so
+  nothing is lost.
 - **"What's new in 0.8.0"**, a group heading, then that version's entry from CHANGELOG.md drawn as
   text, never as markup: its headings at 14px 600 in Ink, its paragraphs and items at 13px Muted
   Ink, line-height 1.5, at most 70ch; each item after the 6×1px dash the plugin rows use; bold in
   Ink at 600. A version whose notes are not in the app says so and links to GitHub.
 - **"Built with"**, a group heading, then one paragraph naming what the app ships and where the
   licences are.
+
+### First-run welcome
+
+The first launch's welcome (`src/renderer/onboarding`, since 2026-11-15, the maintainer's request
+after Zen's and Helium's): a few questions, ad blocking first, ending on sign-in. Shown on a
+profile with no settings yet, and again from About. The questions are data (`steps.ts`) and will
+change often; the shape below is what stays.
+
+- **A page of ours below the bar, like Settings**: Shell Grey, flat and opaque, no scrim, no
+  shadow, no corner. Nothing floats, so nothing rises.
+- **One question per screen**: the question (the Welcome Exception), its lead under it 16px down,
+  then the answers. The first screen is the welcome itself: the 56px app icon, 28px above the
+  title, the lead saying what the app adds, and one 13px Muted Ink line ("9 questions, about a
+  minute. Enter keeps what is chosen and moves on."). Continue reads "Get started" there.
+- **No eyebrow.** Where the visitor is lives in the foot, never in a label above the question.
+- **The answers are a radio group of tiles in the tile frame** of Theme pictures: a 2px ring with
+  3px of air at the control radius, transparent at rest, Hairline on hover, the accent when chosen;
+  the radio underneath for the keyboard and screen readers. Every answer is a real setting written
+  the moment it is chosen, and the tile shown as chosen is the one matching what is stored, so a
+  question opens on the current value.
+- **Picture answers**: a 16:10 print behind a Hairline, square, on Field White (a welcome line
+  drawing, or the Light or dark pictures filling it); the themes keep their pictures' 16:9, None
+  first. The name 10px under the print, 15px, then the detail at 13px Muted Ink, both 5px in from the
+  ring so they line up with the picture.
+- **Word answers**, where no picture would be honest (on purpose: updates is a policy and sign-in
+  three actions with conditions in their words): the name and detail on a Field White panel with a
+  Hairline and a 3px radius (Shapes), 14px × 16px padding, at least 88px tall, every panel in a row
+  as tall as the tallest.
+- **Names are Ink, 600 when chosen**, like the theme cards' — weight carries selection, the accent
+  stays on the ring.
+- **What an answer says right away** goes under the tiles in the status-line pattern, 20px down,
+  at most 70ch: Glass that cannot show on this computer, a plugin's own line and buttons once it is
+  on (the Prompt's button at 13px), a browser sign-in that was not imported.
+- **The foot**, above a Hairline, 14px × the gutter × 18px: Back (the Prompt's button at 14px, from
+  the second screen), Continue (the one filled button), then, pushed right, the progress and Skip
+  setup. On the sign-in screen Continue says what the chosen answer does ("Open SoundCloud's
+  sign-in", "Choose the export…", "Start listening").
+- **Progress** is a row of 16×2px square-ended segments, 4px apart, Hairline ahead and Ink done,
+  like the showcase's progress rule, then "1 of 9" at 12px tabular Muted Ink, read as "Question 1
+  of 9" by a screen reader. Under an 860px window the segments go and the count stays.
+- **Skip setup** is a quiet text button, 13px Muted Ink with the links' 45% underline, Ink on hover,
+  24px after the count. It keeps everything chosen so far; the defaults stand for the rest. Absent
+  on the last screen.
+- **Keyboard**: focus lands on the answer shown as chosen (Continue on the first screen), so the
+  arrows move through the group at once. Enter continues unless a button or link has focus; 1–9 pick
+  a tile. A tile's focus ring is the 2px `--bsc-focus` ring 3px outside its frame; the foot's
+  buttons ring 2px outside.
+- **Motion**: each screen slides in 14px from the side it came from (forward from the right, Back
+  from the left) with a fade, 180ms `cubicOut`. Reduced motion removes it (Motion).
+- **Cursor**: `default` on the tiles and every button, as the Buttons rule says.
+- **Forced colours**: the chosen ring is Highlight; the drawings keep Canvas and CanvasText.
 
 ### Plugin rows
 
@@ -1001,6 +1125,21 @@ line drawings beside the layout settings. They show; the words still say.
   ends in mixes of Muted Ink; our bar a shade darker than SoundCloud's header, so the two never
   read as one band; the part the row's setting controls in Ink. Decorative: hidden from assistive
   technology, since the row's words say it all.
+- **The welcome's line drawings** (`OnboardingFigure.svelte`, 2026-11-15): one per picture answer,
+  a 160×100 (16:10) scene drawn in the same language — a 1.4 stroke with round ends in mixes of
+  Muted Ink on a Field White sheet with 3px corners, blocks and bands as faint fills, and what the
+  answer is about in Ink. They show SoundCloud's page and player, a desktop behind the window, a
+  Discord or Last.fm profile, SoundCloud's page each start choice opens, the taskbar. Decorative,
+  like the layout drawings.
+- **A present ad is a solid Ink block** (at 75%): a banner on the page, a slot between two tracks
+  on the player.
+- **Glass is drawn in its own colours**: the window a dark tint over the desktop with the dark
+  palette's inks on it, whatever the panel is in, as a picture of a mode is (the Two-Mode Rule's
+  exception). Solid is the panel's own page colour.
+
+**The Empty Outline Rule.** A dashed outline means one thing in every drawing: nothing is there —
+a blocked ad, no Discord card, no scrobbles, a closed window. Never use it for "optional",
+"coming soon" or emphasis.
 
 **The Same Window Rule.** Every layout drawing is the same window, as all the layout settings have
 it right now, so the drawings never disagree and changing one setting changes them all. A drawing
@@ -1021,6 +1160,11 @@ needed.
 **The switch's knob is a second small state motion** (2026-11-14): it slides across the track
 over 120ms (`cubic-bezier(0.2, 0.8, 0.2, 1)`), so on and off read as a movement, not a flicker.
 The track's colour changes at once. Reduced motion removes the slide.
+
+**The welcome's step slide is a third** (2026-11-15): moving between the first-run welcome's
+questions, the new one slides 14px from the side it came from with a fade, over the dialogs'
+180ms `cubicOut`. The page itself does not move; only the question changes. Reduced motion
+removes it.
 
 **The one exception is the wait line** on the page-status surface: a 120×2px Hairline track with
 a Muted Ink segment crossing it every 1.4s, shown only while something is in progress. A message
@@ -1102,8 +1246,8 @@ In a contrast theme, focus shows where you are; hover does not.
   ink whatever the Appearance.
 - **Don't** introduce a webfont. The CSP blocks remote loads, and the OS stack is the point.
 - **Don't** add a third radius, a second shadow, or a second accent without retiring one first.
-- **Don't** exceed 15px type in BetterSoundCloud's own UI, outside the Lyrics and Showcase
-  Exceptions.
+- **Don't** exceed 15px type in BetterSoundCloud's own UI, outside the Lyrics, Showcase and
+  Welcome Exceptions.
 - **Don't** grow the chrome past 32px. New affordances go into settings or an overlay.
 - **Don't** style SoundCloud's page from a component stylesheet. Page-level appearance is
   CSS-only through `insertCSS`, and no node may be added to their document.

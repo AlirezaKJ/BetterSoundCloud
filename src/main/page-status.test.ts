@@ -93,6 +93,7 @@ function makeShell() {
     },
     content: { webContents: content },
     settings: null,
+    onboarding: null,
     status: null as { webContents: FakeContents } | null,
     pageStatus: null as PageStatus | null,
     identity: {},

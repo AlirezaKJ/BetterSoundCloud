@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-14T12:00:00.000Z",
+  "generatedAt": "2026-11-15T12:00:00.000Z",
   "title": "Design System: BetterSoundCloud",
   "extensions": {
     "colorMeta": {
@@ -159,6 +159,10 @@
       "overline": {
         "displayName": "Overline",
         "purpose": "One use only: the NOT IMPLEMENTED YET badge on a pending setting."
+      },
+      "welcome-question": {
+        "displayName": "Welcome Question",
+        "purpose": "The Welcome Exception (approved 2026-11-15): the first-run welcome's question titles only, clamp(36px, 4.2vw, 56px) at 650, line-height 1.08, −0.02em, balanced, at most 22ch. Everything else on the welcome keeps the 15px scale. It does not transfer."
       }
     },
     "shadows": [
@@ -193,6 +197,11 @@
         "name": "hover",
         "value": "none",
         "purpose": "Hover states are instant. The wash appears on the frame it is needed; no transition."
+      },
+      {
+        "name": "welcome-step",
+        "value": "180ms cubicOut, 14px",
+        "purpose": "Between the first-run welcome's questions: the new one slides 14px from the side it came from (forward from the right, Back from the left) with a fade. Reduced motion removes it."
       }
     ],
     "breakpoints": [
@@ -322,6 +331,38 @@
       "description": "What friends see on Discord, built by the function that sends it, drawn in our colours: Field White, Hairline, 6px. Nothing on it can be pressed. Its caption beneath.",
       "html": "<div class=\"ds-discord\"><div class=\"ds-discord-card\"><p class=\"ds-discord-kind\">Listening to BetterSoundCloud</p><div class=\"ds-discord-body\"><span class=\"ds-discord-art\"></span><div class=\"ds-discord-words\"><p class=\"ds-discord-title\">Birahe</p><p class=\"ds-discord-state\">by Ali Sorena</p><div class=\"ds-discord-progress\"><span>1:05</span><span class=\"ds-discord-rule\"><span style=\"width:30%\"></span></span><span>3:33</span></div></div></div><span class=\"ds-discord-button\">Listen on SoundCloud</span></div><p class=\"ds-discord-caption\">What your friends see on your Discord profile, right now.</p></div>",
       "css": ".ds-discord { padding: 14px; background: var(--bsc-bg-primary, #f2f2f2); color: var(--bsc-text-primary, #1a1a1a); } .ds-discord p { margin: 0; } .ds-discord-card { width: min(100%, 340px); padding: 12px; border: 1px solid var(--bsc-border, rgb(0 0 0 / 12%)); border-radius: var(--bsc-radius, 6px); background: var(--bsc-bg-secondary, #fff); } .ds-discord-kind { font-size: 12px; font-weight: 600; color: var(--bsc-text-secondary, #5c5c5c); } .ds-discord-body { display: flex; gap: 12px; margin-top: 10px; } .ds-discord-art { flex: 0 0 auto; width: 64px; height: 64px; border-radius: var(--bsc-radius, 6px); background: var(--bsc-bg-hover, rgb(0 0 0 / 8%)); } .ds-discord-words { flex: 1; min-width: 0; } .ds-discord-title { font-size: 14px; font-weight: 600; } .ds-discord-state { margin-top: 2px; font-size: 13px; color: var(--bsc-text-secondary, #5c5c5c); } .ds-discord-progress { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 12px; font-variant-numeric: tabular-nums; color: var(--bsc-text-secondary, #5c5c5c); } .ds-discord-rule { position: relative; flex: 1; height: 2px; background: var(--bsc-border, rgb(0 0 0 / 12%)); } .ds-discord-rule span { position: absolute; inset: 0 auto 0 0; background: var(--bsc-text-primary, #1a1a1a); } .ds-discord-button { display: block; margin-top: 8px; padding: 5px 0; border: 1px solid var(--bsc-border, rgb(0 0 0 / 12%)); border-radius: var(--bsc-radius, 6px); font-size: 13px; text-align: center; } .ds-discord-caption { margin-top: 8px !important; font-size: 12px; color: var(--bsc-text-secondary, #5c5c5c); }"
+    },
+    {
+      "name": "Continue Button",
+      "kind": "button",
+      "refersTo": "button-continue",
+      "description": "The one filled button in the system, used only for the first-run welcome's way forward: Ink fill, Shell Grey text at 600, an Enter key chip. Emphasis from the neutrals, never the accent.",
+      "html": "<button class=\"ds-btn-continue\" type=\"button\">Continue <kbd class=\"ds-kbd\">Enter</kbd></button>",
+      "css": ".ds-btn-continue { display: inline-flex; align-items: center; gap: 10px; height: 34px; padding: 0 16px; border: 1px solid var(--bsc-text-primary, #1a1a1a); border-radius: var(--bsc-radius, 6px); background: var(--bsc-text-primary, #1a1a1a); color: var(--bsc-bg-primary, #f2f2f2); font: 600 14px system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; cursor: default; } .ds-btn-continue:hover { background: color-mix(in srgb, var(--bsc-text-primary, #1a1a1a) 86%, var(--bsc-bg-primary, #f2f2f2)); } .ds-btn-continue:focus-visible { outline: 2px solid var(--bsc-focus, #e64d00); outline-offset: 2px; } .ds-btn-continue:disabled { opacity: 0.6; } .ds-kbd { padding: 0 6px; border: 1px solid color-mix(in srgb, var(--bsc-bg-primary, #f2f2f2) 45%, transparent); border-radius: var(--bsc-radius, 6px); font: 400 12px/18px inherit; }"
+    },
+    {
+      "name": "Welcome Answer Tile",
+      "kind": "chip",
+      "refersTo": "welcome-tile",
+      "description": "A picture answer on the first-run welcome: the tile frame of Theme pictures round a 16:10 square print, the name at 15px in Ink (600 when chosen), the detail at 13px Muted Ink.",
+      "html": "<div class=\"ds-answers\" role=\"radiogroup\" aria-label=\"Block ads?\"><label class=\"ds-answer ds-answer--chosen\"><input type=\"radio\" name=\"ds-ads\" checked /><span class=\"ds-answer-ring\"><span class=\"ds-answer-print\"></span></span><span class=\"ds-answer-name\">Audio ads and the page’s ads</span><span class=\"ds-answer-detail\">Also hides display ads and trackers on SoundCloud’s page.</span></label><label class=\"ds-answer\"><input type=\"radio\" name=\"ds-ads\" /><span class=\"ds-answer-ring\"><span class=\"ds-answer-print\"></span></span><span class=\"ds-answer-name\">Neither</span><span class=\"ds-answer-detail\">SoundCloud plays its ads, as it does in a browser.</span></label></div>",
+      "css": ".ds-answers { display: grid; grid-template-columns: repeat(2, minmax(0, 220px)); gap: 20px 16px; padding: 12px; background: var(--bsc-bg-primary, #f2f2f2); font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; } .ds-answer { position: relative; display: flex; flex-direction: column; cursor: default; } .ds-answer input { position: absolute; width: 1px; height: 1px; opacity: 0; } .ds-answer-ring { display: block; padding: 3px; border: 2px solid transparent; border-radius: var(--bsc-radius, 6px); } .ds-answer:hover .ds-answer-ring { border-color: var(--bsc-border, rgb(0 0 0 / 12%)); } .ds-answer--chosen .ds-answer-ring { border-color: var(--bsc-accent, #e64d00); } .ds-answer:has(input:focus-visible) .ds-answer-ring { outline: 2px solid var(--bsc-focus, #e64d00); outline-offset: 3px; } .ds-answer-print { display: block; aspect-ratio: 16 / 10; border: 1px solid var(--bsc-border, rgb(0 0 0 / 12%)); background: var(--bsc-bg-secondary, #ffffff); } .ds-answer-name { margin-top: 10px; padding: 0 5px; font-size: 15px; line-height: 1.35; color: var(--bsc-text-primary, #1a1a1a); } .ds-answer--chosen .ds-answer-name { font-weight: 600; } .ds-answer-detail { margin-top: 2px; padding: 0 5px; font-size: 13px; line-height: 1.45; color: var(--bsc-text-secondary, #5c5c5c); }"
+    },
+    {
+      "name": "Welcome Word Tile",
+      "kind": "chip",
+      "refersTo": "welcome-tile-words",
+      "description": "An answer with no honest picture (updates, sign-in): its words on a Field White panel with a 3px radius, concentric in the 6px tile frame, every panel in a row as tall as the tallest.",
+      "html": "<div class=\"ds-words\" role=\"radiogroup\" aria-label=\"Update automatically?\"><label class=\"ds-word ds-word--chosen\"><input type=\"radio\" name=\"ds-upd\" checked /><span class=\"ds-word-ring\"><span class=\"ds-word-panel\"><span class=\"ds-word-name\">Keep me up to date</span><span class=\"ds-word-detail\">Checked twice a day; one notification when one is ready.</span></span></span></label><label class=\"ds-word\"><input type=\"radio\" name=\"ds-upd\" /><span class=\"ds-word-ring\"><span class=\"ds-word-panel\"><span class=\"ds-word-name\">I’ll check myself</span><span class=\"ds-word-detail\">Nothing is checked until you ask, in Settings → About.</span></span></span></label></div>",
+      "css": ".ds-words { display: grid; grid-template-columns: repeat(2, minmax(0, 240px)); gap: 20px 16px; padding: 12px; background: var(--bsc-bg-primary, #f2f2f2); font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; } .ds-word { position: relative; display: flex; flex-direction: column; cursor: default; } .ds-word input { position: absolute; width: 1px; height: 1px; opacity: 0; } .ds-word-ring { flex: 1; display: block; padding: 3px; border: 2px solid transparent; border-radius: var(--bsc-radius, 6px); } .ds-word:hover .ds-word-ring { border-color: var(--bsc-border, rgb(0 0 0 / 12%)); } .ds-word--chosen .ds-word-ring { border-color: var(--bsc-accent, #e64d00); } .ds-word:has(input:focus-visible) .ds-word-ring { outline: 2px solid var(--bsc-focus, #e64d00); outline-offset: 3px; } .ds-word-panel { display: flex; flex-direction: column; gap: 4px; box-sizing: border-box; height: 100%; min-height: 88px; padding: 14px 16px; border: 1px solid var(--bsc-border, rgb(0 0 0 / 12%)); border-radius: 3px; background: var(--bsc-bg-secondary, #ffffff); } .ds-word-name { font-size: 15px; line-height: 1.35; color: var(--bsc-text-primary, #1a1a1a); } .ds-word--chosen .ds-word-name { font-weight: 600; } .ds-word-detail { margin-top: 2px; font-size: 13px; line-height: 1.45; color: var(--bsc-text-secondary, #5c5c5c); }"
+    },
+    {
+      "name": "Welcome Foot",
+      "kind": "nav",
+      "refersTo": "welcome-progress-segment",
+      "description": "The welcome's foot: Back, Continue, then the progress (2px square-ended segments and \"n of N\") and Skip setup as a quiet underlined text button.",
+      "html": "<footer class=\"ds-foot\"><button class=\"ds-foot-back\" type=\"button\">Back</button><button class=\"ds-foot-go\" type=\"button\">Continue</button><div class=\"ds-progress\"><span class=\"ds-segments\" aria-hidden=\"true\"><span class=\"ds-seg ds-seg--done\"></span><span class=\"ds-seg ds-seg--done\"></span><span class=\"ds-seg\"></span><span class=\"ds-seg\"></span></span><span>2 of 4</span></div><button class=\"ds-skip\" type=\"button\">Skip setup</button></footer>",
+      "css": ".ds-foot { display: flex; align-items: center; gap: 12px; padding: 14px 24px 18px; border-top: 1px solid var(--bsc-border, rgb(0 0 0 / 12%)); background: var(--bsc-bg-primary, #f2f2f2); font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; } .ds-foot-back { height: 34px; padding: 0 16px; border: 1px solid var(--bsc-border, rgb(0 0 0 / 12%)); border-radius: var(--bsc-radius, 6px); background: transparent; color: var(--bsc-text-primary, #1a1a1a); font: inherit; font-size: 14px; cursor: default; } .ds-foot-back:hover { background: var(--bsc-bg-hover, rgb(0 0 0 / 8%)); } .ds-foot-go { height: 34px; padding: 0 16px; border: 1px solid var(--bsc-text-primary, #1a1a1a); border-radius: var(--bsc-radius, 6px); background: var(--bsc-text-primary, #1a1a1a); color: var(--bsc-bg-primary, #f2f2f2); font: inherit; font-size: 14px; font-weight: 600; cursor: default; } .ds-progress { display: flex; align-items: center; gap: 12px; margin-left: auto; font-size: 12px; color: var(--bsc-text-secondary, #5c5c5c); font-variant-numeric: tabular-nums; } .ds-segments { display: flex; gap: 4px; } .ds-seg { width: 16px; height: 2px; background: var(--bsc-border, rgb(0 0 0 / 12%)); } .ds-seg--done { background: var(--bsc-text-primary, #1a1a1a); } .ds-skip { margin-left: 24px; padding: 4px 2px; border: 0; background: none; color: var(--bsc-text-secondary, #5c5c5c); font: inherit; font-size: 13px; text-decoration: underline; text-decoration-color: color-mix(in srgb, currentcolor 45%, transparent); text-underline-offset: 2px; cursor: default; } .ds-skip:hover { color: var(--bsc-text-primary, #1a1a1a); text-decoration-color: currentcolor; } .ds-foot button:focus-visible { outline: 2px solid var(--bsc-focus, #e64d00); outline-offset: 2px; }"
     }
   ],
   "narrative": {
@@ -343,12 +384,12 @@
       },
       {
         "name": "The Two-Mode Rule",
-        "body": "Every colour exists twice and is consumed only through a --bsc-* custom property. A literal hex outside tokens.css is a bug: it will be correct in one mode and wrong in the other. The sanctioned exceptions are #fff on the danger hover and on the knob of a switch that is on (white on the accent, like the close button's glyph on its red), which must stay white in both modes; and the pictures of a mode on the Light or dark tiles, which draw that mode's own values from tokens.css whatever the panel is in (Theme pictures).",
+        "body": "Every colour exists twice and is consumed only through a --bsc-* custom property. A literal hex outside tokens.css is a bug: it will be correct in one mode and wrong in the other. The sanctioned exceptions are #fff on the danger hover and on the knob of a switch that is on (white on the accent, like the close button's glyph on its red), which must stay white in both modes; and the pictures of a mode on the Light or dark tiles, which draw that mode's own values from tokens.css whatever the panel is in (Theme pictures). Since 2026-11-15, one more of the same kind: the welcome's drawing of Glass, drawn in Glass's own dark tint and the dark palette's inks whatever the panel is in, because Glass is always dark (Theme pictures, \"The welcome's line drawings\").",
         "section": "colors"
       },
       {
         "name": "The 15px Ceiling Rule",
-        "body": "Nothing in BetterSoundCloud's own UI is larger than 15px. The frame has no headlines because the frame has nothing to announce. If a surface seems to need display type, it probably belongs to SoundCloud's view, not ours.",
+        "body": "Nothing in BetterSoundCloud's own UI is larger than 15px. The frame has no headlines because the frame has nothing to announce. If a surface seems to need display type, it probably belongs to SoundCloud's view, not ours. It has three named exceptions, each bound to one surface — the Lyrics, Showcase and Welcome Exceptions — and none transfers.",
         "section": "typography"
       },
       {
@@ -385,6 +426,11 @@
         "name": "The Same Window Rule",
         "body": "Every layout drawing is the same window, as all the layout settings have it right now, so the drawings never disagree and changing one setting changes them all. A drawing shows the state, never a picture of the setting on its own.",
         "section": "components"
+      },
+      {
+        "name": "The Empty Outline Rule",
+        "body": "A dashed outline means one thing in every drawing: nothing is there — a blocked ad, no Discord card, no scrobbles, a closed window. Never use it for \"optional\", \"coming soon\" or emphasis.",
+        "section": "components"
       }
     ],
     "dos": [
@@ -403,7 +449,7 @@
       "Don't use glassmorphism, backdrop blur, glow, or saturated gradients. They read as a theme rather than a tool and destroy legibility in a 32px strip. Confirmed anti-reference. One exception, the user's to choose: the Glass setting (Windows 11, off by default, kept by the maintainer 2026-11-11), which puts the whole window on a dark live blur, like a theme does. Our chrome on it stays flat: a plain dark fill on the bars, no blur or glow of its own, and dark ink whatever the Appearance.",
       "Don't introduce a webfont. The CSP blocks remote loads, and the OS stack is the point.",
       "Don't add a third radius, a second shadow, or a second accent without retiring one first.",
-      "Don't exceed 15px type in BetterSoundCloud's own UI, outside the Lyrics and Showcase Exceptions.",
+      "Don't exceed 15px type in BetterSoundCloud's own UI, outside the Lyrics, Showcase and Welcome Exceptions.",
       "Don't grow the chrome past 32px. New affordances go into settings or an overlay.",
       "Don't style SoundCloud's page from a component stylesheet. Page-level appearance is CSS-only through insertCSS, and no node may be added to their document."
     ]

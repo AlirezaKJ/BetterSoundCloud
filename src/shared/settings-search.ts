@@ -171,6 +171,12 @@ export const OTHER_ENTRIES: readonly SearchEntry[] = [
   },
   {
     section: 'about',
+    name: 'Show the welcome again',
+    text: 'The first-run questions again: ads, the look, Discord and Last.fm, startup, sign-in.',
+    target: '[data-bsc-about-welcome]'
+  },
+  {
+    section: 'about',
     name: 'Report a problem',
     text: 'Open the project’s issues on GitHub. Also the version you have, and its updates.',
     target: '[data-bsc-about-links]'

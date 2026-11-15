@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { app, components, dialog, ipcMain, nativeTheme } from 'electron'
 import type { WebContentsView } from 'electron'
@@ -30,8 +31,11 @@ import {
   toggleVisualView,
   closeVisualView,
   rendererUrl,
-  sendFrameCss
+  sendFrameCss,
+  openOnboarding,
+  closeOnboarding
 } from './window'
+import { recordOnboardingFinished, shouldOnboard } from './onboarding'
 import {
   attachAudioEngine,
   detachAudioEngine,
@@ -273,6 +277,40 @@ if (process.env['ELECTRON_RENDERER_URL']) {
   app.setPath('userData', join(app.getPath('appData'), 'BetterSoundCloud (dev)'))
 }
 
+/**
+ * Whether this profile had no settings yet when this launch began: the first-run welcome's cue
+ * (shared/onboarding.ts). Read before anything touches the settings store, which writes the file.
+ */
+const FIRST_RUN = !existsSync(join(app.getPath('userData'), 'settings.json'))
+
+/** Whether a window opens with the welcome: decided by the first window, false once finished. */
+let onboardingDue: boolean | null = null
+
+/** SoundCloud's own sign-in page, where the welcome hands over when asked to (no click on it). */
+const SIGN_IN_URL = 'https://soundcloud.com/signin'
+
+/** The welcome finished asking for sign-in before SoundCloud could open: its first page is it. */
+let signInNext = false
+
+/**
+ * The page ad blocker when the welcome opened: it applies to the next page load (`applies:
+ * 'reload'`), so a welcome that changed it reloads SoundCloud as it closes.
+ */
+let adBlockerAtWelcome = false
+
+/** Open the welcome, remembering what it may need to reload for. */
+function showWelcome(target: Shell): void {
+  adBlockerAtWelcome = settings.get('advanced.adBlocker')
+  openOnboarding(target)
+}
+
+/** The page SoundCloud opens on: the startup setting's, or its sign-in once, after the welcome. */
+function firstPage(): string {
+  if (!signInNext) return startUrl(settings.get('general.startupUrl'))
+  signInNext = false
+  return SIGN_IN_URL
+}
+
 /** Decided once, here, for the whole launch: Chromium cannot change it while running. */
 const HARDWARE_ACCELERATION = !SAFE_MODE && settings.get('advanced.hardwareAcceleration')
 if (!HARDWARE_ACCELERATION) {
@@ -339,7 +377,7 @@ function waitForWidevine(): void {
       startUpdates()
       if (!shell) return
       if (shell.pageStatus?.kind === 'setting-up') showPageStatus(shell, { kind: 'loading' })
-      loadSoundCloud(shell, startUrl(settings.get('general.startupUrl')))
+      loadSoundCloud(shell, firstPage())
     },
     (error: unknown) => {
       clearTimeout(slow)
@@ -379,7 +417,7 @@ function watchForLateWidevine(): void {
     if (wentOnWithout || !shell) return
     if (shell.pageStatus?.kind === 'setup-failed') {
       showPageStatus(shell, { kind: 'loading' })
-      loadSoundCloud(shell, startUrl(settings.get('general.startupUrl')))
+      loadSoundCloud(shell, firstPage())
     }
   }, LATE_WIDEVINE_CHECK_MS)
 }
@@ -415,7 +453,7 @@ function continueWithoutWidevine(target: Shell): void {
     `[widevine] continuing without it (${widevine.detail}); protected tracks will not play`
   )
   showPageStatus(target, { kind: 'loading' })
-  loadSoundCloud(target, startUrl(settings.get('general.startupUrl')))
+  loadSoundCloud(target, firstPage())
 }
 
 /** What is holding up SoundCloud's first page right now. */
@@ -528,6 +566,7 @@ function showMainWindow(): void {
         next.header,
         next.content,
         next.settings,
+        next.onboarding,
         next.embedded,
         next.player,
         next.visualStrip,
@@ -543,12 +582,16 @@ function showMainWindow(): void {
     attachContextMenu(next)
     attachPageStatus(next)
     applyLiveSettings()
+    // The first-run welcome, over everything below our bar while SoundCloud (and on a first
+    // launch, Widevine) gets ready behind it. Left unfinished, it comes back with the window.
+    onboardingDue ??= shouldOnboard(FIRST_RUN)
+    if (onboardingDue) showWelcome(next)
 
     // SoundCloud only once Widevine is ready (see `waitForWidevine`), or once the user chose to go
     // on without it. A window opened after that — macOS reopening from the Dock — loads straight
     // away.
     if (widevine.state === 'ready' || widevine.state === 'skipped') {
-      loadSoundCloud(next, startUrl(settings.get('general.startupUrl')))
+      loadSoundCloud(next, firstPage())
     } else if (widevine.state === 'failed') showPageStatus(next, startingStatus())
     noticeSlowStart(next, startingStatus)
     return
@@ -570,10 +613,16 @@ function registerIpc(): void {
     shell !== null &&
     (event.sender === shell.header.webContents || event.sender === shell.embedded?.webContents)
 
-  /** The header drives the window; the settings panel only reads and writes settings. */
+  /**
+   * The header drives the window; the settings panel only reads and writes settings, and so does
+   * the first-run welcome, which asks the same questions.
+   */
   const fromSettingsUi = (
     event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent
-  ): boolean => fromChrome(event) || event.sender === shell?.settings?.webContents
+  ): boolean =>
+    fromChrome(event) ||
+    event.sender === shell?.settings?.webContents ||
+    event.sender === shell?.onboarding?.webContents
 
   ipcMain.on(CH.windowMinimize, (e) => {
     if (fromChrome(e)) shell?.window.minimize()
@@ -613,6 +662,32 @@ function registerIpc(): void {
   ipcMain.on(CH.settingsClose, (e) => {
     // Sent by the settings panel's own close button, so the sender is that view.
     if (shell && e.sender === shell.settings?.webContents) closeSettings(shell)
+  })
+
+  // The welcome's last step. `true` asks for SoundCloud's sign-in page next: loaded now if
+  // SoundCloud is open, or as its first page once Widevine is ready (never before: §4).
+  ipcMain.on(CH.onboardingFinish, (e, signIn: unknown) => {
+    if (!shell || e.sender !== shell.onboarding?.webContents) return
+    recordOnboardingFinished()
+    onboardingDue = false
+    closeOnboarding(shell)
+    const open = widevine.state === 'ready' || widevine.state === 'skipped'
+    if (signIn === true) {
+      // A fresh page load, so a changed ad blocker applies to it as well.
+      if (!open) signInNext = true
+      else if (shell.pageStatus?.kind !== 'setup-failed') {
+        void shell.content.webContents.loadURL(SIGN_IN_URL)
+      }
+    } else if (open && settings.get('advanced.adBlocker') !== adBlockerAtWelcome) {
+      shell.content.webContents.reload()
+    }
+  })
+
+  // Settings → About's "Show the welcome again".
+  ipcMain.on(CH.onboardingOpen, (e) => {
+    if (!shell || e.sender !== shell.settings?.webContents) return
+    closeSettings(shell)
+    showWelcome(shell)
   })
 
   ipcMain.on(CH.navBack, (e) => {
@@ -989,7 +1064,9 @@ function registerIpc(): void {
     return clearSiteData(shell)
   })
   ipcMain.handle(CH.browserSessionImport, (e) => {
-    if (!shell || !fromSettingsView(e)) return null
+    // The settings view, or the welcome's sign-in step, which offers the same import.
+    const fromWelcome = shell !== null && e.sender === shell.onboarding?.webContents
+    if (!shell || !(fromSettingsView(e) || fromWelcome)) return null
     return chooseAndImportBrowserSession(shell)
   })
 }
@@ -1130,9 +1207,11 @@ function pluginResult(change: () => void): PluginsResult {
 
 /** Plugin rows change on their own (a status line, a button), so the open panel is told. */
 function broadcastPlugins(): void {
-  const view = shell?.settings
-  if (view && !view.webContents.isDestroyed()) {
-    view.webContents.send(CH.pluginsChanged, pluginViews())
+  // Settings, and the welcome's Last.fm step, which shows the plugin's own line and buttons.
+  for (const view of [shell?.settings, shell?.onboarding]) {
+    if (view && !view.webContents.isDestroyed()) {
+      view.webContents.send(CH.pluginsChanged, pluginViews())
+    }
   }
 }
 
@@ -1154,7 +1233,7 @@ function broadcastPresenceStatus(status: PresenceStatus): void {
 /** Tell every one of our own renderers about a settings change. */
 function broadcastSettings(next: Settings): void {
   if (!shell) return
-  for (const view of [shell.header, shell.settings]) {
+  for (const view of [shell.header, shell.settings, shell.onboarding]) {
     if (view && !view.webContents.isDestroyed()) {
       view.webContents.send(CH.settingsChanged, next)
     }
