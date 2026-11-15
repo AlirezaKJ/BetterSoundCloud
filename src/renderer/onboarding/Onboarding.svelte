@@ -2,7 +2,7 @@
   import { onMount, tick } from 'svelte'
   import { fly } from 'svelte/transition'
   import { cubicOut } from 'svelte/easing'
-  import iconUrl from '../../../resources/icon.png?url'
+  import logoUrl from '../../../resources/logo.svg?url'
   import type { Settings, SettingKey } from '@shared/settings-schema'
   import type { ThemeSummary } from '@shared/themes'
   import type { PluginView } from '@shared/plugins'
@@ -256,7 +256,7 @@
         in:fly={{ x: 14 * direction, duration: REDUCED_MOTION ? 0 : 180, easing: cubicOut }}
       >
         {#if step?.kind === 'welcome'}
-          <img class="icon" src={iconUrl} alt="" width="56" height="56" />
+          <img class="icon" src={logoUrl} alt="" width="63" height="40" />
         {/if}
         <h1 id="step-title">{step?.title}</h1>
         <p class="lead">{step?.lead}</p>
@@ -466,8 +466,8 @@
 
   .icon {
     display: block;
-    width: 56px;
-    height: 56px;
+    width: 63px;
+    height: 40px;
     margin-bottom: 28px;
   }
 

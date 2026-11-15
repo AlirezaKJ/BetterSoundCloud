@@ -120,7 +120,10 @@ funding; whether to ship a default Last.fm API key; telemetry
 - **Name stays BetterSoundCloud.** Changing it would break update continuity and macOS keychain
   grants after release.
 - **Author:** AlirezaKJ. **Licence:** MIT. **Repo:** `AlirezaKJ/BetterSoundCloud`.
-- **Icon:** `build-resources/icon.png`, 1000×1000, the single source for all platform icons.
+- **Icon:** The Pull, an orange sleeve with the record drawn out of it, chosen by the maintainer on
+  2026-11-14 for the app and its website. It replaced SoundCloud's own cloud in a black circle, which
+  read as SoundCloud's app rather than a client of it. Every size is drawn by the website
+  repository's `brand/logos/the-pull/build.mjs` (CLAUDE.md §1, "The icons are The Pull").
 - **Voice, as practised in the codebase and issue threads:** plain, specific, and honest about
   what does not work. The settings panel labels unbuilt features "Not implemented yet" rather
   than shipping controls that silently do nothing. This is a deliberate posture, not an accident.

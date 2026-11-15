@@ -1,5 +1,5 @@
 import { join } from 'node:path'
-import { app, Menu, Tray, nativeImage } from 'electron'
+import { app, Menu, Tray } from 'electron'
 
 /**
  * The tray icon and its right-click menu.
@@ -28,17 +28,25 @@ function buildMenu(showWindow: () => void): Menu {
   ])
 }
 
-export function createTray(showWindow: () => void): void {
-  // One icon file serves the installer, the window and the tray. It is 1000x1000, so it
-  // is resized here rather than shipping a second asset that can drift from the first.
-  // `resources/` is inside the asar at runtime and beside `out/` in dev, so this one
-  // path resolves in both.
-  const source = nativeImage.createFromPath(
-    join(import.meta.dirname, '../../resources/icon.png')
-  )
-  const icon = source.resize({ width: 16, height: 16 })
+/**
+ * Each platform's own tray file, drawn for the tray's size rather than shrunk from the app's icon
+ * (a 1024px icon resized to 16 blurred, and its record vanished on a dark taskbar). Windows' .ico
+ * holds a size for every display scale; Linux takes the PNG and its @2x; macOS a black "Template"
+ * image, which it recolours for the menu bar. `resources/` is inside the asar at runtime and beside
+ * `out/` in dev, so this one path resolves in both.
+ */
+function trayIconPath(): string {
+  const name =
+    process.platform === 'win32'
+      ? 'tray.ico'
+      : process.platform === 'darwin'
+        ? 'trayTemplate.png'
+        : 'tray.png'
+  return join(import.meta.dirname, '../../resources', name)
+}
 
-  tray = new Tray(icon)
+export function createTray(showWindow: () => void): void {
+  tray = new Tray(trayIconPath())
   tray.setToolTip('BetterSoundCloud')
   tray.setContextMenu(buildMenu(showWindow))
 

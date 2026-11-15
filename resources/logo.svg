@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="62 230 890 564" role="img" aria-label="BetterSoundCloud">
+<title>BetterSoundCloud</title>
+<path fill="#121212" fill-rule="evenodd" d="M644 254.07A262 262 0 1 1 644 769.93ZM668 512a22 22 0 1 0 44 0a22 22 0 1 0 -44 0Z"/>
+<path fill="#fff" fill-opacity="0.16" d="M644 256.1A260 260 0 1 1 644 767.9L644 755.7A248 248 0 1 0 644 268.3Z"/>
+<path fill="#262626" d="M644 299.93A217 217 0 1 1 644 724.07L644 717.92A211 211 0 1 0 644 306.08Z"/>
+<path fill="#262626" d="M644 345.23A173 173 0 1 1 644 678.77L644 672.54A167 167 0 1 0 644 351.46Z"/>
+<path fill="#ff5500" fill-rule="evenodd" d="M644 444.12A82 82 0 1 1 644 579.88ZM668 512a22 22 0 1 0 44 0a22 22 0 1 0 -44 0Z"/>
+<rect x="64" y="232" width="552" height="560" rx="44" fill="#ff5500"/>
+<rect x="64" y="232" width="552" height="560" rx="44" fill="none" stroke="#121212" stroke-opacity="0.12" stroke-width="4"/>
+</svg>

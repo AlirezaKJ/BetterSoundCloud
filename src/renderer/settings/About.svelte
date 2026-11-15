@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import changelog from '../../../CHANGELOG.md?raw'
-  import iconUrl from '../../../resources/icon.png?url'
+  import logoUrl from '../../../resources/logo.svg?url'
   import { changelogEntry } from '@shared/changelog'
   import type { ChangelogEntry, Inline } from '@shared/changelog'
   import UpdateStatus from './UpdateStatus.svelte'
@@ -40,7 +40,7 @@
 {/snippet}
 
 <div class="app" data-bsc-about>
-  <img src={iconUrl} alt="" width="56" height="56" />
+  <img src={logoUrl} alt="" width="57" height="36" />
   <div>
     <p class="app-name">BetterSoundCloud</p>
     <p class="meta">{meta}</p>

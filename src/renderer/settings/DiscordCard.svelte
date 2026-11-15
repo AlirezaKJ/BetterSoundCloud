@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import iconUrl from '../../../resources/icon.png?url'
+  // The image Discord holds as our badge (PRESENCE_LOGO), so the preview shows what friends see.
+  import badgeUrl from '../../../resources/discord-logo.png?url'
   import { buildActivity, PRESENCE_LOGO } from '@shared/presence'
   import type { NowPlaying } from '@shared/now-playing'
   import type { Settings } from '@shared/settings-schema'
@@ -68,13 +69,13 @@
         <div class="art">
           <img
             class="large"
-            src={artwork || iconUrl}
+            src={artwork || badgeUrl}
             alt=""
             width="64"
             height="64"
             referrerpolicy="no-referrer"
           />
-          {#if artwork}<img class="badge" src={iconUrl} alt="" width="20" height="20" />{/if}
+          {#if artwork}<img class="badge" src={badgeUrl} alt="" width="20" height="20" />{/if}
         </div>
         <div class="words">
           <p class="title">{activity.details}</p>
@@ -149,13 +150,13 @@
     object-fit: cover;
   }
 
-  /* Our badge in the artwork's corner, as Discord draws the small image. */
+  /* Our badge in the artwork's corner, as Discord draws the small image: a circle. */
   .badge {
     position: absolute;
     right: -4px;
     bottom: -4px;
     border: 2px solid var(--bsc-bg-secondary);
-    border-radius: var(--bsc-radius);
+    border-radius: 50%;
     background: var(--bsc-bg-secondary);
   }
 

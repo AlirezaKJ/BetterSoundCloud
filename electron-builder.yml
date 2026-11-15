@@ -59,10 +59,10 @@ win:
       arch: [x64]
     - target: portable
       arch: [x64]
-  # A ready-made .ico (16 to 256px, converted once from resources/icon.png) rather than the PNG:
-  # electron-builder's PNG-to-ICO tool writes the file and then crashes on exit (0xC0000005,
-  # Node 24, electron-builder 26.15.3, measured 2026-10-27), failing every Windows build. If
-  # icon.png changes, regenerate this from it.
+  # A ready-made .ico rather than the PNG: electron-builder's PNG-to-ICO tool writes the file and
+  # then crashes on exit (0xC0000005, Node 24, electron-builder 26.15.3, measured 2026-10-27),
+  # failing every Windows build. It holds every size Windows asks for at every display scale, each
+  # drawn for its pixels, from the mark's source (CLAUDE.md §1, "The icons").
   icon: build-resources/icon.ico
   artifactName: BetterSoundCloud-${version}-win-${arch}.${ext}
 
@@ -101,7 +101,8 @@ linux:
     - AppImage
     - deb
     - rpm
-  icon: resources/icon.png
+  # A folder of sizes (16x16.png …), each drawn for its pixels, rather than one PNG shrunk.
+  icon: build-resources/icons
   category: AudioVideo
   executableName: bettersoundcloud
   synopsis: A desktop client for SoundCloud

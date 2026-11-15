@@ -79,6 +79,16 @@ CLAUDE.md is worse than none, because it gets trusted.
   `EVS_PASSWD`) and Linux, fuses checked by `scripts/verify-fuses.mjs`, all into a draft release.
   Signing never runs on pushes or pull requests. macOS is not built until notarization is funded.
   Its actions are pinned to commit hashes; keep them pinned.
+- **The icons are The Pull**, an orange sleeve with the record drawn out of it (chosen by the
+  maintainer 2026-11-14). Every size is drawn for its pixels by `brand/logos/the-pull/build.mjs` in
+  the project website's repository; copy the files from there, never resize or edit them here (a
+  1024px icon shrunk to 16 blurred, and its record vanished on a dark taskbar).
+  `build-resources/icon.ico` is Windows' (every size at every display scale), `build-resources/icons/`
+  Linux's, `resources/icon.icns` macOS's. In `resources/`: `icon.png` (notifications), the tray's
+  file for each platform (`tray.ico`, `tray.png` with its @2x, `trayTemplate.png`; `main/tray.ts`),
+  `logo.svg` (the mark cropped to its edges, beside words in our views) and `discord-logo.png`. The
+  last is the image Discord holds as `PRESENCE_LOGO`, uploaded to the Discord application by hand,
+  and the Discord card's preview shows this copy of it: change both together.
 
 ---
 
@@ -105,7 +115,7 @@ src/renderer/   Svelte 5. One folder per view, each with index.html + main.ts + 
                 tokens.css (design tokens), lib/ (shared components)
 src/shared/     Pure TypeScript shared by main, preload and renderer. No Electron, no DOM.
 resources/      Shipped at runtime: engine.bin (ad blocker), themes/, theme-pictures/ (§17),
-                plugins/, minimal-nav.css, soundcloud-palette-{dark,light}.css (§17), icon.png
+                plugins/, minimal-nav.css, soundcloud-palette-{dark,light}.css (§17), the icons (§1)
 scripts/        Blocker engine build, VMP signing hooks, the packaged smoke check, the fuse check,
                 the Electron pin check (verify-electron.mjs), the backlog page (todo-overview.mjs)
 docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CUSTOM_PLUGINS.md,

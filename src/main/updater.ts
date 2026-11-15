@@ -141,7 +141,7 @@ function notify(status: UpdateStatus): void {
 
   notification = new Notification({
     ...words,
-    // The tray's file. Windows draws the app's own icon from its ID anyway.
+    // The app's icon. Windows draws the app's own icon from its ID anyway.
     icon: nativeImage.createFromPath(join(import.meta.dirname, '../../resources/icon.png'))
   })
   notification.on('click', () => options?.showSettings())

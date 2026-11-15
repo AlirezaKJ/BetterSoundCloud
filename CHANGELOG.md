@@ -4,6 +4,9 @@ Each version's entry is also its release notes on GitHub.
 
 ## Unreleased
 
+- **A new icon of our own**: an orange record sleeve with the record drawn out of it, in place of
+  SoundCloud's cloud. Each size is drawn for the size it's shown at, so the taskbar and tray icons
+  are sharp at every display scale, and the record shows on a dark taskbar too.
 - **A welcome on first launch**: one question at a time, with pictures, about blocking ads, light
   or dark, a theme, Discord and Last.fm, where SoundCloud opens, closing to the tray and updates,
   then signing in. Enter keeps the answer shown, and **Skip setup** is always there. Settings →
