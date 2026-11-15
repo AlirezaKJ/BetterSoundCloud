@@ -2,7 +2,7 @@
 
 Each version's entry is also its release notes on GitHub.
 
-## Unreleased
+## 0.9.0 (not released yet)
 
 - **Keyboard shortcuts you choose** ([#127](https://github.com/AlirezaKJ/BetterSoundCloud/issues/127)):
   play or pause, next track, previous track, and volume up, down and mute, with keys you set in

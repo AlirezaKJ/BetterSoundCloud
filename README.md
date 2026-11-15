@@ -2,7 +2,7 @@
 
 [![Downloads](https://img.shields.io/github/downloads/AlirezaKJ/BetterSoundCloud/total.svg)](https://github.com/AlirezaKJ/BetterSoundCloud/releases)
 
-SoundCloud on your desktop, in a window of its own. BetterSoundCloud runs SoundCloud's own web player and adds what a browser tab can't: synced lyrics, Discord Rich Presence, Last.fm scrobbling, an equaliser, a pitch changer, a visualizer, themes, a glass look on Windows 11, plugins, and skipping the audio ads between tracks.
+SoundCloud on your desktop, in a window of its own. BetterSoundCloud runs SoundCloud's own web player and adds what a browser tab can't: synced lyrics, Discord Rich Presence, Last.fm scrobbling, an equaliser, a pitch changer, a visualizer, themes, a glass look on Windows 11, keyboard shortcuts that work from any app, plugins, and skipping the audio ads between tracks.
 
 It is not made by SoundCloud.
 
@@ -62,7 +62,7 @@ The AppImage is the most tested of the three; the `.deb` and `.rpm` are new.
 
 ### Windows
 
-Run the `-setup.exe`. Once 0.8.0 is installed, it removes 0.7.x for you, whether you installed
+Run the `-setup.exe`. Once it is installed, it removes 0.7.x for you, whether you installed
 0.7.x with its `Setup.exe` or its `.msi`. The `.msi` installed 0.7.x for every user of the
 computer, so Windows asks for permission to remove it. If you say no, both stay installed; you can
 remove 0.7.x later in Settings → Apps, where it is listed as "bettersoundcloud", version 0.7.
@@ -76,10 +76,10 @@ remove 0.7.x later in Settings → Apps, where it is listed as "bettersoundcloud
 ### Linux
 
 0.7.x on Linux was a copy of the source code, set up by an install script and updated from GitHub
-every time it started. 0.8.0 is an ordinary package. It starts signed out and with default
-settings, because it keeps its data in a different folder from 0.7.x.
+every time it started. Since 0.8.0 it is an ordinary package. It starts signed out and with
+default settings, because it keeps its data in a different folder from 0.7.x.
 
-After installing 0.8.0, remove the old copy:
+After installing it, remove the old copy:
 
 ```bash
 rm -rf ~/BetterSoundCloud                                   # 0.7.x's source code
@@ -88,12 +88,35 @@ rm -rf ~/.config/bettersoundcloud                           # its sign-in and se
 ```
 
 Mind the capitals. `~/.config/bettersoundcloud`, all lowercase, is 0.7.x's;
-`~/.config/BetterSoundCloud` belongs to 0.8.0, so keep that one. If the install script also
-installed Node.js for you (in `~/.nvm`), remove it only if nothing else of yours uses it.
+`~/.config/BetterSoundCloud` belongs to 0.8.0 and later, so keep that one. If the install script
+also installed Node.js for you (in `~/.nvm`), remove it only if nothing else of yours uses it.
 
-## What's new in 0.8.0
+## What's new in 0.9.0
 
-0.8.0 is BetterSoundCloud rebuilt from scratch.
+- **Settings is a page**, with every setting explained in a sentence or two, and **search**
+  (Ctrl+F) that finds any setting, theme or plugin. Themes show as pictures of the app wearing
+  them.
+- **A welcome on first launch**: a few questions, one at a time, about ads, light or dark, a theme,
+  Discord and Last.fm, where SoundCloud opens and updates, then on to signing in.
+- **Keyboard shortcuts you choose**: play, pause, skip and change the volume with keys you set,
+  even while another app is in front
+  ([#127](https://github.com/AlirezaKJ/BetterSoundCloud/issues/127)), and change any of the
+  window's own keys, in Settings → Shortcuts. Play, pause and skip are in the tray menu too.
+- **An equaliser** ([#101](https://github.com/AlirezaKJ/BetterSoundCloud/issues/101)),
+  **Pitch** ([#124](https://github.com/AlirezaKJ/BetterSoundCloud/issues/124)) and **a
+  visualizer**, MilkDrop's presets included: built-in plugins, off until you turn them on in
+  Settings → Plugins.
+- **Glass** on Windows 11: the window on a live blur of whatever is behind it. And the top bar can
+  hide until you point at it.
+- **Import browser sign-in** (Settings → Advanced), for accounts that sign in with Google, Apple or
+  Facebook.
+- **A new icon of our own**, in place of SoundCloud's cloud.
+
+Everything else is in the [changelog](CHANGELOG.md).
+
+## Rebuilt in 0.8.0
+
+0.8.0 rebuilt BetterSoundCloud from scratch.
 
 - **Protected tracks play.** In 0.7.x, part of SoundCloud's catalogue greyed out and skipped
   ([#95](https://github.com/AlirezaKJ/BetterSoundCloud/issues/95),
@@ -120,10 +143,6 @@ installed Node.js for you (in `~/.nvm`), remove it only if nothing else of yours
   turned off.
 - **You choose what opens at startup**: Home, Feed, Library, or where you left off. Closing the
   window can keep it playing in the tray instead of quitting.
-- **Keyboard shortcuts you choose**: play, pause, skip and change the volume with keys you set,
-  even while another app is in front, and change any of the window's own keys (reload, back,
-  zoom, F6 to move between the bar, SoundCloud's page and the lyrics pane) in Settings → Shortcuts.
-  Play, pause and skip are in the tray menu too.
 
 ### What it looks like
 
@@ -151,9 +170,9 @@ changes as soon as the file is saved.
 
 <img src="docs/media/discord-card.webp" width="404" alt="Discord's card: Listening to BetterSoundCloud, Espresso by Sabrina Carpenter, with its progress bar" />
 
-### Not back yet
+## Not back yet
 
-These were in 0.7.x and are planned, but are not in 0.8.0:
+These were in 0.7.x and are planned, but are not in 0.9.0:
 
 - the track downloader
 - the CSS and JavaScript editor (a theme file covers CSS for now)

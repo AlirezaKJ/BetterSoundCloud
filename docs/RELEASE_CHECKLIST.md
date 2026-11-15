@@ -77,12 +77,28 @@ when one is refused, write down what SoundCloud said rather than retrying.
       settings. v0.7.x kept its profile in `~/.config/bettersoundcloud` and v2 keeps it in
       `~/.config/BetterSoundCloud`; nothing is copied across, on purpose (see `app.setName` in
       `src/main/index.ts`).
+- [ ] The icon: the installer, the app in the Start menu and Explorer, the taskbar (pinned and
+      running) and the tray, in Windows' light and dark modes, at 100% and at 125% or 150% display
+      scaling. The record shows beside the orange sleeve and every size is sharp, never a blurred
+      square. On Linux, the app menu and the tray.
+- [ ] The welcome, on the fresh profile: it opens first, each answer changes its setting (look in
+      Settings afterwards), Skip setup works, and its last step opens SoundCloud's sign-in page.
 - [ ] Sign in from the fresh profile. No challenge, no "unusual activity".
+- [ ] Import browser sign-in (Settings → Advanced), with a cookie export of soundcloud.com from a
+      browser signed in with a Google account: the app opens signed in as that account, and the row
+      says how many sign-in cookies it took.
 - [ ] Play ten tracks from a large playlist, **including one that greys out and skips on v0.7.1** —
       the only real test of the VMP signature (`requestMediaKeySystemAccess` succeeds even unsigned).
 - [ ] Like a track and follow a user. Both stick after a reload.
 - [ ] Turn on Last.fm, connect it, and see the track scrobble on last.fm.
-- [ ] Discord shows the track while it plays.
+- [ ] Discord shows the track while it plays, with the new icon as its corner badge.
+- [ ] Shortcuts (Settings → Shortcuts): set keys for play/pause, next, previous, volume up and mute,
+      with "Also in other apps" on. With a track playing, press them from another window, and from a
+      full-screen game if you have one: SoundCloud pauses and plays, skips, goes back, and
+      BetterSoundCloud's slider in Windows' volume mixer moves and mutes. Pick a key another app
+      holds: its row says so. Change Reload to another key and check it reloads. The tray's
+      Play/Pause, Next track and Previous track work too. Do the same on Linux if you can: nothing
+      there (MPRIS, `pactl`, keys from other apps under Wayland) has run on a real machine yet.
 - [ ] Turn on the Equaliser plugin and pick Bass boost while a track plays, including a protected one
       (one that greyed out on v0.7.1): the bass rises within a moment, nothing plays twice or echoes,
       and the Windows media flyout still shows the track. Untick the plugin: the original sound is
@@ -106,6 +122,9 @@ when one is refused, write down what SoundCloud said rather than retrying.
       title stays easy to read. With "MilkDrop changes preset" on "Every 30 seconds" it moves on
       by itself. Watch the window's frame rate with the view open: it must not stutter.
 - [ ] Pick each built-in theme with SoundCloud in its light mode and its dark mode.
+- [ ] Glass on Windows 11 (Settings → Themes): the window sits on a live blur of what is behind it,
+      still there when another window is in front. With hardware acceleration off (after the
+      restart), its row says why there is no glass.
 - [ ] The portable build too: it unpacks to a new temporary folder on every launch, so the archive's
       integrity check and the `.sig` signature files must survive being moved.
 - [ ] Not possible yet: Castlabs' VMP lab page, which would confirm the licence server sees
