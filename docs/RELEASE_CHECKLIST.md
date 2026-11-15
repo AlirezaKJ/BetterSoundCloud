@@ -134,8 +134,10 @@ when one is refused, write down what SoundCloud said rather than retrying.
 
 ## 4. Publish
 
-Paste this version's entry from `CHANGELOG.md` into the draft's notes, under the checksums the
-workflow wrote, and change "(not released yet)" in its heading to the date. Add anything above that
+Check that the entry credits everyone whose pull request is in this version: every pull request
+merged since the last tag (`gh pr list --state merged`) is named on the lines it brought, "By @login
+in #N", and in the entry's "Thanks". Paste this version's entry from `CHANGELOG.md` into the
+draft's notes, under the checksums the workflow wrote, and change "(not released yet)" in its heading to the date. Add anything above that
 the release notes must say and the entry does not yet. The workflow writes only the checksums and
 GitHub's list of merged changes. Read the README against
 the release too: its download table, "What's new", "Not back yet" and "Known issues" must be true

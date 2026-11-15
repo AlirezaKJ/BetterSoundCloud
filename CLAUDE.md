@@ -848,7 +848,11 @@ context menu have the shortcut; embedded and player do not).
   re-record one when a change makes it wrong. `CONTRIBUTING.md` — building from source, the rules a pull request is checked
   against, VMP signing and the release workflow.
 - `CHANGELOG.md` — each version's entry is its release notes, pasted onto the GitHub release. A
-  change users will notice adds a line to the next version's entry in the same change.
+  change users will notice adds a line to the next version's entry in the same change. A change
+  that came from someone else's pull request credits them on its line, "By @login in [#N](link to
+  the pull request)", and the version's entry ends with a "Thanks" section naming them (and whoever
+  asked for its features in an issue). Before a release, check that every pull request merged since
+  the last tag (`gh pr list --state merged`) is credited.
 - `docs/RELEASE_CHECKLIST.md` — what to check before every tag, automated and by hand.
 - Themes: `docs/CUSTOM_THEMES.md` is the authors' guide. See §17.
 

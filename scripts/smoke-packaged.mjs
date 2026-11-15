@@ -165,6 +165,18 @@ try {
     existsSync(cdm) && readdirSync(cdm).length > 0
   )
 
+  // A new profile opens the first-run welcome over the page (since 2026-11-15). Skip setup closes
+  // it, as a new user would; left open, it covers the page and every view laid over it, such as the
+  // Visualizer's view of its own, which then rightly counts as not drawn.
+  const welcome = await view((url) => url.includes('/onboarding/index.html'), 15000)
+  check('a new profile opens the welcome', welcome !== null)
+  if (welcome) await welcome.run('window.bsc.finishOnboarding(false)').catch(() => undefined)
+  await wait(1500)
+  const welcomeLeft = (
+    await fetch(`http://127.0.0.1:${PORT}/json/list`).then((r) => r.json())
+  ).some((t) => t.url.includes('/onboarding/index.html'))
+  check('…and Skip setup closes it', !welcomeLeft)
+
   await header.run('window.bsc.toggleSettings()')
   const settings = await view((url) => url.includes('/settings/index.html'), 15000)
   check('Settings opens', settings !== null)
@@ -375,8 +387,9 @@ try {
   // The Visualizer: on, it runs no engine until the full-screen view shows; there, the engine
   // listens and the view draws on a canvas; closed, the engine lets go. Under reduced motion it is
   // hidden and runs nothing at all.
+  // Asked through the header, which may list plugins too, so it still answers once Settings closes.
   const visualizer = () =>
-    settings.run(
+    header.run(
       `window.bsc.listPlugins().then((list) => { const p = list.find((x) => x.id === 'visualizer'); return p && { state: p.state, lead: p.status && p.status.lead, problem: p.status && p.status.problem } })`
     )
   check('the bundled Visualizer plugin is found, off', (await visualizer())?.state === 'off')
@@ -430,6 +443,12 @@ try {
   // Its view of its own: the player bar gets a third button and SoundCloud's bar the room for it
   // (two buttons are 92px, three 126); opened, it covers the page, the engine listens and its bars
   // are drawn; closed, the engine lets go. Under reduced motion it is not offered at all.
+  //
+  // Settings closes first. Since it became a page (2026-11-14) it covers the view of its own, which
+  // then counts as not drawn, so the engine rightly does not listen for it (CLAUDE.md §4). From here
+  // the header, which may read and change settings and plugins too, asks instead.
+  await settings.run('window.bsc.closeSettings()')
+  await wait(1000)
   const ownViews = async () =>
     (await fetch(`http://127.0.0.1:${PORT}/json/list`).then((r) => r.json())).filter((t) =>
       t.url.includes('/visual-view/index.html')
@@ -488,7 +507,7 @@ try {
       }
       return 'still loading'
     }
-    await settings.run(`window.bsc.setPluginSetting('visualizer', 'view', 'milkdrop')`)
+    await header.run(`window.bsc.setPluginSetting('visualizer', 'view', 'milkdrop')`)
     await wait(1000)
     const row = await visualizer()
     await header.run('window.bsc.toggleVisualView()')
@@ -505,7 +524,7 @@ try {
       drop?.exceptions[0]
     )
     if (drop) await drop.run('window.bsc.closeVisualView()').catch(() => undefined)
-    await settings.run(`window.bsc.setPluginSetting('visualizer', 'showcase', 'milkdrop')`)
+    await header.run(`window.bsc.setPluginSetting('visualizer', 'showcase', 'milkdrop')`)
     await wait(1000)
     await header.run('window.bsc.openShowcase()')
     const hall = await view((url) => url.includes('/showcase/index.html'), 15000)
@@ -519,7 +538,7 @@ try {
     await wait(2000)
     check('…and both closed, the engine lets go', (await audioViews()) === 0)
   }
-  await settings.run(`window.bsc.setPluginEnabled('visualizer', false)`)
+  await header.run(`window.bsc.setPluginEnabled('visualizer', false)`)
   await wait(1000)
   check('…and the plugin off, its strip goes too', (await stripViews()) === 0)
 

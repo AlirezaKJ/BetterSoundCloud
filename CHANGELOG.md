@@ -2,7 +2,7 @@
 
 Each version's entry is also its release notes on GitHub.
 
-## 0.9.0 (not released yet)
+## 0.9.0 (2026-11-16)
 
 - **Keyboard shortcuts you choose** ([#127](https://github.com/AlirezaKJ/BetterSoundCloud/issues/127)):
   play or pause, next track, previous track, and volume up, down and mute, with keys you set in
@@ -30,16 +30,17 @@ Each version's entry is also its release notes on GitHub.
   problem. **Discord** shows the card your friends see, with what's playing now.
 - **Import browser sign-in** (Settings → Advanced): signed in to SoundCloud with Google in your
   browser? Export soundcloud.com's cookies with Cookie-Editor and choose the file; the app takes
-  the sign-in from it and nothing else.
+  the sign-in from it and nothing else. By @Jeter361 in [#126](https://github.com/AlirezaKJ/BetterSoundCloud/pull/126).
 - **Glass** (Settings → Themes, Windows 11): SoundCloud and the bars around it sit on a live,
   blurred view of whatever is behind the window, and stay that way when another window is in
   front. The glass is dark, so SoundCloud shows in its dark colours while it is on, with any
   theme. If it can't show, in safe mode or with hardware acceleration off, Settings says why.
+  By @Jeter361 in [#126](https://github.com/AlirezaKJ/BetterSoundCloud/pull/126).
 - **Hide the top bar until you point at it** (Settings → Appearance): SoundCloud's header and the
   window buttons slide away, and come back when the pointer touches the top edge of the window.
-  The header stays while you type in its search box.
+  The header stays while you type in its search box. By @Jeter361 in [#126](https://github.com/AlirezaKJ/BetterSoundCloud/pull/126).
 - Themes now reach SoundCloud's newer pages too, such as a track's page when signed in, which
-  SoundCloud draws in a frame of its own.
+  SoundCloud draws in a frame of its own. By @Jeter361 in [#126](https://github.com/AlirezaKJ/BetterSoundCloud/pull/126).
 
 - **An equaliser**, like Spotify's: six bands from 60 Hz to 15 kHz, presets, and a curve you drag
   or move with the keyboard. It shapes everything SoundCloud plays, protected tracks included,
@@ -61,6 +62,16 @@ Each version's entry is also its release notes on GitHub.
   choice for each place, and it listens only while one is on screen.
 - Plugins can shape the sound too, with the new `audio` permission
   ([guide](docs/CUSTOM_PLUGINS.md)).
+
+### Thanks
+
+To @Jeter361, whose pull request brought the browser sign-in import, Glass, the top bar that hides
+until you point at it, and themes on SoundCloud's newer pages
+([#126](https://github.com/AlirezaKJ/BetterSoundCloud/pull/126)); and to @funqu, @yamidarkmagician
+and @gyatt936, whose requests became the equaliser, Pitch and the shortcuts
+([#101](https://github.com/AlirezaKJ/BetterSoundCloud/issues/101),
+[#124](https://github.com/AlirezaKJ/BetterSoundCloud/issues/124),
+[#127](https://github.com/AlirezaKJ/BetterSoundCloud/issues/127)).
 
 ## 0.8.0 (2026-11-05)
 
