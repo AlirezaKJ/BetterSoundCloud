@@ -128,6 +128,22 @@ vi.mock('./page-status', () => ({
   showPageStatus: mocks.showPageStatus
 }))
 vi.mock('./tray', () => ({ createTray: vi.fn() }))
+// The shortcuts and playback control: the real ones register system-wide keys, load the native
+// media helper and ask Linux's D-Bus and sound server, none of which a test should do.
+vi.mock('./shortcuts', () => ({
+  startShortcuts: vi.fn(),
+  applyShortcuts: vi.fn(),
+  refreshShortcuts: vi.fn(),
+  setRecording: vi.fn(),
+  shortcutStatus: () => ({ playback: 'ready', volume: 'ready', taken: {} }),
+  onShortcutStatusChange: () => () => {}
+}))
+vi.mock('./playback', () => ({
+  startPlayback: () => Promise.resolve(),
+  playbackAvailability: () => ({ playback: 'ready', volume: 'ready' }),
+  pressPlayback: vi.fn(),
+  changeVolume: vi.fn()
+}))
 vi.mock('./start-page', () => ({
   startUrl: mocks.startUrl,
   rememberLastPage: mocks.rememberLastPage
@@ -144,7 +160,11 @@ vi.mock('./blocker', () => ({
   setBlockingEnabled: mocks.setBlockingEnabled,
   setAudioAdBlocking: mocks.setAudioAdBlocking
 }))
-vi.mock('./settings-store', () => ({ get: mocks.settingsGet, set: mocks.settingsSet }))
+vi.mock('./settings-store', () => ({
+  get: mocks.settingsGet,
+  set: mocks.settingsSet,
+  getAll: () => ({})
+}))
 vi.mock('./themes', () => ({
   NO_THEME: 'vanilla',
   listThemes: () => [],

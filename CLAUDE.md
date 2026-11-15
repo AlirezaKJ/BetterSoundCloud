@@ -146,11 +146,13 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CU
 | `main/chrome-theme.ts`             | A theme's `chrome` sections into our own views: `themeChromeView()`, `setChromeTheme()`                                                                            |
 | `main/blocker.ts` + `net-rules.ts` | Ad/tracker blocking and the never-filter allowlist                                                                                                                 |
 | `main/diagnostics.ts`              | Dev-only network and page-error log, `whoAnswered()` (SoundCloud vs DataDome)                                                                                      |
-| `main/tray.ts`                     | Tray icon and menu (playback items disabled until playback control exists)                                                                                         |
+| `main/tray.ts`                     | Tray icon and menu; its Play/Pause, Next and Previous go through `main/playback.ts` (§23)                                                                          |
 | `main/updater.ts`                  | The auto-updater over electron-updater: when to check, download and install, the notification, `getUpdateStatus` for settings (§20)                                |
 | `main/relaunch.ts`                 | `relaunchAfterQuit()`: every restart, so a relaunched copy can start on Linux and from an AppImage (§1)                                                            |
 | `main/go-to-url.ts`                | `resolveGoToUrl()` for the menu's "Go to URL" prompt                                                                                                               |
-| `main/focus-cycle.ts`              | F6 / Shift+F6 in every view (`watchFocusKeys`, read in `before-input-event`), moving focus between the bar, the page and our panels                                |
+| `main/focus-cycle.ts`              | Where F6 / Shift+F6 moves focus (`moveFocusFrom`): the bar, the page and our panels; the keys are `main/shortcuts.ts`'s                                            |
+| `main/shortcuts.ts`                | Every shortcut in Settings → Shortcuts: in-window keys in `before-input-event`, opted-in keys via `globalShortcut` (§23)                                           |
+| `main/playback.ts`                 | Playback control, the one way to SoundCloud's player from outside its page; the volume keys (§23)                                                                  |
 | `main/start-page.ts`               | "On startup, open": `startUrl()` for the first load, `rememberLastPage()` keeps `<userData>/last-page.json` for "Where you left off"                               |
 | `main/onboarding.ts`               | The first-run welcome's record in the profile (`<userData>/onboarding.json`): `shouldOnboard()`, `recordOnboardingFinished()` (§9)                                 |
 | `main/plugins.ts`                  | The plugin service: finds plugins, records approvals, runs each in its own process, answers its calls (§16)                                                        |
@@ -175,6 +177,8 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CU
 | `shared/start-page.ts`      | `START_PAGE_URLS`, `startPageUrl()`, `pageToRemember()` (only soundcloud.com pages; never `/logout` or a sign-in step)                                                               |
 | `shared/onboarding.ts`      | `needsOnboarding()`, `readOnboardingRecord()`: whether a launch opens with the welcome (a profile with no settings yet, or left unfinished)                                          |
 | `shared/focus-cycle.ts`     | `focusCycle()`, `nextFocusArea()`: the order F6 moves through                                                                                                                        |
+| `shared/shortcuts.ts`       | Keys: `keyName()`, `pressToKeys()`, `normalizeKeys()`, `parseKeys()`, `matchesKeys()`, `refusal()`, `heldBy()`, `keyLabels()`, `ShortcutStatus`, `nextZoom()`                        |
+| `shared/playback.ts`        | Linux's half of playback control, pure: `mprisNameFor()`, `ourSinkInputs()`, `nextVolume()`                                                                                          |
 | `shared/presence.ts`        | `Activity`, `buildActivity()` (the Discord card), `sameActivity()`, `PRESENCE_LOGO`                                                                                                  |
 | `shared/lyrics.ts`          | `LyricsState`, `parseLrc()`, `currentLineIndex()`, `playbackPosition()`, `lyricsQueries()`, `bestMatch()`                                                                            |
 | `shared/lyric-clock.ts`     | `lyricClock()`: which lyric line is being sung, one timer per line, for the pane and the showcase                                                                                    |
@@ -342,6 +346,8 @@ views:
 | `finishOnboarding`                                    | send           | the welcome only; closes it, then SoundCloud's sign-in page when asked (`firstPage`)                     |
 | `openOnboarding`                                      | send           | the settings view only ("Show the welcome again" in About)                                               |
 | `getGlassStatus`                                      | invoke         | `fromSettingsUi`; `GlassStatus`: whether Glass is under the window, or why not                           |
+| `getShortcutStatus`, `onShortcutStatus`               | invoke/sub     | `fromSettingsUi`; pushed to the settings view (`broadcastShortcutStatus`)                                |
+| `recordingShortcut`                                   | send           | the settings view only; no shortcut answers while it records (§23)                                       |
 | (no method) `CH.focusArrived`                         | pushed         | to the view F6 moved focus into; the chrome preload itself puts focus on a control                       |
 | `getWidevineSkipped`                                  | invoke         | `fromSettingsUi`; `true` after "Continue without Widevine", until Widevine arrives                       |
 | `resetSettings`, `clearSiteData`                      | invoke         | the settings view only (`fromSettingsView`); each answers whether it worked                              |
@@ -467,7 +473,8 @@ Each view is `src/renderer/<entry>/{index.html, main.ts, <Name>.svelte}`.
   focus ring to 3:1 against `--bsc-bg-primary`.
 - **Forced colours** (Windows contrast themes): `tokens.css` maps every token to a system colour,
   so draw with tokens and it keeps working. A literal colour sinks into Canvas there.
-- **Keyboard between views is F6 / Shift+F6** (`main/focus-cycle.ts`, order in
+- **Keyboard between views is F6 / Shift+F6** by default (changeable in Settings → Shortcuts, heard
+  by `main/shortcuts.ts`; where focus goes is `main/focus-cycle.ts`, order in
   `shared/focus-cycle.ts`): bar → page → lyrics → player, or bar ↔ Settings while it is open. A new
   view gets it for free (`web-contents-created`); it lands on the control the view last had, the
   one marked `data-bsc-focus-first`, or its first, with the ring drawn by the preload
@@ -559,9 +566,10 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
   field is out of range, so `buildActivity` keeps each text field to 2–128 characters.
 - Dev log: `[now-playing] playing | Artist — Title | 1:05 / 3:33 | liked | artwork | <url>`, one
   line per change except clock ticks. An empty field there points at a stale selector.
-- **Playback control (play/pause/skip from outside the page) does not exist yet** and is an open
-  decision — see "Open decisions" in `docs/TODO.md`. Do not pick a mechanism without the
-  maintainer.
+- **Playback control goes through `main/playback.ts` and nowhere else** (decided by the maintainer
+  2026-11-15, §23): the system's media controls, pressed for our own media session, so SoundCloud's
+  own Media Session handlers run. Play/pause, next and previous only: SoundCloud registers no
+  seek-to handler, so seeking is still not possible.
 - **SoundCloud's media element is not in the document** (measured 2026-11-10: no `audio` or
   `video` element while a track plays). The content preload cannot reach it, so nothing that needs
   the element itself — seeking, playback speed, `.play()` — can be built from the isolated world;
@@ -578,8 +586,9 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
 - Kinds: `boolean` (drawn as a switch, `Switch.svelte`), `number` (`min`, `max`, `step`; `unit`
   prints "%" beside it, `slider: true` draws the Background's slider instead of a typed field),
   `enum` (`options`, `labels`; `tiles: true` draws a picture per option instead of a dropdown),
-  `string`. An enum drawn as an ordinary row must label every option, or the dropdown shows raw
-  values (pinned).
+  `string`, and `keys` (a shortcut: up to two key combinations, drawn as key chips you press to
+  record new ones, `ShortcutKeys.svelte`; `anywhere` names its "Also in other apps" switch, §23). An
+  enum drawn as an ordinary row must label every option, or the dropdown shows raw values (pinned).
 - **How a row reads** (the maintainer's choices, 2026-11-14): `group` puts a heading over a run of
   settings in their section (a group's settings must be next to each other in the schema);
   `figure` draws the window beside the row as all the layout settings have it now, the part
@@ -588,9 +597,10 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
   default gets a 2px accent mark in the gutter and a "Reset" beside its name. One with `applies`
   offers "Restart now" (`restartApp`, once its value differs from `getSettingsAtLaunch`) or
   "Reload SoundCloud" (changed while Settings is open).
-- **Ctrl+, (⌘, on macOS) opens and closes Settings** from any view (`watchSettingsKey` in
-  index.ts, read in `before-input-event` like F6); while Settings has the keyboard it hears the
-  key itself, so it fades out. Settings → Shortcuts lists it, with Ctrl+F.
+- **Ctrl+, (⌘, on macOS) opens and closes Settings** from any view by default (the
+  `shortcuts.openSettings` setting, heard by `main/shortcuts.ts`); while Settings has the keyboard
+  it hears the key itself, so it fades out. Ctrl+F searches it (`shortcuts.searchSettings`, Settings'
+  own). Both are rows in Settings → Shortcuts, changeable like every other key.
 - **About** is a section with no settings (`about` in `SECTIONS`, `About.svelte`): the version and
   the update line, the links, "What's new" from CHANGELOG.md (bundled with `?raw`, read by
   `changelogEntry`), what it is built with. **Discord** opens with a preview of the card friends
@@ -605,7 +615,9 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
   Glass, Glass tint) under "With every theme" with the same `settingRow` snippet as every other
   section, then `Background.svelte` the background group. A setting a
   component draws says so with `drawnBy: 'themes' | 'background'` and gets no ordinary row; it is
-  still stored, coerced and defaulted from the schema. Only the Themes section may use it (pinned).
+  still stored, coerced and defaulted from the schema. Only the Themes section may use those
+  (pinned); `drawnBy: 'keys'`, a shortcut's "Also in other apps" switch drawn in its row, only
+  Shortcuts.
 - **Stored values carry a version** (`SETTINGS_VERSION`). When a setting's meaning changes, bump
   it and add one step to `upgradeValues` in `settings-schema.ts` (pure, tested); the store runs
   it once on load and saves the result.
@@ -647,6 +659,8 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
   is the updater's line, with its one button (`UpdateStatus.svelte`, words from
   `describeUpdateStatus`, §20). `statusFrom: 'glass'` says why there is no glass while the box is
   ticked (`GlassStatus.svelte`, words from `describeGlassStatus`, §17), and nothing otherwise.
+  `statusFrom: 'playback' | 'volume'`, on a group's first shortcut, says why those keys cannot reach
+  SoundCloud here (words from `describeShortcutStatus`, §23).
 - Main reads with `settings.get(key)` / `getAll()`; writes go through `settings.set`, which
   coerces. Live effects are applied in `applyLiveSettings()` in `index.ts`.
 - Renderers read with `getSettings()` + `onSettingsChanged()` and write with `setSetting()`, which
@@ -723,6 +737,7 @@ Dev builds log to the terminal running `npm run dev`. Tags:
 | `[page-status]`                                                                                  | What the status view is saying (`load failed -106 ERR_INTERNET_DISCONNECTED`, `cleared`, …)                                                                     |
 | `[content]`, `[window]`                                                                          | A failed SoundCloud load; the window shown without its header                                                                                                   |
 | `[audio]`                                                                                        | The audio engine starting and running (dev); stepping aside and why (all builds)                                                                                |
+| `[playback]`, `[shortcuts]`                                                                      | What playback and volume can do here, each press and its answer (dev); the keys registered for other apps (dev)                                                 |
 | `[visualizer]`                                                                                   | The Visualizer's strip: where it is, and whether it is shown, aside for the pointer, or hidden (dev)                                                            |
 | `[theme]`, `[background]`, `[lyrics]`, `[player]`, `[context-menu]`, `[blocker]`, `[ad-request]` | Their features                                                                                                                                                  |
 
@@ -759,7 +774,9 @@ context menu have the shortcut; embedded and player do not).
   - or mock `electron` and the main modules, as `index.test.ts` does for startup, the window
     lifecycle and the now-playing IPC path.
 - Anything that loads `index.ts` must mock `./presence` and `./updater`: the real ones connect to
-  the Discord app and to GitHub from whatever machine runs the tests. `discord-ipc.test.ts` instead runs a fake Discord on a real
+  the Discord app and to GitHub from whatever machine runs the tests. And `./shortcuts` and
+  `./playback`, which register system-wide keys, load the native media helper and ask Linux's
+  D-Bus and sound server. `discord-ipc.test.ts` instead runs a fake Discord on a real
   local pipe, so the bytes on the wire are tested as sent.
 - Plugins are tested three ways: `plugin-sandbox.test.ts` runs small scripts in the real sandbox;
   `lastfm-plugin.test.ts` runs the shipped Last.fm plugin against a fake Last.fm, and
@@ -1432,3 +1449,74 @@ SoundCloud's page): Butterchurn's WebGL renderer (`lib/MilkDrop.svelte`, loaded 
   is loaded but out of sight (`hidden`), so it shows at once when music starts.
 - `[data-bsc-milkdrop]` says `loading`, `ready` (a preset compiled) or `failed`: the packaged
   smoke check reads it in both views.
+
+---
+
+## 23. Shortcuts and playback control
+
+```
+Settings → Shortcuts: a `keys` setting per action (up to two combinations, '' for none)
+  main/shortcuts.ts
+    in the window: `before-input-event` in every view (web-contents-created) --matchesKeys--> action
+    from other apps: `globalShortcut`, only the playback and volume keys whose
+                     "Also in other apps" switch is on, only while set
+  actions (index.ts `shortcutActions`): focus (focus-cycle.ts), Settings, reload/back/forward,
+    zoom (the Zoom setting), and through main/playback.ts:
+      play/pause, next, previous --> the system's media controls, our own session
+          Windows: native/media-controls (C++/WinRT), session found by the app's ID
+          Linux:   MPRIS over D-Bus (`dbus-send`), our player found by our pid
+      volume up, down, mute --> BetterSoundCloud's own volume in the system mixer
+          Windows: the same helper's audio sessions; Linux: `pactl`
+tray menu: Play/Pause, Next track, Previous track --> main/playback.ts
+```
+
+Rules that hold this together:
+
+- **Playback control has one mechanism and one call site**, `main/playback.ts` (the maintainer's
+  decision, 2026-11-15, closing the open decision in docs/TODO.md). It presses the system's media
+  buttons for our own media session, which Chromium registers for SoundCloud's playback; the press
+  reaches SoundCloud's own Media Session handlers exactly as a keyboard media key or Windows' media
+  flyout does. Nothing is typed, clicked or run in SoundCloud's page: §7 and §14 stand. Measured in
+  this Electron, 2026-11-15: SoundCloud registers play, pause, next and previous (its next and
+  previous call its own `playNext`/`playPrev` with `userInitiated`), skip forward and back, and no
+  seek-to; each press takes 1 to 9ms. Until something has played in a launch there is no session,
+  and a press does nothing ("no-session").
+- **The keyboard's media keys are left to Chromium**, which routes them the same way. There is no
+  switch for them: turning Chromium's media-key handling off (`HardwareMediaKeyHandling`) also
+  removes the media session itself (measured), and every playback key with it. The maintainer
+  removed the old "Respond to media keys" setting for that reason (2026-11-15).
+- **Volume is never SoundCloud's slider**, which is in its page. The volume keys move
+  BetterSoundCloud's own volume in the system mixer, 5% a press on the step's grid, never past
+  100%; turning it up unmutes, as the system's own keys do. Chromium plays sound from its audio
+  service process, so main passes every pid `app.getAppMetrics()` has.
+- **`globalShortcut` only for what the user turned on.** A key works from other apps only when it
+  is a playback or volume key, set, with its "Also in other apps" switch on (on by default: #127
+  asks for exactly that), and only while playback control works here. Everything is let go on
+  every change and on quit; v0.7.x held the media keys system-wide for its whole life. A key
+  another app holds cannot be registered: it still works while our window is in front, and its row
+  says so (`ShortcutStatus.taken`). A key registered for other apps is answered by
+  `globalShortcut` alone, never also in the window, so it cannot act twice.
+- **Keys must be usable.** `refusal` turns down a combination without Ctrl, Alt or ⌘ (unless it is
+  an F key: anything else would fire while typing), the media and volume keys, copy/paste/undo, and
+  each system's own (Alt+F4, Alt+Tab; ⌘Q, ⌘H, ⌘M, ⌘Tab, ⌘Space). One key belongs to one shortcut
+  (`heldBy`); the recorder says which has it and keeps listening. `coerce` applies the rules that
+  hold everywhere, so a hand-edited file cannot bind copy.
+- **A combination is an Electron accelerator in one spelling** (`normalizeKeys`): modifiers in the
+  order CommandOrControl, Control, Alt, Shift. CommandOrControl is Ctrl off the Mac and ⌘ on it, so
+  a profile moved between them keeps its keys. A letter is named by what it types when that is a
+  Latin letter, else by its place (Persian, Russian layouts); digits and punctuation by their place.
+- **While Settings records a key, nothing answers** (`recordingShortcut`): every global key is let
+  go and no key acts in the settings view, so the recorder hears even a key that is already set.
+  It ends when the recorder stops or its view goes away.
+- **Held keys repeat only for volume and zoom.** A held play/pause toggles once.
+- **The Windows helper is optional, like Glass's**: built by `npm run native:build`
+  (scripts/build-native.mjs builds both addons; the release requires them), loaded from
+  `resources/native/media-controls.node`, unpacked from the asar. Without it the playback and
+  volume rows say so (`statusFrom`), and nothing is registered for them. Linux needs `dbus-send`
+  (playback) and `pactl` (volume); neither part has been seen on a real Linux machine yet, nor
+  global keys under Wayland. macOS has neither: there is no macOS build, so those rows are not
+  shown there (`platforms`).
+- **The page's keys act only where they make sense**: reload, back, forward and zoom from the bar,
+  the page and the panels beside it, not from Settings, the welcome, the showcase or the
+  right-click menu, where they would reach behind what the user is looking at. An action answering
+  false leaves the key to the view.

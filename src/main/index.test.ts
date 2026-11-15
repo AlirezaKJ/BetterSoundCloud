@@ -102,6 +102,22 @@ vi.mock('./background', () => ({
   pictureThumbnail: () => null
 }))
 vi.mock('./tray', () => ({ createTray: mocks.createTray }))
+// The shortcuts and playback control: the real ones register system-wide keys, load the native
+// media helper and ask Linux's D-Bus and sound server, none of which a test should do.
+vi.mock('./shortcuts', () => ({
+  startShortcuts: vi.fn(),
+  applyShortcuts: vi.fn(),
+  refreshShortcuts: vi.fn(),
+  setRecording: vi.fn(),
+  shortcutStatus: () => ({ playback: 'ready', volume: 'ready', taken: {} }),
+  onShortcutStatusChange: () => () => {}
+}))
+vi.mock('./playback', () => ({
+  startPlayback: () => Promise.resolve(),
+  playbackAvailability: () => ({ playback: 'ready', volume: 'ready' }),
+  pressPlayback: vi.fn(),
+  changeVolume: vi.fn()
+}))
 // The real one reads and writes a file in the profile, and needs a real webContents.
 vi.mock('./start-page', () => ({
   startUrl: () => 'https://soundcloud.com/discover',

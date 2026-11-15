@@ -486,8 +486,9 @@ there; it is not an icon rail.
 - **Search:** the Field at 30px tall in the Settings sidebar's 56px top row, with a 15px stroked
   magnifier inside its left edge in Muted Ink, the accent caret, and "Search settings" as its
   placeholder in Muted Ink. While it is empty and unfocused, a key chip at its right says
-  "Ctrl+F" ("⌘F" on macOS); while it holds text, our own clear ✕ takes that place — a 22px button
-  with the Hover Wash, a 15px stroked cross — instead of Chromium's.
+  the key set for searching in Settings → Shortcuts, "Ctrl+F" ("⌘F" on macOS) by default, and
+  none is drawn once that key is removed; while it holds text, our own clear ✕ takes that
+  place — a 22px button with the Hover Wash, a 15px stroked cross — instead of Chromium's.
 - **Switch** (`Switch.svelte`, since 2026-11-14, the maintainer's choice after Windows' and
   Apple's settings): every on/off setting, in the schema's rows and the plugin rows. A real
   checkbox underneath with `role="switch"`. Squared, to keep the Two Radii Rule and no pills: a
@@ -533,7 +534,7 @@ floating over it.
 - **Group headings** inside a section, from the schema's `group` ("Window", "SoundCloud’s page",
   "Player", "With every theme"…): Label size at 600 in Muted Ink, a Hairline beneath, wherever the
   group changes from the row before. The same heading names the rows drawn by hand ("Your sign-in
-  and data", "Moving around") and each section's matches in search.
+  and data") and each section's matches in search.
 - **A changed setting** (since 2026-11-14) is marked by a 2px accent bar in the gutter, 14px left
   of the row's text and as tall as it, and a "Reset" text button beside its name: 12px Muted Ink
   with the links' quiet underline, Ink on hover, its accessible name saying what it goes back to. This is
@@ -550,10 +551,11 @@ floating over it.
 
 The field at the top of the sidebar looks through the name and explanation of every setting,
 every theme and plugin, each plugin's own settings (named "Visualizer: In the full-screen view"),
-and the rows drawn by hand (the sign-in import, the reset buttons, the window's keys in
-Shortcuts). A plugin's settings show only while it is on, so while it is off its match lands on the
-plugin's switch, and its explanation ends "Shown once Visualizer is on." Every word typed must appear, in any order, ignoring case and
-accents.
+and the rows drawn by hand (the sign-in import, the reset buttons). The keys in Shortcuts are
+schema rows like any other, found by their name and explanation. A plugin's settings show only
+while it is on, so while it is off its match lands on the plugin's switch, and its explanation
+ends "Shown once Visualizer is on." Every word typed must appear, in any order, ignoring case
+and accents.
 
 - **The matches take the column's place**, under the title "Search": a count line ("3 matches",
   Caption, tabular figures), then the matches grouped by section, each group under the
@@ -570,9 +572,10 @@ accents.
   on its control (a radio group's chosen option, as Tab would land). When that control is
   disabled, the row itself takes focus, ringed 2px in `--bsc-focus` 4px outside it at the control
   radius, so the keyboard and a screen reader are where the eye is.
-- **Keys:** Ctrl+F (⌘F) focuses and selects the field from anywhere on the page; Enter takes the
-  first match; ↓ moves into the matches and ↑ / ↓ through them, ↑ from the first going back to the
-  field; Escape clears, and a second Escape closes Settings.
+- **Keys:** Ctrl+F (⌘F), or whatever key Shortcuts sets for it, focuses and selects the field
+  from anywhere on the page; Enter takes the first match; ↓ moves into the matches and ↑ / ↓
+  through them, ↑ from the first going back to the field; Escape clears, and a second Escape
+  closes Settings.
 
 ### Context Menu
 
@@ -848,7 +851,9 @@ without the setting changing. Today that is Discord presence, which needs the Di
 running (`statusFrom: 'discord'` in the schema, `src/renderer/settings/DiscordStatus.svelte`), and
 Glass, which needs Windows 11 and hardware acceleration (`statusFrom: 'glass'`,
 `GlassStatus.svelte`). Glass's line appears only while its switch is on and there is no glass
-("Off in safe mode", "Not showing"): working glass shows itself.
+("Off in safe mode", "Not showing"): working glass shows itself. The shortcut rows use the same
+form for a key another app holds and for keys this build or computer cannot carry out (Shortcut
+rows).
 
 - **Under the help text**, in the label column: one Caption line. The state comes first, in two
   or three words of Ink at 600 ("Connected", "Discord isn’t running"), then a full stop and the
@@ -1047,6 +1052,54 @@ settings** and **Clear cache and site data**. Buttons, not settings, and neither
   "Done. SoundCloud is opening again, signed out.") or that it failed and to try again. The
   opener's label says "Resetting…" / "Clearing…" while main works.
 
+### Shortcut rows
+
+Settings → Shortcuts (since 2026-11-15, GitHub #127): every key the app answers, changeable. A
+shortcut is an ordinary settings row of kind `keys`, drawn by the same row as every other
+setting, with its keys as the control (`src/renderer/settings/ShortcutKeys.svelte`). The groups
+are Playback, Volume, SoundCloud’s page, Moving around and Settings.
+
+- **The maintainer's decisions, 2026-11-15:** the playback and volume keys start with no key,
+  since the keyboard's media keys already work, and each can also work from other apps. There is
+  no separate media-keys switch any more: it was removed.
+- **A combination is a button of key chips**: one chip per key (Ctrl, Alt, Shift, then the key;
+  ⌘ ⌥ ⇧ ⌃ on a Mac; arrows as ← → ↑ ↓, "Num +" for the keypad), each Field White behind a
+  Hairline at the control radius, the system font at 12px, at least 26px wide, 4px apart. The
+  button is transparent with 3px of air round the chips, the Hover Wash on hover, and the focus
+  ring inset in that air. Its accessible name is the shortcut and its keys, "Press to change".
+- **Pressing it records**, in its place: a field-like box at least 140px wide and 30px tall,
+  Field White behind a Hairline, "Press keys…" in 13px Muted Ink, and the focus ring while it
+  listens. Modifiers held so far show in it as chips, followed by "…".
+- **Up to two combinations**, with "or" between them in 12px Muted Ink, so two read as two and
+  not as one long one.
+- **"+"** adds the second: a 26px chrome button, a 15px stroked plus in Muted Ink, Ink and the
+  Hover Wash on hover. It has a trailing column of its own, held empty when it is not offered
+  (two keys, no key, or while recording), so every row's keys end on one line down the panel.
+- **No key yet**: "Set a key", the Prompt's button at 13px, as "Restart now" is.
+- **Recording keys:** the next combination with Ctrl, Alt or ⌘, or an F key, is saved at once.
+  Esc keeps what was there (or cancels, when adding); Backspace removes the key being replaced;
+  Tab leaves, keeping it. While it listens, every other key is the recorder's, Settings' Escape
+  and search key included, and the app answers no shortcut, so a key already set can be pressed.
+- **What cannot be used is said, and recording goes on.** A Caption line under the row, the
+  problem in Ink, never red: on its own it would fire while you type, the media keys already
+  work, every text box needs it, the system keeps it, or "Already used for Back. Press another
+  key, or change that one first." The next key pressed is tried in the same way.
+- **The recording line** is always in the row, empty and taking no room until it fills, with
+  `role="status"`, and the recorder points at it, so a screen reader hears it as it changes:
+  "Press the new keys. Esc keeps what was there; Backspace removes it." (or "Esc cancels."), or
+  the problem. It comes last in the label column.
+- **"Also in other apps"**, on a playback or volume row once it has a key: a Switch with its
+  words at the Label tier (13px Muted Ink, the section's 14px being for setting names), 8px
+  apart, 8px under the explanation. A visually hidden prefix names the row ("Play or pause:"),
+  so a screen reader does not hear six identical switches.
+- **Status lines follow it**, in the status-line form (the state in Ink at 600, the rest in
+  Muted Ink): "Ctrl+Alt+P is taken. Another app has it, so it works only while BetterSoundCloud
+  is in front." on the row whose key it is, and on a group's first row, only when the keys
+  cannot work here, "Can’t reach SoundCloud." (a build without the media helper), "No volume
+  control." (no `pactl` on Linux) or "Not on this system yet."
+- **Changed and Reset cover the keys and the switch together**: either one changed from its
+  default marks the row, and Reset puts both back.
+
 ### Theme rows
 
 Settings → Themes (`src/renderer/settings/Themes.svelte`). A single choice among files, so it is a
@@ -1195,10 +1248,9 @@ true })`, because a view last used with the mouse draws no ring for a plain `foc
 - **Closing Settings gives focus back** to where it came from, usually the bar's Settings button.
 - **Ctrl+, (⌘, on macOS) opens Settings and closes it** from anywhere in the window, as in most
   apps (2026-11-14). Closing by it fades out like Escape.
-- **Settings → Shortcuts lists the keys**, F6 and Shift+F6 under "Moving around", Ctrl+, and
-  Ctrl+F under "Settings", as rows with key chips: Field White behind a
-  Hairline, 6px radius, the system font at 12px. The same chip, tighter and in Muted Ink, is the
-  search field's "Ctrl+F" hint.
+- **These keys can be changed** in Settings → Shortcuts (Shortcut rows): F6 and Shift+F6 are the
+  defaults under "Moving around", Ctrl+, and Ctrl+F under "Settings". Whatever is set there is
+  what moves focus, opens Settings and searches it; this section names the defaults.
 
 ### Forced colours
 

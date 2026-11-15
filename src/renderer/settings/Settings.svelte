@@ -27,6 +27,18 @@
   import type { FigureName, WindowLayout } from './setting-figure'
   import About from './About.svelte'
   import DiscordCard from './DiscordCard.svelte'
+  import ShortcutKeys from './ShortcutKeys.svelte'
+  import {
+    describeRefusal,
+    describeShortcutStatus,
+    describeTaken,
+    heldBy,
+    keyText,
+    matchesKeys,
+    parseKeys,
+    refusal
+  } from '@shared/shortcuts'
+  import type { KeyPress, ShortcutStatus } from '@shared/shortcuts'
 
   /*
    * Settings is a page that stands in for SoundCloud's while it is open: everything below our bar,
@@ -46,8 +58,6 @@
 
   const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const DURATION = REDUCED_MOTION ? 0 : 180
-  const MAC = window.bsc.platform === 'darwin'
-  const SEARCH_KEY = MAC ? '⌘F' : 'Ctrl+F'
   /** What every setting starts as, so a changed one can be marked and put back. */
   const DEFAULTS = defaults()
 
@@ -100,6 +110,53 @@
   /** Settings changed while Settings is open that apply to the next page load: "Reload". */
   let reloadDue = $state<SettingKey[]>([])
 
+  /** What the playback and volume keys can do here, and which keys another app holds. */
+  let shortcutStatus = $state<ShortcutStatus | null>(null)
+  /** A shortcut row recording a new key, and what it says about the last one pressed. */
+  let keyStates = $state<
+    Record<string, { recording: boolean; problem: string; replacing: boolean }>
+  >({})
+
+  /** The shortcut settings, for telling which one already has a key. */
+  const KEY_SETTINGS = SETTING_KEYS.filter((key) => SETTINGS[key].kind === 'keys')
+
+  /** The setting saying whether a shortcut also works from other apps, if it has one. */
+  const anywhereOf = (key: SettingKey): SettingKey | null => {
+    const def: SettingDef = SETTINGS[key]
+    return def.kind === 'keys' && def.anywhere ? (def.anywhere as SettingKey) : null
+  }
+
+  /** Why a combination cannot be `key`'s, in a sentence for its row, or '' when it can. */
+  const keysProblem = (key: SettingKey, keys: string): string => {
+    const why = refusal(keys, window.bsc.platform)
+    if (why) return describeRefusal(why, window.bsc.platform)
+    if (!values) return ''
+    const shortcuts = Object.fromEntries(KEY_SETTINGS.map((k) => [k, values?.[k] as string]))
+    const other = heldBy(keys, shortcuts, key, window.bsc.platform)
+    return other
+      ? `Already used for ${SETTINGS[other].label}. Press another key, or change that one first.`
+      : ''
+  }
+
+  /** A shortcut key the user set, as Settings' own keydown handler sees it. */
+  const pressed = (e: KeyboardEvent, key: SettingKey): boolean => {
+    const press: KeyPress = {
+      key: e.key,
+      code: e.code,
+      control: e.ctrlKey,
+      alt: e.altKey,
+      shift: e.shiftKey,
+      meta: e.metaKey
+    }
+    return values !== null && matchesKeys(press, values[key] as string, window.bsc.platform)
+  }
+
+  /** The search key as its hint chip shows it, or nothing when it has none. */
+  const searchKey = $derived.by(() => {
+    const first = values ? parseKeys(values['shortcuts.searchSettings'])[0] : undefined
+    return first ? keyText(first, window.bsc.platform) : ''
+  })
+
   let searchField = $state<HTMLInputElement | null>(null)
   let scroller = $state<HTMLElement | null>(null)
   let results = $state<HTMLElement | null>(null)
@@ -137,6 +194,19 @@
   const changed = (key: SettingKey): boolean =>
     values !== null && JSON.stringify(values[key]) !== JSON.stringify(DEFAULTS[key])
 
+  /** A row is changed when its setting is, or a shortcut's "also in other apps" switch. */
+  const rowChanged = (key: SettingKey): boolean => {
+    const anywhere = anywhereOf(key)
+    return changed(key) || (anywhere !== null && changed(anywhere))
+  }
+
+  /** Reset puts the row back: a shortcut's keys and its switch together. */
+  async function resetRow(key: SettingKey): Promise<void> {
+    const anywhere = anywhereOf(key)
+    if (anywhere && changed(anywhere)) await update(anywhere, DEFAULTS[anywhere])
+    if (changed(key)) await update(key, DEFAULTS[key])
+  }
+
   /** A setting's default in words, for its Reset button's name: "on", "Home", "100%". */
   const defaultWords = (key: SettingKey): string => {
     const def: SettingDef = SETTINGS[key]
@@ -144,6 +214,10 @@
     if (typeof value === 'boolean') return value ? 'on' : 'off'
     if (def.kind === 'enum') return optionLabel(key, String(value))
     if (def.kind === 'number') return `${value}${def.unit ?? ''}`
+    if (def.kind === 'keys') {
+      const keys = parseKeys(String(value)).map((k) => keyText(k, window.bsc.platform))
+      return keys.length > 0 ? keys.join(' or ') : 'no key'
+    }
     return String(value) || 'empty'
   }
 
@@ -183,10 +257,12 @@
 
   const entries = $derived<SearchEntry[]>([
     ...SECTIONS.flatMap((section) =>
-      keysIn(section).map((key) => {
-        const def: SettingDef = SETTINGS[key]
-        return { section, name: def.label, text: def.help ?? '', target: settingTarget(key) }
-      })
+      keysIn(section)
+        .filter((key) => (SETTINGS[key] as SettingDef).drawnBy !== 'keys')
+        .map((key) => {
+          const def: SettingDef = SETTINGS[key]
+          return { section, name: def.label, text: def.help ?? '', target: settingTarget(key) }
+        })
     ),
     ...themes.map((theme) => ({
       section: 'themes' as const,
@@ -236,11 +312,11 @@
         // A search is cleared first, so a second Escape closes Settings.
         if (searching) clearSearch()
         else requestClose()
-      } else if ((MAC ? e.metaKey : e.ctrlKey) && !e.altKey && e.key.toLowerCase() === 'f') {
+      } else if (pressed(e, 'shortcuts.searchSettings')) {
         e.preventDefault()
         searchField?.focus()
         searchField?.select()
-      } else if ((MAC ? e.metaKey : e.ctrlKey) && !e.altKey && !e.shiftKey && e.key === ',') {
+      } else if (pressed(e, 'shortcuts.openSettings')) {
         // The key that opened Settings closes it (main leaves it to this page while Settings has
         // the keyboard), so it fades out like Escape.
         e.preventDefault()
@@ -257,10 +333,16 @@
     const stopWatching = window.bsc.onSettingsChanged((s) => {
       values = s
     })
+    // Subscribe first, then read, so no change slips between the two.
+    const stopShortcuts = window.bsc.onShortcutStatus((status) => {
+      shortcutStatus = status
+    })
+    void window.bsc.getShortcutStatus().then((status) => (shortcutStatus = status))
 
     return () => {
       window.removeEventListener('keydown', onKey)
       stopWatching()
+      stopShortcuts()
     }
   })
 
@@ -419,12 +501,15 @@
     <!-- `as const` narrows each entry to its literal shape, so entries that are
          wired have no `wired` property at all — hence the `in` guard. -->
     {@const pending = 'wired' in def && def.wired === false}
-    {@const isChanged = !pending && changed(key)}
+    {@const isChanged = !pending && rowChanged(key)}
     {@const tiles = def.kind === 'enum' && 'tiles' in def && def.tiles}
+    {@const shortcut = def.kind === 'keys'}
+    {@const anywhere = anywhereOf(key)}
+    {@const keyState = keyStates[key]}
     <div class="row" class:pending class:changed={isChanged} data-bsc-setting={key}>
       <div class="label">
         <div class="name-line">
-          {#if tiles}
+          {#if tiles || shortcut}
             <span class="name" id={`${key}-name`}>{def.label}</span>
           {:else}
             <label for={key}>{def.label}</label>
@@ -435,7 +520,7 @@
               class="reset"
               aria-label={`Reset “${def.label}” to ${defaultWords(key)}`}
               title={`Back to ${defaultWords(key)}`}
-              onclick={() => update(key, DEFAULTS[key])}>Reset</button
+              onclick={() => resetRow(key)}>Reset</button
             >
           {/if}
         </div>
@@ -468,6 +553,42 @@
         {#if 'statusFrom' in def && def.statusFrom === 'updates'}<UpdateStatus />{/if}
         {#if 'statusFrom' in def && def.statusFrom === 'glass'}<GlassStatus />{/if}
 
+        {#if shortcut}
+          <!-- Also from other apps (globalShortcut): only once there is a key to register. Right
+               under the explanation, so the lines about whether it can work follow it. -->
+          {#if anywhere && (values[key] as string) !== ''}
+            <div class="anywhere" data-bsc-setting={anywhere}>
+              <Switch
+                id={anywhere}
+                checked={values[anywhere] as boolean}
+                onchange={(on: boolean) => update(anywhere, on)}
+              />
+              <label for={anywhere}
+                ><span class="visually-hidden">{def.label}: </span>Also in other apps</label
+              >
+            </div>
+          {/if}
+          {#each shortcutStatus?.taken[key] ?? [] as keys (keys)}
+            {@const line = describeTaken(keys, window.bsc.platform)}
+            <p class="note"><span class="state">{line.state}</span> {line.rest}</p>
+          {/each}
+          {#if shortcutStatus && 'statusFrom' in def && (def.statusFrom === 'playback' || def.statusFrom === 'volume')}
+            {@const line = describeShortcutStatus(def.statusFrom, shortcutStatus)}
+            {#if line}<p class="note">
+                <span class="state">{line.state}</span>
+                {line.rest}
+              </p>{/if}
+          {/if}
+          <!-- While recording: how, and why the last key pressed cannot be this one's. Always in the
+               page, so a screen reader announces it as it fills; the recorder points at it. -->
+          <p class="note keys-note" role="status" id={`${key}-keys-note`}>
+            {#if keyState?.recording}{#if keyState.problem}<span class="problem"
+                  >{keyState.problem}</span
+                >{:else if keyState.replacing}Press the new keys. Esc keeps what was there;
+                Backspace removes it.{:else}Press the new keys. Esc cancels.{/if}{/if}
+          </p>
+        {/if}
+
         {#if tiles && def.kind === 'enum'}
           <!-- A picture per choice, instead of a dropdown: a light window, a dark one, both. -->
           <div class="tiles" role="radiogroup" aria-labelledby={`${key}-name`}>
@@ -495,7 +616,19 @@
 
       {#if !tiles}
         <div class="control">
-          {#if def.kind === 'boolean'}
+          {#if def.kind === 'keys'}
+            <ShortcutKeys
+              id={key}
+              label={def.label}
+              value={values[key] as string}
+              platform={window.bsc.platform}
+              check={(keys: string) => keysProblem(key, keys)}
+              describedBy={`${key}-keys-note`}
+              onchange={(next: string) => update(key, next)}
+              onstate={(state: { recording: boolean; problem: string; replacing: boolean }) =>
+                (keyStates = { ...keyStates, [key]: state })}
+            />
+          {:else if def.kind === 'boolean'}
             <Switch
               id={key}
               checked={!pending && (values[key] as boolean)}
@@ -602,7 +735,7 @@
           type="search"
           placeholder="Search settings"
           aria-label="Search settings"
-          aria-keyshortcuts={window.bsc.platform === 'darwin' ? 'Meta+F' : 'Control+F'}
+          aria-keyshortcuts={searchKey ? searchKey.replace('Ctrl', 'Control') : undefined}
           spellcheck="false"
           autocomplete="off"
           data-bsc-focus-first={searching ? '' : undefined}
@@ -620,7 +753,7 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8l8 8M16 8l-8 8" /></svg>
           </button>
         {:else}
-          <kbd class="find-key" aria-hidden="true">{SEARCH_KEY}</kbd>
+          {#if searchKey}<kbd class="find-key" aria-hidden="true">{searchKey}</kbd>{/if}
         {/if}
       </div>
 
@@ -746,38 +879,6 @@
               <BrowserSession />
               <!-- Reset settings, and clear SoundCloud's data: buttons that ask first, not settings. -->
               <Reset />
-            {/if}
-            {#if active === 'shortcuts'}
-              <!-- Keys built into the window (main/focus-cycle.ts, Ctrl+, in index.ts). Not
-                   settings, so not schema rows, but listed where people look for keys. -->
-              <h2 class="group">Moving around</h2>
-              <div class="row" data-bsc-settings-key="next-part">
-                <div class="label">
-                  <p class="name">Move focus to the next part of the window</p>
-                  <p class="help">
-                    From the top bar to SoundCloud’s page, then the lyrics pane and the player
-                    buttons when they’re open. With Settings open, between Settings and the top
-                    bar.
-                  </p>
-                </div>
-                <div class="control"><kbd>F6</kbd></div>
-              </div>
-              <div class="row" data-bsc-settings-key="previous-part">
-                <div class="label"><p class="name">Move focus back</p></div>
-                <div class="control keys"><kbd>Shift</kbd> <kbd>F6</kbd></div>
-              </div>
-              <h2 class="group">Settings</h2>
-              <div class="row" data-bsc-settings-key="open-settings">
-                <div class="label">
-                  <p class="name">Open or close Settings</p>
-                  <p class="help">From anywhere in the window, as in most apps.</p>
-                </div>
-                <div class="control keys"><kbd>{MAC ? '⌘' : 'Ctrl'}</kbd> <kbd>,</kbd></div>
-              </div>
-              <div class="row" data-bsc-settings-key="search-settings">
-                <div class="label"><p class="name">Search settings</p></div>
-                <div class="control keys"><kbd>{MAC ? '⌘' : 'Ctrl'}</kbd> <kbd>F</kbd></div>
-              </div>
             {/if}
           {/if}
         </div>
@@ -1190,6 +1291,46 @@
     color: var(--bsc-text-secondary);
   }
 
+  /* A problem gets its own line in Ink, never red (DESIGN.md, the status line). */
+  .problem {
+    color: var(--bsc-text-primary);
+  }
+
+  /* A status line's state: a few words in Ink at 600, before the rest in Muted Ink. */
+  .state {
+    font-weight: 600;
+    color: var(--bsc-text-primary);
+  }
+
+  /* A shortcut's "Also in other apps": the switch and its words, under the explanation, at the
+     Label tier (the section's 14px label rule is for setting names). */
+  .anywhere {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .anywhere label {
+    font-size: 13px;
+    color: var(--bsc-text-secondary);
+  }
+
+  /* The recording line, kept in the page while empty so it is announced as it fills. */
+  .keys-note:empty {
+    margin: 0;
+  }
+
+  /* Read by a screen reader, not shown: which row's switch this is. */
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
   .row.pending label {
     color: var(--bsc-text-disabled);
   }
@@ -1277,11 +1418,6 @@
     min-width: 0;
     padding: 0 5px;
     color: var(--bsc-text-secondary);
-  }
-
-  .keys {
-    display: flex;
-    gap: 4px;
   }
 
   /* A launch notice (DESIGN.md): the status line's shape, the state in Ink at 600, the rest in

@@ -85,7 +85,19 @@ import {
 import type { PageStatus } from '@shared/page-status'
 import { createTray } from './tray'
 import { rememberLastPage, startUrl } from './start-page'
-import { watchFocusKeys } from './focus-cycle'
+import { moveFocusFrom } from './focus-cycle'
+import {
+  applyShortcuts,
+  onShortcutStatusChange,
+  refreshShortcuts,
+  setRecording,
+  shortcutStatus,
+  startShortcuts
+} from './shortcuts'
+import type { ShortcutAction } from './shortcuts'
+import { changeVolume, playbackAvailability, pressPlayback, startPlayback } from './playback'
+import { nextZoom } from '@shared/shortcuts'
+import type { ShortcutStatus } from '@shared/shortcuts'
 import {
   attachContextMenu,
   hideContextMenu,
@@ -101,7 +113,7 @@ import {
 } from './blocker'
 import type { Shell } from './window'
 import { SETTINGS, SETTING_KEYS } from '@shared/settings-schema'
-import type { Settings } from '@shared/settings-schema'
+import type { SettingKey, Settings } from '@shared/settings-schema'
 import * as settings from './settings-store'
 import {
   copyThemeToUserFolder,
@@ -211,8 +223,10 @@ app.setName('BetterSoundCloud')
  * method does not exist elsewhere.
  */
 const APP_ID = 'com.alirezakj.bettersoundcloud'
+/** The ID this build runs under, which Windows also names our media session by (main/playback.ts). */
+const RUNNING_APP_ID = isDev ? `${APP_ID}.dev` : APP_ID
 if (process.platform === 'win32') {
-  app.setAppUserModelId(isDev ? `${APP_ID}.dev` : APP_ID)
+  app.setAppUserModelId(RUNNING_APP_ID)
 }
 
 // Printed in dev so the identity is verifiable at a glance without opening DevTools.
@@ -474,11 +488,16 @@ if (!app.requestSingleInstanceLock()) {
       // fully off from the first request — never half-applied mid-load. Safe mode never
       // loads it, so no filter can touch a single request.
       if (!SAFE_MODE) loadBlockerEngine()
-      // Before the first view exists, so every view takes part in F6 from its first key.
-      watchFocusKeys(() => shell)
-      watchSettingsKey()
+      // Before the first view exists, so every view hears the shortcuts from its first key.
+      startShortcuts({ actions: shortcutActions(), availability: playbackAvailability })
+      applyShortcuts(settings.getAll())
+      // What the playback and volume keys can do here; on Linux that takes asking two tools.
+      void startPlayback(RUNNING_APP_ID).then(refreshShortcuts)
       showMainWindow()
-      createTray(showMainWindow)
+      createTray(showMainWindow, {
+        press: pressPlayback,
+        ready: () => playbackAvailability().playback === 'ready'
+      })
       // Plugins belong to the app, not the window, and none of them needs SoundCloud's page.
       // The audio engine first, so a plugin that shapes the sound has something to ask. Safe
       // mode never runs it: troubleshooting starts from SoundCloud's own sound.
@@ -810,6 +829,14 @@ function registerIpc(): void {
   ipcMain.handle(CH.safeModeGet, (e) => (fromSettingsUi(e) ? SAFE_MODE : null))
   // And whether Glass is really under the window, so a ticked box never silently does nothing.
   ipcMain.handle(CH.glassStatusGet, (e) => (fromSettingsUi(e) ? glassStatus() : null))
+  // Settings → Shortcuts: what the playback and volume keys can do here, which keys another app
+  // holds, and the recorder saying it is listening (no shortcut answers while it does).
+  ipcMain.handle(CH.shortcutStatusGet, (e) => (fromSettingsUi(e) ? shortcutStatus() : null))
+  ipcMain.on(CH.shortcutRecording, (e, on: unknown) => {
+    if (shell !== null && e.sender === shell.settings?.webContents)
+      setRecording(e.sender, on === true)
+  })
+  onShortcutStatusChange(broadcastShortcutStatus)
   ipcMain.handle(CH.settingsAtLaunch, (e) => (fromSettingsUi(e) ? SETTINGS_AT_LAUNCH : null))
   ipcMain.on(CH.appRestart, (e) => {
     // The settings view's "Restart now" only. Never `app.relaunch()` directly (relaunch.ts).
@@ -1223,6 +1250,13 @@ function broadcastUpdateStatus(status: UpdateStatus): void {
   }
 }
 
+function broadcastShortcutStatus(status: ShortcutStatus): void {
+  const view = shell?.settings
+  if (view && !view.webContents.isDestroyed()) {
+    view.webContents.send(CH.shortcutStatusChanged, status)
+  }
+}
+
 function broadcastPresenceStatus(status: PresenceStatus): void {
   const view = shell?.settings
   if (view && !view.webContents.isDestroyed()) {
@@ -1336,6 +1370,8 @@ function applyLiveSettings(): void {
   })
   // App-wide too. Before the updater starts this only records the choice.
   setAutoUpdate(settings.get('general.checkForUpdates'))
+  // The shortcuts belong to the app as well: the ones that work from other apps outlive the window.
+  applyShortcuts(settings.getAll())
 
   if (!shell) {
     applyChromeTheme()
@@ -1413,21 +1449,77 @@ function notePagePicture(): void {
 }
 
 /**
- * Ctrl+, (⌘, on macOS) opens Settings from anywhere in the window, and closes it, as in VS Code,
- * Slack and Discord. Settings hears it itself while it has the keyboard, so it can fade out; the
- * showcase covers everything, so Settings would open unseen under it.
+ * What each shortcut in Settings → Shortcuts does (main/shortcuts.ts hears the keys). Each answers
+ * whether it acted where the key was pressed, so a key that means nothing there reaches that view
+ * as usual. `from` is null for a key pressed in another app.
  */
-function watchSettingsKey(): void {
-  app.on('web-contents-created', (_event, contents) => {
-    contents.on('before-input-event', (event, input) => {
-      if (input.type !== 'keyDown' || input.key !== ',' || input.alt || input.shift) return
-      const mac = process.platform === 'darwin'
-      if (mac ? !input.meta || input.control : !input.control || input.meta) return
-      if (!shell || shell.showcase || contents === shell.settings?.webContents) return
-      event.preventDefault()
-      toggleSettings(shell)
+function shortcutActions(): Partial<Record<SettingKey, ShortcutAction>> {
+  const playback =
+    (action: Parameters<typeof pressPlayback>[0]): ShortcutAction =>
+    () => {
+      pressPlayback(action)
+      return true
+    }
+  const volume =
+    (action: Parameters<typeof changeVolume>[0]): ShortcutAction =>
+    () => {
+      changeVolume(action)
+      return true
+    }
+  /**
+   * The page's keys act on SoundCloud's page from the bar, the page and the panels beside it, but
+   * not from our own pages (Settings, the welcome), the showcase or the right-click menu, where
+   * Ctrl+R or Alt+← would reach behind what the user is looking at.
+   */
+  const onPage =
+    (act: (content: Electron.WebContents) => void): ShortcutAction =>
+    (from) => {
+      if (!shell || !from) return false
+      const elsewhere = [shell.settings, shell.onboarding, shell.showcase, shell.contextMenu]
+      if (elsewhere.some((view) => view?.webContents === from)) return false
+      act(shell.content.webContents)
+      return true
+    }
+  /** The zoom keys move the Zoom setting, so Settings and the next launch agree with the page. */
+  const zoom = (next: (current: number) => number): ShortcutAction =>
+    onPage(() => {
+      settings.set('appearance.zoomFactor', next(settings.get('appearance.zoomFactor')))
+      applyLiveSettings()
+      broadcastSettings(settings.getAll())
     })
-  })
+
+  return {
+    'shortcuts.playPause': playback('playPause'),
+    'shortcuts.nextTrack': playback('next'),
+    'shortcuts.previousTrack': playback('previous'),
+    'shortcuts.volumeUp': volume('up'),
+    'shortcuts.volumeDown': volume('down'),
+    'shortcuts.mute': volume('mute'),
+    'shortcuts.reload': onPage((content) => content.reload()),
+    'shortcuts.back': onPage((content) => {
+      if (content.navigationHistory.canGoBack()) content.navigationHistory.goBack()
+    }),
+    'shortcuts.forward': onPage((content) => {
+      if (content.navigationHistory.canGoForward()) content.navigationHistory.goForward()
+    }),
+    'shortcuts.zoomIn': zoom((current) => nextZoom(current, 'in')),
+    'shortcuts.zoomOut': zoom((current) => nextZoom(current, 'out')),
+    'shortcuts.zoomReset': zoom(() => 100),
+    'shortcuts.focusNext': (from) =>
+      shell !== null && from !== null && moveFocusFrom(shell, from, false),
+    'shortcuts.focusPrevious': (from) =>
+      shell !== null && from !== null && moveFocusFrom(shell, from, true),
+    // From anywhere in the window, and again to close it, as in VS Code, Slack and Discord.
+    // Settings hears it itself while it has the keyboard, so it can fade out; the showcase covers
+    // everything, so Settings would open unseen under it.
+    'shortcuts.openSettings': (from) => {
+      if (!shell || !from || shell.showcase || from === shell.settings?.webContents)
+        return false
+      toggleSettings(shell)
+      return true
+    }
+    // Search settings is Settings' own: it hears its key itself.
+  }
 }
 
 /** What the Background shows: the setting, unless the selected theme needs one (`@background`). */

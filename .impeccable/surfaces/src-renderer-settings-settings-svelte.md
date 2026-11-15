@@ -68,3 +68,21 @@ state (focus, on, chosen, changed).
 ## Open
 
 - The insides of Plugins, Themes, Background and the editors are not redesigned in this pass.
+
+## Shortcuts — 2026-11-15
+
+The maintainer asked for keys that play, pause, skip and go back, every key changeable in Settings
+(with GitHub #127: "while I'm in another app", "edit the bind as well"), and chose in discovery:
+the system's media controls as the mechanism; each key choosing whether it works in other apps;
+volume up, down and mute; the window's keys changeable; reload, back and zoom; the media-keys
+switch removed (it cannot be separated from the media session); the tray's playback items on.
+
+- Every shortcut is a schema row of kind `keys`, in groups: Playback, Volume, SoundCloud's page,
+  Moving around, Settings. Same row as every setting: name, one-sentence explanation, control on the
+  right, the changed mark and Reset.
+- The control: a key combination is a button of key chips, pressed to record a new one ("Press
+  keys…", the held modifiers as chips); up to two, "or" between them, "+" to add the second; "Set a
+  key" when there is none. Esc keeps, Backspace removes, Tab leaves.
+- What cannot be used is said in a Caption line in Ink under the explanation, and recording goes on.
+- Playback and volume keys get "Also in other apps" (a switch, on by default) once a key is set; a
+  key another app holds is said in its row.

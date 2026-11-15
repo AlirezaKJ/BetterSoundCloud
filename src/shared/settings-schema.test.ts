@@ -10,7 +10,8 @@ import {
   upgradeValues,
   APPLIES_NOTES
 } from './settings-schema'
-import type { SettingDef } from './settings-schema'
+import { parseKeys, refusal, sameKeys } from './shortcuts'
+import type { SettingDef, SettingKey } from './settings-schema'
 
 describe('schema integrity', () => {
   it('gives every setting a label and a known section', () => {
@@ -74,7 +75,29 @@ describe('schema integrity', () => {
       'discord.showWhenPaused',
       'general.checkForUpdates',
       'general.minimizeToTray',
-      'general.startupUrl'
+      'general.startupUrl',
+      'shortcuts.back',
+      'shortcuts.focusNext',
+      'shortcuts.focusPrevious',
+      'shortcuts.forward',
+      'shortcuts.mute',
+      'shortcuts.mute.anywhere',
+      'shortcuts.nextTrack',
+      'shortcuts.nextTrack.anywhere',
+      'shortcuts.openSettings',
+      'shortcuts.playPause',
+      'shortcuts.playPause.anywhere',
+      'shortcuts.previousTrack',
+      'shortcuts.previousTrack.anywhere',
+      'shortcuts.reload',
+      'shortcuts.searchSettings',
+      'shortcuts.volumeDown',
+      'shortcuts.volumeDown.anywhere',
+      'shortcuts.volumeUp',
+      'shortcuts.volumeUp.anywhere',
+      'shortcuts.zoomIn',
+      'shortcuts.zoomOut',
+      'shortcuts.zoomReset'
     ])
   })
 
@@ -215,12 +238,70 @@ describe('upgradeValues', () => {
 })
 
 describe('drawnBy', () => {
-  it('is only used in the Themes section, which is the only one that draws its own components', () => {
+  it('is only used where something draws it: Themes for its components, Shortcuts for the keys', () => {
     // Settings.svelte skips these rows everywhere, but only the Themes section renders the
-    // components that draw them — a `drawnBy` setting anywhere else would simply vanish.
+    // components that draw them, and only a shortcut's row its "Also in other apps" switch — a
+    // `drawnBy` setting anywhere else would simply vanish.
     for (const key of SETTING_KEYS) {
       const def: SettingDef = SETTINGS[key]
-      if (def.drawnBy) expect(def.section, key).toBe('themes')
+      if (def.drawnBy === 'keys') expect(def.section, key).toBe('shortcuts')
+      else if (def.drawnBy) expect(def.section, key).toBe('themes')
     }
+  })
+
+  it('draws each "Also in other apps" switch in exactly one shortcut’s row', () => {
+    const anywhere = SETTING_KEYS.flatMap((key) => {
+      const def: SettingDef = SETTINGS[key]
+      return def.kind === 'keys' && def.anywhere ? [def.anywhere] : []
+    })
+    const drawnByKeys = SETTING_KEYS.filter((key) => {
+      const def: SettingDef = SETTINGS[key]
+      return def.drawnBy === 'keys'
+    })
+    expect([...anywhere].sort()).toEqual([...drawnByKeys].sort())
+    for (const key of anywhere) {
+      expect(isSettingKey(key), key).toBe(true)
+      expect(SETTINGS[key as SettingKey].kind, key).toBe('boolean')
+    }
+  })
+})
+
+describe('shortcuts', () => {
+  const keySettings = SETTING_KEYS.filter((key) => SETTINGS[key].kind === 'keys')
+
+  it('writes every default in its one spelling, so a default is never marked changed', () => {
+    for (const key of keySettings) {
+      const value = SETTINGS[key].default as string
+      expect(coerce(key, value), key).toBe(value)
+    }
+  })
+
+  it('gives no two shortcuts the same key by default, on any platform', () => {
+    for (const platform of ['win32', 'linux', 'darwin']) {
+      const seen: string[] = []
+      for (const key of keySettings) {
+        for (const keys of parseKeys(SETTINGS[key].default as string)) {
+          expect(
+            seen.some((other) => sameKeys(other, keys, platform)),
+            `${platform}: ${key} ${keys}`
+          ).toBe(false)
+          expect(refusal(keys, platform), `${platform}: ${key} ${keys}`).toBeNull()
+          seen.push(keys)
+        }
+      }
+    }
+  })
+
+  it('stores keys in their one spelling, drops what cannot be used, and keeps an empty choice', () => {
+    expect(coerce('shortcuts.playPause', 'ctrl+alt+p')).toBe('Control+Alt+P')
+    expect(coerce('shortcuts.playPause', 'Alt+CmdOrCtrl+P  F8 F9')).toBe(
+      'CommandOrControl+Alt+P F8'
+    )
+    expect(coerce('shortcuts.reload', '')).toBe('')
+    // Nothing usable in it is not a choice: the default comes back.
+    expect(coerce('shortcuts.reload', 'P')).toBe('CommandOrControl+R F5')
+    expect(coerce('shortcuts.reload', 42)).toBe('CommandOrControl+R F5')
+    // Copy, paste and the media keys are never taken, even from a hand-edited file.
+    expect(coerce('shortcuts.playPause', 'CommandOrControl+C MediaPlayPause F7')).toBe('F7')
   })
 })

@@ -120,30 +120,6 @@ export function searchSettings(entries: readonly SearchEntry[], query: string): 
  */
 export const OTHER_ENTRIES: readonly SearchEntry[] = [
   {
-    section: 'shortcuts',
-    name: 'Move focus to the next part of the window',
-    text: 'F6. From the top bar to SoundCloud’s page, the lyrics pane and the player buttons.',
-    target: attributeSelector('data-bsc-settings-key', 'next-part')
-  },
-  {
-    section: 'shortcuts',
-    name: 'Move focus back',
-    text: 'Shift+F6. The same parts of the window, the other way round.',
-    target: attributeSelector('data-bsc-settings-key', 'previous-part')
-  },
-  {
-    section: 'shortcuts',
-    name: 'Open or close Settings',
-    text: 'Ctrl+, (⌘, on a Mac), from anywhere in the window.',
-    target: attributeSelector('data-bsc-settings-key', 'open-settings')
-  },
-  {
-    section: 'shortcuts',
-    name: 'Search settings',
-    text: 'Ctrl+F (⌘F on a Mac), while Settings is open.',
-    target: attributeSelector('data-bsc-settings-key', 'search-settings')
-  },
-  {
     section: 'advanced',
     name: 'Import browser sign-in',
     text: 'Sign in with the account you use in your browser, from a cookie export of soundcloud.com.',

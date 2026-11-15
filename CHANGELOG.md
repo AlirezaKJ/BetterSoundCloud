@@ -4,6 +4,12 @@ Each version's entry is also its release notes on GitHub.
 
 ## Unreleased
 
+- **Keyboard shortcuts you choose** ([#127](https://github.com/AlirezaKJ/BetterSoundCloud/issues/127)):
+  play or pause, next track, previous track, and volume up, down and mute, with keys you set in
+  Settings → Shortcuts, and each one can work while another app is in front. They reach SoundCloud
+  the way your keyboard's media keys do. The window's own keys can be changed too, and there are new
+  ones: reload, back, forward and zoom.
+- **The tray menu plays, pauses and skips.**
 - **A new icon of our own**: an orange record sleeve with the record drawn out of it, in place of
   SoundCloud's cloud. Each size is drawn for the size it's shown at, so the taskbar and tray icons
   are sharp at every display scale, and the record shows on a dark taskbar too.
