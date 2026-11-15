@@ -24,8 +24,11 @@ function viewFor(shell: Shell, area: FocusArea): WebContentsView | null {
   const pageHidden = shell.pageStatus !== null && hidesPage(shell.pageStatus)
   switch (area) {
     case 'bar':
-      // Our own bar is back while Settings is open, over the window buttons on SoundCloud's header.
-      return shell.embeddedShowing && !shell.settings ? shell.embedded : shell.header
+      // Our own bar is back while Settings or the welcome is open, over the window buttons on
+      // SoundCloud's header.
+      return shell.embeddedShowing && !shell.settings && !shell.onboarding
+        ? shell.embedded
+        : shell.header
     case 'page':
       // The status view stands in for the page, or asks over it when the page hangs; the
       // Visualizer's view of its own covers the page while it is open.
@@ -35,7 +38,9 @@ function viewFor(shell: Shell, area: FocusArea): WebContentsView | null {
     case 'player':
       return pageHidden ? null : shell.player
     case 'settings':
-      return shell.settings
+      // The first-run welcome is a page of ours like Settings, and takes its place in the cycle
+      // (Settings opens above it, and wins while open).
+      return shell.settings ?? shell.onboarding
   }
 }
 
@@ -49,14 +54,14 @@ function areaOf(shell: Shell, contents: WebContents): FocusArea | null {
   if (is(shell.content) || is(shell.status) || is(shell.visualView)) return 'page'
   if (is(shell.lyrics)) return 'lyrics'
   if (is(shell.player)) return 'player'
-  if (is(shell.settings)) return 'settings'
+  if (is(shell.settings) || is(shell.onboarding)) return 'settings'
   return null
 }
 
 /** Move keyboard focus from the view that saw F6 to the next part of the window. */
 export function moveFocus(shell: Shell, from: FocusArea, backwards: boolean): void {
   const cycle = focusCycle({
-    settings: shell.settings !== null,
+    settings: shell.settings !== null || shell.onboarding !== null,
     lyrics: viewFor(shell, 'lyrics') !== null,
     player: viewFor(shell, 'player') !== null
   })

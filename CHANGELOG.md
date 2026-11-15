@@ -4,6 +4,10 @@ Each version's entry is also its release notes on GitHub.
 
 ## Unreleased
 
+- **A welcome on first launch**: one question at a time, with pictures, about blocking ads, light
+  or dark, a theme, Discord and Last.fm, where SoundCloud opens, closing to the tray and updates,
+  then signing in. Enter keeps the answer shown, and **Skip setup** is always there. Settings →
+  About shows it again.
 - **Settings is a page now**, not a small box: it fills the window under the top bar, with the
   sections down the side, and every setting says what it does in a sentence or two. **Search**
   at the top of the sidebar (Ctrl+F) finds any setting, theme or plugin and takes you to it.

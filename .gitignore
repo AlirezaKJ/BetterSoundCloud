@@ -34,3 +34,5 @@ Thumbs.db
 # The impeccable design tool: its hook cache and review screenshots are per machine.
 .impeccable/hook.cache.json
 .impeccable/review/
+# …and its decision page's state while a round is open.
+.impeccable/questions/

@@ -85,7 +85,9 @@ export function clearPageStatus(shell: Shell): void {
   shell.layout()
   // Keyboard focus was in the view we just removed. Hand it to the page, so the user's next
   // key press lands somewhere rather than nowhere.
-  if (hadFocus && !shell.settings && shell.window.isFocused()) shell.content.webContents.focus()
+  if (hadFocus && !shell.settings && !shell.onboarding && shell.window.isFocused()) {
+    shell.content.webContents.focus()
+  }
 }
 
 /**
@@ -265,9 +267,12 @@ function createStatusView(shell: Shell): void {
   shell.status = view
   shell.window.contentView.addChildView(view)
   themeChromeView(view, 'status')
-  // A panel the user opened stays above what we put up underneath it. Re-adding a child view
-  // moves it to the top.
-  if (shell.settings) shell.window.contentView.addChildView(shell.settings)
+  // The welcome and a panel the user opened stay above what we put up underneath them.
+  // Re-adding a child view moves it to the top. On a first launch the welcome covers the
+  // "setting up playback" status while Widevine downloads behind it.
+  for (const above of [shell.onboarding, shell.settings]) {
+    if (above) shell.window.contentView.addChildView(above)
+  }
   if (isDev) enableDevToolsShortcut(view)
 
   view.webContents.once('did-finish-load', () => {
@@ -277,7 +282,9 @@ function createStatusView(shell: Shell): void {
     // So Enter and Tab reach the buttons without a click first — but only within a window
     // the user is already in. Focusing a view raises its window, and a status appearing must
     // never pull the user out of another app.
-    if (!shell.settings && shell.window.isFocused()) view.webContents.focus()
+    if (!shell.settings && !shell.onboarding && shell.window.isFocused()) {
+      view.webContents.focus()
+    }
   })
   void view.webContents.loadURL(rendererUrl('status'))
 }

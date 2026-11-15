@@ -49,7 +49,7 @@ describe('layout() owns every view position', () => {
     expect(body).toContain('shell.visualView.setVisible(!pageHidden)')
     // The engine listens for it only while it is drawn, and Settings, opaque, hides it…
     expect(body).toMatch(
-      /const visualViewDrawn =\s+shell\.visualView !== null && !pageHidden && !shell\.showcase && !settingsOpen/
+      /const visualViewDrawn =\s+shell\.visualView !== null && !pageHidden && !shell\.showcase && !ourPageOpen/
     )
     expect(body).toContain("setVisualPlaceShown('view', visualViewDrawn)")
     // …and the strip steps back while it is open: it would draw the same thing twice.
@@ -90,7 +90,7 @@ describe('layout() owns every view position', () => {
     expect(body).toContain('const visualStripShows = visualStripWanted && !shell.audioStopped')
     expect(body).toMatch(/const visualStripDrawn =\s+visualStripWanted && !shell\.showcase/)
     // Settings is opaque and covers it, so it is not drawn while Settings is open either.
-    expect(body).toMatch(/const visualStripDrawn =\s+[^\n]*!settingsOpen/)
+    expect(body).toMatch(/const visualStripDrawn =\s+[^\n]*!ourPageOpen/)
     // The page's room for it is re-decided whenever it comes or goes, from the same flag…
     expect(body).toMatch(/if \(visualStripFlipped\) void applyContentCss\(/)
     expect(SRC).toMatch(/stripReserve = shell\.visualStripShowing \?/)
@@ -128,13 +128,18 @@ describe('layout() owns every view position', () => {
     // must close it, whatever the bar setting says. The page keeps its place under it, so it does
     // not jump as Settings fades.
     const body = layoutBody()
-    expect(body).toContain('const barShows = !embeddedShows || settingsOpen')
+    // Settings and the first-run welcome are both a page of ours under our bar.
+    expect(body).toContain(
+      'const ourPageOpen = shell.settings !== null || shell.onboarding !== null'
+    )
+    expect(body).toContain('const barShows = !embeddedShows || ourPageOpen')
+    expect(body).toContain('fitBelowHeader(window, shell.onboarding, HEADER_HEIGHT)')
     expect(body).toContain('header.setVisible(barShows)')
     expect(body).toContain(
       'content.setBounds({ x: 0, y: strip, width, height: height - strip })'
     )
     expect(body).toContain('fitBelowHeader(window, shell.settings, HEADER_HEIGHT)')
-    expect(body).toMatch(/shell\.embedded\.setVisible\(\s+embeddedShows && !settingsOpen/)
+    expect(body).toMatch(/shell\.embedded\.setVisible\(\s+embeddedShows && !ourPageOpen/)
     // Opening and closing it re-run the layout, which alone decides the bar.
     expect(functionBody('toggleSettings')).toContain('shell.layout()')
     expect(functionBody('closeSettings')).toContain('shell.layout()')

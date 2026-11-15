@@ -72,6 +72,11 @@ export type Shell = {
   /** Where keyboard focus was when settings opened, so closing them hands it back there. */
   settingsOpener: WebContents | null
   /**
+   * The first-run welcome (`renderer/onboarding`), while it is open: a page of ours under our
+   * bar, like Settings, which opens above it. Null means closed.
+   */
+  onboarding: WebContentsView | null
+  /**
    * The window buttons drawn over SoundCloud's own header. Exists only while the
    * BetterSoundCloud bar is hidden. See `setContentAppearance`.
    */
@@ -342,6 +347,7 @@ export function createShell(identity: Identity): Shell {
     content,
     settings: null,
     settingsOpener: null,
+    onboarding: null,
     embedded: null,
     player: null,
     visualStrip: null,
@@ -412,12 +418,13 @@ export function createShell(identity: Identity): Shell {
     const compactHeader = embeddedShows && cssWidth < COMPACT_HEADER_WIDTH
     const fitHeader = embeddedShows && cssWidth < FIT_HEADER_WIDTH
     const strip = embeddedShows ? 0 : HEADER_HEIGHT
-    // Settings stands in for SoundCloud's page while it is open, and our own bar is above it
-    // whatever the bar setting says, so the window can always be moved and closed and the gear
-    // closes Settings again. The bar is laid over the page's top edge rather than pushing the page
-    // down: moved, SoundCloud's page would jump under Settings as it fades in and out.
-    const settingsOpen = shell.settings !== null
-    const barShows = !embeddedShows || settingsOpen
+    // Settings stands in for SoundCloud's page while it is open, and so does the first-run
+    // welcome; our own bar is above either whatever the bar setting says, so the window can always
+    // be moved and closed and the gear opens or closes Settings. The bar is laid over the page's
+    // top edge rather than pushing the page down: moved, SoundCloud's page would jump under
+    // Settings as it fades in and out.
+    const ourPageOpen = shell.settings !== null || shell.onboarding !== null
+    const barShows = !embeddedShows || ourPageOpen
     // The Visualizer's strip is wanted with SoundCloud's player bar, which shows while a track is
     // loaded, and goes with the page like the other overlays on SoundCloud's bars; drawn only
     // where it can be seen (the showcase covers it while open). It asks the engine for sound
@@ -428,7 +435,7 @@ export function createShell(identity: Identity): Shell {
     // Drawn only where it can be seen and is not the same thing twice: the showcase covers it, and
     // the view of its own already shows what it would.
     const visualStripDrawn =
-      visualStripWanted && !shell.showcase && !shell.visualView && !settingsOpen
+      visualStripWanted && !shell.showcase && !shell.visualView && !ourPageOpen
     const visualStripShows = visualStripWanted && !shell.audioStopped
     const visualStripFlipped = visualStripShows !== shell.visualStripShowing
     shell.visualStripShowing = visualStripShows
@@ -457,17 +464,19 @@ export function createShell(identity: Identity): Shell {
     header.setVisible(barShows)
     header.setBounds({ x: 0, y: 0, width, height: barShows ? HEADER_HEIGHT : 0 })
     content.setBounds({ x: 0, y: strip, width, height: height - strip })
-    // Settings only exists while it is open, so check before resizing it. Always under our bar.
+    // Settings and the welcome only exist while open, so check before resizing them. Always
+    // under our bar.
     if (shell.settings) fitBelowHeader(window, shell.settings, HEADER_HEIGHT)
+    if (shell.onboarding) fitBelowHeader(window, shell.onboarding, HEADER_HEIGHT)
     // The menu view is attached after the shell is built, so it too can be absent here.
     if (shell.contextMenu) fitBelowHeader(window, shell.contextMenu, strip)
     // The page-status view covers exactly what SoundCloud's page does.
     if (shell.status) fitBelowHeader(window, shell.status, strip)
     if (shell.embedded) {
       // With the header hidden until pointed at, our window buttons hide and come back with it.
-      // Under Settings, our own bar has the window buttons.
+      // Under Settings or the welcome, our own bar has the window buttons.
       shell.embedded.setVisible(
-        embeddedShows && !settingsOpen && (!shell.autoHideHeader || shell.headerRevealed)
+        embeddedShows && !ourPageOpen && (!shell.autoHideHeader || shell.headerRevealed)
       )
       fitOverSoundCloudHeader(shell, embeddedShows)
     }
@@ -516,7 +525,7 @@ export function createShell(identity: Identity): Shell {
       fitVisualView(shell, strip)
     }
     const visualViewDrawn =
-      shell.visualView !== null && !pageHidden && !shell.showcase && !settingsOpen
+      shell.visualView !== null && !pageHidden && !shell.showcase && !ourPageOpen
     // The showcase covers everything, our own bar included.
     if (shell.showcase) shell.showcase.setBounds({ x: 0, y: 0, width, height })
 
@@ -637,11 +646,12 @@ export function toggleSettings(shell: Shell): void {
     return
   }
 
-  // The bar's Settings button, the window buttons over SoundCloud's header, or the page (the
-  // right-click menu's Settings lands here, its own view already gone).
+  // The bar's Settings button, the window buttons over SoundCloud's header, the welcome (Ctrl+,
+  // from it), or the page (the right-click menu's Settings lands here, its own view already gone).
   shell.settingsOpener =
-    [shell.header, shell.embedded, shell.content].find((v) => v?.webContents.isFocused())
-      ?.webContents ?? null
+    [shell.header, shell.embedded, shell.onboarding, shell.content].find((v) =>
+      v?.webContents.isFocused()
+    )?.webContents ?? null
 
   const view = new WebContentsView({
     webPreferences: {
@@ -702,6 +712,60 @@ export function closeSettings(shell: Shell): void {
     const back = opener && !opener.isDestroyed() ? opener : shell.content.webContents
     back.focus()
   }
+}
+
+/**
+ * Open the first-run welcome (`renderer/onboarding`): on a profile's first launch, and from
+ * Settings → About. A page of ours below our bar, like Settings, which opens above it. It sets
+ * real settings as it goes, through the same IPC as Settings, so closing it keeps what was chosen.
+ */
+export function openOnboarding(shell: Shell): void {
+  if (shell.onboarding) {
+    shell.onboarding.webContents.focus()
+    return
+  }
+  const view = new WebContentsView({
+    webPreferences: {
+      preload: join(import.meta.dirname, '../preload/chrome.cjs'),
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+      webSecurity: true,
+      devTools: isDev
+    }
+  })
+  hardenSession(view.webContents.session, shell.identity)
+  routeNewWindowsToBrowser(view.webContents)
+  // Opaque, in the page's own colour: on a first launch it is the first thing painted, and a
+  // transparent view would show SoundCloud's page (or nothing) until it does.
+  view.setBackgroundColor(nativeTheme.shouldUseDarkColors ? '#121212' : '#f2f2f2')
+
+  shell.onboarding = view
+  const views = shell.window.contentView
+  views.addChildView(view)
+  // Settings and the right-click menu stay above it.
+  for (const above of [shell.settings, shell.contextMenu]) if (above) views.addChildView(above)
+  // A page of ours, like Settings: it follows a theme's colours for our panels.
+  themeChromeView(view, 'settings')
+  shell.layout()
+  if (isDev) enableDevToolsShortcut(view)
+  void view.webContents.loadURL(rendererUrl('onboarding'))
+  // Focused, so Enter and the arrow keys work at once; never while Settings has the keyboard.
+  view.webContents.once('did-finish-load', () => {
+    if (shell.onboarding === view && !shell.settings) view.webContents.focus()
+  })
+}
+
+/** Close the welcome, giving the keyboard to SoundCloud's page. */
+export function closeOnboarding(shell: Shell): void {
+  const view = shell.onboarding
+  if (!view) return
+  const hadFocus = !view.webContents.isDestroyed() && view.webContents.isFocused()
+  shell.onboarding = null
+  shell.window.contentView.removeChildView(view)
+  shell.layout()
+  view.webContents.close()
+  if (hadFocus && shell.window.isFocused()) shell.content.webContents.focus()
 }
 
 /*
@@ -1295,7 +1359,13 @@ export function setVisualStrip(shell: Shell, enabled: boolean): void {
   views.addChildView(view)
   // Under everything that floats over the page: a page status (a hang is a dialog over the page),
   // the settings panel, the right-click menu and the showcase stay on top.
-  for (const above of [shell.status, shell.settings, shell.contextMenu, shell.showcase]) {
+  for (const above of [
+    shell.status,
+    shell.onboarding,
+    shell.settings,
+    shell.contextMenu,
+    shell.showcase
+  ]) {
     if (above) views.addChildView(above)
   }
   sendPageThemeOnLoad(shell, view)
@@ -1364,7 +1434,13 @@ function openVisualView(shell: Shell): void {
   views.addChildView(view)
   // A page status (a hang asks over the page), the settings panel, the right-click menu and the
   // showcase stay above it.
-  for (const above of [shell.status, shell.settings, shell.contextMenu, shell.showcase]) {
+  for (const above of [
+    shell.status,
+    shell.onboarding,
+    shell.settings,
+    shell.contextMenu,
+    shell.showcase
+  ]) {
     if (above) views.addChildView(above)
   }
   shell.layout()
@@ -1475,7 +1551,9 @@ function openLyrics(shell: Shell): void {
   views.addChildView(view)
   // Adding a view puts it on top; the settings panel and the right-click menu must stay above
   // the pane, and adding a view that is already there only moves it to the top.
-  for (const above of [shell.settings, shell.contextMenu]) if (above) views.addChildView(above)
+  for (const above of [shell.onboarding, shell.settings, shell.contextMenu]) {
+    if (above) views.addChildView(above)
+  }
   themeChromeView(view, 'lyrics')
   shell.layout()
 
@@ -1754,6 +1832,7 @@ export function rendererUrl(
   entry:
     | 'header'
     | 'settings'
+    | 'onboarding'
     | 'embedded'
     | 'player'
     | 'context-menu'
