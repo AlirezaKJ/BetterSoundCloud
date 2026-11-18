@@ -34,7 +34,7 @@ describe('buildActivity', () => {
       },
       buttons: [
         { label: 'Listen on SoundCloud', url: TRACK.url },
-        { label: 'Get BetterSoundCloud', url: 'https://bsc.akjstud.io/' }
+        { label: 'Get BetterSoundCloud', url: 'https://bsc.akj.studio/' }
       ],
       instance: false
     })

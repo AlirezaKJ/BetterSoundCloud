@@ -52,12 +52,13 @@ export type PresenceOptions = {
 export const PRESENCE_LOGO = 'bw-icon-bordered-white'
 
 /**
- * The second button: where to get the app, the project's landing page (from 2026-10-29). It
- * replaced the old site, which stopped answering on 2026-10-27.
+ * The second button: where to get the app, the project's website. It moved to bsc.akj.studio on
+ * 2026-11-18. Every release up to 0.9.0 links its old address, bsc.akjstud.io, which redirects
+ * there, so that address has to keep redirecting while those versions are still in use.
  */
 const PROJECT_BUTTON = {
   label: 'Get BetterSoundCloud',
-  url: 'https://bsc.akjstud.io/'
+  url: 'https://bsc.akj.studio/'
 }
 
 /** Discord rejects a text field shorter than 2 or longer than 128 characters. */
