@@ -2,6 +2,14 @@
 
 Each version's entry is also its release notes on GitHub.
 
+## Next (not released yet)
+
+- **Fixed: the page reloading over and over, unable to sign in.** A profile could hold a sign-in
+  SoundCloud no longer accepts and its sign-out could not remove (an installed build and one run
+  from source keep their sign-ins apart). SoundCloud then signed itself out every few seconds. The
+  app now clears that sign-in after a few rounds and opens SoundCloud signed out, ready to sign in.
+  By @Jeter361 in [#129](https://github.com/AlirezaKJ/BetterSoundCloud/pull/129).
+
 ## 0.9.0 (2026-11-16)
 
 - **Keyboard shortcuts you choose** ([#127](https://github.com/AlirezaKJ/BetterSoundCloud/issues/127)):
