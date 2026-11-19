@@ -106,8 +106,49 @@ export function readSignInCookies(parsed: unknown, now: number): SignInImport {
   return { ok: true, cookies, ignored: parsed.length - cookies.length }
 }
 
+/**
+ * A cookie export's text as the entries `readSignInCookies` reads, or null if it is neither kind.
+ *
+ * Two kinds are in use. Cookie-Editor (and EditThisCookie) write a JSON array. The "cookies.txt"
+ * extensions, curl and yt-dlp write the Netscape format: one tab-separated line per cookie
+ * (domain, include-subdomains, path, secure, expiry in seconds with 0 for a session cookie,
+ * name, value), `#` comments, and an `#HttpOnly_` prefix on the domain of an HttpOnly cookie.
+ * Until 2026-11-19 only JSON was read, and the file dialog showed only .json files, so choosing a
+ * cookies.txt did nothing at all.
+ */
+export function parseCookieExport(text: string): unknown[] | null {
+  const trimmed = text.replace(/^\uFEFF/, '').trim()
+  if (trimmed.startsWith('[')) {
+    try {
+      const parsed: unknown = JSON.parse(trimmed)
+      return Array.isArray(parsed) ? parsed : null
+    } catch {
+      return null
+    }
+  }
+  const entries: unknown[] = []
+  for (const rawLine of trimmed.split(/\r?\n/)) {
+    const httpOnly = rawLine.startsWith('#HttpOnly_')
+    const line = httpOnly ? rawLine.slice('#HttpOnly_'.length) : rawLine
+    if (!line || line.startsWith('#')) continue
+    const fields = line.split('\t')
+    if (fields.length !== 7) return null
+    const [domain = '', , path = '/', , expiry = '0', name = '', value = ''] = fields
+    const seconds = Number(expiry)
+    entries.push({
+      domain,
+      path,
+      name,
+      value,
+      httpOnly,
+      ...(Number.isFinite(seconds) && seconds > 0 ? { expirationDate: seconds } : {})
+    })
+  }
+  return entries.length > 0 ? entries : null
+}
+
 export const NOT_AN_EXPORT =
-  'That file isn’t a cookie export. In Cookie-Editor on soundcloud.com, choose Export, then JSON.'
+  'That file isn’t a cookie export. Export soundcloud.com’s cookies as JSON (Cookie-Editor) or as cookies.txt, then choose that file.'
 export const NO_SIGN_IN =
   'That file has no SoundCloud sign-in in it. Sign in on soundcloud.com in your browser, then export its cookies again.'
 export const EXPIRED =
