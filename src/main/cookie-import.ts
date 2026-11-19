@@ -1,6 +1,11 @@
 import { readFile, stat } from 'node:fs/promises'
 import type { Session } from 'electron'
-import { NOT_AN_EXPORT, SIGN_IN_COOKIES, readSignInCookies } from '@shared/sign-in-cookies'
+import {
+  NOT_AN_EXPORT,
+  SIGN_IN_COOKIES,
+  parseCookieExport,
+  readSignInCookies
+} from '@shared/sign-in-cookies'
 
 /**
  * "Import browser sign-in" (Settings → Advanced): bring a browser's SoundCloud sign-in into the
@@ -23,12 +28,9 @@ export async function importSignIn(
   now = Date.now() / 1000
 ): Promise<{ imported: number; ignored: number }> {
   if ((await stat(file)).size > MAX_FILE_BYTES) throw new ImportProblem(NOT_AN_EXPORT)
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(await readFile(file, 'utf8'))
-  } catch {
-    throw new ImportProblem(NOT_AN_EXPORT)
-  }
+  // Cookie-Editor's JSON, or the Netscape cookies.txt format (shared/sign-in-cookies.ts).
+  const parsed = parseCookieExport(await readFile(file, 'utf8'))
+  if (!parsed) throw new ImportProblem(NOT_AN_EXPORT)
 
   const result = readSignInCookies(parsed, now)
   if (!result.ok) throw new ImportProblem(result.error)
