@@ -13,11 +13,16 @@ git tag v0.8.0
 git push origin v0.8.0
 ```
 
-`.github/workflows/release.yml` builds Windows and Linux and drafts the release. In the run's log,
-the Windows job must show `[vmp] Signature verified.`, and both build jobs must show `PASS` for
-every fuse. The draft holds the installer (`…-setup.exe`), the portable build (`…-portable.exe`),
-the AppImage, `.deb` and `.rpm`, the update feeds (`latest.yml`, `latest-linux.yml`) and
-`SHA256SUMS.txt`. Download them from the draft.
+`.github/workflows/release.yml` builds Windows and Linux and drafts the release. **The Windows job
+stops twice to wait for you**: SignPath emails you a signing request for the app's exe, then one
+for the installers. Approve each in SignPath (it waits up to 30 minutes for each). In the run's
+log, the Windows job's "Widevine-sign" step must end with `verify-pkg` saying the signature is valid
+for `streaming`, "Check the code signatures" must show `Valid` and SignPath Foundation as the signer
+for all three files, and both build jobs must show `PASS` for every fuse. The draft holds the
+installer (`…-setup.exe`), the portable build (`…-portable.exe`), the AppImage, `.deb` and `.rpm`,
+the update feeds (`latest.yml`, `latest-linux.yml`) and `SHA256SUMS.txt`. Download them from the
+draft, and check in the setup's Properties → Digital Signatures that it is signed by SignPath
+Foundation.
 
 If the workflow cannot run, build Windows by hand, from a shell with your Castlabs EVS login current
 (`py -m castlabs_evs.account reauth` if it has lapsed — signing needs it, and it lapses):
@@ -28,7 +33,10 @@ npm run dist:win
 py -m castlabs_evs.vmp verify-pkg release\win-unpacked
 ```
 
-`verify-pkg` must say the signature is valid for `streaming`.
+`verify-pkg` must say the signature is valid for `streaming`. A build by hand is not code-signed:
+SignPath signs only what the workflow builds. Do not publish one once releases are code-signed:
+SmartScreen warns about it again, and once `publisherName` is set (the code-signing item in
+docs/TODO.md), installed copies refuse it as an update.
 
 ## 2. The automated smoke check
 

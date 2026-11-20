@@ -1,12 +1,19 @@
 name: Release
 
-# Builds the installers, Widevine-signs the Windows build, and puts everything in a DRAFT GitHub
-# release. Nothing is public until a person has tested the build (docs/RELEASE_CHECKLIST.md) and
-# pressed Publish.
+# Builds the installers, code-signs and Widevine-signs the Windows build, and puts everything in a
+# DRAFT GitHub release. Nothing is public until a person has tested the build
+# (docs/RELEASE_CHECKLIST.md) and pressed Publish.
 #
 # Signing happens only here, on a tag or a deliberate run, never on pushes or pull requests:
 # Castlabs asks that a valid signature is not re-requested routinely, and a workflow that pull
-# requests can trigger would hand the signing account to anyone who opens one.
+# requests can trigger would hand the signing accounts to anyone who opens one.
+#
+# Code signing is the SignPath Foundation's: free for open source, with a certificate issued to
+# "SignPath Foundation", which Windows shows as the publisher. A tag signs with the release-signing
+# policy, where the maintainer approves each request in SignPath while the job waits. A run by
+# hand signs with SignPath's test certificate unless told otherwise. Windows does not trust that
+# certificate, so a test-signed build is never published: the Linux and publish jobs skip it, and
+# its Windows files are only this run's artifacts.
 #
 # macOS is left out until notarization is funded: on macOS 15+ an un-notarized download cannot be
 # opened the normal way, which reads as a broken app. See docs/TODO.md, Milestone 4.
@@ -18,6 +25,14 @@ on:
   # A run by hand from the Actions tab. GitHub offers it only for workflows on the default branch,
   # which this one is from 0.8.0. Pushing a tag is still the usual way.
   workflow_dispatch:
+    inputs:
+      signing-policy:
+        description: SignPath signing policy. A test-signing build checks the pipeline and is never published.
+        type: choice
+        options:
+          - test-signing
+          - release-signing
+        default: test-signing
 
 permissions:
   contents: read
@@ -39,6 +54,8 @@ jobs:
       version: ${{ steps.read.outputs.version }}
       tag: ${{ steps.read.outputs.tag }}
       prerelease: ${{ steps.read.outputs.prerelease }}
+      signing-policy: ${{ steps.read.outputs.signing-policy }}
+      windows-version: ${{ steps.read.outputs.windows-version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -48,6 +65,8 @@ jobs:
       # and release notes that each name a different version.
       - name: Read the version and check the tag
         id: read
+        env:
+          CHOSEN_POLICY: ${{ inputs.signing-policy }}
         run: |
           version=$(jq -r .version package.json)
           tag="v$version"
@@ -59,14 +78,29 @@ jobs:
             *-*) prerelease=true ;;
             *) prerelease=false ;;
           esac
+          # A pushed tag is a release, signed with the real certificate. A run by hand uses the
+          # policy chosen for it.
+          if [ "$GITHUB_EVENT_NAME" = push ]; then
+            policy=release-signing
+          else
+            policy="$CHOSEN_POLICY"
+          fi
+          # BetterSoundCloud.exe's product version, which SignPath checks
+          # (.signpath/artifact-configurations/app.xml). electron-builder writes it in Windows'
+          # four-part form: 0.9.0 and 0.9.0-beta.1 both become 0.9.0.0.
+          IFS=. read -r major minor patch <<< "${version%%-*}"
           {
             echo "version=$version"
             echo "tag=$tag"
             echo "prerelease=$prerelease"
+            echo "signing-policy=$policy"
+            echo "windows-version=$major.$minor.$patch.0"
           } >> "$GITHUB_OUTPUT"
 
       # Checked before building, so a repeat run stops here instead of signing again for nothing.
+      # A test-signed build is never published, so it may be built for a version that is out.
       - name: Stop if this version already has a release
+        if: steps.read.outputs.signing-policy == 'release-signing'
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.read.outputs.tag }}
@@ -94,20 +128,32 @@ jobs:
       - run: npm test
 
   windows:
-    name: Windows (Widevine-signed)
+    name: Windows (code-signed and Widevine-signed)
     needs: [version, check]
     runs-on: windows-latest
-    timeout-minutes: 45
+    # Two signing requests, each of which may wait up to 30 minutes for its approval in SignPath.
+    timeout-minutes: 120
+    # SignPath fetches the files to sign from this run's artifacts with this job's token, which
+    # needs actions: read for that.
+    permissions:
+      contents: read
+      actions: read
     steps:
       # First, so a missing secret fails in seconds rather than after the build.
-      - name: Require the Castlabs account
+      - name: Require the Castlabs account and the SignPath token
         shell: bash
         env:
           EVS_ACCOUNT_NAME: ${{ secrets.EVS_ACCOUNT_NAME }}
           EVS_PASSWD: ${{ secrets.EVS_PASSWD }}
+          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+          SIGNPATH_ORGANIZATION_ID: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
         run: |
           if [ -z "$EVS_ACCOUNT_NAME" ] || [ -z "$EVS_PASSWD" ]; then
             echo "::error::Add the EVS_ACCOUNT_NAME and EVS_PASSWD repository secrets (your Castlabs EVS login). Without a Widevine signature the build greys out and skips protected tracks."
+            exit 1
+          fi
+          if [ -z "$SIGNPATH_API_TOKEN" ] || [ -z "$SIGNPATH_ORGANIZATION_ID" ]; then
+            echo "::error::Add the SIGNPATH_API_TOKEN repository secret (the API token of SignPath's CI user) and the SIGNPATH_ORGANIZATION_ID variable. Without them nothing can be code-signed."
             exit 1
           fi
 
@@ -134,20 +180,137 @@ jobs:
       # that does nothing. Windows runners have the C++ build tools node-gyp needs.
       - run: node scripts/build-native.mjs --required
 
-      # STRICT_VMP_SIGNING makes scripts/vmp-sign.js fail the build when it cannot sign, instead
-      # of shipping a client that skips DRM tracks. It is the literal string 'true' and never
-      # derived from whether a secret is set, which would fail open.
-      - name: Package and Widevine-sign
+      # The build goes in steps around the signatures, each after the one before it: the app's exe
+      # is code-signed at SignPath; then it gets the Widevine (VMP) signature, which on Windows must
+      # cover the code-signed exe (Castlabs); then the installers are built from that folder and
+      # code-signed in turn; then the update feed is made to describe the signed installer.
+
+      # 1. Pack. This builds an installer too, thrown away below: only an NSIS build writes
+      #    resources/app-update.yml, without which an installed copy never updates (CLAUDE.md §20),
+      #    and the --prepackaged build in step 4 packs the folder exactly as it finds it.
+      #    VMP_SIGN_LATER keeps scripts/vmp-after-sign.js from adding the Widevine signature now,
+      #    before the exe has its code signature.
+      - name: Pack the app
         env:
-          STRICT_VMP_SIGNING: 'true'
-          EVS_PYTHON: python
-          EVS_NO_ASK: '1'
-          EVS_ACCOUNT_NAME: ${{ secrets.EVS_ACCOUNT_NAME }}
-          EVS_PASSWD: ${{ secrets.EVS_PASSWD }}
-        run: npx electron-builder --win --publish never
+          VMP_SIGN_LATER: 'true'
+        run: npx electron-builder --win nsis --x64 --publish never
 
       - name: Check the fuses
         run: node scripts/verify-fuses.mjs release/win-unpacked/BetterSoundCloud.exe
+
+      - name: Check the app will know it was installed
+        shell: bash
+        run: |
+          if [ ! -f release/win-unpacked/resources/app-update.yml ]; then
+            echo "::error::release/win-unpacked has no resources/app-update.yml, so installed copies would never update."
+            exit 1
+          fi
+
+      # That installer holds the exe before either signature. Nothing of it may ship.
+      - name: Throw away the unsigned installer
+        shell: bash
+        run: rm -f release/*.exe release/*.blockmap release/latest.yml
+
+      # 2. Code-sign the app's exe: artifact configuration `app`, kept in
+      #    .signpath/artifact-configurations/app.xml.
+      - name: Upload the app's exe for signing
+        id: upload-app
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: unsigned-app
+          path: release/win-unpacked/BetterSoundCloud.exe
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Code-sign the app's exe at SignPath
+        uses: signpath/github-action-submit-signing-request@4a84eb4ad763290f059275786f2deed97c2c672b # v3.1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: BetterSoundCloud
+          signing-policy-slug: ${{ needs.version.outputs.signing-policy }}
+          artifact-configuration-slug: app
+          github-artifact-id: ${{ steps.upload-app.outputs.artifact-id }}
+          parameters: |
+            version: "${{ needs.version.outputs.windows-version }}"
+          wait-for-completion-timeout-in-seconds: 1800
+          output-artifact-directory: signed/app
+
+      - name: Put the signed exe in the app
+        shell: bash
+        run: cp signed/app/BetterSoundCloud.exe release/win-unpacked/BetterSoundCloud.exe
+
+      # 3. The Widevine signature, over the code-signed exe. Verified separately: a zero exit from
+      #    the signer is not proof that the package validates.
+      - name: Widevine-sign
+        shell: bash
+        env:
+          EVS_NO_ASK: '1'
+          EVS_ACCOUNT_NAME: ${{ secrets.EVS_ACCOUNT_NAME }}
+          EVS_PASSWD: ${{ secrets.EVS_PASSWD }}
+        run: |
+          python -m castlabs_evs.vmp sign-pkg release/win-unpacked
+          python -m castlabs_evs.vmp verify-pkg release/win-unpacked
+
+      # 4. The installer and the portable build, from that folder as it is. With --prepackaged
+      #    electron-builder packs nothing, flips no fuse, edits no resource and runs no hook, so
+      #    neither signature is touched.
+      - name: Build the installers
+        run: npx electron-builder --win --prepackaged release/win-unpacked --publish never
+
+      # 5. Code-sign both: artifact configuration `installers`. Their product version is the
+      #    package.json version.
+      - name: Upload the installers for signing
+        id: upload-installers
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: unsigned-installers
+          path: |
+            release/*-setup.exe
+            release/*-portable.exe
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Code-sign the installers at SignPath
+        uses: signpath/github-action-submit-signing-request@4a84eb4ad763290f059275786f2deed97c2c672b # v3.1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: BetterSoundCloud
+          signing-policy-slug: ${{ needs.version.outputs.signing-policy }}
+          artifact-configuration-slug: installers
+          github-artifact-id: ${{ steps.upload-installers.outputs.artifact-id }}
+          parameters: |
+            version: "${{ needs.version.outputs.version }}"
+          wait-for-completion-timeout-in-seconds: 1800
+          output-artifact-directory: signed/installers
+
+      - name: Put the signed installers in place
+        shell: bash
+        run: cp signed/installers/*.exe release/
+
+      # 6. Signing changed the setup's bytes, so latest.yml's hash and size and the blockmap no
+      #    longer describe it, and every user's update would fail its checksum.
+      - name: Bring the update feed in line with the signed installer
+        run: node scripts/refresh-windows-feed.mjs release
+
+      - name: Check the code signatures
+        shell: pwsh
+        env:
+          POLICY: ${{ needs.version.outputs.signing-policy }}
+        run: |
+          $files = @(Get-Item -Path release/win-unpacked/BetterSoundCloud.exe, release/*-setup.exe, release/*-portable.exe)
+          if ($files.Count -ne 3) { throw "Expected the app's exe, the setup and the portable build, found $($files.Count) files." }
+          foreach ($file in $files) {
+            $signature = Get-AuthenticodeSignature -LiteralPath $file.FullName
+            "$($file.Name): $($signature.Status), signed by $($signature.SignerCertificate.Subject)"
+            if ($null -eq $signature.SignerCertificate) { throw "$($file.Name) is not code-signed." }
+            # The test certificate is self-signed, so Windows does not trust it. Only a
+            # release-signed file has to be fully valid.
+            if ($env:POLICY -eq 'release-signing' -and $signature.Status -ne 'Valid') {
+              throw "$($file.Name): the signature is $($signature.Status)."
+            }
+          }
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -162,6 +325,8 @@ jobs:
   linux:
     name: Linux (AppImage, deb, rpm)
     needs: [version, check]
+    # A test-signed run checks Windows' signing and publishes nothing.
+    if: needs.version.outputs.signing-policy == 'release-signing'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -198,6 +363,9 @@ jobs:
   publish:
     name: Draft the GitHub release
     needs: [version, windows, linux]
+    # Never for the test certificate: Windows does not trust it, and electron-updater would refuse
+    # such an update. A test-signed run's files stay in the run's artifacts.
+    if: needs.version.outputs.signing-policy == 'release-signing'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -207,8 +375,8 @@ jobs:
           path: dist
           merge-multiple: true
 
-      # Windows and macOS builds are not code-signed yet, so a checksum is the only way a user can
-      # tell the file they downloaded is the one built here.
+      # The Linux packages carry no signature, so for them a checksum is the only way a user can
+      # tell the file they downloaded is the one built here. Windows' are listed too.
       - name: Write the SHA-256 checksums
         working-directory: dist
         run: |

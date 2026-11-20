@@ -41,6 +41,8 @@ electronFuses:
 #   Windows-> VMP sign AFTER  code signing  (afterSign)
 # Two small wrapper files, each one obviously named for the platform it handles. Both
 # call signPackage() in scripts/vmp-sign.js.
+# Windows releases are code-signed at SignPath after electron-builder has finished, so there
+# .github/workflows/release.yml sets VMP_SIGN_LATER and adds the VMP signature itself, after.
 afterPack: scripts/vmp-after-pack.js
 afterSign: scripts/vmp-after-sign.js
 

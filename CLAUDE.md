@@ -75,10 +75,29 @@ CLAUDE.md is worse than none, because it gets trusted.
   `settings.get('appearance.theme')`, or safe mode stops covering it. Plugins still run otherwise:
   they cannot touch the window or SoundCloud's page. Users find it in the README's Troubleshooting.
 - **Releases are built by `.github/workflows/release.yml`**, on a pushed tag `v<version>` that
-  must match `package.json`: Windows VMP-signed (repository secrets `EVS_ACCOUNT_NAME`,
-  `EVS_PASSWD`) and Linux, fuses checked by `scripts/verify-fuses.mjs`, all into a draft release.
-  Signing never runs on pushes or pull requests. macOS is not built until notarization is funded.
-  Its actions are pinned to commit hashes; keep them pinned.
+  must match `package.json`: Windows code-signed and VMP-signed, and Linux, fuses checked by
+  `scripts/verify-fuses.mjs`, all into a draft release. Signing never runs on pushes or pull
+  requests. macOS is not built until notarization is funded. Its actions are pinned to commit
+  hashes; keep them pinned.
+- **Windows code signing is the SignPath Foundation's** (decided 2026-11-20; certificate issued to
+  "SignPath Foundation"), from the workflow only. Repository secrets `EVS_ACCOUNT_NAME`,
+  `EVS_PASSWD`, `SIGNPATH_API_TOKEN`, variable `SIGNPATH_ORGANIZATION_ID`. **The order is fixed**,
+  because on Windows the VMP signature must cover the code-signed exe (Castlabs):
+  1. Pack with `VMP_SIGN_LATER=true`, which keeps `vmp-after-sign.js` out of the way. This is a
+     full NSIS build, never `--dir`: only an NSIS build writes `resources/app-update.yml`.
+  2. SignPath signs `BetterSoundCloud.exe`.
+  3. VMP-sign the folder.
+  4. Build the installers `--prepackaged`.
+  5. SignPath signs the installers.
+  6. `scripts/refresh-windows-feed.mjs` rewrites `latest.yml`'s hash and rebuilds the blockmap,
+     since signing changed the setup's bytes.
+
+  So a release makes two signing requests, each approved by the maintainer in SignPath. A run by
+  hand signs with the test certificate and publishes nothing; never publish a test-signed build.
+  The artifact configurations' copies are `.signpath/artifact-configurations/`: change them
+  together with SignPath. What is left (the Foundation's "Code signing policy" page,
+  `publisherName`) is in docs/TODO.md.
+
 - **The icons are The Pull**, an orange sleeve with the record drawn out of it (chosen by the
   maintainer 2026-11-14). Every size is drawn for its pixels by `brand/logos/the-pull/build.mjs` in
   the project website's repository; copy the files from there, never resize or edit them here (a
@@ -117,7 +136,9 @@ src/shared/     Pure TypeScript shared by main, preload and renderer. No Electro
 resources/      Shipped at runtime: engine.bin (ad blocker), themes/, theme-pictures/ (§17),
                 plugins/, minimal-nav.css, soundcloud-palette-{dark,light}.css (§17), the icons (§1)
 scripts/        Blocker engine build, VMP signing hooks, the packaged smoke check, the fuse check,
-                the Electron pin check (verify-electron.mjs), the backlog page (todo-overview.mjs)
+                the Electron pin check (verify-electron.mjs), the backlog page (todo-overview.mjs),
+                the update feed after code signing (refresh-windows-feed.mjs)
+.signpath/      Copies of the SignPath artifact configurations (§1)
 docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CUSTOM_PLUGINS.md,
                 media/ (the README's pictures and animated WebP clips)
 ```
@@ -1177,8 +1198,10 @@ Rules that hold this together:
   has exited, with the same arguments and none of its open files. Windows' installer waits for the
   app to close and opens the new version itself.
 - **Every download is checked against the feed's sha512**, so a Windows differential download is
-  byte-identical to the VMP-signed installer. Unsigned builds skip electron-updater's publisher
-  check (there is no publisher to check).
+  byte-identical to the signed installer. The installer is code-signed after electron-builder
+  wrote `latest.yml` and the blockmap, so `scripts/refresh-windows-feed.mjs` re-describes it (§1):
+  a stale hash would fail every update. No `publisherName` is set yet, so electron-updater checks no
+  publisher. Setting it waits for the first release under the real certificate (docs/TODO.md).
 - **Verified end to end on Linux** (2026-10-28): a 0.8.0 AppImage fed a local 0.8.1 feed checked,
   downloaded, showed the notification, and on "Restart now" came back as 0.8.1 on its own profile.
   **And on Windows** the same day: installers of 0.8.1 → 0.8.2 → 0.8.3 against a local feed

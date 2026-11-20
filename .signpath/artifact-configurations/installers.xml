@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <!-- The NSIS setup and the portable exe from release/, zipped by actions/upload-artifact.
+       Built (prepackaged) from the app folder AFTER its Authenticode and Widevine (VMP)
+       signatures. NSIS installers are signed as plain PE files: nothing inside is re-signed.
+       version: the installers' product version, which electron-builder writes as the
+       package.json version (0.9.0). The release workflow passes it. -->
+  <parameters>
+    <parameter name="version" required="true" />
+  </parameters>
+  <zip-file>
+    <pe-file path="BetterSoundCloud-*-win-x64-setup.exe" product-name="BetterSoundCloud" product-version="${version}">
+      <authenticode-sign />
+    </pe-file>
+    <pe-file path="BetterSoundCloud-*-win-x64-portable.exe" product-name="BetterSoundCloud" product-version="${version}">
+      <authenticode-sign />
+    </pe-file>
+  </zip-file>
+</artifact-configuration>
