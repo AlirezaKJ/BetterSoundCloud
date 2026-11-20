@@ -194,7 +194,10 @@ Windows builds are code-signed through the [SignPath Foundation](https://signpat
 open-source projects; the certificate is issued to "SignPath Foundation", which Windows shows as the
 publisher. The project, its signing policies and its artifact configurations live in SignPath; the
 two artifact configurations are copied in [`.signpath/artifact-configurations/`](.signpath/artifact-configurations)
-so they can be reviewed with the workflow. Change the copy and SignPath together.
+so they can be reviewed with the workflow. Change the copy and SignPath together. The
+[SignPath GitHub App](https://github.com/apps/signpath) must be installed on the repository (this
+one only). SignPath's docs call it optional for a public repository, but without it every signing
+request fails with "Failed to retrieve GitHub App token" (seen 2026-11-20).
 
 The order is fixed: Castlabs requires the VMP signature to cover the code-signed exe on Windows, so
 the Windows job packs the app (with `VMP_SIGN_LATER=true`, which keeps `scripts/vmp-after-sign.js`

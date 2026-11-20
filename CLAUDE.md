@@ -81,7 +81,9 @@ CLAUDE.md is worse than none, because it gets trusted.
   hashes; keep them pinned.
 - **Windows code signing is the SignPath Foundation's** (decided 2026-11-20; certificate issued to
   "SignPath Foundation"), from the workflow only. Repository secrets `EVS_ACCOUNT_NAME`,
-  `EVS_PASSWD`, `SIGNPATH_API_TOKEN`, variable `SIGNPATH_ORGANIZATION_ID`. **The order is fixed**,
+  `EVS_PASSWD`, `SIGNPATH_API_TOKEN`, variable `SIGNPATH_ORGANIZATION_ID`, and the SignPath GitHub
+  App installed on the repository (without it, every request fails). Where it stands and what is
+  left: the code-signing item in docs/TODO.md. **The order is fixed**,
   because on Windows the VMP signature must cover the code-signed exe (Castlabs):
   1. Pack with `VMP_SIGN_LATER=true`, which keeps `vmp-after-sign.js` out of the way. This is a
      full NSIS build, never `--dir`: only an NSIS build writes `resources/app-update.yml`.
