@@ -174,15 +174,40 @@ signature.
 
 Pushing a tag `v<version>` (it must match `package.json`, e.g. `v0.8.0`) runs
 [`.github/workflows/release.yml`](.github/workflows/release.yml). It runs the checks, builds the
-Windows installer and portable build (VMP-signed, with `STRICT_VMP_SIGNING=true`) and the Linux
-AppImage, `.deb` and `.rpm`, confirms Electron's fuses are set (`scripts/verify-fuses.mjs`), and
-puts every file plus `SHA256SUMS.txt` in a **draft** release. Nothing is public until you publish
-the draft. Versions with a suffix (`0.9.0-beta.1`) are marked as pre-releases. macOS is not built
-until notarization is funded.
+Windows installer and portable build (code-signed and VMP-signed, below) and the Linux AppImage,
+`.deb` and `.rpm`, confirms Electron's fuses are set (`scripts/verify-fuses.mjs`), and puts every
+file plus `SHA256SUMS.txt` in a **draft** release. Nothing is public until you publish the draft.
+Versions with a suffix (`0.9.0-beta.1`) are marked as pre-releases. macOS is not built until
+notarization is funded.
 
-It needs two repository secrets, your Castlabs EVS login: `EVS_ACCOUNT_NAME` and `EVS_PASSWD`
-(`gh secret set EVS_ACCOUNT_NAME`, then `gh secret set EVS_PASSWD`; each asks for the value).
-Without them the Windows job stops at its first step.
+It needs, as repository secrets, your Castlabs EVS login, `EVS_ACCOUNT_NAME` and `EVS_PASSWD`, and
+`SIGNPATH_API_TOKEN`, the API token of the SignPath CI user (`gh secret set <name>` asks for each
+value); and, as a repository variable, `SIGNPATH_ORGANIZATION_ID`. Without them the Windows job
+stops at its first step.
 
 Test the draft's files before publishing: run `npm run smoke:packaged -- <path to the exe>` and work
 through [`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md).
+
+### Windows code signing (SignPath)
+
+Windows builds are code-signed through the [SignPath Foundation](https://signpath.org), free for
+open-source projects; the certificate is issued to "SignPath Foundation", which Windows shows as the
+publisher. The project, its signing policies and its artifact configurations live in SignPath; the
+two artifact configurations are copied in [`.signpath/artifact-configurations/`](.signpath/artifact-configurations)
+so they can be reviewed with the workflow. Change the copy and SignPath together. The
+[SignPath GitHub App](https://github.com/apps/signpath) must be installed on the repository (this
+one only). SignPath's docs call it optional for a public repository, but without it every signing
+request fails with "Failed to retrieve GitHub App token" (seen 2026-11-20).
+
+The order is fixed: Castlabs requires the VMP signature to cover the code-signed exe on Windows, so
+the Windows job packs the app (with `VMP_SIGN_LATER=true`, which keeps `scripts/vmp-after-sign.js`
+out of the way), has SignPath sign `BetterSoundCloud.exe`, VMP-signs the folder, builds the
+installers from it with `--prepackaged`, has SignPath sign those, and finally runs
+`scripts/refresh-windows-feed.mjs`, since signing changed the installer that `latest.yml` and its
+`.blockmap` describe. **So a release makes two signing requests, and each waits for you to approve
+it in SignPath** (up to 30 minutes each); SignPath emails you when one is waiting.
+
+To check the pipeline without releasing anything, run the workflow by hand from the Actions tab: it
+signs with SignPath's test certificate by default, skips Linux and the draft release, and leaves the
+Windows files in the run's artifacts. Windows does not trust the test certificate, so never publish
+a test-signed build.

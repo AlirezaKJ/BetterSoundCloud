@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <!-- BetterSoundCloud.exe from release/win-unpacked, zipped by actions/upload-artifact.
+       Signed BEFORE the Widevine (VMP) signature: Castlabs requires that order on Windows.
+       version: the exe's product version, which electron-builder writes in the four-part
+       Windows form (0.9.0 -> 0.9.0.0). The release workflow passes it. -->
+  <parameters>
+    <parameter name="version" required="true" />
+  </parameters>
+  <zip-file>
+    <pe-file path="BetterSoundCloud.exe" product-name="BetterSoundCloud" product-version="${version}">
+      <authenticode-sign />
+    </pe-file>
+  </zip-file>
+</artifact-configuration>
