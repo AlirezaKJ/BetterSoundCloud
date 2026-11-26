@@ -313,8 +313,8 @@ export const STEPS: Step[] = [
         id: 'browser',
         label: 'Bring my browser’s sign-in',
         detail:
-          'From a Cookie-Editor JSON export of soundcloud.com. Only the sign-in is taken; delete ' +
-          'the file after.',
+          'From a Cookie-Editor JSON or cookies.txt export of soundcloud.com. Takes only the ' +
+          'sign-in; delete the file after.',
         action: 'Choose the export…'
       },
       {

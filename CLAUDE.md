@@ -678,7 +678,9 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
 - **"Import browser sign-in"** (Settings → Advanced, `BrowserSession.svelte`) brings a browser's
   SoundCloud sign-in into the content view's session from a cookie export the user picks in main's
   own dialog (`importSignIn`, main/cookie-import.ts); no path or value reaches a renderer, and
-  nothing is kept. **It takes the sign-in and nothing else**: `readSignInCookies`
+  nothing is kept. The export is Cookie-Editor's JSON or a cookies.txt (the Netscape format),
+  which `parseCookieExport` reads into the same entries; it never trims the text as a whole, since
+  an empty value's line ends in a tab. **It takes the sign-in and nothing else**: `readSignInCookies`
   (shared/sign-in-cookies.ts) picks `oauth_token`, `oauth_refresh_token` and
   `_soundcloud_session` by name and host, sets them host-only as SoundCloud does, after removing
   the app's old ones. Never widen it to the whole file: `datadome` is issued to one client, and
