@@ -36,8 +36,8 @@
   <div class="label">
     <p class="name">Import browser sign-in</p>
     <p class="help">
-      Brings in your browser’s SoundCloud sign-in from a Cookie-Editor JSON export, and nothing
-      else. Then delete the file: anyone who has it is signed in as you.
+      Brings in your browser’s SoundCloud sign-in from a Cookie-Editor JSON or cookies.txt
+      export, and nothing else. Then delete the file: anyone who has it is signed in as you.
     </p>
     {#if line}
       <div class="result" role="status">

@@ -1106,7 +1106,12 @@ async function chooseAndImportBrowserSession(target: Shell): Promise<BrowserSess
   const { canceled, filePaths } = await dialog.showOpenDialog(target.window, {
     title: 'Import your SoundCloud sign-in',
     properties: ['openFile'],
-    filters: [{ name: 'Cookie export (JSON)', extensions: ['json'] }]
+    // Both export formats, and anything else: a filter of .json alone hid a cookies.txt export,
+    // so choosing one did nothing at all (2026-11-19).
+    filters: [
+      { name: 'Cookie export (JSON or cookies.txt)', extensions: ['json', 'txt'] },
+      { name: 'All files', extensions: ['*'] }
+    ]
   })
   const file = filePaths[0]
   if (canceled || !file) return { imported: 0, ignored: 0, error: '' }

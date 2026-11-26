@@ -2,6 +2,17 @@
 
 Each version's entry is also its release notes on GitHub.
 
+## Next (not released yet)
+
+- **Import browser sign-in reads cookies.txt files too**, the format the "Get cookies.txt"
+  extensions write, as well as Cookie-Editor's JSON. Choosing one used to do nothing.
+  By @Jeter361 in [#130](https://github.com/AlirezaKJ/BetterSoundCloud/pull/130).
+
+### Thanks
+
+To @Jeter361, whose pull request brought cookies.txt files to the browser sign-in import
+([#130](https://github.com/AlirezaKJ/BetterSoundCloud/pull/130)).
+
 ## 0.9.0 (2026-11-16)
 
 - **Keyboard shortcuts you choose** ([#127](https://github.com/AlirezaKJ/BetterSoundCloud/issues/127)):

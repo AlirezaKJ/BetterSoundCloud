@@ -4,7 +4,8 @@ Signing in to SoundCloud with Google, Apple or Facebook opens your web browser, 
 stays in the browser. To use it in BetterSoundCloud:
 
 1. Sign in to SoundCloud in your browser (Chrome, Edge, Firefox, Zen, …).
-2. With soundcloud.com open, use the Cookie-Editor extension to export its cookies as JSON.
+2. With soundcloud.com open, export its cookies: as JSON with the Cookie-Editor extension, or as a
+   `cookies.txt` file (the Netscape format that "Get cookies.txt" extensions, curl and yt-dlp write).
 3. In BetterSoundCloud, open **Settings → Advanced → Import browser sign-in**, choose the file,
    and SoundCloud reloads, signed in.
 4. Delete the file. Anyone who has it can sign in as you.

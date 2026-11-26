@@ -93,8 +93,8 @@ when one is refused, write down what SoundCloud said rather than retrying.
       Settings afterwards), Skip setup works, and its last step opens SoundCloud's sign-in page.
 - [ ] Sign in from the fresh profile. No challenge, no "unusual activity".
 - [ ] Import browser sign-in (Settings → Advanced), with a cookie export of soundcloud.com from a
-      browser signed in with a Google account: the app opens signed in as that account, and the row
-      says how many sign-in cookies it took.
+      browser signed in with a Google account, once as Cookie-Editor JSON and once as cookies.txt:
+      the app opens signed in as that account, and the row says how many sign-in cookies it took.
 - [ ] Play ten tracks from a large playlist, **including one that greys out and skips on v0.7.1** —
       the only real test of the VMP signature (`requestMediaKeySystemAccess` succeeds even unsigned).
 - [ ] Like a track and follow a user. Both stick after a reload.
