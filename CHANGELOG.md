@@ -7,6 +7,11 @@ Each version's entry is also its release notes on GitHub.
 - **Import browser sign-in reads cookies.txt files too**, the format the "Get cookies.txt"
   extensions write, as well as Cookie-Editor's JSON. Choosing one used to do nothing.
   By @Jeter361 in [#130](https://github.com/AlirezaKJ/BetterSoundCloud/pull/130).
+- **Fixed: the page reloading over and over, unable to sign in.** A profile could hold a sign-in
+  SoundCloud no longer accepts and its sign-out could not remove (an installed build and one run
+  from source keep their sign-ins apart). SoundCloud then signed itself out every few seconds. The
+  app now clears that sign-in after a few rounds and opens SoundCloud signed out, ready to sign in.
+  By @Jeter361 in [#129](https://github.com/AlirezaKJ/BetterSoundCloud/pull/129).
 
 ### Thanks
 
