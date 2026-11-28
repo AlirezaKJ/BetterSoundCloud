@@ -19,25 +19,33 @@ export function watchSignOutLoop(content: WebContents, startUrl: () => string): 
     trips = noted.trips
     if (!noted.loop) return
     trips = []
-    void clearSignIn(content).then(() => {
-      if (content.isDestroyed()) return
-      console.warn(
-        '[session] SoundCloud kept signing out a sign-in it could not clear; cleared it'
-      )
-      content.loadURL(startUrl()).catch(() => undefined)
-    })
+    void breakLoop(content, startUrl)
   })
 }
 
 /**
- * Remove the sign-in cookies. `cookies.remove(url, name)` takes every cookie of that name the URL
- * would be sent, so SoundCloud's own `.soundcloud.com` cookies go as well as host-only ones.
+ * Leave SoundCloud's page, remove the sign-in cookies, then open the start page with the history
+ * dropped.
+ *
+ * The page goes first, as in `clearSiteData` (index.ts): its scripts, still running, could write
+ * `oauth_token` back, since SoundCloud's page sets that cookie itself (it is not HttpOnly).
+ * `cookies.remove(url, name)` takes every cookie of that name the URL would be sent, so a
+ * `.soundcloud.com` cookie goes as well as a host-only one.
  */
-async function clearSignIn(content: WebContents): Promise<void> {
+async function breakLoop(content: WebContents, startUrl: () => string): Promise<void> {
+  await content.loadURL('about:blank').catch(() => undefined)
   if (content.isDestroyed()) return
+
   const { cookies } = content.session
   for (const cookie of SIGN_IN_COOKIES) {
     await cookies.remove(`https://${cookie.host}/`, cookie.name).catch(() => undefined)
   }
   await cookies.flushStore().catch(() => undefined)
+  if (content.isDestroyed()) return
+
+  console.warn('[session] SoundCloud kept signing out a sign-in it could not clear; cleared it')
+  // Back would otherwise lead to the blank page, then to the pages of the dead sign-in. Run ahead
+  // of window.ts's own listener, so the header's Back button reads the history after it is cleared.
+  content.prependOnceListener('did-navigate', () => content.navigationHistory.clear())
+  content.loadURL(startUrl()).catch(() => undefined)
 }

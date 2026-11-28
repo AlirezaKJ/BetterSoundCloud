@@ -30,6 +30,10 @@ CLAUDE.md is worse than none, because it gets trusted.
 | `npx prettier --write <files>`              | Fix formatting before `check`                                                                                                  |
 
 - Dev runs from its own profile, `%APPDATA%/BetterSoundCloud (dev)`, set in `src/main/index.ts`.
+  **`npm start` does not**: `electron-vite preview` runs the built app on the installed app's own
+  profile, with the Electron from `node_modules`, which does not encrypt cookies as the installed
+  app does (the `enableCookieEncryption` fuse). The two can then disagree about the sign-in: that
+  is how SoundCloud's sign-out loop was first hit (§10).
 - **The Windows installer removes v0.7.x** (`build-resources/installer.nsh`, `nsis.include`): its
   Squirrel Setup.exe install (per-user installs only) and its all-users MSI, after this version is
   installed, then remakes the shortcuts Squirrel deletes by their shared name. It must never touch
@@ -177,6 +181,7 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CU
 | `main/shortcuts.ts`                | Every shortcut in Settings → Shortcuts: in-window keys in `before-input-event`, opted-in keys via `globalShortcut` (§23)                                           |
 | `main/playback.ts`                 | Playback control, the one way to SoundCloud's player from outside its page; the volume keys (§23)                                                                  |
 | `main/start-page.ts`               | "On startup, open": `startUrl()` for the first load, `rememberLastPage()` keeps `<userData>/last-page.json` for "Where you left off"                               |
+| `main/sign-out-loop.ts`            | `watchSignOutLoop()`: SoundCloud's page signing itself out over and over on a sign-in it cannot clear; clears that sign-in (§10)                                   |
 | `main/onboarding.ts`               | The first-run welcome's record in the profile (`<userData>/onboarding.json`): `shouldOnboard()`, `recordOnboardingFinished()` (§9)                                 |
 | `main/plugins.ts`                  | The plugin service: finds plugins, records approvals, runs each in its own process, answers its calls (§16)                                                        |
 | `main/plugin-host.ts`              | The entry point of a plugin's own utility process: relays messages, makes its https requests                                                                       |
@@ -198,6 +203,7 @@ docs/           TODO.md (the backlog), DESIGN.md (design system), PRODUCT.md, CU
 | `shared/page-theme.ts`      | `PageTheme`, `detectPageTheme()`, `overlayTheme()` (a theme's `@mode` beats SoundCloud's setting)                                                                                    |
 | `shared/context-menu.ts`    | `ContextMenuRequest`, `CONTEXT_MENU_ACTIONS`, `cleanUrl`, `shortUrl`, `elide`                                                                                                        |
 | `shared/start-page.ts`      | `START_PAGE_URLS`, `startPageUrl()`, `pageToRemember()` (only soundcloud.com pages; never `/logout` or a sign-in step)                                                               |
+| `shared/sign-out-loop.ts`   | `isLogoutUrl()`, `noteLogout()`, `SIGN_OUT_LOOP`: when trips to `/logout` are that loop rather than a sign-out                                                                       |
 | `shared/onboarding.ts`      | `needsOnboarding()`, `readOnboardingRecord()`: whether a launch opens with the welcome (a profile with no settings yet, or left unfinished)                                          |
 | `shared/focus-cycle.ts`     | `focusCycle()`, `nextFocusArea()`: the order F6 moves through                                                                                                                        |
 | `shared/shortcuts.ts`       | Keys: `keyName()`, `pressToKeys()`, `normalizeKeys()`, `parseKeys()`, `matchesKeys()`, `refusal()`, `heldBy()`, `keyLabels()`, `ShortcutStatus`, `nextZoom()`                        |
@@ -739,6 +745,14 @@ content.ts watchPlayer()  --CH.trackUpdate (PlayerReading)-->  index.ts fromSoun
 - Ad blocking: `resources/engine.bin`, loaded synchronously. `neverFilter()` runs before the
   engine; sign-in, DataDome, reCAPTCHA, playback and SoundCloud's own hosts are never filtered.
   Audio ads (`isAudioAdRequest`) have their own setting. The filter-list blocker is off by default.
+- **SoundCloud's sign-out loop is broken by main** (`main/sign-out-loop.ts`, PR #129). On a
+  sign-in SoundCloud rejects, its page goes to `/logout`, which answers 401 and clears nothing, so
+  the page came back on the same dead token every 2.6s and could never be signed in to (measured
+  by the contributor, 2026-11-19). Three trips to `/logout` within 30s (`SIGN_OUT_LOOP`) are the
+  loop; one, the right-click menu's Sign out included, is left alone. Main then loads `about:blank`
+  first (SoundCloud's scripts could write `oauth_token` back, as in `clearSiteData`), removes only
+  the three cookies `SIGN_IN_COOKIES` names, host-only and domain-wide alike, and opens the start
+  page with the history dropped. Off `did-navigate`, never a timer on SoundCloud's origin.
 - Do not send deliberately bot-like requests to SoundCloud from a developer's machine while
   testing; it can hurt that IP's standing with SoundCloud's bot check.
 
@@ -760,6 +774,7 @@ Dev builds log to the terminal running `npm run dev`. Tags:
 | `[updates]`                                                                                      | One line per change of the updater's state: checking, current, available/downloading/ready with versions and install kind, or why it failed (all builds)        |
 | `[widevine]`                                                                                     | How long the Widevine wait took, or why it failed; then going on without it, or it arriving late (all builds)                                                   |
 | `[page-status]`                                                                                  | What the status view is saying (`load failed -106 ERR_INTERNET_DISCONNECTED`, `cleared`, …)                                                                     |
+| `[session]`                                                                                      | SoundCloud's page kept signing out a sign-in it could not clear, so main cleared it (all builds)                                                                |
 | `[content]`, `[window]`                                                                          | A failed SoundCloud load; the window shown without its header                                                                                                   |
 | `[audio]`                                                                                        | The audio engine starting and running (dev); stepping aside and why (all builds)                                                                                |
 | `[playback]`, `[shortcuts]`                                                                      | What playback and volume can do here, each press and its answer (dev); the keys registered for other apps (dev)                                                 |
